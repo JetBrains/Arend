@@ -245,6 +245,10 @@ public class DefinitionSerialization implements ArendSerializer {
       builder.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
     }
 
+    for (Pair<Definition, Integer> pair : definition.getParametersOriginalDefinitions()) {
+      builder.addParameterOriginalDef(writeParameterOriginalDef(pair));
+    }
+
     builder.setHasEnclosingClass(definition.getEnclosingClass() != null);
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
     if (definition.getParametersTypecheckingOrder() != null) {
@@ -355,12 +359,23 @@ public class DefinitionSerialization implements ArendSerializer {
     return result;
   }
 
+  private DefinitionProtos.Definition.ParameterOriginalDef writeParameterOriginalDef(Pair<Definition, Integer> pair) {
+    DefinitionProtos.Definition.ParameterOriginalDef.Builder builder = DefinitionProtos.Definition.ParameterOriginalDef.newBuilder();
+    builder.setIndex(pair.proj2);
+    builder.setDefinition(myCallTargetIndexProvider.getDefIndex(pair.proj1));
+    return builder.build();
+  }
+
   private DefinitionProtos.Definition.FunctionData writeFunctionDefinition(ExpressionSerialization defSerializer, FunctionDefinition definition) {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
     builder.setIsStdLevels(definition.getLevelParameters() == null);
     if (definition.getLevelParameters() != null) {
       builder.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
+    }
+
+    for (Pair<Definition, Integer> pair : definition.getParametersOriginalDefinitions()) {
+      builder.addParameterOriginalDef(writeParameterOriginalDef(pair));
     }
 
     builder.addAllOmegaParameter(definition.getOmegaParameters());

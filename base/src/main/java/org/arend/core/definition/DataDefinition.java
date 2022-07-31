@@ -11,6 +11,7 @@ import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.ext.core.level.LevelSubstitution;
+import org.arend.ext.util.Pair;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +36,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private List<LevelVariable> myLevelParameters;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
   private List<Boolean> myOmegaParameters = Collections.emptyList();
+  private List<Pair<Definition,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
   private Definition myPLevelsParent;
   private Definition myHLevelsParent;
   private boolean myPLevelsDerived;
@@ -108,6 +110,16 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   @Override
   public void setLevelParameters(List<LevelVariable> parameters) {
     myLevelParameters = parameters;
+  }
+
+  @Override
+  public List<? extends Pair<Definition,Integer>> getParametersOriginalDefinitions() {
+    return myParametersOriginalDefinitions;
+  }
+
+  @Override
+  public void setParametersOriginalDefinitions(List<Pair<Definition,Integer>> definitions) {
+    myParametersOriginalDefinitions = definitions;
   }
 
   @Override

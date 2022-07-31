@@ -1021,6 +1021,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, LocalInstancePool localInstancePool) {
     def.getData().setTypecheckedIfNotCancelled(typedDef);
+    if (!def.getParametersOriginalDefinitions().isEmpty()) {
+      List<Pair<Definition,Integer>> parametersOriginalDefinitions = new ArrayList<>();
+      for (Pair<TCDefReferable, Integer> pair : def.getParametersOriginalDefinitions()) {
+        parametersOriginalDefinitions.add(new Pair<>(pair.proj1.getTypechecked(), pair.proj2));
+      }
+      typedDef.setParametersOriginalDefinitions(parametersOriginalDefinitions);
+    }
     if (def.enclosingClass != null) {
       typedDef.setHasEnclosingClass(true);
     }
@@ -1898,6 +1905,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private void typecheckDataHeader(DataDefinition dataDefinition, Concrete.DataDefinition def, LocalInstancePool localInstancePool) {
     def.getData().setTypecheckedIfNotCancelled(dataDefinition);
+    if (!def.getParametersOriginalDefinitions().isEmpty()) {
+      List<Pair<Definition,Integer>> parametersOriginalDefinitions = new ArrayList<>();
+      for (Pair<TCDefReferable, Integer> pair : def.getParametersOriginalDefinitions()) {
+        parametersOriginalDefinitions.add(new Pair<>(pair.proj1.getTypechecked(), pair.proj2));
+      }
+      dataDefinition.setParametersOriginalDefinitions(parametersOriginalDefinitions);
+    }
     if (def.enclosingClass != null) {
       dataDefinition.setHasEnclosingClass(true);
     }

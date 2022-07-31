@@ -283,11 +283,21 @@ public class DefinitionDeserialization implements ArendDeserializer {
     return result;
   }
 
+  private List<Pair<Definition,Integer>> readParametersOriginalDefinitions(List<DefinitionProtos.Definition.ParameterOriginalDef> protos) throws DeserializationException {
+    if (protos.isEmpty()) return Collections.emptyList();
+    List<Pair<Definition,Integer>> result = new ArrayList<>();
+    for (DefinitionProtos.Definition.ParameterOriginalDef proto : protos) {
+      result.add(new Pair<>(myCallTargetProvider.getCallTarget(proto.getDefinition()), proto.getIndex()));
+    }
+    return result;
+  }
+
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
     dataDef.setOmegaParameters(dataProto.getOmegaParameterList());
     if (dataProto.getHasEnclosingClass()) {
       dataDef.setHasEnclosingClass(true);
     }
+    dataDef.setParametersOriginalDefinitions(readParametersOriginalDefinitions(dataProto.getParameterOriginalDefList()));
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = dataProto.getParametersTypecheckingOrderList();
     if (!parametersTypecheckingOrder.isEmpty()) {
@@ -430,6 +440,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
     if (functionProto.getHasEnclosingClass()) {
       functionDef.setHasEnclosingClass(true);
     }
+    functionDef.setParametersOriginalDefinitions(readParametersOriginalDefinitions(functionProto.getParameterOriginalDefList()));
     List<Boolean> strictParameters = functionProto.getStrictParametersList();
     if (!strictParameters.isEmpty()) {
       functionDef.setStrictParameters(strictParameters);

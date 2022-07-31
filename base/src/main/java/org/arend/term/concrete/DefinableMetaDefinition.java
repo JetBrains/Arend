@@ -13,9 +13,11 @@ import org.arend.ext.typechecking.ContextData;
 import org.arend.ext.typechecking.ExpressionTypechecker;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.TypedExpression;
+import org.arend.ext.util.Pair;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.naming.reference.LevelReferable;
 import org.arend.naming.reference.MetaReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,7 +58,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
   }
 
   @Override
-  public void addParameters(List<? extends Concrete.Parameter> parameters) {
+  public void addParameters(List<? extends Concrete.Parameter> parameters, List<Pair<TCDefReferable,Integer>> parametersOriginalDefinitions) {
     throw new IllegalStateException();
   }
 

@@ -1,5 +1,6 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
@@ -8,6 +9,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.error.RedundantCoclauseError;
 import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.util.Pair;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.ext.concrete.definition.FunctionKind;
@@ -23,6 +25,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final ErrorReporter myErrorReporter;
   private final Set<TCLevelReferable> myLevelRefs = new HashSet<>();
   private final Set<ParameterReferable> myWhereRefs = new HashSet<>();
+  private final Set<Definition> myWhereDefs = new HashSet<>();
 
   private DesugarVisitor(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
@@ -43,24 +46,101 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       processLevelDefinitions((Concrete.Definition) definition, hDefs, errorReporter, "h");
     }
 
-    if (!visitor.myWhereRefs.isEmpty()) {
-      List<Concrete.Parameter> newParams = new ArrayList<>();
-      for (ParameterReferable ref : visitor.myWhereRefs) {
-        Referable origRef = ref.getReferable();
+    if (!visitor.myWhereDefs.isEmpty() || !visitor.myWhereRefs.isEmpty()) {
+      Set<Pair<Definition,Integer>> whereRefs = new HashSet<>();
+      Set<WhereVarData> dataSet = new HashSet<>();
+      for (ParameterReferable whereRef : visitor.myWhereRefs) {
+        TCDefReferable defRef = (TCDefReferable) whereRef.getDefinition().getData();
+        Referable origRef = whereRef.getReferable();
+        int index = 0;
         loop:
-        for (Concrete.Parameter parameter : ref.getDefinition().getParameters()) {
+        for (Concrete.Parameter parameter : whereRef.getDefinition().getParameters()) {
           for (Referable referable : parameter.getRefList()) {
             if (referable == origRef) {
-              newParams.add(new Concrete.TelescopeParameter(definition.getData(), parameter.isExplicit(), Collections.singletonList(referable), parameter.getType()));
               break loop;
             }
+            index++;
+          }
+        }
+        dataSet.add(new WhereVarData(whereRef, defRef, index));
+        if (defRef.getTypechecked() != null) {
+          whereRefs.add(new Pair<>(defRef.getTypechecked(), index));
+        }
+      }
+
+      int myLevel = getReferableLevel(definition.getData());
+      for (Definition def : visitor.myWhereDefs) {
+        for (Pair<Definition, Integer> pair : def.getParametersOriginalDefinitions()) {
+          if (!whereRefs.contains(pair) && getReferableLevel(pair.proj1.getRef()) < myLevel) {
+            dataSet.add(new WhereVarData(null, pair.proj1.getRef(), pair.proj2));
           }
         }
       }
-      definition.addParameters(newParams);
+
+      List<WhereVarData> dataList = new ArrayList<>(dataSet);
+      dataList.sort(Comparator.comparingInt(data -> getReferableLevel(data.definitionRef)));
+      List<Concrete.Parameter> newParams = new ArrayList<>();
+      List<Pair<TCDefReferable,Integer>> parametersOriginalDefinitions = new ArrayList<>();
+      for (WhereVarData data : dataList) {
+        if (data.parameterRef == null) {
+          DependentLink param = DependentLink.Helper.get(data.definitionRef.getTypechecked().getParameters(), data.parameterIndex);
+          newParams.add(new Concrete.TelescopeParameter(definition.getData(), param.isExplicit(), Collections.singletonList(new LocalReferable(param.getName())), new Concrete.ReferenceExpression(definition.getData(), new CoreReferable(null, param.getTypedType()))));
+        } else {
+          Referable origRef = data.parameterRef.getReferable();
+          loop:
+          for (Concrete.Parameter parameter : data.parameterRef.getDefinition().getParameters()) {
+            for (Referable referable : parameter.getRefList()) {
+              if (referable == origRef) {
+                newParams.add(new Concrete.TelescopeParameter(definition.getData(), parameter.isExplicit(), Collections.singletonList(referable), parameter.getType()));
+                break loop;
+              }
+            }
+          }
+        }
+        parametersOriginalDefinitions.add(new Pair<>(data.definitionRef, data.parameterIndex));
+      }
+      definition.addParameters(newParams, parametersOriginalDefinitions);
     }
 
     definition.setDesugarized();
+  }
+
+  private static class WhereVarData {
+    final ParameterReferable parameterRef;
+    final TCDefReferable definitionRef;
+    final int parameterIndex;
+
+    WhereVarData(ParameterReferable parameterRef, TCDefReferable definitionRef, int parameterIndex) {
+      this.parameterRef = parameterRef;
+      this.definitionRef = definitionRef;
+      this.parameterIndex = parameterIndex;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      WhereVarData that = (WhereVarData) o;
+      return parameterIndex == that.parameterIndex && Objects.equals(parameterRef, that.parameterRef) && definitionRef.equals(that.definitionRef);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(parameterRef, definitionRef, parameterIndex);
+    }
+  }
+
+  private static int getReferableLevel(LocatedReferable referable) {
+    int level = 0;
+    while (true) {
+      LocatedReferable parent = referable.getLocatedReferableParent();
+      if (parent == null) {
+        break;
+      }
+      level++;
+      referable = parent;
+    }
+    return level;
   }
 
   private static void processLevelDefinitions(Concrete.Definition def, Set<LevelDefinition> defs, ErrorReporter errorReporter, String kind) {
@@ -549,6 +629,11 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     if (ref instanceof ParameterReferable) {
       myWhereRefs.add((ParameterReferable) ref);
       expr.setReferent(((ParameterReferable) ref).getReferable());
+    } else if (ref instanceof TCDefReferable) {
+      Definition def = ((TCDefReferable) ref).getTypechecked();
+      if (def != null && !def.getParametersOriginalDefinitions().isEmpty()) {
+        myWhereDefs.add(def);
+      }
     }
     return expr;
   }

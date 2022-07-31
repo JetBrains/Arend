@@ -6,12 +6,10 @@ import org.jetbrains.annotations.NotNull;
 public class ParameterReferable implements Referable {
   private final Concrete.GeneralDefinition myDefinition;
   private final Referable myOriginalReferable;
-  private final int myLevel;
 
-  public ParameterReferable(Concrete.GeneralDefinition definition, Referable originalReferable, int level) {
+  public ParameterReferable(Concrete.GeneralDefinition definition, Referable originalReferable) {
     myDefinition = definition;
     myOriginalReferable = originalReferable;
-    myLevel = level;
   }
 
   @Override
@@ -25,9 +23,5 @@ public class ParameterReferable implements Referable {
 
   public Referable getReferable() {
     return myOriginalReferable;
-  }
-
-  public int getLevel() {
-    return myLevel;
   }
 }

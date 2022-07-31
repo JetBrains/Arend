@@ -19,6 +19,7 @@ import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.util.Pair;
 import org.arend.naming.reference.*;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.term.Fixity;
@@ -1705,7 +1706,7 @@ public final class Concrete {
 
     List<? extends Parameter> getParameters();
 
-    void addParameters(List<? extends Parameter> parameters);
+    void addParameters(List<? extends Parameter> parameters, List<Pair<TCDefReferable,Integer>> parametersOriginalDefinitions);
   }
 
   public static abstract class ResolvableDefinition implements GeneralDefinition {
@@ -2059,7 +2060,7 @@ public final class Concrete {
     }
 
     @Override
-    public void addParameters(List<? extends Parameter> parameters) {
+    public void addParameters(List<? extends Parameter> parameters, List<Pair<TCDefReferable,Integer>> parametersOriginalDefinitions) {
       List<ClassElement> elements = new ArrayList<>();
       for (Parameter parameter : parameters) {
         Concrete.Expression type = parameter.getType();
@@ -2171,9 +2172,8 @@ public final class Concrete {
     }
 
     @Override
-    public void addParameters(List<? extends Parameter> parameters) {
-      //noinspection unchecked
-      myParameters.addAll(0, (List<? extends TypeParameter>) parameters);
+    public void addParameters(List<? extends Parameter> parameters, List<Pair<TCDefReferable,Integer>> parametersOriginalDefinitions) {
+      throw new IllegalStateException();
     }
 
     @NotNull
@@ -2377,6 +2377,7 @@ public final class Concrete {
 
   public static abstract class BaseFunctionDefinition extends Definition {
     private final List<Parameter> myParameters;
+    private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
     private Expression myResultType;
     private Expression myResultTypeLevel;
     private final FunctionBody myBody;
@@ -2403,9 +2404,14 @@ public final class Concrete {
       return myParameters;
     }
 
+    public List<Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
+      return myParametersOriginalDefinitions;
+    }
+
     @Override
-    public void addParameters(List<? extends Parameter> parameters) {
+    public void addParameters(List<? extends Parameter> parameters, List<Pair<TCDefReferable,Integer>> parametersOriginalDefinitions) {
       myParameters.addAll(0, parameters);
+      myParametersOriginalDefinitions = parametersOriginalDefinitions;
     }
 
     @Nullable
@@ -2488,6 +2494,7 @@ public final class Concrete {
 
   public static class DataDefinition extends Definition {
     private final List<TypeParameter> myParameters;
+    private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<ConstructorClause> myConstructorClauses;
     private final boolean myIsTruncated;
@@ -2509,10 +2516,15 @@ public final class Concrete {
       return myParameters;
     }
 
+    public List<Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
+      return myParametersOriginalDefinitions;
+    }
+
     @Override
-    public void addParameters(List<? extends Parameter> parameters) {
+    public void addParameters(List<? extends Parameter> parameters, List<Pair<TCDefReferable, Integer>> parametersOriginalDefinitions) {
       //noinspection unchecked
       myParameters.addAll(0, (List<? extends TypeParameter>) parameters);
+      myParametersOriginalDefinitions = parametersOriginalDefinitions;
     }
 
     @Nullable
@@ -2627,9 +2639,8 @@ public final class Concrete {
     }
 
     @Override
-    public void addParameters(List<? extends Parameter> parameters) {
-      //noinspection unchecked
-      myParameters.addAll(0, (List<? extends TypeParameter>) parameters);
+    public void addParameters(List<? extends Parameter> parameters, List<Pair<TCDefReferable, Integer>> parametersOriginalDefinitions) {
+      throw new IllegalStateException();
     }
 
     @NotNull

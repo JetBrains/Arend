@@ -710,10 +710,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   }
 
   public void resolveGroup(Group group, Scope scope) {
-    resolveGroup(group, scope, 0);
-  }
-
-  private void resolveGroup(Group group, Scope scope, int level) {
     LocatedReferable groupRef = group.getReferable();
     Collection<? extends Statement> statements = group.getStatements();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
@@ -729,13 +725,13 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }
 
-    List<? extends Concrete.Parameter> defParams = def == null ? Collections.emptyList() : def.getParameters();
+    List<? extends Concrete.Parameter> defParams = def == null || !(def.getData() instanceof TCDefReferable) ? Collections.emptyList() : def.getParameters();
     if (!defParams.isEmpty()) {
       List<Referable> refs = new ArrayList<>();
       for (Concrete.Parameter defParam : defParams) {
         if (defParam.getType() != null) {
           for (Referable referable : defParam.getRefList()) {
-            refs.add(new ParameterReferable(def, referable, level));
+            refs.add(new ParameterReferable(def, referable));
           }
         }
       }
@@ -748,11 +744,11 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     for (Statement statement : statements) {
       Group subgroup = statement.getGroup();
       if (subgroup != null) {
-        resolveGroup(subgroup, cachedScope, level + 1);
+        resolveGroup(subgroup, cachedScope);
       }
     }
     for (Group subgroup : dynamicSubgroups) {
-      resolveGroup(subgroup, cachedScope, level + 1);
+      resolveGroup(subgroup, cachedScope);
     }
 
     if (myResolveTypeClassReferences) {

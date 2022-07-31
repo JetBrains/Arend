@@ -9,6 +9,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.level.LevelSubstitution;
+import org.arend.ext.util.Pair;
 import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,6 +34,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private List<Boolean> myStrictParameters = Collections.emptyList();
   private List<Boolean> myOmegaParameters = Collections.emptyList();
   private List<LevelVariable> myLevelParameters;
+  private List<Pair<Definition,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
   private Definition myPLevelsParent;
   private Definition myHLevelsParent;
@@ -161,6 +163,16 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   @Override
   public void setLevelParameters(List<LevelVariable> parameters) {
     myLevelParameters = parameters;
+  }
+
+  @Override
+  public List<? extends Pair<Definition,Integer>> getParametersOriginalDefinitions() {
+    return myParametersOriginalDefinitions;
+  }
+
+  @Override
+  public void setParametersOriginalDefinitions(List<Pair<Definition,Integer>> definitions) {
+    myParametersOriginalDefinitions = definitions;
   }
 
   public void setRecursiveDefinitions(Set<Definition> recursiveDefinitions) {

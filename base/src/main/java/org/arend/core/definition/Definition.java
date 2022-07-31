@@ -11,6 +11,7 @@ import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.core.subst.ListLevels;
 import org.arend.ext.core.definition.CoreDefinition;
+import org.arend.ext.util.Pair;
 import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
@@ -84,6 +85,14 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   public abstract List<? extends LevelVariable> getLevelParameters();
 
   public void setLevelParameters(List<LevelVariable> levelParameters) {
+    throw new IllegalStateException();
+  }
+
+  public List<? extends Pair<Definition,Integer>> getParametersOriginalDefinitions() {
+    return Collections.emptyList();
+  }
+
+  public void setParametersOriginalDefinitions(List<Pair<Definition,Integer>> definitions) {
     throw new IllegalStateException();
   }
 

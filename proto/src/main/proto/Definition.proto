@@ -32,6 +32,10 @@ message Definition {
         int32 size = 3;
         int32 index = 4;
     }
+    message ParameterOriginalDef {
+      int32 index = 1;
+      int32 definition = 2;
+    }
     message ClassData {
         repeated int32 super_class_ref = 1;
         repeated Field personal_field = 2;
@@ -103,6 +107,7 @@ message Definition {
         repeated LevelParameter level_param = 17;
         bool is_std_levels = 18;
         repeated bool omega_parameter = 19;
+        repeated ParameterOriginalDef parameter_original_def = 20;
 
         message Constructor {
             Referable referable = 1;
@@ -135,6 +140,7 @@ message Definition {
         repeated LevelParameter level_param = 17;
         bool is_std_levels = 18;
         repeated bool omega_parameter = 19;
+        repeated ParameterOriginalDef parameter_original_def = 20;
 
         enum HiddenStatus {
             NOT_HIDDEN = 0;
