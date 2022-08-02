@@ -1,6 +1,7 @@
 package org.arend.term.abs;
 
 import org.arend.naming.reference.Referable;
+import org.arend.term.Fixity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,6 +54,11 @@ public class AbstractParameterPattern implements Abstract.Pattern {
 
   public @Nullable Referable getSingleReferable() {
     return myReferable;
+  }
+
+  @Override
+  public @Nullable Fixity getFixity() {
+    return null;
   }
 
   @Override

@@ -502,7 +502,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     Abstract.Expression type = pattern.getType();
 
     if (longRef != null || pattern.isUnnamed()) {
-      return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), longRef, type == null ? null : type.accept(this, null));
+      Fixity fixity = pattern.getFixity();
+      return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), longRef, type == null ? null : type.accept(this, null), fixity == null ? Fixity.NONFIX : fixity);
     } else if (pattern.isTuplePattern()) {
       return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), buildPatterns(pattern.getSequence()), buildTypedReferables(pattern.getAsPatterns()));
     } else {

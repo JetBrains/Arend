@@ -2824,7 +2824,7 @@ public final class Concrete {
       if (patterns.size() == 0) {
         int x = 1;
       }
-//      assert patterns.size() > 0;
+      assert patterns.size() > 0;
       myUnparsedPatterns = List.copyOf(patterns);
       setExplicit(isExplicit);
     }
