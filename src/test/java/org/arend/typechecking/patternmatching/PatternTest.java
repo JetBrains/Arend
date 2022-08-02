@@ -558,4 +558,15 @@ public class PatternTest extends TypeCheckingTestCase {
                     "  | :: (0, _) is, :: a l => a :: indices is l\n" +
                     "  | :: (suc n, _) is, :: _ l => indices ((n, 0) :: is) l");
   }
+
+
+  @Test
+  public void qualifiedConstructor() {
+    typeCheckModule(
+                    "\\module M \\where {\n" +
+                    "  \\data List | nil | \\infixr 10 ::: Nat List\n" +
+                    "  \\func f (a b : M.List) : Nat \\elim a\n" +
+                    "    | M.nil => 0\n" +
+                    "}", 1);
+  }
 }

@@ -9,6 +9,7 @@ import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
+import org.arend.ext.module.LongName;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.DataContainer;
 import org.arend.ext.reference.ExpressionResolver;
@@ -622,7 +623,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
 
       if (namePattern.type == null) {
-        Referable resolved = myParentScope.resolveName(referable.getRefName());
+        Referable resolved = referable instanceof UnresolvedReference ? ((UnresolvedReference) referable).resolve(myParentScope, null) : myParentScope.resolveName(referable.getRefName());
         Referable ref = resolved == null ? null : myReferableConverter.convert(RedirectingReferable.getOriginalReferable(resolved));
         if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind().isConstructor()) {
           return new Concrete.ConstructorPattern(namePattern.getData(), namePattern.isExplicit(), ref, List.of(), namePattern.getAsReferable());

@@ -300,7 +300,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     TerminalNode id = ctx.ID();
 
     if (atomPatterns.size() == 1 && basePattern instanceof Concrete.NamePattern && id == null) {
-      Referable referable = ((Concrete.NamePattern) basePattern).getRef() == null ? null : new NamedUnresolvedReference(position, ((Concrete.NamePattern) basePattern).getRef().getRefName());
+      Referable referable = ((Concrete.NamePattern) basePattern).getRef() == null ? null : ((Concrete.NamePattern) basePattern).getRef();
       return new Concrete.NamePattern(position, basePattern.isExplicit(), referable, typeCtx == null ? null : visitExpr(typeCtx));
     } if (atomPatterns.size() == 1) {
       Concrete.Pattern innerPattern = (Concrete.Pattern) visit(ctx.atomPattern(0));
