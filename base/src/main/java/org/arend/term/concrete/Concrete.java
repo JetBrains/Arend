@@ -2821,9 +2821,6 @@ public final class Concrete {
 
     public UnparsedConstructorPattern(@Nullable Object data, boolean isExplicit, @NotNull List<BinOpSequenceElem<Pattern>> patterns, @Nullable TypedReferable asReferable) {
       super(data, asReferable);
-      if (patterns.size() == 0) {
-        int x = 1;
-      }
       assert patterns.size() > 0;
       myUnparsedPatterns = List.copyOf(patterns);
       setExplicit(isExplicit);
