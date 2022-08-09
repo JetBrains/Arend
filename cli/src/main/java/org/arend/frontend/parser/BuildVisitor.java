@@ -3,7 +3,6 @@ package org.arend.frontend.parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.arend.core.pattern.Pattern;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.concrete.expr.SigmaFieldKind;
@@ -1263,6 +1262,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.BinOpSequenceElem<>(visitCaseExpr(ctx.caseExpr()), Fixity.NONFIX, true);
   }
 
+  @Override
+  public Object visitArgumentLet(ArgumentLetContext ctx) {
+    return new Concrete.BinOpSequenceElem<>(visitLetExpr(ctx.letExpr()), Fixity.NONFIX, true);
+  }
+
   private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<? super EmptyGroup> statements, ChildGroup parentGroup, TCDefReferable enclosingClass, TCDefReferable enclosingDefinition, boolean isDefault) {
     List<String> path = visitLongNamePath(ctx.longName());
     Position position = tokenPosition(ctx.start);
@@ -1966,6 +1970,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.LetExpression visitLet(LetContext ctx) {
+    return visitLetExpr(ctx.letExpr());
+  }
+
+  @Override
+  public Concrete.LetExpression visitLetExpr(LetExprContext ctx) {
     List<Concrete.LetClause> clauses = new ArrayList<>();
     for (LetClauseContext clauseCtx : ctx.letClause()) {
       clauses.add(visitLetClause(clauseCtx));
