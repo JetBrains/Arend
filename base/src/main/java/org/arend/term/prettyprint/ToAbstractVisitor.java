@@ -419,12 +419,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private List<Concrete.ClassFieldImpl> visitClassFieldImpls(ClassCallExpression expr, List<Concrete.Argument> arguments) {
     List<Concrete.ClassFieldImpl> statements = new ArrayList<>();
     boolean canBeArgument = arguments != null;
+    int verboseLevel = myConfig.getVerboseLevel(expr);
+    int implicitCounter = 0;
     for (ClassField field : expr.getDefinition().getFields()) {
+      implicitCounter += field.getReferable().isExplicitField() ? 0 : 1;
       Expression implementation = expr.getAbsImplementationHere(field);
       if (implementation != null) {
         boolean genGoal = getVerboseLevel(implementation) == 0 && !hasFlag(PrettyPrinterFlag.SHOW_PROOFS) && field.isProperty();
         if (canBeArgument && field.getReferable().isParameterField()) {
-          visitArgument(implementation, field.getReferable().isExplicitField(), arguments, genGoal, false);
+          visitArgument(implementation, field.getReferable().isExplicitField(), arguments, genGoal, verboseLevel >= implicitCounter);
         } else {
           statements.add(cImplStatement(field.getReferable(), genGoal ? generateHiddenGoal(implementation) : implementation.accept(this, null)));
           canBeArgument = false;
