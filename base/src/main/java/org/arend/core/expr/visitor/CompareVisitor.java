@@ -849,9 +849,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
 
       int numberOfOldArgs = oldDataArgs.size() - args.size();
+      ExprSubstitution substitution = new ExprSubstitution();
+      for (int i = 0; i < numberOfOldArgs; i++) {
+        substitution.add(dataParams, oldDataArgs.get(i));
+        dataParams = dataParams.getNext();
+      }
       List<? extends Expression> oldList = oldDataArgs.subList(numberOfOldArgs, oldDataArgs.size());
-      dataParams = DependentLink.Helper.get(dataParams, numberOfOldArgs);
-      if (!compareLists(correctOrder ? oldList : args, correctOrder ? args : oldList, dataParams, defCall1.getDefinition(), new ExprSubstitution())) {
+      if (!compareLists(correctOrder ? oldList : args, correctOrder ? args : oldList, dataParams, defCall1.getDefinition(), substitution)) {
         return false;
       }
 
