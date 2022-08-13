@@ -22,13 +22,19 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
   private Set<ClassField> myImplementedFields;
   private Expression mySubstExpression;
 
-  public static Expression make(InferenceVariable binding, Equations equations) {
-    Expression type = binding.getType().normalize(NormalizationMode.WHNF);
+  public static Expression makeUnique(Expression type) {
     if (type instanceof SigmaExpression && !((SigmaExpression) type).getParameters().hasNext()) {
       return new TupleExpression(Collections.emptyList(), (SigmaExpression) type);
     } else if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getNumberOfNotImplementedFields() == 0) {
       return new NewExpression(null, (ClassCallExpression) type);
     }
+    return null;
+  }
+
+  public static Expression make(InferenceVariable binding, Equations equations) {
+    Expression type = binding.getType().normalize(NormalizationMode.WHNF);
+    Expression uniqueResult = makeUnique(type);
+    if (uniqueResult != null) return uniqueResult;
 
     InferenceReferenceExpression result = new InferenceReferenceExpression(binding);
     if (!equations.supportsExpressions()) {

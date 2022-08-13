@@ -1059,6 +1059,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       result.type.accept(substVisitor, null);
     }
 
+    InferenceVariableSolveVisitor solveVisitor = new InferenceVariableSolveVisitor(this);
+    if (result.expression != null) {
+      result.expression.accept(solveVisitor, null);
+    }
+    result.type.accept(solveVisitor, null);
+
     ErrorReporterCounter counter = new ErrorReporterCounter(GeneralError.Level.ERROR, errorReporter);
     StripVisitor stripVisitor = new StripVisitor(counter, false);
     invokeDeferredMetas(substVisitor, stripVisitor, true);
@@ -1138,6 +1144,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (!substVisitor.isEmpty()) {
       result.subst(substVisitor);
     }
+    result.getExpr().accept(new InferenceVariableSolveVisitor(this), null);
     StripVisitor stripVisitor = new StripVisitor(errorReporter);
     invokeDeferredMetas(substVisitor, stripVisitor, true);
     return result.strip(stripVisitor);
