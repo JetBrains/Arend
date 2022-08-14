@@ -1880,6 +1880,7 @@ public final class Concrete {
     private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
     public TCDefReferable pOriginalDef; // definition from which p-levels were copied, or null if they are not inherited
     public TCDefReferable hOriginalDef;
+    private Map<TCDefReferable, List<? extends Concrete.Parameter>> myExternalParameters = Collections.emptyMap();
 
     @Override
     public @NotNull TCDefReferable getData() {
@@ -1901,6 +1902,14 @@ public final class Concrete {
 
     public void setRecursiveDefinitions(Set<TCDefReferable> recursiveDefinitions) {
       myRecursiveDefinitions = recursiveDefinitions;
+    }
+
+    public Map<? extends TCDefReferable, ? extends List<? extends Concrete.Parameter>> getExternalParameters() {
+      return myExternalParameters;
+    }
+
+    public void setExternalParameters(Map<TCDefReferable, List<? extends Concrete.Parameter>> parameters) {
+      myExternalParameters = parameters;
     }
 
     @Override

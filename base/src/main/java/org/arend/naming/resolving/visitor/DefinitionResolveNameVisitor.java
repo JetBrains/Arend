@@ -44,6 +44,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   private final ErrorReporter myErrorReporter;
   private ErrorReporter myLocalErrorReporter;
   private final ResolverListener myResolverListener;
+  private final Map<TCDefReferable, List<? extends Concrete.Parameter>> myExternalParameters = new HashMap<>();
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter) {
     myResolveTypeClassReferences = false;
@@ -724,6 +725,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     } else {
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }
+    if (def instanceof Concrete.Definition && !myExternalParameters.isEmpty()) {
+      ((Concrete.Definition) def).setExternalParameters(new HashMap<>(myExternalParameters));
+    }
 
     List<? extends Concrete.Parameter> defParams = def == null || !(def.getData() instanceof TCDefReferable) ? Collections.emptyList() : def.getParameters();
     if (!defParams.isEmpty()) {
@@ -741,6 +745,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     if (!defParams.isEmpty() || def instanceof Concrete.ClassDefinition && (!statements.isEmpty() || !dynamicSubgroups.isEmpty())) {
       cachedScope = CachingScope.make(makeScope(group, scope, LexicalScope.Extent.EVERYTHING));
     }
+    if (!defParams.isEmpty()) {
+      myExternalParameters.put((TCDefReferable) def.getData(), defParams);
+    }
     for (Statement statement : statements) {
       Group subgroup = statement.getGroup();
       if (subgroup != null) {
@@ -749,6 +756,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
     for (Group subgroup : dynamicSubgroups) {
       resolveGroup(subgroup, cachedScope);
+    }
+    if (!defParams.isEmpty()) {
+      myExternalParameters.remove((TCDefReferable) def.getData());
     }
 
     if (myResolveTypeClassReferences) {

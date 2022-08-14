@@ -23,6 +23,7 @@ import org.arend.ext.userData.Key;
 import org.arend.ext.serialization.SerializableKey;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.MetaReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.ext.util.Pair;
@@ -245,7 +246,7 @@ public class DefinitionSerialization implements ArendSerializer {
       builder.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
     }
 
-    for (Pair<Definition, Integer> pair : definition.getParametersOriginalDefinitions()) {
+    for (Pair<TCDefReferable, Integer> pair : definition.getParametersOriginalDefinitions()) {
       builder.addParameterOriginalDef(writeParameterOriginalDef(pair));
     }
 
@@ -359,7 +360,7 @@ public class DefinitionSerialization implements ArendSerializer {
     return result;
   }
 
-  private DefinitionProtos.Definition.ParameterOriginalDef writeParameterOriginalDef(Pair<Definition, Integer> pair) {
+  private DefinitionProtos.Definition.ParameterOriginalDef writeParameterOriginalDef(Pair<TCDefReferable, Integer> pair) {
     DefinitionProtos.Definition.ParameterOriginalDef.Builder builder = DefinitionProtos.Definition.ParameterOriginalDef.newBuilder();
     builder.setIndex(pair.proj2);
     builder.setDefinition(myCallTargetIndexProvider.getDefIndex(pair.proj1));
@@ -374,7 +375,7 @@ public class DefinitionSerialization implements ArendSerializer {
       builder.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
     }
 
-    for (Pair<Definition, Integer> pair : definition.getParametersOriginalDefinitions()) {
+    for (Pair<TCDefReferable, Integer> pair : definition.getParametersOriginalDefinitions()) {
       builder.addParameterOriginalDef(writeParameterOriginalDef(pair));
     }
 

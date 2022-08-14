@@ -42,7 +42,7 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void invokeTest2() {
     typeCheckModule(
-      "\\func foo (x : Nat) : bar.baz 3 = (x,3) => idp\n" +
+      "\\func foo (x : Nat) : bar.baz = x => idp\n" +
       "  \\where\n" +
       "    \\func bar : baz = x => idp\n" +
       "      \\where\n" +
@@ -72,7 +72,7 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void invokeTest5() {
     typeCheckModule(
-      "\\func foo (x : Nat) : bar.baz 3 = (x,3) => idp\n" +
+      "\\func foo (x : Nat) : bar.baz = x => idp\n" +
       "  \\where\n" +
       "    \\func bar : baz = {Nat} _ => idp\n" +
       "      \\where\n" +
@@ -84,7 +84,7 @@ public class VarsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func bar : foo.baz = (\\lam x => x) => idp\n" +
       "  \\where\n" +
-      "    \\func foo (x : Nat) : bar.baz 3 = (x,3) => idp\n" +
+      "    \\func foo (x : Nat) : baz = x => idp\n" +
       "      \\where\n" +
       "        \\func baz => x\n");
   }
@@ -92,9 +92,9 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void invokeTest7() {
     typeCheckModule(
-      "\\func foo (x : Nat) : bar.baz 3 = (x,3) => idp\n" +
+      "\\func foo (x : Nat) : bar.baz 3 = idp {_} {x,3} => idp\n" +
       "  \\where\n" +
-      "    \\func bar (y : Nat) : baz = (x,y) => idp\n" +
+      "    \\func bar (y : Nat) : baz = idp {_} {x,y} => idp\n" +
       "      \\where\n" +
       "        \\func baz : (x,bak) = (x,y) => idp\n" +
       "          \\where\n" +
@@ -104,9 +104,9 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void invokeTest8() {
     typeCheckModule(
-      "\\func foo (x : Nat) : bar.baz 3 = (x,3) => idp\n" +
+      "\\func foo (x : Nat) : bar.baz 3 = idp {_} {x,3} => idp\n" +
       "  \\where\n" +
-      "    \\func bar (y : Nat) : baz = (x,y) => idp\n" +
+      "    \\func bar (y : Nat) : baz = idp {_} {x,y} => idp\n" +
       "      \\where\n" +
       "        \\func baz : (x,bak) = (x,_) => idp\n" +
       "          \\where\n" +
@@ -137,6 +137,17 @@ public class VarsTest extends TypeCheckingTestCase {
       "        \\func qux => bar.bak 5\n" +
       "  }\n" +
       "\\func test : foo.baz.qux 4 = 9 => idp");
+  }
+
+  @Test
+  public void patternMatchingTest() {
+    typeCheckModule(
+      "\\func foo (x : Nat) => bar 2 Nat.+ x\n" +
+      "  \\where\n" +
+      "    \\func bar (y : Nat) : Nat\n" +
+      "      | 0 => 0\n" +
+      "      | suc y => x Nat.* y\n" +
+      "\\func test : foo 3 = foo.bar 2 4 => idp");
   }
 
   @Test

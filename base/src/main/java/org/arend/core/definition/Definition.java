@@ -88,11 +88,11 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     throw new IllegalStateException();
   }
 
-  public List<? extends Pair<Definition,Integer>> getParametersOriginalDefinitions() {
+  public List<? extends Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
     return Collections.emptyList();
   }
 
-  public void setParametersOriginalDefinitions(List<Pair<Definition,Integer>> definitions) {
+  public void setParametersOriginalDefinitions(List<Pair<TCDefReferable,Integer>> definitions) {
     throw new IllegalStateException();
   }
 
@@ -107,16 +107,6 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
       result++;
     }
     return result;
-  }
-
-  public boolean hasPLevelParameters() {
-    List<? extends LevelVariable> vars = getLevelParameters();
-    return vars == null || !vars.isEmpty() && vars.get(0).getType() == LevelVariable.LvlType.PLVL;
-  }
-
-  public boolean hasHLevelParameters() {
-    List<? extends LevelVariable> vars = getLevelParameters();
-    return vars == null || !vars.isEmpty() && vars.get(vars.size() - 1).getType() == LevelVariable.LvlType.HLVL;
   }
 
   public boolean hasNonTrivialPLevelParameters() {

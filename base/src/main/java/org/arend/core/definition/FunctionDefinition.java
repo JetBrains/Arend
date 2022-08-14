@@ -34,7 +34,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private List<Boolean> myStrictParameters = Collections.emptyList();
   private List<Boolean> myOmegaParameters = Collections.emptyList();
   private List<LevelVariable> myLevelParameters;
-  private List<Pair<Definition,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
+  private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
   private Definition myPLevelsParent;
   private Definition myHLevelsParent;
@@ -166,12 +166,12 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   }
 
   @Override
-  public List<? extends Pair<Definition,Integer>> getParametersOriginalDefinitions() {
+  public List<? extends Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
     return myParametersOriginalDefinitions;
   }
 
   @Override
-  public void setParametersOriginalDefinitions(List<Pair<Definition,Integer>> definitions) {
+  public void setParametersOriginalDefinitions(List<Pair<TCDefReferable,Integer>> definitions) {
     myParametersOriginalDefinitions = definitions;
   }
 

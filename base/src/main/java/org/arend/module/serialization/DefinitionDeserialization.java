@@ -3,8 +3,6 @@ package org.arend.module.serialization;
 import com.google.protobuf.ByteString;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
@@ -283,11 +281,11 @@ public class DefinitionDeserialization implements ArendDeserializer {
     return result;
   }
 
-  private List<Pair<Definition,Integer>> readParametersOriginalDefinitions(List<DefinitionProtos.Definition.ParameterOriginalDef> protos) throws DeserializationException {
+  private List<Pair<TCDefReferable,Integer>> readParametersOriginalDefinitions(List<DefinitionProtos.Definition.ParameterOriginalDef> protos) throws DeserializationException {
     if (protos.isEmpty()) return Collections.emptyList();
-    List<Pair<Definition,Integer>> result = new ArrayList<>();
+    List<Pair<TCDefReferable,Integer>> result = new ArrayList<>();
     for (DefinitionProtos.Definition.ParameterOriginalDef proto : protos) {
-      result.add(new Pair<>(myCallTargetProvider.getCallTarget(proto.getDefinition()), proto.getIndex()));
+      result.add(new Pair<>(myCallTargetProvider.getCallTarget(proto.getDefinition()).getRef(), proto.getIndex()));
     }
     return result;
   }
