@@ -291,62 +291,47 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return (Concrete.Pattern) visit(ctx);
   }
 
-  @Override
-  public Concrete.Pattern visitPatternAtom(PatternAtomContext ctx) {
-    Concrete.Pattern pattern = (Concrete.Pattern) visit(ctx.atomPattern());
-    TerminalNode id = ctx.ID();
-    if (id == null) {
-      return pattern;
-    }
-
-    ExprContext type = ctx.expr();
-    Position position = tokenPosition(id.getSymbol());
-    Concrete.TypedReferable typedRef = new Concrete.TypedReferable(position, new ParsedLocalReferable(position, id.getText()), type == null ? null : visitExpr(type));
-
-    if (pattern instanceof Concrete.NamePattern) {
-      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
-      Referable referable = namePattern.getReferable();
-      if (namePattern.type != null || !(referable instanceof ParsedLocalReferable)) {
-        myErrorReporter.report(new ParserError(tokenPosition(ctx.AS().getSymbol()), "As-patterns are not allowed for variables"));
-        return pattern;
-      }
-      return new Concrete.ConstructorPattern(namePattern.getData(), namePattern.isExplicit(), new NamedUnresolvedReference(((ParsedLocalReferable) referable).getPosition(), referable.textRepresentation()), Collections.emptyList(), typedRef);
-    }
-
-    if (pattern.getAsReferable() != null) {
-      myErrorReporter.report(new ParserError(GeneralError.Level.WARNING_UNUSED, tokenPosition(ctx.AS().getSymbol()), "\\as binding is ignored"));
-    } else {
-      pattern.setAsReferable(typedRef);
-    }
-    return pattern;
-  }
-
-  @Override
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
-    List<AtomPatternOrIDContext> atomPatternOrIDs = ctx.atomPatternOrID();
+    List<AtomPatternContext> atomPatterns = ctx.atomPattern();
     Position position = tokenPosition(ctx.start);
-    List<String> longName = visitLongNamePath(ctx.longName());
+    Concrete.Pattern basePattern = visitAtomPattern(atomPatterns.get(0));
     ExprContext typeCtx = ctx.expr();
     TerminalNode id = ctx.ID();
 
-    if (atomPatternOrIDs.isEmpty() && longName.size() == 1 && id == null) {
-      return new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, longName.get(0)), typeCtx == null ? null : visitExpr(typeCtx));
+    if (atomPatterns.size() == 1 && basePattern instanceof Concrete.NamePattern && id == null) {
+      Referable referable = ((Concrete.NamePattern) basePattern).getRef() == null ? null : ((Concrete.NamePattern) basePattern).getRef();
+      return new Concrete.NamePattern(position, basePattern.isExplicit(), referable, typeCtx == null ? null : visitExpr(typeCtx));
+    } if (atomPatterns.size() == 1) {
+      Concrete.Pattern innerPattern = (Concrete.Pattern) visit(ctx.atomPattern(0));
+      if (id == null) {
+        return innerPattern;
+      }
+      ExprContext type = ctx.expr();
+      Concrete.TypedReferable typedRef = new Concrete.TypedReferable(position, new ParsedLocalReferable(position, id.getText()), type == null ? null : visitExpr(type));
+
+      if (innerPattern.getAsReferable() != null) {
+        myErrorReporter.report(new ParserError(GeneralError.Level.WARNING_UNUSED, tokenPosition(ctx.AS().getSymbol()), "\\as binding is ignored"));
+      } else {
+        innerPattern.setAsReferable(typedRef);
+      }
+      return innerPattern;
     } else {
       if (typeCtx != null && id == null) {
         myErrorReporter.report(new ParserError(tokenPosition(typeCtx.start), "Type annotation is allowed only for variables"));
       }
-      List<Concrete.Pattern> patterns = new ArrayList<>(atomPatternOrIDs.size());
-      for (AtomPatternOrIDContext atomCtx : atomPatternOrIDs) {
-        patterns.add(visitAtomPattern(atomCtx));
+      List<Concrete.BinOpSequenceElem<Concrete.Pattern>> patterns = new ArrayList<>(atomPatterns.size());
+      for (AtomPatternContext atomCtx : atomPatterns) {
+        Concrete.Pattern pattern = visitAtomPattern(atomCtx);
+        patterns.add(new Concrete.BinOpSequenceElem<>(pattern, Fixity.NONFIX, pattern.isExplicit()));
       }
 
       Position pos = id == null ? null : tokenPosition(id.getSymbol());
-      return new Concrete.ConstructorPattern(position, LongUnresolvedReference.make(position, longName), patterns,
-        pos == null ? null : new Concrete.TypedReferable(pos, new ParsedLocalReferable(pos, id.getText()), typeCtx == null ? null : visitExpr(typeCtx)));
+      return new Concrete.UnparsedConstructorPattern(position, true, patterns,
+              pos == null ? null : new Concrete.TypedReferable(pos, new ParsedLocalReferable(pos, id.getText()), typeCtx == null ? null : visitExpr(typeCtx)));
     }
   }
 
-  private Concrete.Pattern visitAtomPattern(AtomPatternOrIDContext ctx) {
+  private Concrete.Pattern visitAtomPattern(AtomPatternContext ctx) {
     return (Concrete.Pattern) visit(ctx);
   }
 
@@ -376,18 +361,26 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return pattern;
   }
 
-  @Override
-  public Concrete.Pattern visitPatternOrIDAtom(PatternOrIDAtomContext ctx) {
-    return (Concrete.Pattern) visit(ctx.atomPattern());
-  }
 
   @Override
   public Concrete.Pattern visitPatternID(PatternIDContext ctx) {
     Position position = tokenPosition(ctx.start);
-    List<String> longName = visitLongNamePath(ctx.longName());
-    return longName.size() == 1
-      ? new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, longName.get(0)), null)
-      : new Concrete.ConstructorPattern(position, true, LongUnresolvedReference.make(position, longName), Collections.emptyList(), null);
+    TerminalNode infixCtx = ctx.INFIX();
+    TerminalNode postfixCtx = infixCtx == null ? ctx.POSTFIX() : null;
+    TerminalNode idCtx = postfixCtx == null ? ctx.ID() : null;
+    TerminalNode targetCtx = infixCtx != null ? infixCtx : postfixCtx != null ? postfixCtx : idCtx;
+    Fixity fixity = infixCtx != null ? Fixity.INFIX : postfixCtx != null ? Fixity.POSTFIX : Fixity.NONFIX;
+    LongNameContext longName = ctx.longName();
+    Referable targetReferable;
+    String refText = infixCtx != null ? getInfixText(infixCtx) : postfixCtx != null ? getPostfixText(postfixCtx) : idCtx.getText();
+    if (longName != null) {
+      Concrete.ReferenceExpression expression = visitLongNameRef(longName, refText, infixCtx != null ? Fixity.INFIX : postfixCtx != null ? Fixity.POSTFIX : null);
+      targetReferable = expression.getReferent();
+    } else {
+      targetReferable = new NamedUnresolvedReference(tokenPosition(targetCtx.getSymbol()), refText);
+    }
+
+    return new Concrete.NamePattern(position, true, targetReferable, null, fixity);
   }
 
   @Override
@@ -1220,7 +1213,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       return expr;
     }
 
-    List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size());
+    List<Concrete.BinOpSequenceElem<Concrete.Expression>> sequence = new ArrayList<>(argumentCtxs.size());
     sequence.add(new Concrete.BinOpSequenceElem(expr));
     for (ArgumentContext argumentCtx : argumentCtxs) {
       sequence.add(visitArgument(argumentCtx));
@@ -1229,14 +1222,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.BinOpSequenceExpression(expr.getData(), sequence, null);
   }
 
-  private Concrete.BinOpSequenceElem visitArgument(ArgumentContext ctx) {
-    return (Concrete.BinOpSequenceElem) visit(ctx);
+  private Concrete.BinOpSequenceElem<Concrete.Expression> visitArgument(ArgumentContext ctx) {
+    //noinspection unchecked
+    return (Concrete.BinOpSequenceElem<Concrete.Expression>) visit(ctx);
   }
 
   @Override
-  public Concrete.BinOpSequenceElem visitArgumentExplicit(ArgumentExplicitContext ctx) {
+  public Concrete.BinOpSequenceElem<Concrete.Expression> visitArgumentExplicit(ArgumentExplicitContext ctx) {
     AtomFieldsAccContext atomFieldsAcc = ctx.atomFieldsAcc();
-    return new Concrete.BinOpSequenceElem(visitAtomFieldsAcc(atomFieldsAcc), atomFieldsAcc.atom() instanceof AtomLiteralContext && isName(((AtomLiteralContext) atomFieldsAcc.atom()).literal()) && atomFieldsAcc.NUMBER().isEmpty() ? Fixity.UNKNOWN : Fixity.NONFIX, true);
+    return new Concrete.BinOpSequenceElem<>(visitAtomFieldsAcc(atomFieldsAcc), atomFieldsAcc.atom() instanceof AtomLiteralContext && isName(((AtomLiteralContext) atomFieldsAcc.atom()).literal()) && atomFieldsAcc.NUMBER().isEmpty() ? Fixity.UNKNOWN : Fixity.NONFIX, true);
   }
 
   private boolean isName(LiteralContext ctx) {
@@ -1244,28 +1238,33 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
-  public Concrete.BinOpSequenceElem visitArgumentNew(ArgumentNewContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitNew(ctx.appPrefix(), ctx.appExpr(), ctx.implementStatements()), Fixity.NONFIX, true);
+  public Concrete.BinOpSequenceElem<Concrete.Expression> visitArgumentNew(ArgumentNewContext ctx) {
+    return new Concrete.BinOpSequenceElem<>(visitNew(ctx.appPrefix(), ctx.appExpr(), ctx.implementStatements()), Fixity.NONFIX, true);
   }
 
   @Override
-  public Concrete.BinOpSequenceElem visitArgumentUniverse(ArgumentUniverseContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitExpr(ctx.universeAtom()), Fixity.NONFIX, true);
+  public Concrete.BinOpSequenceElem<Concrete.Expression> visitArgumentUniverse(ArgumentUniverseContext ctx) {
+    return new Concrete.BinOpSequenceElem<>(visitExpr(ctx.universeAtom()), Fixity.NONFIX, true);
   }
 
   @Override
-  public Concrete.BinOpSequenceElem visitArgumentImplicit(ArgumentImplicitContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitTupleExprs(ctx.tupleExpr(), ctx.COMMA(), ctx), Fixity.NONFIX, false);
+  public Concrete.BinOpSequenceElem<Concrete.Expression> visitArgumentImplicit(ArgumentImplicitContext ctx) {
+    return new Concrete.BinOpSequenceElem<>(visitTupleExprs(ctx.tupleExpr(), ctx.COMMA(), ctx), Fixity.NONFIX, false);
   }
 
   @Override
   public Object visitArgumentLam(ArgumentLamContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitLamExpr(ctx.lamExpr()), Fixity.NONFIX, true);
+    return new Concrete.BinOpSequenceElem<>(visitLamExpr(ctx.lamExpr()), Fixity.NONFIX, true);
   }
 
   @Override
   public Object visitArgumentCase(ArgumentCaseContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitCaseExpr(ctx.caseExpr()), Fixity.NONFIX, true);
+    return new Concrete.BinOpSequenceElem<>(visitCaseExpr(ctx.caseExpr()), Fixity.NONFIX, true);
+  }
+
+  @Override
+  public Object visitArgumentLet(ArgumentLetContext ctx) {
+    return new Concrete.BinOpSequenceElem<>(visitLetExpr(ctx.letExpr()), Fixity.NONFIX, true);
   }
 
   private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<? super EmptyGroup> statements, ChildGroup parentGroup, TCDefReferable enclosingClass, TCDefReferable enclosingDefinition, boolean isDefault) {
@@ -1782,8 +1781,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         return new Concrete.BinOpSequenceExpression(expr.getData(), ((Concrete.BinOpSequenceExpression) expr).getSequence(), new Concrete.FunctionClauses(tokenPosition(body.start), visitWithBody(body)));
       }
 
-      List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size() + 1);
-      sequence.add(new Concrete.BinOpSequenceElem(expr));
+      List<Concrete.BinOpSequenceElem<Concrete.Expression>> sequence = new ArrayList<>(argumentCtxs.size() + 1);
+      sequence.add(new Concrete.BinOpSequenceElem<>(expr));
       for (ArgumentContext argCtx : argumentCtxs) {
         sequence.add(visitArgument(argCtx));
       }
@@ -1971,6 +1970,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.LetExpression visitLet(LetContext ctx) {
+    return visitLetExpr(ctx.letExpr());
+  }
+
+  @Override
+  public Concrete.LetExpression visitLetExpr(LetExprContext ctx) {
     List<Concrete.LetClause> clauses = new ArrayList<>();
     for (LetClauseContext clauseCtx : ctx.letClause()) {
       clauses.add(visitLetClause(clauseCtx));

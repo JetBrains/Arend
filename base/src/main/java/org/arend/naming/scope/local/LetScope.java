@@ -19,13 +19,13 @@ public class LetScope extends DelegateScope {
   }
 
   private Referable find(Abstract.Pattern pattern, Predicate<Referable> pred) {
-    Referable ref = pattern.getHeadReference();
+    Referable ref = pattern.getSingleReferable();
     if (ref != null) {
       if (pred.test(ref)) {
         return ref;
       }
     } else {
-      List<? extends Abstract.Pattern> patterns = pattern.getArguments();
+      List<? extends Abstract.Pattern> patterns = pattern.getSequence();
       for (int i = patterns.size() - 1; i >= 0; i--) {
         ref = find(patterns.get(i), pred);
         if (ref != null) {
@@ -58,13 +58,13 @@ public class LetScope extends DelegateScope {
   }
 
   private Referable resolveName(Abstract.Pattern pattern, String name) {
-    Referable ref = pattern.getHeadReference();
+    Referable ref = pattern.getSingleReferable();
     if (ref != null) {
       if (ref.textRepresentation().equals(name)) {
         return ref;
       }
     } else {
-      List<? extends Abstract.Pattern> patterns = pattern.getArguments();
+      List<? extends Abstract.Pattern> patterns = pattern.getSequence();
       for (int i = patterns.size() - 1; i >= 0; i--) {
         ref = resolveName(patterns.get(i), name);
         if (ref != null) {

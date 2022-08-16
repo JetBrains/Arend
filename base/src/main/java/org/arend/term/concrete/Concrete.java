@@ -9,6 +9,7 @@ import org.arend.ext.concrete.pattern.ConcreteConstructorPattern;
 import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.concrete.pattern.ConcreteReferencePattern;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.module.LongName;
@@ -473,32 +474,35 @@ public final class Concrete {
     }
   }
 
-  public static class BinOpSequenceElem {
-    public Expression expression;
+  public static class BinOpSequenceElem<T extends Concrete.SourceNode> {
+    private T binOpComponent;
     public final Fixity fixity;
     public final boolean isExplicit;
 
-    public BinOpSequenceElem(@NotNull Expression expression, Fixity fixity, boolean isExplicit) {
-      this.expression = expression;
+    public BinOpSequenceElem(@NotNull T binOpComponent, Fixity fixity, boolean isExplicit) {
+      this.binOpComponent = binOpComponent;
       this.fixity = fixity != Fixity.UNKNOWN ? fixity
         : !isExplicit ? Fixity.NONFIX
-        : expression instanceof FixityReferenceExpression
-          ? ((FixityReferenceExpression) expression).fixity
-          : expression instanceof ReferenceExpression ? Fixity.UNKNOWN : Fixity.NONFIX;
-      if (isExplicit && fixity == Fixity.UNKNOWN && expression instanceof FixityReferenceExpression) {
-        ((FixityReferenceExpression) expression).fixity = Fixity.NONFIX;
+        : binOpComponent instanceof FixityReferenceExpression
+          ? ((FixityReferenceExpression) binOpComponent).fixity
+          : binOpComponent instanceof ReferenceExpression ? Fixity.UNKNOWN : Fixity.NONFIX;
+      if (isExplicit && fixity == Fixity.UNKNOWN && binOpComponent instanceof FixityReferenceExpression) {
+        ((FixityReferenceExpression) binOpComponent).fixity = Fixity.NONFIX;
       }
       this.isExplicit = isExplicit;
     }
 
     // Constructor for the first element in a BinOpSequence
-    public BinOpSequenceElem(@NotNull Expression expression) {
-      this.expression = expression;
-      this.fixity = expression instanceof FixityReferenceExpression ? ((FixityReferenceExpression) expression).fixity : Fixity.NONFIX;
-      if (expression instanceof FixityReferenceExpression) {
-        ((FixityReferenceExpression) expression).fixity = Fixity.NONFIX;
+    public BinOpSequenceElem(@NotNull T binOpComponent) {
+      this.binOpComponent = binOpComponent;
+      this.fixity = binOpComponent instanceof FixityReferenceExpression ? ((FixityReferenceExpression) binOpComponent).fixity : Fixity.NONFIX;
+      boolean explicit = true;
+      if (binOpComponent instanceof FixityReferenceExpression) {
+        ((FixityReferenceExpression) binOpComponent).fixity = Fixity.NONFIX;
+      } else if (binOpComponent instanceof Concrete.Pattern) {
+        explicit = ((Pattern) binOpComponent).isExplicit();
       }
-      this.isExplicit = true;
+      this.isExplicit = explicit;
     }
 
     public boolean isInfixReference() {
@@ -510,12 +514,28 @@ public final class Concrete {
     }
 
     public Precedence getReferencePrecedence() {
-      Expression expr = expression;
-      // after the reference is resolved, it may become an application
-      if (expression instanceof AppExpression && fixity != Fixity.NONFIX) {
-        expr = ((AppExpression) expression).getFunction();
+      if (binOpComponent instanceof Expression) {
+        Expression expr = (Expression) binOpComponent;
+        // after the reference is resolved, it may become an application
+        if (binOpComponent instanceof AppExpression && fixity != Fixity.NONFIX) {
+          expr = ((AppExpression) binOpComponent).getFunction();
+        }
+        return expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getReferent() instanceof GlobalReferable ? ((GlobalReferable) ((ReferenceExpression) expr).getReferent()).getPrecedence() : Precedence.DEFAULT;
       }
-      return expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getReferent() instanceof GlobalReferable ? ((GlobalReferable) ((ReferenceExpression) expr).getReferent()).getPrecedence() : Precedence.DEFAULT;
+      return null;
+    }
+
+    public @NotNull T getComponent() {
+      return binOpComponent;
+    }
+
+    public void setComponent(@NotNull T value) {
+      binOpComponent = value;
+    }
+
+    @Override
+    public String toString() {
+      return binOpComponent.toString();
     }
   }
 
@@ -541,17 +561,17 @@ public final class Concrete {
 
   public static class BinOpSequenceExpression extends Expression {
     public static final byte PREC = 0;
-    private final List<BinOpSequenceElem> mySequence;
+    private final List<BinOpSequenceElem<Expression>> mySequence;
     private final FunctionClauses myClauses;
 
-    public BinOpSequenceExpression(Object data, List<BinOpSequenceElem> sequence, FunctionClauses clauses) {
+    public BinOpSequenceExpression(Object data, List<BinOpSequenceElem<Expression>> sequence, FunctionClauses clauses) {
       super(data);
       mySequence = sequence;
       myClauses = clauses;
     }
 
     @NotNull
-    public List<BinOpSequenceElem> getSequence() {
+    public List<BinOpSequenceElem<Expression>> getSequence() {
       return mySequence;
     }
 
@@ -571,8 +591,8 @@ public final class Concrete {
     @Override
     public @NotNull List<ConcreteArgument> getArgumentsSequence() {
       List<ConcreteArgument> result = new ArrayList<>(mySequence.size());
-      for (BinOpSequenceElem elem : mySequence) {
-        result.add(new Argument(elem.expression, elem.isExplicit));
+      for (BinOpSequenceElem<Expression> elem : mySequence) {
+        result.add(new Argument(elem.binOpComponent, elem.isExplicit));
       }
       return result;
     }
@@ -2794,12 +2814,18 @@ public final class Concrete {
   public static class NamePattern extends Pattern implements ConcreteReferencePattern {
     private @Nullable Referable myReferable;
     public @Nullable Expression type;
+    public @NotNull Fixity fixity;
 
     public NamePattern(Object data, boolean isExplicit, @Nullable Referable referable, @Nullable Expression type) {
+      this(data, isExplicit, referable, type, Fixity.NONFIX);
+    }
+
+    public NamePattern(Object data, boolean isExplicit, @Nullable Referable referable, @Nullable Expression type, @NotNull Fixity fixity) {
       super(data, null);
       setExplicit(isExplicit);
       myReferable = referable;
       this.type = type;
+      this.fixity = fixity;
     }
 
     @Override
@@ -2814,6 +2840,10 @@ public final class Concrete {
 
     public void setReferable(Referable ref) {
       myReferable = ref;
+    }
+
+    public @NotNull Fixity getFixity() {
+      return fixity;
     }
 
     @Override
@@ -2851,6 +2881,42 @@ public final class Concrete {
     @Override
     public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
       visitor.prettyPrintTypedReferable(this);
+    }
+  }
+
+  /**
+   * This representation is internal, it should not be visible to users or plugin API.
+   * Requires additional parsing by {@link org.arend.naming.binOp.PatternBinOpEngine#parse(UnparsedConstructorPattern, ErrorReporter)}
+   * Immutable.
+   */
+  public static class UnparsedConstructorPattern extends Pattern implements PatternHolder {
+    private final @NotNull List<BinOpSequenceElem<Pattern>> myUnparsedPatterns;
+
+    public UnparsedConstructorPattern(@Nullable Object data, boolean isExplicit, @NotNull List<BinOpSequenceElem<Pattern>> patterns, @Nullable TypedReferable asReferable) {
+      super(data, asReferable);
+      assert patterns.size() > 0;
+      myUnparsedPatterns = List.copyOf(patterns);
+      setExplicit(isExplicit);
+    }
+
+    @Override
+    public SourceNode getSourceNode() {
+      return this;
+    }
+
+    @Override
+    public Pattern copy() {
+      return new UnparsedConstructorPattern(getData(), isExplicit(), myUnparsedPatterns, getAsReferable());
+    }
+
+    @Override
+    @NotNull
+    public List<Pattern> getPatterns() {
+      throw new IllegalStateException("Access to unparsed constructor pattern\nPlease use PatternBinOpEngine");
+    }
+
+    public @NotNull List<BinOpSequenceElem<Pattern>> getUnparsedPatterns() {
+      return myUnparsedPatterns;
     }
   }
 

@@ -633,12 +633,21 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public @Nullable TypecheckingResult replaceType(@NotNull TypedExpression typedExpression, @NotNull CoreExpression type, @Nullable ConcreteSourceNode marker) {
-    if (!(type instanceof Expression && marker instanceof Concrete.SourceNode)) {
+  public @Nullable TypecheckingResult replaceType(@NotNull TypedExpression typedExpression, @NotNull CoreExpression newType, @Nullable ConcreteSourceNode marker) {
+    if (!(newType instanceof Expression && marker instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
     TypecheckingResult result = TypecheckingResult.fromChecked(typedExpression);
-    return result.type.isError() ? result : CompareVisitor.compare(myEquations, CMP.LE, result.type, (Expression) type, Type.OMEGA, (Concrete.SourceNode) marker) ? new TypecheckingResult(result.expression, (Expression) type) : null;
+    Expression expr = result.expression;
+    Expression type = result.type.normalize(NormalizationMode.WHNF);
+    while (type instanceof FunCallExpression && ((FunCallExpression) type).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+      FunctionDefinition func = ((FunCallExpression) type).getDefinition();
+      Expression evalType = ((FunCallExpression) type).evaluate();
+      if (evalType == null) break;
+      expr = TypeDestructorExpression.make(func, expr);
+      type = evalType.normalize(NormalizationMode.WHNF);
+    }
+    return type.isError() ? new TypecheckingResult(expr, type) : CompareVisitor.compare(myEquations, CMP.LE, type, (Expression) newType, Type.OMEGA, (Concrete.SourceNode) marker) ? new TypecheckingResult(expr, (Expression) newType) : null;
   }
 
   @Override
@@ -1050,6 +1059,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       result.type.accept(substVisitor, null);
     }
 
+    InferenceVariableSolveVisitor solveVisitor = new InferenceVariableSolveVisitor(this);
+    if (result.expression != null) {
+      result.expression.accept(solveVisitor, null);
+    }
+    result.type.accept(solveVisitor, null);
+
     ErrorReporterCounter counter = new ErrorReporterCounter(GeneralError.Level.ERROR, errorReporter);
     StripVisitor stripVisitor = new StripVisitor(counter, false);
     invokeDeferredMetas(substVisitor, stripVisitor, true);
@@ -1129,6 +1144,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (!substVisitor.isEmpty()) {
       result.subst(substVisitor);
     }
+    result.getExpr().accept(new InferenceVariableSolveVisitor(this), null);
     StripVisitor stripVisitor = new StripVisitor(errorReporter);
     invokeDeferredMetas(substVisitor, stripVisitor, true);
     return result.strip(stripVisitor);

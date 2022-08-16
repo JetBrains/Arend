@@ -2,7 +2,7 @@ package org.arend.typechecking.visitor;
 
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
-import org.arend.naming.BinOpParser;
+import org.arend.naming.binOp.ExpressionBinOpEngine;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
@@ -47,8 +47,8 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
     List<Concrete.Parameter> parameters = new ArrayList<>();
     convertBinOpAppHoles(expr, parameters);
     return !parameters.isEmpty()
-        ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
-        : new BinOpParser(myErrorReporter).parse(expr).accept(this, null);
+            ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
+            : ExpressionBinOpEngine.parse(expr, myErrorReporter).accept(this, null);
   }
 
   @Override
@@ -58,6 +58,11 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
     return !parameters.isEmpty()
         ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
         : super.visitApp(expr, params);
+  }
+
+  @Override
+  protected void visitPattern(Concrete.Pattern pattern, Void params) {
+    super.visitPattern(pattern, params);
   }
 
   @Override
@@ -141,16 +146,16 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
 
   private void convertBinOpAppHoles(Concrete.BinOpSequenceExpression expr, List<Concrete.Parameter> parameters) {
     boolean isLastElemInfix = true;
-    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      if (elem.expression instanceof Concrete.ApplyHoleExpression)
-        elem.expression = createAppHoleRef(parameters, elem.expression.getData());
-      else if (isLastElemInfix) convertRecursively(elem.expression, parameters);
-      else if (elem.expression instanceof Concrete.BinOpSequenceExpression)
-        elem.expression = elem.expression.accept(this, null);
-      else if (elem.expression instanceof Concrete.SigmaExpression
-          || elem.expression instanceof Concrete.PiExpression
-          || elem.expression instanceof Concrete.CaseExpression
-      ) convertRecursively(elem.expression, parameters);
+    for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : expr.getSequence()) {
+      if (elem.getComponent() instanceof Concrete.ApplyHoleExpression)
+        elem.setComponent(createAppHoleRef(parameters, elem.getComponent().getData()));
+      else if (isLastElemInfix) convertRecursively(elem.getComponent(), parameters);
+      else if (elem.getComponent() instanceof Concrete.BinOpSequenceExpression)
+        elem.setComponent(elem.getComponent().accept(this, null));
+      else if (elem.getComponent() instanceof Concrete.SigmaExpression
+          || elem.getComponent() instanceof Concrete.PiExpression
+          || elem.getComponent() instanceof Concrete.CaseExpression
+      ) convertRecursively(elem.getComponent(), parameters);
       isLastElemInfix = elem.isInfixReference();
     }
   }

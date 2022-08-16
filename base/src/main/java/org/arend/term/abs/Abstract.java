@@ -6,6 +6,7 @@ import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
+import org.arend.term.Fixity;
 import org.arend.term.NamespaceCommand;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -89,9 +90,11 @@ public final class Abstract {
   public interface Pattern extends LamParameter {
     boolean isUnnamed();
     boolean isExplicit();
+    boolean isTuplePattern();
     @Nullable Integer getInteger();
-    @Nullable Referable getHeadReference();
-    @NotNull List<? extends Pattern> getArguments();
+    @Nullable Referable getSingleReferable();
+    @Nullable Fixity getFixity();
+    @NotNull List<? extends Pattern> getSequence();
     @Nullable Expression getType();
     @NotNull List<? extends TypedReferable> getAsPatterns();
   }

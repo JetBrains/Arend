@@ -65,7 +65,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
 
     while (true) {
       if (expr instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression) expr).getClauses() == null) {
-        List<Concrete.BinOpSequenceElem> binOpSeq = ((Concrete.BinOpSequenceExpression) expr).getSequence();
+        List<Concrete.BinOpSequenceElem<Concrete.Expression>> binOpSeq = ((Concrete.BinOpSequenceExpression) expr).getSequence();
         Precedence minPrec = null;
         int index = -1;
         for (int i = 0; i < binOpSeq.size(); i++) {
@@ -86,14 +86,14 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
           }
         }
         if (index == -1) {
-          expr = binOpSeq.get(0).expression;
+          expr = binOpSeq.get(0).getComponent();
         } else {
           for (int i = index + 1; i < binOpSeq.size(); i++) {
             if (binOpSeq.get(i).isExplicit) {
               break;
             }
           }
-          expr = binOpSeq.get(index).expression;
+          expr = binOpSeq.get(index).getComponent();
         }
       } else if (expr instanceof Concrete.AppExpression) {
         expr = ((Concrete.AppExpression) expr).getFunction();

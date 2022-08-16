@@ -378,8 +378,8 @@ public abstract class BaseCliFrontend {
     } else {
       requestedModules = new LinkedHashSet<>();
       for (String fileName : argFiles) {
-        boolean isPath = fileName.contains(FileSystems.getDefault().getSeparator());
         Path path = Paths.get(fileName);
+        boolean isPath = path.isAbsolute() || path.getNameCount() > 1;
         if (!Files.exists(path)) {
           myLibraryManager.getLibraryErrorReporter().report(new GeneralError(GeneralError.Level.ERROR, "File " + path + " not found"));
         } else if (fileName.endsWith(FileUtils.LIBRARY_CONFIG_FILE) || isPath && Files.isDirectory(path)) {

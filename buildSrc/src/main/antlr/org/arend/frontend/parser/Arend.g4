@@ -103,20 +103,16 @@ elim : '\\with' | '\\elim' ID (',' ID)*;
 
 where : '\\where' ('{' statement* '}' | statement);
 
-pattern : atomPattern (AS ID (':' expr)?)?                # patternAtom
-        | longName atomPatternOrID* (AS ID)? (':' expr)?  # patternConstructor
+pattern : atomPattern+ (AS ID)? (':' expr)?  # patternConstructor
         ;
 
-atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit
-            | '{' pattern '}'                     # patternImplicit
-            | NUMBER                              # patternNumber
-            | NEGATIVE_NUMBER                     # patternNegativeNumber
-            | '_'                                 # patternAny
+atomPattern : (longName '.')? (INFIX | POSTFIX | ID) # patternID
+            | '(' (pattern (',' pattern)*)? ')'      # patternExplicit
+            | '{' pattern '}'                        # patternImplicit
+            | NUMBER                                 # patternNumber
+            | NEGATIVE_NUMBER                        # patternNegativeNumber
+            | '_'                                    # patternAny
             ;
-
-atomPatternOrID : atomPattern     # patternOrIDAtom
-                | longName        # patternID
-                ;
 
 constructor : COERCE? defId tele* (':' expr2)? (elim? '{' clause? ('|' clause)* '}')?;
 
@@ -149,7 +145,7 @@ expr  : appPrefix? appExpr (implementStatements argument*)? withBody?     # app
       | '\\Pi' tele+ '->' expr                                            # pi
       | '\\Sigma' sigmaTele*                                              # sigma
       | lamExpr                                                           # lam
-      | letKw '|'? letClause ('|' letClause)* ('\\in' expr?)?             # let
+      | letExpr                                                           # let
       | caseExpr                                                          # case
       ;
 
@@ -169,6 +165,8 @@ lamParam : nameTele     # lamTele
 lamExpr : '\\lam' lamParam+ ('=>' expr?)?;
 
 caseExpr : (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)* ('\\return' returnExpr2)? withBody?;
+
+letExpr : letKw '|'? letClause ('|' letClause)* ('\\in' expr?)?;
 
 withBody : '\\with' '{' clause? ('|' clause)* '}';
 
@@ -194,6 +192,7 @@ argument : atomFieldsAcc                            # argumentExplicit
          | '{' tupleExpr (',' tupleExpr)* ','? '}'  # argumentImplicit
          | lamExpr                                  # argumentLam
          | caseExpr                                 # argumentCase
+         | letExpr                                  # argumentLet
          ;
 
 clauses : '{' clause? ('|' clause)* '}' # clausesWithBraces

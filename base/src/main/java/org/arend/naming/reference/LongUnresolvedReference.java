@@ -106,7 +106,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
   @NotNull
   @Override
-  public Referable resolve(Scope scope, List<Referable> resolvedRefs, RefKind kind) {
+  public Referable resolve(Scope scope, @Nullable List<Referable> resolvedRefs, RefKind kind) {
     return resolve(scope, resolvedRefs, false, kind);
   }
 

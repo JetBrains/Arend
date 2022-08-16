@@ -1,6 +1,7 @@
 package org.arend.term.abs;
 
 import org.arend.naming.reference.Referable;
+import org.arend.term.Fixity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,17 +43,26 @@ public class AbstractParameterPattern implements Abstract.Pattern {
   }
 
   @Override
+  public boolean isTuplePattern() {
+    return false;
+  }
+
+  @Override
   public @Nullable Integer getInteger() {
     return null;
   }
 
-  @Override
-  public @Nullable Referable getHeadReference() {
+  public @Nullable Referable getSingleReferable() {
     return myReferable;
   }
 
   @Override
-  public @NotNull List<? extends Abstract.Pattern> getArguments() {
+  public @Nullable Fixity getFixity() {
+    return null;
+  }
+
+  @Override
+  public @NotNull List<? extends Abstract.Pattern> getSequence() {
     return Collections.emptyList();
   }
 

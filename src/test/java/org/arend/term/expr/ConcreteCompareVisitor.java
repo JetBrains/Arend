@@ -21,10 +21,10 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return false;
     }
     if (expr1 instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression) expr1).getSequence().size() == 1) {
-      expr1 = ((Concrete.BinOpSequenceExpression) expr1).getSequence().get(0).expression;
+      expr1 = ((Concrete.BinOpSequenceExpression) expr1).getSequence().get(0).getComponent();
     }
     if (expr2 instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression) expr2).getSequence().size() == 1) {
-      expr2 = ((Concrete.BinOpSequenceExpression) expr2).getSequence().get(0).expression;
+      expr2 = ((Concrete.BinOpSequenceExpression) expr2).getSequence().get(0).getComponent();
     }
     return expr1.accept(this, expr2);
   }
@@ -172,8 +172,8 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     if (expr1.getSequence().size() != binOpExpr2.getSequence().size()) return false;
     for (int i = 0; i < expr1.getSequence().size(); i++) {
       if (expr1.getSequence().get(i).fixity != binOpExpr2.getSequence().get(i).fixity || expr1.getSequence().get(i).isExplicit != binOpExpr2.getSequence().get(i).isExplicit) return false;
-      Concrete.Expression arg1 = expr1.getSequence().get(i).expression;
-      Concrete.Expression arg2 = ((Concrete.BinOpSequenceExpression) expr2).getSequence().get(i).expression;
+      Concrete.Expression arg1 = expr1.getSequence().get(i).getComponent();
+      Concrete.Expression arg2 = ((Concrete.BinOpSequenceExpression) expr2).getSequence().get(i).getComponent();
       if (!compare(arg1, arg2)) {
         return false;
       }

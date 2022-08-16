@@ -45,7 +45,7 @@ public class NamedUnresolvedReference implements UnresolvedReference {
 
   @NotNull
   @Override
-  public Referable resolve(Scope scope, List<Referable> resolvedRefs, RefKind kind) {
+  public Referable resolve(Scope scope, @Nullable List<Referable> resolvedRefs, RefKind kind) {
     if (resolved != null) {
       return resolved;
     }

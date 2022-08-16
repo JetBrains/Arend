@@ -2117,6 +2117,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       LevelSubstitution levelSubstitution = levelSolver.solveLevels();
       typechecker.getEquations().finalizeEquations(levelSubstitution, def);
       InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(levelSubstitution);
+      InferenceVariableSolveVisitor solveVisitor = new InferenceVariableSolveVisitor(typechecker);
       StripVisitor stripVisitor = new StripVisitor(errorReporter);
       typechecker.invokeDeferredMetas(substVisitor, stripVisitor, true);
       for (Constructor constructor : dataDefinition.getConstructors()) {
@@ -2124,6 +2125,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           substVisitor.visitParameters(constructor.getParameters(), null);
           substVisitor.visitBody(constructor.getBody(), null);
         }
+        solveVisitor.visitParameters(constructor.getParameters(), null);
         stripVisitor.visitParameters(constructor.getParameters());
         stripVisitor.visitBody(constructor.getBody());
       }

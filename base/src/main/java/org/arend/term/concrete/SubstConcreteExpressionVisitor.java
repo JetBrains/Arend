@@ -187,7 +187,7 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
   @Override
   public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void ignored) {
     if (expr.getSequence().size() == 1) {
-      return expr.getSequence().get(0).expression.accept(this, null);
+      return expr.getSequence().get(0).getComponent().accept(this, null);
     }
     var clauses = expr.getClauses();
 
@@ -197,7 +197,7 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
     return new Concrete.BinOpSequenceExpression(
       myData != null ? myData : expr.getData(),
       expr.getSequence().stream()
-        .map(elem -> new Concrete.BinOpSequenceElem(elem.expression.accept(this, null), elem.fixity, elem.isExplicit))
+        .map(elem -> new Concrete.BinOpSequenceElem<>(elem.getComponent().accept(this, null), elem.fixity, elem.isExplicit))
         .collect(Collectors.toList()),
       functionClauses
     );

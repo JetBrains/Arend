@@ -98,11 +98,11 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   @Override
   public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, P params) {
     if (expr.getSequence().size() == 1 && expr.getClauses() == null) {
-      return expr.getSequence().get(0).expression.accept(this, params);
+      return expr.getSequence().get(0).getComponent().accept(this, params);
     }
 
-    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      elem.expression = elem.expression.accept(this, params);
+    for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : expr.getSequence()) {
+      elem.setComponent(elem.getComponent().accept(this, params));
     }
     if (expr.getClauses() != null) {
       visitClauses(expr.getClauseList(), params);

@@ -848,8 +848,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         oldDataArgs = classArgs;
       }
 
-      List<? extends Expression> oldList = oldDataArgs.subList(oldDataArgs.size() - args.size(), oldDataArgs.size());
-      if (!compareLists(correctOrder ? oldList : args, correctOrder ? args : oldList, dataParams, defCall1.getDefinition(), new ExprSubstitution())) {
+      int numberOfOldArgs = oldDataArgs.size() - args.size();
+      ExprSubstitution substitution = new ExprSubstitution();
+      for (int i = 0; i < numberOfOldArgs; i++) {
+        substitution.add(dataParams, oldDataArgs.get(i));
+        dataParams = dataParams.getNext();
+      }
+      List<? extends Expression> oldList = oldDataArgs.subList(numberOfOldArgs, oldDataArgs.size());
+      if (!compareLists(correctOrder ? oldList : args, correctOrder ? args : oldList, dataParams, defCall1.getDefinition(), substitution)) {
         return false;
       }
 
@@ -857,10 +863,6 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       Sort codSort;
       List<SingleDependentLink> params = new ArrayList<>();
       if (classCall1 == null) {
-        int numberOfOldArgs = oldDataArgs.size() - args.size();
-        for (int i = 0; i < numberOfOldArgs; i++) {
-          dataParams = dataParams.getNext();
-        }
         List<Expression> newDataArgs = new ArrayList<>(oldDataArgs.subList(0, numberOfOldArgs));
         lam = defCall1.getDefinition().getDefCall(defCall1.getLevels(), newDataArgs);
         codSort = defCall1 instanceof DataCallExpression ? ((DataCallExpression) defCall1).getDefinition().getSort() : ((UniverseExpression) ((FunCallExpression) defCall1).getDefinition().getResultType()).getSort();
