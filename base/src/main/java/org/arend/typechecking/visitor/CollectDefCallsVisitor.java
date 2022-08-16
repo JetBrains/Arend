@@ -5,7 +5,7 @@ import org.arend.term.concrete.Concrete;
 
 import java.util.*;
 
-public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
+public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void> {
   private final Collection<TCReferable> myDependencies;
   private final boolean myWithBodies;
   private Set<TCReferable> myExcluded;
@@ -28,19 +28,17 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
   }
 
   @Override
-  protected Void visitDataBody(Concrete.DataDefinition def, Void params) {
+  protected void visitDataBody(Concrete.DataDefinition def, Void params) {
     if (myWithBodies) {
       super.visitDataBody(def, params);
     }
-    return null;
   }
 
   @Override
-  protected Void visitClassBody(Concrete.ClassDefinition def, Void params) {
+  protected void visitClassBody(Concrete.ClassDefinition def, Void params) {
     if (myWithBodies) {
       super.visitClassBody(def, params);
     }
-    return null;
   }
 
   @Override

@@ -281,6 +281,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
       ((Concrete.Definition) def).setRecursiveDefinitions(defSet);
     }
 
+    myOrderingListener.preBodiesFound(defs);
     Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_BODIES);
     for (Concrete.ResolvableDefinition definition : scc) {
       ordering.order(definition);

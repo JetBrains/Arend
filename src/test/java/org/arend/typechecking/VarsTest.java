@@ -153,6 +153,17 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void recursiveTest() {
     typeCheckModule(
+      "\\func foo (x y : Nat) => bar 4\n" +
+      "  \\where\n" +
+      "    \\func bar (n : Nat) : Nat\n" +
+      "      | 0 => 0\n" +
+      "      | suc n => bar n Nat.+ x\n" +
+      "\\func test : (foo.bar 5 4, foo 3 100) = (20, 12) => idp");
+  }
+
+  @Test
+  public void mutualRecursiveTest() {
+    typeCheckModule(
       "\\func foo (x y : Nat) => baz\n" +
       "  \\where {\n" +
       "    \\func bar (n : Nat) : Nat\n" +
@@ -191,6 +202,17 @@ public class VarsTest extends TypeCheckingTestCase {
       "        \\func qux => (y',x')\n" +
       "      }\n" +
       "\\func test : (foo.bar.baz 1 2, foo.bar.qux 3 4) = ((1,2),(4,3)) => idp");
+  }
+
+  @Test
+  public void dynamicTest() {
+    typeCheckModule(
+      "\\record R {\n" +
+      "  \\func foo (x : Nat) => bar\n" +
+      "    \\where\n" +
+      "      \\func bar => x\n" +
+      "}\n" +
+      "\\func test (r : R) : r.foo 7 = R.foo.bar {r} 7 => idp");
   }
 
   @Test

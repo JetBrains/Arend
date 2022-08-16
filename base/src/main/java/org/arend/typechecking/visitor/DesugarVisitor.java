@@ -8,7 +8,6 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.error.RedundantCoclauseError;
 import org.arend.ext.error.TypecheckingError;
-import org.arend.ext.util.Pair;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.ext.concrete.definition.FunctionKind;
@@ -23,17 +22,13 @@ import java.util.*;
 public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final ErrorReporter myErrorReporter;
   private final Set<TCLevelReferable> myLevelRefs = new HashSet<>();
-  private final Set<ParameterReferable> myWhereRefs = new HashSet<>();
-  private final Set<Definition> myWhereDefs = new HashSet<>();
-  private final Concrete.Definition myDefinition;
 
-  private DesugarVisitor(ErrorReporter errorReporter, Concrete.Definition definition) {
+  private DesugarVisitor(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
-    myDefinition = definition;
   }
 
   public static void desugar(Concrete.ResolvableDefinition definition, ErrorReporter errorReporter) {
-    DesugarVisitor visitor = new DesugarVisitor(errorReporter, definition instanceof Concrete.Definition ? (Concrete.Definition) definition : null);
+    DesugarVisitor visitor = new DesugarVisitor(errorReporter);
     definition.accept(visitor, null);
 
     if (!visitor.myLevelRefs.isEmpty() && definition instanceof Concrete.Definition) {
@@ -47,116 +42,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       processLevelDefinitions((Concrete.Definition) definition, hDefs, errorReporter, "h");
     }
 
-    if (!visitor.myWhereDefs.isEmpty() || !visitor.myWhereRefs.isEmpty()) {
-      Set<Pair<TCDefReferable,Integer>> whereRefs = new HashSet<>();
-      Set<WhereVarData> dataSet = new HashSet<>();
-      for (ParameterReferable whereRef : visitor.myWhereRefs) {
-        TCDefReferable defRef = (TCDefReferable) whereRef.getDefinition().getData();
-        Referable origRef = whereRef.getReferable();
-        int index = 0;
-        loop:
-        for (Concrete.Parameter parameter : whereRef.getDefinition().getParameters()) {
-          for (Referable referable : parameter.getRefList()) {
-            if (referable == origRef) {
-              break loop;
-            }
-            index++;
-          }
-        }
-        dataSet.add(new WhereVarData(whereRef, defRef, index));
-        whereRefs.add(new Pair<>(defRef, index));
-      }
-
-      int myLevel = getReferableLevel(definition.getData());
-      for (Definition def : visitor.myWhereDefs) {
-        for (Pair<TCDefReferable, Integer> pair : def.getParametersOriginalDefinitions()) {
-          if (pair.proj1 != definition.getData() && !whereRefs.contains(pair) && getReferableLevel(pair.proj1) < myLevel) {
-            dataSet.add(new WhereVarData(null, pair.proj1, pair.proj2));
-          }
-        }
-      }
-
-      List<WhereVarData> dataList = new ArrayList<>(dataSet);
-      dataList.sort(Comparator.comparingInt(data -> getReferableLevel(data.definitionRef)));
-      List<Concrete.Parameter> newParams = new ArrayList<>();
-      List<Pair<TCDefReferable,Integer>> parametersOriginalDefinitions = new ArrayList<>();
-      for (WhereVarData data : dataList) {
-        if (data.parameterRef == null) {
-          List<? extends Concrete.Parameter> params = definition instanceof Concrete.Definition ? ((Concrete.Definition) definition).getExternalParameters().get(data.definitionRef) : null;
-          if (params != null) {
-            Pair<Concrete.Parameter, Referable> param = getParameter(params, data.parameterIndex);
-            if (param != null) {
-              newParams.add(new Concrete.TelescopeParameter(definition.getData(), param.proj1.isExplicit(), Collections.singletonList(param.proj2), param.proj1.getType()));
-            }
-          }
-        } else {
-          Referable origRef = data.parameterRef.getReferable();
-          loop:
-          for (Concrete.Parameter parameter : data.parameterRef.getDefinition().getParameters()) {
-            for (Referable referable : parameter.getRefList()) {
-              if (referable == origRef) {
-                newParams.add(new Concrete.TelescopeParameter(definition.getData(), parameter.isExplicit(), Collections.singletonList(referable), parameter.getType()));
-                break loop;
-              }
-            }
-          }
-        }
-        parametersOriginalDefinitions.add(new Pair<>(data.definitionRef, data.parameterIndex));
-      }
-      if (!parametersOriginalDefinitions.isEmpty()) {
-        if (definition instanceof Concrete.BaseFunctionDefinition && !definition.getParameters().isEmpty()) {
-          Concrete.FunctionBody body = ((Concrete.BaseFunctionDefinition) definition).getBody();
-          if (body instanceof Concrete.ElimFunctionBody && body.getEliminatedReferences().isEmpty()) {
-            for (Concrete.Parameter parameter : definition.getParameters()) {
-              for (Referable referable : parameter.getReferableList()) {
-                ((Concrete.ElimFunctionBody) body).getEliminatedReferences().add(new Concrete.ReferenceExpression(definition.getData(), referable));
-              }
-            }
-          }
-        }
-        definition.addParameters(newParams, parametersOriginalDefinitions);
-      }
-    }
-
     definition.setDesugarized();
-  }
-
-  private static class WhereVarData {
-    final ParameterReferable parameterRef;
-    final TCDefReferable definitionRef;
-    final int parameterIndex;
-
-    WhereVarData(ParameterReferable parameterRef, TCDefReferable definitionRef, int parameterIndex) {
-      this.parameterRef = parameterRef;
-      this.definitionRef = definitionRef;
-      this.parameterIndex = parameterIndex;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      WhereVarData that = (WhereVarData) o;
-      return parameterIndex == that.parameterIndex && Objects.equals(parameterRef, that.parameterRef) && definitionRef.equals(that.definitionRef);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(parameterRef, definitionRef, parameterIndex);
-    }
-  }
-
-  private static int getReferableLevel(LocatedReferable referable) {
-    int level = 0;
-    while (true) {
-      LocatedReferable parent = referable.getLocatedReferableParent();
-      if (parent == null) {
-        break;
-      }
-      level++;
-      referable = parent;
-    }
-    return level;
   }
 
   private static void processLevelDefinitions(Concrete.Definition def, Set<LevelDefinition> defs, ErrorReporter errorReporter, String kind) {
@@ -186,7 +72,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   }
 
   public static Concrete.Expression desugar(Concrete.Expression expression, ErrorReporter errorReporter) {
-    return expression.accept(new DesugarVisitor(errorReporter, null), null);
+    return expression.accept(new DesugarVisitor(errorReporter), null);
   }
 
   private void getFields(TCDefReferable ref, Set<TCDefReferable> result) {
@@ -640,48 +526,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     if (Prelude.ARRAY != null && expr.getReferent() == Prelude.ARRAY.getRef()) {
       return new Concrete.ReferenceExpression(expr.getData(), Prelude.DEP_ARRAY.getRef(), expr.getPLevels(), expr.getHLevels());
     }
-
-    Referable ref = expr.getReferent();
-    if (ref instanceof ParameterReferable) {
-      myWhereRefs.add((ParameterReferable) ref);
-      expr.setReferent(((ParameterReferable) ref).getReferable());
-    } else if (ref instanceof TCDefReferable && myDefinition != null) {
-      Definition def = ((TCDefReferable) ref).getTypechecked();
-      if (def != null && !def.getParametersOriginalDefinitions().isEmpty()) {
-        List<Concrete.Argument> args = new ArrayList<>();
-        boolean found = false;
-        for (Pair<TCDefReferable, Integer> pair : def.getParametersOriginalDefinitions()) {
-          List<? extends Concrete.Parameter> parameters = myDefinition.getData() == pair.proj1 ? myDefinition.getParameters() : myDefinition.getExternalParameters().get(pair.proj1);
-          if (parameters != null) {
-            Pair<Concrete.Parameter, Referable> paramRef = getParameter(parameters, pair.proj2);
-            if (paramRef != null) {
-              args.add(new Concrete.Argument(new Concrete.ReferenceExpression(expr.getData(), paramRef.proj2), paramRef.proj1.isExplicit()));
-              if (myDefinition.getData() != pair.proj1) {
-                found = true;
-              }
-            }
-          }
-        }
-        if (found) {
-          myWhereDefs.add(def);
-        }
-        return Concrete.AppExpression.make(expr.getData(), expr, args);
-      }
-    }
     return expr;
-  }
-
-  private static Pair<Concrete.Parameter, Referable> getParameter(List<? extends Concrete.Parameter> parameters, int index) {
-    int i = 0;
-    for (Concrete.Parameter parameter : parameters) {
-      for (Referable referable : parameter.getReferableList()) {
-        if (i == index) {
-          return new Pair<>(parameter, referable);
-        }
-        i++;
-      }
-    }
-    return null;
   }
 
   @Override

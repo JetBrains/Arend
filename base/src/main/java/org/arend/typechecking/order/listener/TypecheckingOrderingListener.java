@@ -223,6 +223,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     ArendExtension extension = myExtensionProvider.getArendExtension(definition.getData());
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(new LocalErrorReporter(definition.getData(), myErrorReporter), null, extension);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
+    WhereVarsFixVisitor.fixDefinition(Collections.singletonList(definition));
     DesugarVisitor.desugar(definition, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingUnitStarted(definition.getData());
@@ -279,6 +280,11 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       }
     }
     myErrorReporter.report(new CycleError(cycle));
+  }
+
+  @Override
+  public void preBodiesFound(List<Concrete.Definition> definitions) {
+    WhereVarsFixVisitor.fixDefinition(definitions);
   }
 
   @Override

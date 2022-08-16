@@ -5,7 +5,7 @@ import org.arend.typechecking.visitor.VoidConcreteVisitor;
 
 import java.util.Set;
 
-public class LocalFreeReferableVisitor extends VoidConcreteVisitor<Void,Void> {
+public class LocalFreeReferableVisitor extends VoidConcreteVisitor<Void> {
   private final Set<? extends Referable> myReferables;
   private Referable myFound;
 

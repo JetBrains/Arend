@@ -4,7 +4,7 @@ import org.arend.term.concrete.*;
 
 import java.util.List;
 
-public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Void>, ConcreteResolvableDefinitionVisitor<P,R> {
+public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>, ConcreteResolvableDefinitionVisitor<P,Void> {
   protected void visitFunctionHeader(Concrete.BaseFunctionDefinition def, P params) {
     visitParameters(def.getParameters(), params);
     if (def.getResultType() != null) {
@@ -15,7 +15,7 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     }
   }
 
-  protected R visitFunctionBody(Concrete.BaseFunctionDefinition def, P params) {
+  protected Void visitFunctionBody(Concrete.BaseFunctionDefinition def, P params) {
     Concrete.FunctionBody body = def.getBody();
     if (body instanceof Concrete.TermFunctionBody) {
       ((Concrete.TermFunctionBody) body).getTerm().accept(this, params);
@@ -26,13 +26,13 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   }
 
   @Override
-  public R visitFunction(Concrete.BaseFunctionDefinition def, P params) {
+  public Void visitFunction(Concrete.BaseFunctionDefinition def, P params) {
     visitFunctionHeader(def, params);
     return visitFunctionBody(def, params);
   }
 
   @Override
-  public R visitMeta(DefinableMetaDefinition def, P params) {
+  public Void visitMeta(DefinableMetaDefinition def, P params) {
     visitParameters(def.getParameters(), params);
     if (def.body != null) {
       def.body.accept(this, params);
@@ -48,20 +48,20 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     }
   }
 
-  protected R visitDataBody(Concrete.DataDefinition def, P params) {
+  protected void visitDataBody(Concrete.DataDefinition def, P params) {
     visitClauses(def.getConstructorClauses(), params);
     for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
       for (Concrete.Constructor constructor : clause.getConstructors()) {
         visitConstructor(constructor, params);
       }
     }
-    return null;
   }
 
   @Override
-  public R visitData(Concrete.DataDefinition def, P params) {
+  public Void visitData(Concrete.DataDefinition def, P params) {
     visitDataHeader(def, params);
-    return visitDataBody(def, params);
+    visitDataBody(def, params);
+    return null;
   }
 
   protected void visitConstructor(Concrete.Constructor def, P params) {
@@ -80,15 +80,15 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     }
   }
 
-  protected R visitClassBody(Concrete.ClassDefinition def, P params) {
+  protected void visitClassBody(Concrete.ClassDefinition def, P params) {
     visitElements(def.getElements(), params);
-    return null;
   }
 
   @Override
-  public R visitClass(Concrete.ClassDefinition def, P params) {
+  public Void visitClass(Concrete.ClassDefinition def, P params) {
     visitClassHeader(def, params);
-    return visitClassBody(def, params);
+    visitClassBody(def, params);
+    return null;
   }
 
   protected void visitClassField(Concrete.ClassField field, P params) {

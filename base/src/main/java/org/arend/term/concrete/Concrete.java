@@ -205,6 +205,19 @@ public final class Concrete {
     }
   }
 
+  public static Pair<Concrete.Parameter, Referable> getParameter(List<? extends Concrete.Parameter> parameters, int index) {
+    int i = 0;
+    for (Concrete.Parameter parameter : parameters) {
+      for (Referable referable : parameter.getReferableList()) {
+        if (i == index) {
+          return new Pair<>(parameter, referable);
+        }
+        i++;
+      }
+    }
+    return null;
+  }
+
   public static class DefinitionTypeParameter extends TelescopeParameter {
     private final boolean myStrict;
 

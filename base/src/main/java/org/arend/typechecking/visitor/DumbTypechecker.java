@@ -7,7 +7,6 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.Reference;
 import org.arend.term.abs.Abstract;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.TypecheckingContext;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.error.local.NotEnoughPatternsError;
@@ -17,7 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
+public class DumbTypechecker extends VoidConcreteVisitor<Void> {
   private final BaseDefinitionTypechecker myTypechecker;
   private Concrete.Definition myDefinition;
 
@@ -46,10 +45,9 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   }
 
   @Override
-  public Void visitDataBody(Concrete.DataDefinition def, Void params) {
+  public void visitDataBody(Concrete.DataDefinition def, Void params) {
     checkClauses(def.getConstructorClauses(), def.getEliminatedReferences(), def.getParameters());
     super.visitDataBody(def, null);
-    return null;
   }
 
   @Override
