@@ -8,6 +8,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.ReplaceDataVisitor;
 
 import java.util.*;
 
@@ -111,7 +112,7 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
             if (params != null) {
               Pair<Concrete.Parameter, Referable> param = Concrete.getParameter(params, data.parameterIndex);
               if (param != null) {
-                newParams.add(new Concrete.TelescopeParameter(definition.getData(), param.proj1.isExplicit(), Collections.singletonList(param.proj2), param.proj1.getType()));
+                newParams.add(new Concrete.TelescopeParameter(definition.getData(), param.proj1.isExplicit(), Collections.singletonList(param.proj2), param.proj1.getType() == null ? null : param.proj1.getType().accept(new ReplaceDataVisitor(definition.getData()), null)));
                 selfArgs.add(new Concrete.Argument(new Concrete.ReferenceExpression(null, param.proj2), param.proj1.isExplicit()));
               }
             }
@@ -121,7 +122,7 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
             for (Concrete.Parameter parameter : data.parameterRef.getDefinition().getParameters()) {
               for (Referable referable : parameter.getRefList()) {
                 if (referable == origRef) {
-                  newParams.add(new Concrete.TelescopeParameter(definition.getData(), parameter.isExplicit(), Collections.singletonList(referable), parameter.getType()));
+                  newParams.add(new Concrete.TelescopeParameter(definition.getData(), parameter.isExplicit(), Collections.singletonList(referable), parameter.getType() == null ? null : parameter.getType().accept(new ReplaceDataVisitor(definition.getData()), null)));
                   selfArgs.add(new Concrete.Argument(new Concrete.ReferenceExpression(null, referable), parameter.isExplicit()));
                   break loop;
                 }

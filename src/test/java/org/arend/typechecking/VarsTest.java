@@ -284,7 +284,7 @@ public class VarsTest extends TypeCheckingTestCase {
       "\\func foo {A : \\Type} (a : A) => a\n" +
       "  \\where\n" +
       "    \\func bar => a\n" +
-      "\\func test : bar {Nat} 5 = 5 => idp");
+      "\\func test : foo.bar {Nat} 5 = 5 => idp");
   }
 
   @Test

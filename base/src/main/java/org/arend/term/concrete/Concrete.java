@@ -120,6 +120,8 @@ public final class Concrete {
     public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
       visitor.prettyPrintParameter(this);
     }
+
+    public abstract Parameter copy(Object data);
   }
 
   public static class NameParameter extends Parameter {
@@ -143,6 +145,11 @@ public final class Concrete {
     @NotNull
     public List<? extends Referable> getReferableList() {
       return Collections.singletonList(myReferable);
+    }
+
+    @Override
+    public NameParameter copy(Object data) {
+      return new NameParameter(data, isExplicit(), myReferable);
     }
 
     @Override
@@ -179,6 +186,11 @@ public final class Concrete {
     public Expression getType() {
       return type;
     }
+
+    @Override
+    public TypeParameter copy(Object data) {
+      return new TypeParameter(data, isExplicit(), type);
+    }
   }
 
   public static class TelescopeParameter extends TypeParameter {
@@ -202,6 +214,11 @@ public final class Concrete {
     @Override
     public int getNumberOfParameters() {
       return myReferableList.size();
+    }
+
+    @Override
+    public TelescopeParameter copy(Object data) {
+      return new TelescopeParameter(data, isExplicit(), myReferableList, type);
     }
   }
 
@@ -235,52 +252,72 @@ public final class Concrete {
     public boolean isStrict() {
       return myStrict;
     }
+
+    @Override
+    public DefinitionTypeParameter copy(Object data) {
+      return new DefinitionTypeParameter(data, isExplicit(), isStrict(), type);
+    }
   }
 
   public static class DefinitionTelescopeParameter extends TelescopeParameter {
     private final boolean myStrict;
 
-    public DefinitionTelescopeParameter(Object data, boolean explicit, boolean myStrict, List<? extends Referable> referableList, Expression type) {
+    public DefinitionTelescopeParameter(Object data, boolean explicit, boolean strict, List<? extends Referable> referableList, Expression type) {
       super(data, explicit, referableList, type);
-      this.myStrict = myStrict;
+      myStrict = strict;
     }
 
     @Override
     public boolean isStrict() {
       return myStrict;
     }
+
+    @Override
+    public TelescopeParameter copy(Object data) {
+      return new DefinitionTelescopeParameter(data, isExplicit(), isStrict(), getReferableList(), type);
+    }
   }
 
   public static class SigmaTypeParameter extends TypeParameter implements SourceNode {
     private final SigmaFieldKind mySigmaFieldKind;
 
-    public SigmaTypeParameter(Object data, Expression type, @NotNull SigmaFieldKind mySigmaFieldKind) {
+    public SigmaTypeParameter(Object data, Expression type, @NotNull SigmaFieldKind sigmaFieldKind) {
       super(data, true, type);
-      this.mySigmaFieldKind = mySigmaFieldKind;
+      mySigmaFieldKind = sigmaFieldKind;
     }
 
-    public SigmaTypeParameter(Expression type, @NotNull SigmaFieldKind mySigmaFieldKind) {
+    public SigmaTypeParameter(Expression type, @NotNull SigmaFieldKind sigmaFieldKind) {
       super(true, type);
-      this.mySigmaFieldKind = mySigmaFieldKind;
+      mySigmaFieldKind = sigmaFieldKind;
     }
 
     @Override
     public SigmaFieldKind getSigmaFieldKind() {
       return mySigmaFieldKind;
+    }
+
+    @Override
+    public SigmaTypeParameter copy(Object data) {
+      return new SigmaTypeParameter(data, type, mySigmaFieldKind);
     }
   }
 
   public static class SigmaTelescopeParameter extends TelescopeParameter implements SourceNode {
     private final SigmaFieldKind mySigmaFieldKind;
 
-    public SigmaTelescopeParameter(Object data, @NotNull List<? extends Referable> referableList, Expression type, @NotNull SigmaFieldKind mySigmaFieldKind) {
+    public SigmaTelescopeParameter(Object data, @NotNull List<? extends Referable> referableList, Expression type, @NotNull SigmaFieldKind sigmaFieldKind) {
       super(data, true, referableList, type);
-      this.mySigmaFieldKind = mySigmaFieldKind;
+      mySigmaFieldKind = sigmaFieldKind;
     }
 
     @Override
     public SigmaFieldKind getSigmaFieldKind() {
       return mySigmaFieldKind;
+    }
+
+    @Override
+    public SigmaTelescopeParameter copy(Object data) {
+      return new SigmaTelescopeParameter(data, getReferableList(), type, mySigmaFieldKind);
     }
   }
 
@@ -1291,6 +1328,13 @@ public final class Concrete {
     public @Nullable Referable referable;
     public @Nullable Expression type;
     public final boolean isElim;
+
+    public CaseArgument(@NotNull Expression expression, @Nullable Referable referable, @Nullable Expression type, boolean isElim) {
+      this.expression = expression;
+      this.referable = referable;
+      this.type = type;
+      this.isElim = isElim;
+    }
 
     public CaseArgument(@NotNull Expression expression, @Nullable Referable referable, @Nullable Expression type) {
       this.expression = expression;
