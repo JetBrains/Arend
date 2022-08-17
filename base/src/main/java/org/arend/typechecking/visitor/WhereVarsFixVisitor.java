@@ -151,20 +151,37 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         parametersOriginalDefinitions = new ArrayList<>();
         for (WhereVarData data : dataList) {
           if (data.parameter != null) {
-            newParams.add(new Concrete.TelescopeParameter(definition.getData(), data.parameter.isExplicit(), Collections.singletonList(data.referable), data.parameter.getType() == null ? null : data.parameter.getType().accept(new ReplaceDataVisitor(definition.getData()), null)));
+            newParams.add(new Concrete.TelescopeParameter(definition.getData(), data.parameter.isExplicit(), Collections.singletonList(data.referable), data.parameter.getType() == null ? null : data.parameter.getType()));
             selfArgs.add(new Concrete.Argument(new Concrete.ReferenceExpression(null, data.referable), data.parameter.isExplicit()));
           } else {
             List<? extends Concrete.Parameter> params = definition.getExternalParameters().get(data.definitionRef);
             if (params != null) {
               Pair<Concrete.Parameter, Referable> param = Concrete.getParameter(params, data.parameterIndex);
               if (param != null) {
-                newParams.add(new Concrete.TelescopeParameter(definition.getData(), param.proj1.isExplicit(), Collections.singletonList(param.proj2), param.proj1.getType() == null ? null : param.proj1.getType().accept(new ReplaceDataVisitor(definition.getData()), null)));
+                newParams.add(new Concrete.TelescopeParameter(definition.getData(), param.proj1.isExplicit(), Collections.singletonList(param.proj2), param.proj1.getType() == null ? null : param.proj1.getType()));
                 selfArgs.add(new Concrete.Argument(new Concrete.ReferenceExpression(null, param.proj2), param.proj1.isExplicit()));
               }
             }
           }
           parametersOriginalDefinitions.add(new Pair<>(data.definitionRef, data.parameterIndex));
         }
+
+        List<Concrete.Parameter> newNewParams = new ArrayList<>();
+        for (int i = 0; i < newParams.size(); i++) {
+          Concrete.Parameter param = newParams.get(i);
+          if (i + 1 < newParams.size() && param.getType() != null && param.getType() == newParams.get(i + 1).getType() && param.isExplicit() == newParams.get(i + 1).isExplicit()) {
+            List<Referable> referables = new ArrayList<>(param.getReferableList());
+            while (i + 1 < newParams.size() && param.getType() == newParams.get(i + 1).getType() && param.isExplicit() == newParams.get(i + 1).isExplicit()) {
+              i++;
+              referables.addAll(newParams.get(i).getReferableList());
+            }
+            newNewParams.add(new Concrete.TelescopeParameter(definition.getData(), param.isExplicit(), referables, param.getType() == null ? null : param.getType().accept(new ReplaceDataVisitor(definition.getData()), null)));
+          } else {
+            newNewParams.add(new Concrete.TelescopeParameter(definition.getData(), param.isExplicit(), param.getReferableList(), param.getType() == null ? null : param.getType().accept(new ReplaceDataVisitor(definition.getData()), null)));
+          }
+        }
+        newParams = newNewParams;
+
         if (!parametersOriginalDefinitions.isEmpty()) {
           if (definition instanceof Concrete.BaseFunctionDefinition && !definition.getParameters().isEmpty()) {
             Concrete.FunctionBody body = ((Concrete.BaseFunctionDefinition) definition).getBody();
