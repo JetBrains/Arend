@@ -288,6 +288,15 @@ public class VarsTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void dependencyTest2() {
+    typeCheckModule(
+      "\\func foo {A : \\Type} {a : A} (p : a = a) => a\n" +
+      "  \\where\n" +
+      "    \\func bar => p\n" +
+      "\\func test : foo.bar {Nat} {5} idp = idp => idp");
+  }
+
+  @Test
   public void shadowingTest() {
     typeCheckModule(
       "\\func foo (var : Nat) => test\n" +
@@ -359,9 +368,22 @@ public class VarsTest extends TypeCheckingTestCase {
   public void telescopeTest3() {
     typeCheckModule(
       "\\func foo (x y : Nat) => x\n" +
-      "  \\where\n" +
-      "    \\func test (p : x = y) => p");
+        "  \\where\n" +
+        "    \\func test (p : x = y) => p");
     assertEquals(2, getConcrete("foo.test").getParameters().size());
     assertEquals(3, DependentLink.Helper.size(getDefinition("foo.test").getParameters()));
+  }
+
+  @Test
+  public void telescopeTest4() {
+    typeCheckModule(
+      "\\func foo (x y : Nat) => x\n" +
+      "  \\where {\n" +
+      "    \\func bar => x Nat.+ y\n" +
+      "    \\func baz => bar\n" +
+      "  }\n" +
+      "\\func test : foo.baz 2 3 = 5 => idp");
+    assertEquals(1, getConcrete("foo.baz").getParameters().size());
+    assertEquals(2, DependentLink.Helper.size(getDefinition("foo.baz").getParameters()));
   }
 }
