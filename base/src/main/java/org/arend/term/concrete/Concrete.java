@@ -1949,6 +1949,18 @@ public final class Concrete {
     }
   }
 
+  public static class ExternalParameters {
+    public final List<? extends Concrete.Parameter> parameters;
+    public final LevelParameters pLevelParameters;
+    public final LevelParameters hLevelParameters;
+
+    public ExternalParameters(List<? extends Parameter> parameters, LevelParameters pLevelParameters, LevelParameters hLevelParameters) {
+      this.parameters = parameters;
+      this.pLevelParameters = pLevelParameters;
+      this.hLevelParameters = hLevelParameters;
+    }
+  }
+
   public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition, ConcreteDefinition {
     private final TCDefReferable myReferable;
     private LevelParameters myPLevelParameters;
@@ -1957,7 +1969,7 @@ public final class Concrete {
     private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
     public TCDefReferable pOriginalDef; // definition from which p-levels were copied, or null if they are not inherited
     public TCDefReferable hOriginalDef;
-    private Map<TCDefReferable, List<? extends Concrete.Parameter>> myExternalParameters = Collections.emptyMap();
+    private Map<TCDefReferable, ExternalParameters> myExternalParameters = Collections.emptyMap();
 
     @Override
     public @NotNull TCDefReferable getData() {
@@ -1981,11 +1993,11 @@ public final class Concrete {
       myRecursiveDefinitions = recursiveDefinitions;
     }
 
-    public Map<? extends TCDefReferable, ? extends List<? extends Concrete.Parameter>> getExternalParameters() {
+    public Map<TCDefReferable, ExternalParameters> getExternalParameters() {
       return myExternalParameters;
     }
 
-    public void setExternalParameters(Map<TCDefReferable, List<? extends Concrete.Parameter>> parameters) {
+    public void setExternalParameters(Map<TCDefReferable, ExternalParameters> parameters) {
       myExternalParameters = parameters;
     }
 

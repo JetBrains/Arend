@@ -44,7 +44,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   private final ErrorReporter myErrorReporter;
   private ErrorReporter myLocalErrorReporter;
   private final ResolverListener myResolverListener;
-  private final Map<TCDefReferable, List<? extends Concrete.Parameter>> myExternalParameters = new HashMap<>();
+  private final Map<TCDefReferable, Concrete.ExternalParameters> myExternalParameters = new HashMap<>();
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter) {
     myResolveTypeClassReferences = false;
@@ -746,7 +746,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       cachedScope = CachingScope.make(makeScope(group, scope, LexicalScope.Extent.EVERYTHING));
     }
     if (!defParams.isEmpty()) {
-      myExternalParameters.put((TCDefReferable) def.getData(), defParams);
+      myExternalParameters.put((TCDefReferable) def.getData(), new Concrete.ExternalParameters(defParams, def instanceof Concrete.Definition ? ((Concrete.Definition) def).getPLevelParameters() : null, def instanceof Concrete.Definition ? ((Concrete.Definition) def).getHLevelParameters() : null));
     }
     for (Statement statement : statements) {
       Group subgroup = statement.getGroup();

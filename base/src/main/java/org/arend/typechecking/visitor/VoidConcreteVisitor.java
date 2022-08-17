@@ -4,7 +4,7 @@ import org.arend.term.concrete.*;
 
 import java.util.List;
 
-public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>, ConcreteResolvableDefinitionVisitor<P,Void> {
+public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>, ConcreteResolvableDefinitionVisitor<P,Void>, ConcreteLevelExpressionVisitor<P,Void>  {
   protected void visitFunctionHeader(Concrete.BaseFunctionDefinition def, P params) {
     visitParameters(def.getParameters(), params);
     if (def.getResultType() != null) {
@@ -323,6 +323,48 @@ public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>
   public Void visitTyped(Concrete.TypedExpression expr, P params) {
     expr.expression.accept(this, params);
     expr.type.accept(this, params);
+    return null;
+  }
+
+  @Override
+  public Void visitInf(Concrete.InfLevelExpression expr, P param) {
+    return null;
+  }
+
+  @Override
+  public Void visitLP(Concrete.PLevelExpression expr, P param) {
+    return null;
+  }
+
+  @Override
+  public Void visitLH(Concrete.HLevelExpression expr, P param) {
+    return null;
+  }
+
+  @Override
+  public Void visitNumber(Concrete.NumberLevelExpression expr, P param) {
+    return null;
+  }
+
+  @Override
+  public Void visitId(Concrete.IdLevelExpression expr, P param) {
+    return null;
+  }
+
+  @Override
+  public Void visitSuc(Concrete.SucLevelExpression expr, P param) {
+    return expr.getExpression().accept(this, param);
+  }
+
+  @Override
+  public Void visitMax(Concrete.MaxLevelExpression expr, P param) {
+    expr.getLeft().accept(this, param);
+    expr.getRight().accept(this, param);
+    return null;
+  }
+
+  @Override
+  public Void visitVar(Concrete.VarLevelExpression expr, P param) {
     return null;
   }
 }

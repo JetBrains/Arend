@@ -227,12 +227,12 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void levelsTest2() {
     typeCheckModule(
-      "\\func foo \\plevels p1 >= p2 (A : \\Type) => 3\n" +
+      "\\func foo \\plevels p1 >= p2 (A : \\Type p2) => 3\n" +
       "  \\where\n" +
       "    \\func bar (a : A) => a");
     Definition bar = getDefinition("foo.bar");
     assertNotNull(bar.getLevelParameters());
-    assertEquals(2, bar.getLevelParameters().size());
+    assertEquals(3, bar.getLevelParameters().size());
     assertEquals(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), getDefinition("foo.bar").getParameters().getTypeExpr());
   }
 
@@ -244,29 +244,105 @@ public class VarsTest extends TypeCheckingTestCase {
       "    \\func bar (a : A) => a");
     Definition bar = getDefinition("foo.bar");
     assertNotNull(bar.getLevelParameters());
-    assertEquals(2, bar.getLevelParameters().size());
+    assertEquals(3, bar.getLevelParameters().size());
     assertEquals(new UniverseExpression(new Sort(new Level(bar.getLevelParameters().get(0)), new Level(LevelVariable.HVAR))), bar.getParameters().getTypeExpr());
   }
 
   @Test
   public void levelsTest4() {
     typeCheckModule(
-      "\\func foo \\plevels p1 >= p2 (A : \\Type) => 3\n" +
+      "\\func foo \\plevels p1 >= p2 (A : \\Type p2) => 3\n" +
       "  \\where\n" +
-      "    \\func bar \\plevels p3 >= p4 (a : A) => a", 1);
+      "    \\func bar \\plevels p3 >= p4 (a : A) => a", -1);
   }
 
   @Test
   public void levelsTest5() {
     typeCheckModule(
-      "\\plevels p1 >= p2" +
+      "\\plevels p1 >= p2\n" +
       "\\func foo (A : \\Type p1) => 3\n" +
       "  \\where\n" +
       "    \\func bar (a : A) => a");
     Definition bar = getDefinition("foo.bar");
     assertNotNull(bar.getLevelParameters());
-    assertEquals(2, bar.getLevelParameters().size());
-    assertEquals(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), bar.getParameters().getTypeExpr());
+    assertEquals(3, bar.getLevelParameters().size());
+    assertEquals(new UniverseExpression(new Sort(new Level(bar.getLevelParameters().get(0)), new Level(LevelVariable.HVAR))), bar.getParameters().getTypeExpr());
+  }
+
+  @Test
+  public void levelsTest6() {
+    typeCheckModule(
+      "\\func foo \\plevels p1 >= p2 (A : \\Type p2) => 3\n" +
+      "  \\where\n" +
+      "    \\func bar \\plevels p3 >= p4 (B : \\Type p4) => 4\n" +
+      "      \\where\n" +
+      "        \\func baz (a : A) (b : B) => 5", -1);
+  }
+
+  @Test
+  public void levelsTest7() {
+    typeCheckModule(
+      "\\func foo \\plevels p1 >= p2 (A : \\Type) => 3\n" +
+      "  \\where\n" +
+      "    \\func bar \\plevels p3 >= p4 (B : \\Type) (x : Nat) => 4\n" +
+      "      \\where\n" +
+      "        \\func baz (a : A) => x");
+  }
+
+  @Test
+  public void levelsTest8() {
+    typeCheckModule(
+      "\\func foo \\plevels p1 >= p2 (A : \\Type) (x : Nat) => 3\n" +
+      "  \\where\n" +
+      "    \\func bar \\plevels p3 >= p4 (B : \\Type) => 4\n" +
+      "      \\where\n" +
+      "        \\func baz (b : B) => x");
+  }
+
+  @Test
+  public void levelsTest9() {
+    typeCheckModule(
+      "\\plevels p1 >= p2\n" +
+      "\\func foo (A : \\Type p1) => 3\n" +
+      "  \\where\n" +
+      "    \\func bar \\plevels p3 >= p4 (a : A) => a", 1);
+  }
+
+  @Test
+  public void levelsTest10() {
+    typeCheckModule(
+      "\\plevels p1 >= p2\n" +
+      "\\func foo (A : \\Type p1) => 3\n" +
+      "  \\where\n" +
+      "    \\func bar (B : \\Type p2) => 4\n" +
+      "      \\where\n" +
+      "        \\func baz (a : A) (b : B) => 5");
+  }
+
+  @Test
+  public void levelsTest11() {
+    typeCheckModule(
+      "\\plevels p1 >= p2\n" +
+      "\\plevels p3 >= p4\n" +
+      "\\func foo (A : \\Type p1) => 3\n" +
+      "  \\where\n" +
+      "    \\func bar (B : \\Type p3) => 4\n" +
+      "      \\where\n" +
+      "        \\func baz (a : A) (b : B) => 5", 1);
+  }
+
+  @Test
+  public void levelsTest12() {
+    typeCheckModule(
+      "\\func foo \\plevels p1 >= p2 (A : \\Type p2) => 3\n" +
+      "  \\where\n" +
+      "    \\func bar (a : A) => a\n" +
+      "      \\where\n" +
+      "        \\func baz => bar");
+    Definition baz = getDefinition("foo.bar.baz");
+    assertNotNull(baz.getLevelParameters());
+    assertEquals(3, baz.getLevelParameters().size());
+    assertEquals(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))), getDefinition("foo.bar.baz").getParameters().getTypeExpr());
   }
 
   @Test
