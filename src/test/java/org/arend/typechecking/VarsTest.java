@@ -422,6 +422,17 @@ public class VarsTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void fieldClashTest() {
+    typeCheckModule(
+      "\\func foo (var : Nat) => 0\n" +
+      "  \\where {\n" +
+      "    \\func bar (p : var = var) => 0\n" +
+      "    \\record R (f : bar idp = bar idp) (var : Nat -> Nat)\n" +
+      "  }\n" +
+      "\\func test (r : foo.R) : Nat -> Nat => r.var");
+  }
+
+  @Test
   public void inMetaTest() {
     resolveNamesModule(
       "\\func foo (var : Nat) => var\n" +

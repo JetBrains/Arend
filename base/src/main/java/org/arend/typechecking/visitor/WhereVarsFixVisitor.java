@@ -74,7 +74,6 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
     for (Concrete.Definition definition : definitions) {
       List<Concrete.Parameter> newParams = Collections.emptyList();
       List<Pair<TCDefReferable, Integer>> parametersOriginalDefinitions = Collections.emptyList();
-      List<Concrete.Argument> selfArgs = Collections.emptyList();
       if (!whereVars.proj1.isEmpty() || !whereVars.proj2.isEmpty()) {
         Set<Pair<TCDefReferable, Integer>> wherePairs = new HashSet<>();
         Set<WhereVarData> dataSet = new HashSet<>();
@@ -145,19 +144,16 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         List<WhereVarData> dataList = new ArrayList<>(dataSet);
         dataList.sort(Comparator.comparingInt((WhereVarData data) -> getReferableLevel(data.definitionRef)).thenComparingInt(data -> data.parameterIndex));
         newParams = new ArrayList<>();
-        selfArgs = new ArrayList<>();
         parametersOriginalDefinitions = new ArrayList<>();
         for (WhereVarData data : dataList) {
           if (data.parameter != null) {
             newParams.add(new Concrete.TelescopeParameter(definition.getData(), data.parameter.isExplicit(), Collections.singletonList(data.referable), data.parameter.getType() == null ? null : data.parameter.getType()));
-            selfArgs.add(new Concrete.Argument(new Concrete.ReferenceExpression(null, data.referable), data.parameter.isExplicit()));
           } else {
             Concrete.ExternalParameters params = definition.getExternalParameters().get(data.definitionRef);
             if (params != null) {
               Pair<Concrete.Parameter, Referable> param = Concrete.getParameter(params.parameters, data.parameterIndex);
               if (param != null) {
                 newParams.add(new Concrete.TelescopeParameter(definition.getData(), param.proj1.isExplicit(), Collections.singletonList(param.proj2), param.proj1.getType() == null ? null : param.proj1.getType()));
-                selfArgs.add(new Concrete.Argument(new Concrete.ReferenceExpression(null, param.proj2), param.proj1.isExplicit()));
               }
             }
           }
@@ -180,6 +176,14 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         }
         newParams = newNewParams;
 
+        List<Concrete.Argument> selfArgs = new ArrayList<>();
+        for (Concrete.Parameter param : newParams) {
+          for (Referable referable : param.getReferableList()) {
+            selfArgs.add(new Concrete.Argument(new Concrete.ReferenceExpression(null, referable), param.isExplicit()));
+          }
+        }
+        definition.accept(new WhereVarsFixVisitor(definition, definitionSet, selfArgs), null);
+
         if (definition instanceof Concrete.ClassDefinition) {
           SubstConcreteVisitor visitor = new SubstConcreteVisitor(null);
           for (int i = 0; i < newParams.size(); i++) {
@@ -195,14 +199,12 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
           definition.accept(visitor, null);
         }
 
-        if (!parametersOriginalDefinitions.isEmpty()) {
-          if (definition instanceof Concrete.BaseFunctionDefinition && !definition.getParameters().isEmpty()) {
-            Concrete.FunctionBody body = ((Concrete.BaseFunctionDefinition) definition).getBody();
-            if (body instanceof Concrete.ElimFunctionBody && body.getEliminatedReferences().isEmpty()) {
-              for (Concrete.Parameter parameter : definition.getParameters()) {
-                for (Referable referable : parameter.getReferableList()) {
-                  ((Concrete.ElimFunctionBody) body).getEliminatedReferences().add(new Concrete.ReferenceExpression(definition.getData(), referable));
-                }
+        if (!parametersOriginalDefinitions.isEmpty() && definition instanceof Concrete.BaseFunctionDefinition && !definition.getParameters().isEmpty()) {
+          Concrete.FunctionBody body = ((Concrete.BaseFunctionDefinition) definition).getBody();
+          if (body instanceof Concrete.ElimFunctionBody && body.getEliminatedReferences().isEmpty()) {
+            for (Concrete.Parameter parameter : definition.getParameters()) {
+              for (Referable referable : parameter.getReferableList()) {
+                ((Concrete.ElimFunctionBody) body).getEliminatedReferences().add(new Concrete.ReferenceExpression(definition.getData(), referable));
               }
             }
           }
@@ -256,8 +258,9 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
             definition.setHLevelParameters(hLevels);
           }
         }
+      } else {
+        definition.accept(new WhereVarsFixVisitor(definition, definitionSet, Collections.emptyList()), null);
       }
-      definition.accept(new WhereVarsFixVisitor(definition, definitionSet, selfArgs), null);
       if (!parametersOriginalDefinitions.isEmpty()) {
         definition.addParameters(newParams, parametersOriginalDefinitions);
       }
