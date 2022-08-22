@@ -96,7 +96,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
   protected @Nullable ConcreteExpression getConcreteRepresentation(@Nullable Object data, @Nullable List<Concrete.LevelExpression> pLevels, @Nullable List<Concrete.LevelExpression> hLevels, @NotNull List<? extends ConcreteArgument> arguments, @Nullable ConcreteCoclauses coclauses) {
     if (body == null) return null;
     assert myParameters.size() <= arguments.size();
-    var subst = new SubstConcreteExpressionVisitor(data);
+    var subst = new SubstConcreteVisitor(data);
     for (int i = 0; i < myParameters.size(); i++) {
       subst.bind(Objects.requireNonNull(myParameters.get(i).getReferable()),
         (Concrete.Expression) arguments.get(i).getExpression());
@@ -117,7 +117,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     return result;
   }
 
-  private void binLevelParameters(SubstConcreteExpressionVisitor subst, @Nullable List<Concrete.LevelExpression> levels, List<LevelReferable> levelParameters) {
+  private void binLevelParameters(SubstConcreteVisitor subst, @Nullable List<Concrete.LevelExpression> levels, List<LevelReferable> levelParameters) {
     if (levelParameters != null && levels != null) {
       for (int i = 0; i < levelParameters.size() && i < levels.size(); i++) {
         subst.bind(levelParameters.get(i), levels.get(i));

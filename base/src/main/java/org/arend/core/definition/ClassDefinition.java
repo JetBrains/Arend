@@ -48,6 +48,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private Definition myHLevelsParent;
   private boolean myPLevelsDerived;
   private boolean myHLevelsDerived;
+  private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
 
   public ClassDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -521,6 +522,16 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   @Override
   public void setLevelParameters(List<LevelVariable> parameters) {
     myLevelParameters = parameters;
+  }
+
+  @Override
+  public List<? extends Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
+    return myParametersOriginalDefinitions;
+  }
+
+  @Override
+  public void setParametersOriginalDefinitions(List<Pair<TCDefReferable,Integer>> definitions) {
+    myParametersOriginalDefinitions = definitions;
   }
 
   @Override

@@ -1021,7 +1021,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, LocalInstancePool localInstancePool) {
     def.getData().setTypecheckedIfNotCancelled(typedDef);
-    typedDef.setParametersOriginalDefinitions(def.getParametersOriginalDefinitions());
+    if (myNewDef) {
+      typedDef.setParametersOriginalDefinitions(def.getParametersOriginalDefinitions());
+    }
     if (def.enclosingClass != null) {
       typedDef.setHasEnclosingClass(true);
     }
@@ -1899,7 +1901,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private void typecheckDataHeader(DataDefinition dataDefinition, Concrete.DataDefinition def, LocalInstancePool localInstancePool) {
     def.getData().setTypecheckedIfNotCancelled(dataDefinition);
-    dataDefinition.setParametersOriginalDefinitions(def.getParametersOriginalDefinitions());
+    if (myNewDef) {
+      dataDefinition.setParametersOriginalDefinitions(def.getParametersOriginalDefinitions());
+    }
     if (def.enclosingClass != null) {
       dataDefinition.setHasEnclosingClass(true);
     }
@@ -2527,13 +2531,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (myNewDef) {
       typedDef.clear();
       typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
+      typedDef.setParametersOriginalDefinitions(def.getParametersOriginalDefinitions());
+      typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
 
     boolean classOk = true;
-
-    if (myNewDef) {
-      typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    }
 
     // Process super classes
     for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {

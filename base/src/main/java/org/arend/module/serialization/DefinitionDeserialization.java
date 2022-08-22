@@ -107,6 +107,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
 
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
     classDef.setBaseUniverseKind(defDeserializer.readUniverseKind(classProto.getBaseUniverseKind()));
+    classDef.setParametersOriginalDefinitions(readParametersOriginalDefinitions(classProto.getParameterOriginalDefList()));
 
     Map<Integer, LevelProtos.Levels> superLevelsProto = classProto.getSuperLevelsMap();
     if (!superLevelsProto.isEmpty()) {

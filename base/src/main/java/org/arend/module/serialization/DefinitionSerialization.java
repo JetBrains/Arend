@@ -119,6 +119,10 @@ public class DefinitionSerialization implements ArendSerializer {
       builder.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
     }
 
+    for (Pair<TCDefReferable, Integer> pair : definition.getParametersOriginalDefinitions()) {
+      builder.addParameterOriginalDef(writeParameterOriginalDef(pair));
+    }
+
     for (Map.Entry<ClassDefinition, Levels> entry : definition.getSuperLevels().entrySet()) {
       builder.putSuperLevels(myCallTargetIndexProvider.getDefIndex(entry.getKey()), defSerializer.writeLevels(entry.getValue(), entry.getKey()));
     }

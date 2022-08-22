@@ -383,7 +383,7 @@ public final class Concrete {
         }
         map.put((Referable) entry.getKey(), (Expression) entry.getValue());
       }
-      return accept(new SubstConcreteExpressionVisitor(map, null), null);
+      return accept(new SubstConcreteVisitor(map, null), null);
     }
 
     @Override
@@ -2096,6 +2096,7 @@ public final class Concrete {
     private TCFieldReferable myClassifyingField;
     private boolean myForcedClassifyingField;
     private List<TCDefReferable> myUsedDefinitions = Collections.emptyList();
+    private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
 
     public ClassDefinition(TCDefReferable referable, LevelParameters pParams, LevelParameters hParams, boolean isRecord, boolean withoutClassifying, List<ReferenceExpression> superClasses, List<ClassElement> elements) {
       super(referable, pParams, hParams);
@@ -2157,6 +2158,10 @@ public final class Concrete {
       return Collections.emptyList();
     }
 
+    public List<Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
+      return myParametersOriginalDefinitions;
+    }
+
     @Override
     public void addParameters(List<? extends Parameter> parameters, List<Pair<TCDefReferable,Integer>> parametersOriginalDefinitions) {
       List<ClassElement> elements = new ArrayList<>();
@@ -2173,6 +2178,7 @@ public final class Concrete {
         }
       }
       myElements.addAll(0, elements);
+      myParametersOriginalDefinitions = parametersOriginalDefinitions;
     }
   }
 

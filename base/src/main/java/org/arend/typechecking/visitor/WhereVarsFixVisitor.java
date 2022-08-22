@@ -3,6 +3,7 @@ package org.arend.typechecking.visitor;
 import org.arend.core.definition.Definition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.reference.Precedence;
 import org.arend.ext.util.Pair;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.*;
@@ -178,6 +179,21 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
           }
         }
         newParams = newNewParams;
+
+        if (definition instanceof Concrete.ClassDefinition) {
+          SubstConcreteVisitor visitor = new SubstConcreteVisitor(null);
+          for (int i = 0; i < newParams.size(); i++) {
+            Concrete.Parameter param = newParams.get(i);
+            List<Referable> newRefs = new ArrayList<>(param.getRefList().size());
+            newParams.set(i, new Concrete.TelescopeParameter(param.getData(), param.isExplicit(), newRefs, param.getType() == null ? null : param.getType().accept(visitor, null)));
+            for (Referable referable : param.getRefList()) {
+              FieldReferableImpl newRef = new FieldReferableImpl(Precedence.DEFAULT, referable.getRefName(), param.isExplicit(), true, definition.getData());
+              newRefs.add(newRef);
+              visitor.bind(referable, newRef);
+            }
+          }
+          definition.accept(visitor, null);
+        }
 
         if (!parametersOriginalDefinitions.isEmpty()) {
           if (definition instanceof Concrete.BaseFunctionDefinition && !definition.getParameters().isEmpty()) {

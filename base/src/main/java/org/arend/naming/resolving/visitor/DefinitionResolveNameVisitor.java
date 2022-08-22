@@ -262,7 +262,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       if (def instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
         Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
         if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
-          List<Concrete.Parameter> parameters = new SubstConcreteExpressionVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
+          List<Concrete.Parameter> parameters = new SubstConcreteVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
           for (Concrete.Parameter parameter : parameters) {
             parameter.setExplicit(false);
           }

@@ -16,17 +16,18 @@ import java.util.stream.Collectors;
 /**
  * @see org.arend.term.concrete.BaseConcreteExpressionVisitor
  */
-public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteExpressionVisitor<Void, Concrete.Expression>, ConcreteLevelExpressionVisitor<Void, Concrete.LevelExpression> {
+public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> implements DataContainer, ConcreteLevelExpressionVisitor<Void, Concrete.LevelExpression> {
   private final Map<Referable, Concrete.Expression> mySubstitution;
   private final Map<Referable, Concrete.LevelExpression> myLevelSubstitution = new HashMap<>();
+  private final Map<Referable, Referable> myRefMap = new HashMap<>();
   private final Object myData;
 
-  public SubstConcreteExpressionVisitor(@NotNull Map<Referable, Concrete.Expression> substitution, Object data) {
+  public SubstConcreteVisitor(@NotNull Map<Referable, Concrete.Expression> substitution, Object data) {
     mySubstitution = substitution;
     myData = data;
   }
 
-  public SubstConcreteExpressionVisitor(@Nullable Object data) {
+  public SubstConcreteVisitor(@Nullable Object data) {
     this(new HashMap<>(), data);
   }
 
@@ -39,6 +40,10 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
     mySubstitution.put(referable, expression);
   }
 
+  public void bind(@NotNull Referable referable, @NotNull Referable newReferable) {
+    myRefMap.put(referable, newReferable);
+  }
+
   public void bind(@NotNull Referable referable, @NotNull Concrete.LevelExpression expression) {
     myLevelSubstitution.put(referable, expression);
   }
@@ -48,7 +53,7 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
   }
 
   public int size() {
-    return mySubstitution.size();
+    return mySubstitution.size() + myRefMap.size();
   }
 
   @Override
@@ -77,15 +82,17 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void ignored) {
     var subst = mySubstitution.get(expr.getReferent());
     if (subst != null) return subst;
+    var newRef = myRefMap.get(expr.getReferent());
+    if (newRef == null) newRef = expr.getReferent();
     var data = myData != null ? myData : expr.getData();
     if (Concrete.LongReferenceExpression.class.equals(expr.getClass())) {
       var longRef = (Concrete.LongReferenceExpression) expr;
-      return new Concrete.LongReferenceExpression(data, longRef.getQualifier(), longRef.getLongName(), longRef.getReferent(), visitLevels(longRef.getPLevels()), visitLevels(longRef.getHLevels()));
+      return new Concrete.LongReferenceExpression(data, longRef.getQualifier(), longRef.getLongName(), newRef, visitLevels(longRef.getPLevels()), visitLevels(longRef.getHLevels()));
     } else if (Concrete.FixityReferenceExpression.class.equals(expr.getClass())) {
       var fixityRef = (Concrete.FixityReferenceExpression) expr;
-      return new Concrete.FixityReferenceExpression(data, fixityRef.getReferent(), fixityRef.fixity);
+      return new Concrete.FixityReferenceExpression(data, newRef, fixityRef.fixity);
     } else if (Concrete.ReferenceExpression.class.equals(expr.getClass())) {
-      return new Concrete.ReferenceExpression(data, expr.getReferent(), visitLevels(expr.getPLevels()), visitLevels(expr.getHLevels()));
+      return new Concrete.ReferenceExpression(data, newRef, visitLevels(expr.getPLevels()), visitLevels(expr.getHLevels()));
     } else {
       throw new IllegalArgumentException("Unhandled reference expr: " + expr.getClass());
     }
@@ -345,7 +352,7 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
   @Override
   public Concrete.LevelExpression visitId(Concrete.IdLevelExpression expr, Void param) {
     Concrete.LevelExpression result = myLevelSubstitution.get(expr.getReferent());
-    return result != null ? (myData == null ? result : result.accept(new SubstConcreteExpressionVisitor(myData), null)) : (myData == null ? expr : new Concrete.IdLevelExpression(myData, expr.getReferent()));
+    return result != null ? (myData == null ? result : result.accept(new SubstConcreteVisitor(myData), null)) : (myData == null ? expr : new Concrete.IdLevelExpression(myData, expr.getReferent()));
   }
 
   @Override

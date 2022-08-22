@@ -59,6 +59,7 @@ message Definition {
         map<int32, Levels> super_levels = 19;
         UniverseKind base_universe_kind = 21;
         repeated int32 omega_field = 22;
+        repeated ParameterOriginalDef parameter_original_def = 24;
 
         message Field {
             Referable referable = 1;

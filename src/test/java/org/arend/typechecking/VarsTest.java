@@ -407,9 +407,18 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void inClassTest() {
     typeCheckModule(
-      "\\func foo (var : Nat) (r : R) : var = var => r.f\n" +
+      "\\lemma foo (var : Nat) (r : R) : var = var => r.f\n" +
       "  \\where\n" +
-      "    \\record R (f : var = var)");
+      "    \\record R (f : var = var)\n" +
+      "\\func test : foo.R 3 => \\new foo.R { | f => idp {Nat} {3} }");
+  }
+
+  @Test
+  public void inClassTeleTest() {
+    typeCheckModule(
+      "\\func foo (var var' : Nat Nat) => 0\n" +
+      "  \\where\n" +
+      "    \\record R (f : var = var)", 2);
   }
 
   @Test

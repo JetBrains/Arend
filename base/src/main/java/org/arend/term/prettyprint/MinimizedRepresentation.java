@@ -8,7 +8,6 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.concrete.ConcreteFactory;
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
@@ -21,7 +20,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.SubstConcreteExpressionVisitor;
+import org.arend.term.concrete.SubstConcreteVisitor;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.FunctionArgInferenceError;
@@ -270,7 +269,6 @@ final public class MinimizedRepresentation {
 
 /**
  * Simultaneously traverses both incomplete and complete concrete expressions, attempting to fix errors encountered during the traverse.
- *
  * This visitor is meant to fix only one error. I consider errors not to be independent,
  * therefore, after fixing one error, the rest may become irrelevant for the newly built expression.
  */
@@ -364,7 +362,7 @@ class ErrorFixingConcreteExpressionVisitor extends BiConcreteVisitor {
                 newParams.add(incompleteParam);
             } else if (incompleteParam.getRefList().get(0).equals(error.parameter)) {
                 newParams.add(complete.getParameters().get(i));
-                incomplete.body = incomplete.body.accept(new SubstConcreteExpressionVisitor(Map.of(incompleteParam.getRefList().get(0), new Concrete.ReferenceExpression(null, complete.getParameters().get(i).getRefList().get(0))), null), null);
+                incomplete.body = incomplete.body.accept(new SubstConcreteVisitor(Map.of(incompleteParam.getRefList().get(0), new Concrete.ReferenceExpression(null, complete.getParameters().get(i).getRefList().get(0))), null), null);
             }
         }
         return (Concrete.LamExpression) myFactory.lam(newParams, incomplete.body);
