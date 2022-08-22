@@ -735,11 +735,15 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       for (Concrete.Parameter defParam : defParams) {
         if (defParam.getType() != null) {
           for (Referable referable : defParam.getRefList()) {
-            refs.add(new ParameterReferable(def, referable));
+            if (referable != null) {
+              refs.add(new ParameterReferable(def, referable));
+            }
           }
         }
       }
-      scope = new ListScope(scope, refs);
+      if (!refs.isEmpty()) {
+        scope = new ListScope(scope, refs);
+      }
     }
 
     if (!defParams.isEmpty() || def instanceof Concrete.ClassDefinition && (!statements.isEmpty() || !dynamicSubgroups.isEmpty())) {

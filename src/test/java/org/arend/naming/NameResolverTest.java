@@ -509,14 +509,6 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   @Test
-  public void whereError() {
-    resolveNamesModule(
-      "\\func f (x : Nat) => x \\where\n" +
-      "  \\func b => x", 1);
-    assertThatErrorsAre(error());
-  }
-
-  @Test
   public void whereNoOpenFunctionError() {
     resolveNamesModule(
       "\\func f => x \\where\n" +
