@@ -1682,14 +1682,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return new TypecheckingResult(new ErrorExpression(), normExpr);
     }
 
-    if (checkAllImplemented(classCallExpr, pseudoImplemented, expr)) {
+    if (checkAllImplemented(classCallExpr, pseudoImplemented, expr, expr.getExpression())) {
       return checkResult(expectedType, new TypecheckingResult(new NewExpression(null, classCallExpr), classCallExpr), expr);
     } else {
       return null;
     }
   }
 
-  public boolean checkAllImplemented(ClassCallExpression classCall, Set<ClassField> pseudoImplemented, Concrete.SourceNode sourceNode) {
+  public boolean checkAllImplemented(ClassCallExpression classCall, Set<ClassField> pseudoImplemented, Concrete.SourceNode newSourceNode, Concrete.SourceNode classSourseNode) {
     var expectedFields = classCall.getDefinition().getNumberOfNotImplementedFields();
     int notImplemented = expectedFields - classCall.getImplementedHere().size();
     if (notImplemented == 0) {
@@ -1697,14 +1697,22 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     } else if (notImplemented < 0) {
       throw new IllegalArgumentException("Too many implemented fields (expected " + expectedFields + "): " + classCall);
     } else {
+      int missingArgs = 0;
       List<FieldReferable> fields = new ArrayList<>(notImplemented);
       for (ClassField field : classCall.getDefinition().getFields()) {
         if (!classCall.isImplemented(field) && !pseudoImplemented.contains(field)) {
-          fields.add(field.getReferable());
+          if (field.getReferable().isRealParameterField()) {
+            missingArgs++;
+          } else {
+            fields.add(field.getReferable());
+          }
         }
       }
+      if (missingArgs > 0) {
+        errorReporter.report(new TypecheckingError("Missing " + missingArgs + " arguments", classSourseNode instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) classSourseNode).getBaseClassExpression() : classSourseNode));
+      }
       if (!fields.isEmpty()) {
-        errorReporter.report(new FieldsImplementationError(false, classCall.getDefinition().getReferable(), fields, sourceNode));
+        errorReporter.report(new FieldsImplementationError(false, classCall.getDefinition().getReferable(), fields, newSourceNode));
       }
       return false;
     }

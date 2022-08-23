@@ -1176,7 +1176,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         return null;
       }
       ClassCallExpression classCall = (ClassCallExpression) resultExpr;
-      typechecker.checkAllImplemented(classCall, pseudoImplemented, def);
+      typechecker.checkAllImplemented(classCall, pseudoImplemented, def, resultType);
       if (classCall.getDefinition() == Prelude.DEP_ARRAY) {
         classCall.getImplementedHere().remove(Prelude.ARRAY_AT);
         classCall.setSort(Sort.STD);
@@ -1194,7 +1194,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      TypecheckingResult result = typechecker.finalCheckExpr(new Concrete.NewExpression(def.getData(), Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true, implemented), new Concrete.Coclauses(def.getData(), classFieldImpls))), null);
+      assert resultType != null;
+      TypecheckingResult result = typechecker.finalCheckExpr(new Concrete.NewExpression(def.getData(), Concrete.ClassExtExpression.make(resultType.getData(), typechecker.desugarClassApp(resultType, true, implemented), new Concrete.Coclauses(def.getData(), classFieldImpls))), null);
       if (result == null) return null;
       if (!(result.type instanceof ClassCallExpression)) {
         throw new IllegalStateException();

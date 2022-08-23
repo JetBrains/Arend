@@ -1,5 +1,6 @@
 package org.arend.typechecking;
 
+import org.arend.Matchers;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Definition;
@@ -7,6 +8,8 @@ import org.arend.core.expr.UniverseExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.junit.Test;
+
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -481,5 +484,36 @@ public class VarsTest extends TypeCheckingTestCase {
       "\\func test : foo.baz 2 3 = 5 => idp");
     assertEquals(1, getConcrete("foo.baz").getParameters().size());
     assertEquals(2, DependentLink.Helper.size(getDefinition("foo.baz").getParameters()));
+  }
+
+  @Test
+  public void notImplementedFieldsError() {
+    typeCheckModule(
+      "\\func foo (var : Nat) => 0\n" +
+      "  \\where\n" +
+      "    \\record R (f : var = var)\n" +
+      "\\func test : foo.R \\cowith", 2);
+    assertThatErrorsAre(Matchers.typecheckingError(), Matchers.fieldsImplementation(false, Collections.singletonList(get("foo.R.f"))));
+  }
+
+  @Test
+  public void notImplementedFieldsError2() {
+    typeCheckModule(
+      "\\func foo (var : Nat) => 0\n" +
+      "  \\where\n" +
+      "    \\record R (f : var = var)\n" +
+      "\\func test : foo.R 3 \\cowith", 1);
+    assertThatErrorsAre(Matchers.fieldsImplementation(false, Collections.singletonList(get("foo.R.f"))));
+  }
+
+  @Test
+  public void notImplementedFieldsError3() {
+    typeCheckModule(
+      "\\func foo (var : Nat) => 0\n" +
+      "  \\where\n" +
+      "    \\record R (f : var = var)\n" +
+      "\\func test : foo.R \\cowith\n" +
+      "  | f => idp", 1);
+    assertThatErrorsAre(Matchers.typecheckingError());
   }
 }

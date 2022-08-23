@@ -5,6 +5,10 @@ public interface FieldReferable extends LocatedReferable {
 
   boolean isParameterField();
 
+  default boolean isRealParameterField() {
+    return false;
+  }
+
   @Override
   default boolean isClassField() {
     return true;
