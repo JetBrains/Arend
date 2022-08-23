@@ -7,17 +7,17 @@ import java.util.Objects;
 public class ParameterReferable implements Referable {
   private final TCDefReferable myDefinition;
   private final int myIndex;
-  private final String myName;
+  private final Referable myReferable;
 
-  public ParameterReferable(TCDefReferable definition, int index, String name) {
+  public ParameterReferable(TCDefReferable definition, int index, Referable referable) {
     myDefinition = definition;
     myIndex = index;
-    myName = name;
+    myReferable = referable;
   }
 
   @Override
   public @NotNull String textRepresentation() {
-    return myName;
+    return myReferable.textRepresentation();
   }
 
   public TCDefReferable getDefinition() {
@@ -26,6 +26,11 @@ public class ParameterReferable implements Referable {
 
   public int getIndex() {
     return myIndex;
+  }
+
+  @Override
+  public @NotNull Referable getUnderlyingReferable() {
+    return myReferable;
   }
 
   @Override
