@@ -731,13 +731,15 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     List<? extends Concrete.Parameter> defParams = def == null || !(def.getData() instanceof TCDefReferable) ? Collections.emptyList() : def.getParameters();
     if (!defParams.isEmpty()) {
+      int i = 0;
       List<Referable> refs = new ArrayList<>();
       for (Concrete.Parameter defParam : defParams) {
         if (defParam.getType() != null) {
           for (Referable referable : defParam.getRefList()) {
             if (referable != null) {
-              refs.add(new ParameterReferable(def, referable));
+              refs.add(new ParameterReferable((TCDefReferable) def.getData(), i, referable));
             }
+            i++;
           }
         }
       }

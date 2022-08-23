@@ -1,14 +1,15 @@
 package org.arend.naming.reference;
 
-import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 
 public class ParameterReferable implements Referable {
-  private final Concrete.GeneralDefinition myDefinition;
+  private final TCDefReferable myDefinition;
+  private final int myIndex;
   private final Referable myOriginalReferable;
 
-  public ParameterReferable(Concrete.GeneralDefinition definition, Referable originalReferable) {
+  public ParameterReferable(TCDefReferable definition, int index, Referable originalReferable) {
     myDefinition = definition;
+    myIndex = index;
     myOriginalReferable = originalReferable;
   }
 
@@ -17,8 +18,12 @@ public class ParameterReferable implements Referable {
     return myOriginalReferable.textRepresentation();
   }
 
-  public Concrete.GeneralDefinition getDefinition() {
+  public TCDefReferable getDefinition() {
     return myDefinition;
+  }
+
+  public int getIndex() {
+    return myIndex;
   }
 
   public Referable getReferable() {
