@@ -2,10 +2,7 @@ package org.arend.naming.scope;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.module.ModuleLocation;
-import org.arend.naming.reference.AliasReferable;
-import org.arend.naming.reference.ClassReferable;
-import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.*;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.abs.Abstract;
 import org.arend.term.group.Group;
@@ -152,6 +149,10 @@ public class LexicalScope implements Scope {
       }
     }
 
+    if (myKind == Kind.INSIDE) {
+      elements.addAll(myGroup.getExternalParameters());
+    }
+
     elements.addAll(kind == null ? myParent.getElements(null) : myParent.getElements(kind));
     return elements;
   }
@@ -296,6 +297,16 @@ public class LexicalScope implements Scope {
         Object result = resolveType == ResolveType.REF ? scope.resolveName(name, refKind) : scope.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
         if (result != null) {
           return result;
+        }
+      }
+    }
+
+    if (myKind == Kind.INSIDE && resolveType == ResolveType.REF) {
+      List<? extends Referable> refs = myGroup.getExternalParameters();
+      for (int i = refs.size() - 1; i >= 0; i--) {
+        Referable ref = refs.get(i);
+        if (ref != null && ref.getRefName().equals(name)) {
+          return ref;
         }
       }
     }

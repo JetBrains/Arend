@@ -380,7 +380,7 @@ public class VarsTest extends TypeCheckingTestCase {
       "    \\func bar => var\n" +
       "    \\func var => 4\n" +
       "  }\n" +
-      "\\func test : foo.bar = 4 => idp");
+      "\\func test : foo.bar 4 = 4 => idp");
   }
 
   @Test

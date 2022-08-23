@@ -18,7 +18,6 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.*;
 import org.arend.naming.scope.local.ElimScope;
-import org.arend.naming.scope.local.ListScope;
 import org.arend.prelude.Prelude;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
@@ -730,25 +729,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     List<? extends Concrete.Parameter> defParams = def == null || !(def.getData() instanceof TCDefReferable) ? Collections.emptyList() : def.getParameters();
-    if (!defParams.isEmpty()) {
-      int i = 0;
-      List<Referable> refs = new ArrayList<>();
-      for (Concrete.Parameter defParam : defParams) {
-        if (defParam.getType() != null) {
-          for (Referable referable : defParam.getRefList()) {
-            if (referable != null) {
-              refs.add(new ParameterReferable((TCDefReferable) def.getData(), i, referable));
-            }
-            i++;
-          }
-        }
-      }
-      if (!refs.isEmpty()) {
-        scope = new ListScope(scope, refs);
-      }
-    }
-
-    if (!defParams.isEmpty() || def instanceof Concrete.ClassDefinition && (!statements.isEmpty() || !dynamicSubgroups.isEmpty())) {
+    if (def instanceof Concrete.ClassDefinition && (!statements.isEmpty() || !dynamicSubgroups.isEmpty())) {
       cachedScope = CachingScope.make(makeScope(group, scope, LexicalScope.Extent.EVERYTHING));
     }
     if (!defParams.isEmpty()) {

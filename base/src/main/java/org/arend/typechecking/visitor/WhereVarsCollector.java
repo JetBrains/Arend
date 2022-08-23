@@ -30,7 +30,6 @@ public class WhereVarsCollector extends VoidConcreteVisitor<Void> {
     Referable ref = expr.getReferent();
     if (ref instanceof ParameterReferable) {
       myWhereRefs.add((ParameterReferable) ref);
-      expr.setReferent(((ParameterReferable) ref).getReferable());
     } else if (ref instanceof TCDefReferable && myDefinition != null) {
       Definition def = ((TCDefReferable) ref).getTypechecked();
       if (def != null && !def.getParametersOriginalDefinitions().isEmpty()) {

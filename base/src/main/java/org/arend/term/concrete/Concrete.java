@@ -94,10 +94,6 @@ public final class Concrete {
     }
 
     @Override
-    @NotNull
-    public abstract List<? extends Referable> getReferableList();
-
-    @Override
     public @NotNull List<? extends Referable> getRefList() {
       return getReferableList();
     }

@@ -36,7 +36,6 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
     }
     if (ref instanceof ParameterReferable && !myParametersRefsSupported) {
       myErrorReporter.report(new TypecheckingError("External variables are not allowed here", expr));
-      ref = ((ParameterReferable) ref).getReferable();
     }
     expr.setReferent(ref);
     return expr;

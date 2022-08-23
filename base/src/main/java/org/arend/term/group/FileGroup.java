@@ -5,13 +5,14 @@ import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.scope.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 
 public class FileGroup extends StaticGroup {
   private Scope myScope = EmptyScope.INSTANCE;
 
   public FileGroup(LocatedReferable referable, List<Statement> statements) {
-    super(referable, statements, null);
+    super(referable, statements, Collections.emptyList(), null);
   }
 
   public void setModuleScopeProvider(ModuleScopeProvider moduleScopeProvider) {

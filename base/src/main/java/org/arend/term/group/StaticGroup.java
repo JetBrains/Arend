@@ -1,23 +1,23 @@
 package org.arend.term.group;
 
 import org.arend.naming.reference.LocatedReferable;
-import org.arend.term.NamespaceCommand;
-import org.arend.term.abs.Abstract;
+import org.arend.naming.reference.ParameterReferable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 public class StaticGroup implements ChildGroup, Statement {
   private final LocatedReferable myReferable;
   private final List<Statement> myStatements;
+  private final List<ParameterReferable> myExternalParameters;
   private final ChildGroup myParent;
 
-  public StaticGroup(LocatedReferable referable, List<Statement> statements, ChildGroup parent) {
+  public StaticGroup(LocatedReferable referable, List<Statement> statements, List<ParameterReferable> externalParameters, ChildGroup parent) {
     myReferable = referable;
     myStatements = statements;
+    myExternalParameters = externalParameters;
     myParent = parent;
   }
 
@@ -28,14 +28,19 @@ public class StaticGroup implements ChildGroup, Statement {
   }
 
   @Override
-  public @NotNull Collection<? extends Statement> getStatements() {
+  public @NotNull List<? extends Statement> getStatements() {
     return myStatements;
   }
 
   @NotNull
   @Override
-  public Collection<? extends InternalReferable> getInternalReferables() {
+  public List<? extends InternalReferable> getInternalReferables() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public @NotNull List<? extends ParameterReferable> getExternalParameters() {
+    return myExternalParameters;
   }
 
   @Nullable

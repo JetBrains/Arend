@@ -1,17 +1,17 @@
 package org.arend.term.group;
 
 import org.arend.naming.reference.ClassReferable;
+import org.arend.naming.reference.ParameterReferable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
 import java.util.List;
 
 public class ClassGroup extends StaticGroup {
   private final List<Group> myDynamicGroups;
   private final List<? extends InternalReferable> myInternalGlobalReferables;
 
-  public ClassGroup(ClassReferable reference, List<? extends InternalReferable> internalGlobalReferables, List<Group> dynamicGroups, List<Statement> statements, ChildGroup parent) {
-    super(reference, statements, parent);
+  public ClassGroup(ClassReferable reference, List<? extends InternalReferable> internalGlobalReferables, List<Group> dynamicGroups, List<Statement> statements, List<ParameterReferable> externalParameters, ChildGroup parent) {
+    super(reference, statements, externalParameters, parent);
     myInternalGlobalReferables = internalGlobalReferables;
     myDynamicGroups = dynamicGroups;
   }
@@ -30,13 +30,13 @@ public class ClassGroup extends StaticGroup {
 
   @NotNull
   @Override
-  public Collection<? extends InternalReferable> getInternalReferables() {
+  public List<? extends InternalReferable> getInternalReferables() {
     return myInternalGlobalReferables;
   }
 
   @NotNull
   @Override
-  public Collection<? extends InternalReferable> getFields() {
+  public List<? extends InternalReferable> getFields() {
     return myInternalGlobalReferables;
   }
 }
