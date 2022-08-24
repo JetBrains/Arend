@@ -84,6 +84,22 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return expression.accept(visitor, null);
   }
 
+  public static List<Concrete.TypeParameter> convert(DependentLink params, PrettyPrinterConfig config) {
+    DefinitionRenamer definitionRenamer = config.getDefinitionRenamer();
+    if (definitionRenamer == null) {
+      definitionRenamer = new ConflictDefinitionRenamer();
+    }
+    CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor(definitionRenamer);
+    Set<Variable> variables = new HashSet<>();
+    collector.visitParameters(params, variables);
+    ReferableRenamer renamer = new ReferableRenamer();
+    ToAbstractVisitor visitor = new ToAbstractVisitor(config, definitionRenamer, collector, renamer);
+    renamer.generateFreshNames(variables);
+    List<Concrete.TypeParameter> result = new ArrayList<>();
+    visitor.visitDependentLink(params, result, true, true);
+    return result;
+  }
+
   public static Concrete.LevelExpression convert(Level level) {
     return new ToAbstractVisitor(new PrettyPrinterConfig() {
         @NotNull
@@ -596,6 +612,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private void visitDependentLink(DependentLink parameters, List<? super Concrete.TypeParameter> args, boolean isNamed) {
+    visitDependentLink(parameters, args, isNamed, false);
+  }
+
+  private void visitDependentLink(DependentLink parameters, List<? super Concrete.TypeParameter> args, boolean isNamed, boolean genName) {
     List<Referable> referableList = new ArrayList<>(3);
     for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
@@ -604,7 +624,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         referableList.add(makeLocalReference(link, freeVars, !link.isExplicit()));
       }
 
-      Referable referable = makeLocalReference(link, freeVars, !link.isExplicit());
+      Referable referable = makeLocalReference(link, freeVars, genName || !link.isExplicit());
       if (referable == null && !isNamed && referableList.isEmpty()) {
         Concrete.TypeParameter arg;
         if (link instanceof SigmaTypedDependentLink) {
