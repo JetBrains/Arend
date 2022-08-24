@@ -1377,7 +1377,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             }
           }
         }
-        if (!checkLevel(true, false, level, sort, sourceNode)) {
+        if (!checkLevel(true, false, level, sort, def)) {
           if (myNewDef) {
             typedDef.setKind(CoreFunctionDefinition.Kind.SFUNC);
           }
