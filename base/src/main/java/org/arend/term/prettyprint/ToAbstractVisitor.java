@@ -621,7 +621,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       DependentLink link1 = link.getNextTyped(null);
       Set<Variable> freeVars = myFreeVariablesCollector.getFreeVariables(link1);
       for (; link != link1; link = link.getNext()) {
-        referableList.add(makeLocalReference(link, freeVars, !link.isExplicit()));
+        referableList.add(makeLocalReference(link, freeVars, genName || !link.isExplicit()));
       }
 
       Referable referable = makeLocalReference(link, freeVars, genName || !link.isExplicit());
