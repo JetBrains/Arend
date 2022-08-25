@@ -524,4 +524,46 @@ public class VarsTest extends TypeCheckingTestCase {
       "  \\where\n" +
       "    \\func test => var");
   }
+
+  @Test
+  public void fieldResolveTest() {
+    typeCheckModule(
+      "\\record R (f : Nat)\n" +
+      "\\func foo (r : R) => r.f\n" +
+      "  \\where\n" +
+      "    \\func test => r.f");
+  }
+
+  @Test
+  public void fieldResolveTest2() {
+    typeCheckModule(
+      "\\func foo (r : R) => r.f\n" +
+      "  \\where {\n" +
+      "    \\record R (f : Nat)\n" +
+      "    \\func test => r.f\n" +
+      "  }");
+  }
+
+  @Test
+  public void fieldResolveTest3() {
+    resolveNamesModule(
+      "\\record R (f : Nat)\n" +
+      "\\func foo (r : R) => 0\n" +
+      "  \\where {\n" +
+      "    \\record R (g : Nat)\n" +
+      "    \\func test => r.f\n" +
+      "  }", 1);
+    assertThatErrorsAre(Matchers.notInScope("f"));
+  }
+
+  @Test
+  public void fieldResolveTest4() {
+    typeCheckModule(
+      "\\record R (f : Nat)\n" +
+      "\\func foo (r : R) => r.f\n" +
+      "  \\where\n" +
+      "    \\func test => r.f\n" +
+      "      \\where\n" +
+      "        \\record R (g : Nat)");
+  }
 }

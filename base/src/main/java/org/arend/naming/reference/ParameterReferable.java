@@ -1,18 +1,22 @@
 package org.arend.naming.reference;
 
+import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class ParameterReferable implements Referable {
+public class ParameterReferable implements TypedReferable {
   private final TCDefReferable myDefinition;
   private final int myIndex;
   private final Referable myReferable;
+  private final Concrete.ReferenceExpression myClassRef;
 
-  public ParameterReferable(TCDefReferable definition, int index, Referable referable) {
+  public ParameterReferable(TCDefReferable definition, int index, Referable referable, Concrete.ReferenceExpression classRef) {
     myDefinition = definition;
     myIndex = index;
     myReferable = referable;
+    myClassRef = classRef;
   }
 
   @Override
@@ -31,6 +35,12 @@ public class ParameterReferable implements Referable {
   @Override
   public @NotNull Referable getUnderlyingReferable() {
     return myReferable;
+  }
+
+  @Override
+  public @Nullable ClassReferable getTypeClassReference() {
+    Referable ref = myClassRef == null ? null : myClassRef.getReferent();
+    return ref instanceof ClassReferable ? (ClassReferable) ref : null;
   }
 
   @Override

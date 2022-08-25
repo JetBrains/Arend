@@ -35,7 +35,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     return getTypeClassReference(def.getResultType());
   }
 
-  public Referable getTypeReference(Concrete.Expression expr, boolean isType) {
+  public Concrete.ReferenceExpression getTypeReferenceExpression(Concrete.Expression expr, boolean isType) {
     if (isType) {
       while (true) {
         if (expr instanceof Concrete.PiExpression) {
@@ -110,10 +110,15 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     if (ref instanceof MetaReferable) {
       MetaDefinition def = ((MetaReferable) ref).getDefinition();
       if (def instanceof DefinableMetaDefinition) {
-        return getTypeReference(((DefinableMetaDefinition) def).body, isType);
+        return getTypeReferenceExpression(((DefinableMetaDefinition) def).body, isType);
       }
     }
-    return ref;
+    return (Concrete.ReferenceExpression) expr;
+  }
+
+  public Referable getTypeReference(Concrete.Expression expr, boolean isType) {
+    Concrete.ReferenceExpression refExpr = getTypeReferenceExpression(expr, isType);
+    return refExpr == null ? null : RedirectingReferable.getOriginalReferable(refExpr.getReferent());
   }
 
   public ClassReferable findClassReference(Referable referent) {
