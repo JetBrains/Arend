@@ -566,4 +566,25 @@ public class VarsTest extends TypeCheckingTestCase {
       "      \\where\n" +
       "        \\record R (g : Nat)");
   }
+
+  @Test
+  public void elimTest() {
+    resolveNamesModule(
+      "\\func foo (n : Nat) : Nat\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => n\n" +
+      "  \\where\n" +
+      "    \\func test => n", 1);
+    assertThatErrorsAre(Matchers.notInScope("n"));
+  }
+
+  @Test
+  public void elimTest2() {
+    resolveNamesModule(
+      "\\func foo (n m k l : Nat) : Nat \\elim n, k\n" +
+      "  | n, k => 0\n" +
+      "  \\where\n" +
+      "    \\func test => (n,m,k,l)", 2);
+    assertThatErrorsAre(Matchers.notInScope("n"), Matchers.notInScope("k"));
+  }
 }

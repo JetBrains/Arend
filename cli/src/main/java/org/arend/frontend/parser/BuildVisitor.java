@@ -24,9 +24,7 @@ import org.arend.util.SingletonList;
 import org.arend.util.StringEscapeUtils;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.arend.frontend.parser.ArendParser.*;
@@ -495,11 +493,20 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<? extends Concrete.Parameter> parameters = def.getParameters();
     if (parameters.isEmpty()) return Collections.emptyList();
 
+    Set<String> eliminated = new HashSet<>();
+    Concrete.FunctionBody body = def instanceof Concrete.BaseFunctionDefinition ? ((Concrete.BaseFunctionDefinition) def).getBody() : null;
+    if (body instanceof Concrete.ElimFunctionBody) {
+      if (body.getEliminatedReferences().isEmpty()) return Collections.emptyList();
+      for (Concrete.ReferenceExpression reference : body.getEliminatedReferences()) {
+        eliminated.add(reference.getReferent().getRefName());
+      }
+    }
+
     List<ParameterReferable> result = new ArrayList<>();
     int i = 0;
     for (Concrete.Parameter parameter : parameters) {
       for (Referable referable : parameter.getReferableList()) {
-        if (referable != null) {
+        if (referable != null && !eliminated.contains(referable.getRefName())) {
           result.add(new ParameterReferable((ConcreteLocatedReferable) parent, i, referable, new TypeClassReferenceExtractVisitor().getTypeReferenceExpression(parameter.getType(), true)));
         }
         i++;
