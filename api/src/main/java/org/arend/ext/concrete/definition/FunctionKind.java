@@ -11,6 +11,7 @@ public enum FunctionKind {
   TYPE { @Override public boolean isSFunc() { return true; } },
   FUNC_COCLAUSE { @Override public boolean isCoclause() { return true; } },
   CLASS_COCLAUSE { @Override public boolean isCoclause() { return true; } },
+  AXIOM { @Override public boolean isSFunc() { return true; } },
   FUNC,
   CONS,
   INSTANCE;

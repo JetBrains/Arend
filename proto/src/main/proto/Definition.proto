@@ -22,6 +22,10 @@ message Definition {
     int32 h_levels_parent = 10;
     bool p_levels_derived = 11;
     bool h_levels_derived = 12;
+    repeated LevelParameter level_param = 13;
+    bool is_std_levels = 14;
+    repeated ParameterOriginalDef parameter_original_def = 15;
+    repeated int32 axiom = 16;
 
     message RefList {
         repeated int32 ref = 1;
@@ -54,12 +58,9 @@ message Definition {
         map<int32, Expression.Pi> overridden_field = 12;
         repeated int32 covariant_field = 20;
         int32 squasher = 13;
-        repeated LevelParameter level_param = 23;
-        bool is_std_levels = 18;
         map<int32, Levels> super_levels = 19;
         UniverseKind base_universe_kind = 21;
         repeated int32 omega_field = 22;
-        repeated ParameterOriginalDef parameter_original_def = 24;
 
         message Field {
             Referable referable = 1;
@@ -105,10 +106,7 @@ message Definition {
         CoerceData coerce_data = 12;
         repeated ParametersLevel parameters_levels = 13;
         bool has_enclosing_class = 16;
-        repeated LevelParameter level_param = 17;
-        bool is_std_levels = 18;
         repeated bool omega_parameter = 19;
-        repeated ParameterOriginalDef parameter_original_def = 20;
 
         message Constructor {
             Referable referable = 1;
@@ -138,10 +136,7 @@ message Definition {
         HiddenStatus body_hidden_status = 16;
         bool has_enclosing_class = 13;
         repeated bool strict_parameters = 15;
-        repeated LevelParameter level_param = 17;
-        bool is_std_levels = 18;
         repeated bool omega_parameter = 19;
-        repeated ParameterOriginalDef parameter_original_def = 20;
 
         enum HiddenStatus {
             NOT_HIDDEN = 0;

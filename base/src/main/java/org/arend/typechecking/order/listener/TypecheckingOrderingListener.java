@@ -6,6 +6,7 @@ import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
+import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.error.CountingErrorReporter;
@@ -227,21 +228,27 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     DesugarVisitor.desugar(definition, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingUnitStarted(definition.getData());
-    clauses = definition.accept(new DefinitionTypechecker(checkTypeVisitor), null);
+    DefinitionTypechecker typechecker = new DefinitionTypechecker(checkTypeVisitor);
+    clauses = definition.accept(typechecker, null);
     Definition typechecked = definition.getData().getTypechecked();
     if (typechecked == null) {
       typechecked = newDefinition(definition);
     }
-
-    if (!(definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind().isCoclause())) {
-      FixLevelParameters.fix(Collections.singleton(typechecked));
+    if (!(typechecked instanceof TopLevelDefinition)) {
+      throw new IllegalStateException();
     }
 
-    if (recursive && typechecked instanceof FunctionDefinition) {
-      ((FunctionDefinition) typechecked).setRecursiveDefinitions(Collections.singleton(typechecked));
-    }
-    if (recursive && typechecked instanceof DataDefinition) {
-      ((DataDefinition) typechecked).setRecursiveDefinitions(Collections.singleton(typechecked));
+    if (typechecker.isNew()) {
+      if (!(definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind().isCoclause())) {
+        FixLevelParameters.fix(Collections.singleton((TopLevelDefinition) typechecked), Collections.singleton(typechecked));
+      }
+      if (recursive && typechecked instanceof FunctionDefinition) {
+        ((FunctionDefinition) typechecked).setRecursiveDefinitions(Collections.singleton((FunctionDefinition) typechecked));
+      }
+      if (recursive && typechecked instanceof DataDefinition) {
+        ((DataDefinition) typechecked).setRecursiveDefinitions(Collections.singleton((DataDefinition) typechecked));
+      }
+      findAxioms(Collections.singletonList(definition), Collections.singleton(typechecked));
     }
     if (definition.isRecursive() && typechecked instanceof FunctionDefinition) {
       checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, definition), clauses == null ? Collections.emptyMap() : Collections.singletonMap((FunctionDefinition) typechecked, clauses));
@@ -297,11 +304,11 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
     DesugarVisitor.desugar(definition, visitor.getErrorReporter());
     Definition oldTypechecked = definition.getData().getTypechecked();
-    boolean isNew = oldTypechecked == null || oldTypechecked.status().needsTypeChecking();
-    Definition typechecked = new DefinitionTypechecker(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);
+    DefinitionTypechecker typechecker = new DefinitionTypechecker(visitor);
+    TopLevelDefinition typechecked = typechecker.typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);
     typechecked.setUniverseKind(UniverseKind.WITH_UNIVERSES);
     if (typechecked.status() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
-      mySuspensions.put(definition.getData(), new Pair<>(visitor, isNew));
+      mySuspensions.put(definition.getData(), new Pair<>(visitor, typechecker.isNew()));
     }
 
     typecheckingHeaderFinished(definition.getData(), typechecked);
@@ -335,12 +342,16 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       myCurrentDefinitions.add(definition.getData());
     }
 
+    Set<Definition> newDefs = new HashSet<>();
     List<Pair<Definition, DefinitionListener>> listeners = new ArrayList<>();
     for (Concrete.Definition definition : orderedDefinitions) {
       typecheckingBodyStarted(definition.getData());
 
       Definition def = definition.getData().getTypechecked();
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
+      if (pair != null && pair.proj2) {
+        newDefs.add(def);
+      }
       if (myHeadersAreOK && pair != null) {
         typechecking.setTypechecker(pair.proj1);
         typechecking.updateState(pair.proj2);
@@ -360,23 +371,22 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
           }
         }
       }
-
-      typecheckingBodyFinished(definition.getData(), def);
     }
     myCurrentDefinitions = Collections.emptyList();
 
     myHeadersAreOK = true;
 
     boolean fixLevels = true;
-    Set<Definition> allDefinitions = new LinkedHashSet<>();
+    Set<TopLevelDefinition> allDefinitions = new LinkedHashSet<>();
     for (Concrete.Definition definition : orderedDefinitions) {
       Definition typechecked = definition.getData().getTypechecked();
+      if (!newDefs.contains(typechecked)) continue;
       if (typechecked instanceof FunctionDefinition) {
         ((FunctionDefinition) typechecked).setRecursiveDefinitions(allDefinitions);
-        allDefinitions.add(typechecked);
+        allDefinitions.add((FunctionDefinition) typechecked);
       } else if (typechecked instanceof DataDefinition) {
         ((DataDefinition) typechecked).setRecursiveDefinitions(allDefinitions);
-        allDefinitions.add(typechecked);
+        allDefinitions.add((DataDefinition) typechecked);
       }
       if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind().isCoclause()) {
         fixLevels = false;
@@ -384,11 +394,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     }
 
     if (fixLevels) {
-      FixLevelParameters.fix(allDefinitions);
-    }
-
-    for (Definition definition : allDefinitions) {
-      typecheckingBodyStarted(definition.getReferable());
+      FixLevelParameters.fix(allDefinitions, newDefs);
     }
 
     if (!functionDefinitions.isEmpty()) {
@@ -416,12 +422,14 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       if (definition.getData().getTypechecked().accept(new SearchVisitor<Void>() {
         @Override
         protected CoreExpression.FindAction processDefCall(DefCallExpression expr, Void param) {
-          return expr instanceof LeveledDefCallExpression && allDefinitions.contains(expr.getDefinition()) && !((LeveledDefCallExpression) expr).getLevels().compare(expr.getDefinition().makeIdLevels(), CMP.EQ, DummyEquations.getInstance(), null) ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
+          return expr instanceof LeveledDefCallExpression && expr.getDefinition() instanceof TopLevelDefinition && allDefinitions.contains((TopLevelDefinition) expr.getDefinition()) && !((LeveledDefCallExpression) expr).getLevels().compare(expr.getDefinition().makeIdLevels(), CMP.EQ, DummyEquations.getInstance(), null) ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
         }
       }, null)) {
         myErrorReporter.report(new TypecheckingError("Recursive call must have the same levels as the definition", definition));
       }
     }
+
+    findAxioms(definitions, newDefs);
 
     for (Definition definition : allDefinitions) {
       typecheckingBodyFinished(definition.getReferable(), definition);
@@ -441,6 +449,31 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     }
     UseTypechecking.typecheck(definitions, myErrorReporter);
     myCurrentDefinitions = Collections.emptyList();
+  }
+
+  private void findAxioms(List<? extends Concrete.ResolvableDefinition> definitions, Set<Definition> newDefs) {
+    Set<FunctionDefinition> axioms = new HashSet<>();
+    VoidExpressionVisitor<Void> visitor = new VoidExpressionVisitor<>() {
+      @Override
+      public Void visitDefCall(DefCallExpression expr, Void params) {
+        axioms.addAll(expr.getDefinition().getAxioms());
+        return super.visitDefCall(expr, params);
+      }
+    };
+
+    for (Concrete.ResolvableDefinition definition : definitions) {
+      TCReferable ref = definition.getData();
+      if (ref instanceof TCDefReferable) {
+        Definition def = ((TCDefReferable) ref).getTypechecked();
+        def.accept(visitor, null);
+        if (def instanceof TopLevelDefinition && newDefs.contains(def)) {
+          if (definition instanceof Concrete.BaseFunctionDefinition && ((Concrete.BaseFunctionDefinition) definition).getKind() == FunctionKind.AXIOM) {
+            axioms.add((FunctionDefinition) def);
+          }
+          ((TopLevelDefinition) def).setAxioms(axioms);
+        }
+      }
+    }
   }
 
   private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition, ? extends List<? extends ElimClause<ExpressionPattern>>> clauses) {

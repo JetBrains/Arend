@@ -25,7 +25,7 @@ public class ModuleDeserialization {
   private final ModuleProtos.Module myModuleProto;
   private final SimpleCallTargetProvider myCallTargetProvider = new SimpleCallTargetProvider();
   private final ReferableConverter myReferableConverter;
-  private final List<Pair<DefinitionProtos.Definition, Definition>> myDefinitions = new ArrayList<>();
+  private final List<Pair<DefinitionProtos.Definition, TopLevelDefinition>> myDefinitions = new ArrayList<>();
   private final SerializableKeyRegistryImpl myKeyRegistry;
   private final DefinitionListener myDefinitionListener;
   private final boolean myPrelude;
@@ -60,7 +60,7 @@ public class ModuleDeserialization {
     }
 
     DefinitionDeserialization defDeserialization = new DefinitionDeserialization(myCallTargetProvider, dependencyListener, myKeyRegistry, myDefinitionListener);
-    for (Pair<DefinitionProtos.Definition, Definition> pair : myDefinitions) {
+    for (Pair<DefinitionProtos.Definition, TopLevelDefinition> pair : myDefinitions) {
       defDeserialization.fillInDefinition(pair.proj1, pair.proj2);
     }
     myDefinitions.clear();
@@ -114,7 +114,7 @@ public class ModuleDeserialization {
       }
 
       TCDefReferable tcDefReferable = (TCDefReferable) tcReferable;
-      Definition def = readDefinition(groupProto.getDefinition(), tcDefReferable, false);
+      TopLevelDefinition def = readDefinition(groupProto.getDefinition(), tcDefReferable, false);
       tcDefReferable.setTypechecked(def);
       myCallTargetProvider.putCallTarget(groupProto.getReferable().getIndex(), def);
       myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
@@ -250,7 +250,7 @@ public class ModuleDeserialization {
       }
     }
 
-    Definition def;
+    TopLevelDefinition def;
     if (referable instanceof TCDefReferable && groupProto.hasDefinition()) {
       def = readDefinition(groupProto.getDefinition(), (TCDefReferable) referable, true);
       ((TCDefReferable) referable).setTypechecked(def);
@@ -324,15 +324,13 @@ public class ModuleDeserialization {
     return result;
   }
 
-  private Definition readDefinition(DefinitionProtos.Definition defProto, TCDefReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
-    final Definition def;
+  private TopLevelDefinition readDefinition(DefinitionProtos.Definition defProto, TCDefReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
+    final TopLevelDefinition def;
     switch (defProto.getDefinitionDataCase()) {
       case CLASS: {
-        DefinitionProtos.Definition.ClassData classProto = defProto.getClass_();
         ClassDefinition classDef = new ClassDefinition(referable);
-        classDef.setLevelParameters(readLevelParameters(classProto.getLevelParamList(), classProto.getIsStdLevels()));
         if (fillInternalDefinitions) {
-          for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
+          for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
             DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
             TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), referable);
             ClassField res = new ClassField(absField, classDef);
@@ -345,9 +343,7 @@ public class ModuleDeserialization {
         break;
       }
       case DATA: {
-        DefinitionProtos.Definition.DataData dataProto = defProto.getData();
         DataDefinition dataDef = new DataDefinition(referable);
-        dataDef.setLevelParameters(readLevelParameters(dataProto.getLevelParamList(), dataProto.getIsStdLevels()));
         if (fillInternalDefinitions) {
           for (DefinitionProtos.Definition.DataData.Constructor constructor : defProto.getData().getConstructorList()) {
             DefinitionProtos.Referable conReferable = constructor.getReferable();
@@ -361,21 +357,16 @@ public class ModuleDeserialization {
         def = dataDef;
         break;
       }
-      case FUNCTION: {
-        DefinitionProtos.Definition.FunctionData functionProto = defProto.getFunction();
+      case FUNCTION:
         def = new FunctionDefinition(referable);
-        def.setLevelParameters(readLevelParameters(functionProto.getLevelParamList(), functionProto.getIsStdLevels()));
         break;
-      }
-      case CONSTRUCTOR: {
-        DefinitionProtos.Definition.FunctionData functionProto = defProto.getConstructor().getFunction();
+      case CONSTRUCTOR:
         def = new DConstructor(referable);
-        def.setLevelParameters(readLevelParameters(functionProto.getLevelParamList(), functionProto.getIsStdLevels()));
         break;
-      }
       default:
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
+    def.setLevelParameters(readLevelParameters(defProto.getLevelParamList(), defProto.getIsStdLevels()));
     return def;
   }
 

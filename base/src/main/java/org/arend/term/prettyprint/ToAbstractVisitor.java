@@ -1056,7 +1056,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     } else {
       cBody = new Concrete.ElimFunctionBody(null, Collections.emptyList(), visitIntervalElim(def.getParameters(), body));
     }
-    return new Concrete.FunctionDefinition(visitFunctionKind(def.getKind()), def.getRef(), pair.proj1, pair.proj2, parameters, def.getResultType().accept(this, null), def.getResultTypeLevel() == null ? null : def.getResultTypeLevel().accept(this, null), cBody);
+    return new Concrete.FunctionDefinition(def.isAxiom() ? FunctionKind.AXIOM : visitFunctionKind(def.getKind()), def.getRef(), pair.proj1, pair.proj2, parameters, def.getResultType().accept(this, null), def.getResultTypeLevel() == null ? null : def.getResultTypeLevel().accept(this, null), cBody);
   }
 
   @Override

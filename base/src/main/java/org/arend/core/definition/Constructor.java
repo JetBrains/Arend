@@ -1,6 +1,5 @@
 package org.arend.core.definition;
 
-import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
@@ -61,13 +60,13 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   }
 
   @Override
-  public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
+  public @NotNull Set<? extends TopLevelDefinition> getRecursiveDefinitions() {
     return myDataType.getRecursiveDefinitions();
   }
 
   @Override
-  public List<LevelVariable> getLevelParameters() {
-    return myDataType.getLevelParameters();
+  public TopLevelDefinition getTopLevelDefinition() {
+    return myDataType;
   }
 
   public int getRecursiveParameter() {
@@ -220,11 +219,6 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   @Override
   public UniverseKind getUniverseKind() {
     return myDataType.getUniverseKind();
-  }
-
-  @Override
-  public void setUniverseKind(UniverseKind kind) {
-    throw new IllegalStateException();
   }
 
   @Override

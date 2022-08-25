@@ -38,7 +38,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
     myDefinitionListener = definitionListener;
   }
 
-  public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
+  public void fillInDefinition(DefinitionProtos.Definition defProto, TopLevelDefinition def) throws DeserializationException {
     final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def);
 
     switch (defProto.getDefinitionDataCase()) {
@@ -70,6 +70,8 @@ public class DefinitionDeserialization implements ArendDeserializer {
     }
     def.setPLevelsDerived(defProto.getPLevelsDerived());
     def.setHLevelsDerived(defProto.getHLevelsDerived());
+    def.setParametersOriginalDefinitions(readParametersOriginalDefinitions(defProto.getParameterOriginalDefList()));
+    def.setAxioms(readDefinitions(defProto.getAxiomList(), FunctionDefinition.class));
 
     for (Integer index : defProto.getMetaRefList()) {
       myDependencyListener.dependsOn(def.getRef(), myCallTargetProvider.getMetaCallTarget(index));
@@ -107,7 +109,6 @@ public class DefinitionDeserialization implements ArendDeserializer {
 
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
     classDef.setBaseUniverseKind(defDeserializer.readUniverseKind(classProto.getBaseUniverseKind()));
-    classDef.setParametersOriginalDefinitions(readParametersOriginalDefinitions(classProto.getParameterOriginalDefList()));
 
     Map<Integer, LevelProtos.Levels> superLevelsProto = classProto.getSuperLevelsMap();
     if (!superLevelsProto.isEmpty()) {
@@ -153,10 +154,10 @@ public class DefinitionDeserialization implements ArendDeserializer {
       classDef.addDefault(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), defDeserializer.readAbsExpr(entry.getValue()));
     }
     for (Map.Entry<Integer, DefinitionProtos.Definition.RefList> entry : classProto.getDefaultDependenciesMap().entrySet()) {
-      classDef.addDefaultDependencies(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readDefinitions(entry.getValue(), ClassField.class));
+      classDef.addDefaultDependencies(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readDefinitions(entry.getValue().getRefList(), ClassField.class));
     }
     for (Map.Entry<Integer, DefinitionProtos.Definition.RefList> entry : classProto.getDefaultImplDependenciesMap().entrySet()) {
-      classDef.addDefaultImplDependencies(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readDefinitions(entry.getValue(), ClassField.class));
+      classDef.addDefaultImplDependencies(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readDefinitions(entry.getValue().getRefList(), ClassField.class));
     }
     for (Map.Entry<Integer, ExpressionProtos.Expression.Pi> entry : classProto.getOverriddenFieldMap().entrySet()) {
       classDef.overrideField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), checkFieldType(defDeserializer.readPi(entry.getValue()), classDef));
@@ -256,9 +257,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
     }
   }
 
-  private <T extends Definition> Set<T> readDefinitions(DefinitionProtos.Definition.RefList proto, Class<T> clazz) throws DeserializationException {
+  private <T extends Definition> Set<T> readDefinitions(List<Integer> protos, Class<T> clazz) throws DeserializationException {
     Set<T> result = new HashSet<>();
-    for (Integer index : proto.getRefList()) {
+    for (Integer index : protos) {
       result.add(getDefFromIndex(index, clazz));
     }
     return result;
@@ -296,7 +297,6 @@ public class DefinitionDeserialization implements ArendDeserializer {
     if (dataProto.getHasEnclosingClass()) {
       dataDef.setHasEnclosingClass(true);
     }
-    dataDef.setParametersOriginalDefinitions(readParametersOriginalDefinitions(dataProto.getParameterOriginalDefList()));
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = dataProto.getParametersTypecheckingOrderList();
     if (!parametersTypecheckingOrder.isEmpty()) {
@@ -312,9 +312,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
     }
     List<Integer> recursiveDefIndices = dataProto.getRecursiveDefinitionList();
     if (!recursiveDefIndices.isEmpty()) {
-      Set<Definition> recursiveDefs = new HashSet<>();
+      Set<TopLevelDefinition> recursiveDefs = new HashSet<>();
       for (Integer index : recursiveDefIndices) {
-        recursiveDefs.add(myCallTargetProvider.getCallTarget(index));
+        recursiveDefs.add(myCallTargetProvider.getCallTarget(index, TopLevelDefinition.class));
       }
       dataDef.setRecursiveDefinitions(recursiveDefs);
     }
@@ -439,7 +439,6 @@ public class DefinitionDeserialization implements ArendDeserializer {
     if (functionProto.getHasEnclosingClass()) {
       functionDef.setHasEnclosingClass(true);
     }
-    functionDef.setParametersOriginalDefinitions(readParametersOriginalDefinitions(functionProto.getParameterOriginalDefList()));
     List<Boolean> strictParameters = functionProto.getStrictParametersList();
     if (!strictParameters.isEmpty()) {
       functionDef.setStrictParameters(strictParameters);
@@ -459,9 +458,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
     }
     List<Integer> recursiveDefIndices = functionProto.getRecursiveDefinitionList();
     if (!recursiveDefIndices.isEmpty()) {
-      Set<Definition> recursiveDefs = new HashSet<>();
+      Set<TopLevelDefinition> recursiveDefs = new HashSet<>();
       for (Integer index : recursiveDefIndices) {
-        recursiveDefs.add(myCallTargetProvider.getCallTarget(index));
+        recursiveDefs.add(myCallTargetProvider.getCallTarget(index, TopLevelDefinition.class));
       }
       functionDef.setRecursiveDefinitions(recursiveDefs);
     }

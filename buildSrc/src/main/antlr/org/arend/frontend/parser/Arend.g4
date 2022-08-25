@@ -60,6 +60,7 @@ funcKw      : '\\func'            # funcKwFunc
             | '\\lemma'           # funcKwLemma
             | '\\type'            # funcKwType
             | '\\use' useMod      # funcKwUse
+            | '\\axiom'           # funcKwAxiom
             ;
 
 instanceKw  : '\\instance'        # funcKwInstance

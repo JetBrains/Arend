@@ -18,6 +18,7 @@ public class CertainTypecheckingError extends TypecheckingError {
     TRUNCATED_WITHOUT_UNIVERSE(Level.WARNING, "The data type cannot be truncated since its universe is not specified"),
     CASE_RESULT_TYPE("Cannot infer the result type"),
     COULD_BE_LEMMA(Level.WARNING, "Function can be declared as a lemma"),
+    AXIOM_WITH_BODY(Level.WARNING, "An axiom should not have a body"),
     NO_CLASSIFYING_IGNORED(Level.WARNING_UNUSED, "\\noclassifying is ignored");
 
     private final Level level;

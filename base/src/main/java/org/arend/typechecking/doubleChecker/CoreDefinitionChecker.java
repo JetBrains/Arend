@@ -18,7 +18,6 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
-import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.UseTypechecking;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
@@ -115,6 +114,15 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       }
     }
 
+    if (definition.isAxiom()) {
+      if (body != null) {
+        errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.AXIOM_WITH_BODY, null));
+        return false;
+      } else {
+        return true;
+      }
+    }
+
     if (body instanceof Expression) {
       if (body instanceof CaseExpression) {
         myChecker.checkCase((CaseExpression) body, definition.getResultType(), level);
@@ -166,7 +174,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
     } else if (body == null) {
       ClassCallExpression classCall = definition.getResultType().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
       if (classCall == null) {
-        errorReporter.report(new TypeMismatchError(DocFactory.text("a classCall"), definition.getResultType(), null));
+        errorReporter.report(new TypecheckingError("Missing a body", null));
         return false;
       }
       myChecker.checkCocoverage(classCall);

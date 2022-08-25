@@ -46,7 +46,7 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   }
 
   @Override
-  public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
+  public @NotNull Set<? extends TopLevelDefinition> getRecursiveDefinitions() {
     return Collections.emptySet();
   }
 
@@ -58,10 +58,6 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     return null;
   }
 
-  public void setPLevelsParent(Definition levelsParent) {
-    throw new IllegalStateException();
-  }
-
   public boolean arePLevelsDerived() {
     return false;
   }
@@ -70,30 +66,18 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     return false;
   }
 
-  public void setPLevelsDerived(boolean derived) {
-    throw new IllegalStateException();
+  public abstract TopLevelDefinition getTopLevelDefinition();
+
+  public List<? extends LevelVariable> getLevelParameters() {
+    return getTopLevelDefinition().getLevelParameters();
   }
 
-  public void setHLevelsDerived(boolean derived) {
-    throw new IllegalStateException();
-  }
-
-  public void setHLevelsParent(Definition levelsParent) {
-    throw new IllegalStateException();
-  }
-
-  public abstract List<? extends LevelVariable> getLevelParameters();
-
-  public void setLevelParameters(List<LevelVariable> levelParameters) {
-    throw new IllegalStateException();
+  public Set<? extends FunctionDefinition> getAxioms() {
+    return getTopLevelDefinition().getAxioms();
   }
 
   public List<? extends Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
     return Collections.emptyList();
-  }
-
-  public void setParametersOriginalDefinitions(List<Pair<TCDefReferable,Integer>> definitions) {
-    throw new IllegalStateException();
   }
 
   public int getNumberOfPLevelParameters() {
@@ -275,8 +259,6 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   }
 
   public abstract UniverseKind getUniverseKind();
-
-  public abstract void setUniverseKind(UniverseKind kind);
 
   public List<? extends ParametersLevel> getParametersLevels() {
     return Collections.emptyList();

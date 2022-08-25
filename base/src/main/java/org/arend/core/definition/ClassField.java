@@ -1,6 +1,5 @@
 package org.arend.core.definition;
 
-import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.*;
@@ -41,8 +40,8 @@ public class ClassField extends Definition implements CoreClassField {
   }
 
   @Override
-  public List<? extends LevelVariable> getLevelParameters() {
-    return myParentClass.getLevelParameters();
+  public TopLevelDefinition getTopLevelDefinition() {
+    return myParentClass;
   }
 
   @NotNull
@@ -144,7 +143,6 @@ public class ClassField extends Definition implements CoreClassField {
     return myUniverseKind;
   }
 
-  @Override
   public void setUniverseKind(UniverseKind kind) {
     myUniverseKind = kind;
   }

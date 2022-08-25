@@ -1,6 +1,5 @@
 package org.arend.core.definition;
 
-import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.IntervalElim;
@@ -11,14 +10,13 @@ import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.ext.core.level.LevelSubstitution;
-import org.arend.ext.util.Pair;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class DataDefinition extends Definition implements CoreDataDefinition {
+public class DataDefinition extends TopLevelDefinition implements CoreDataDefinition {
   private final List<Constructor> myConstructors;
   private DependentLink myParameters;
   private Sort mySort = Sort.SET0;
@@ -31,16 +29,9 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
-  private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
+  private Set<TopLevelDefinition> myRecursiveDefinitions = Collections.emptySet();
   private boolean myHasEnclosingClass;
-  private List<LevelVariable> myLevelParameters;
-  private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
   private List<Boolean> myOmegaParameters = Collections.emptyList();
-  private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
-  private Definition myPLevelsParent;
-  private Definition myHLevelsParent;
-  private boolean myPLevelsDerived;
-  private boolean myHLevelsDerived;
 
   public DataDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -58,68 +49,8 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   }
 
   @Override
-  public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
+  public @NotNull Set<? extends TopLevelDefinition> getRecursiveDefinitions() {
     return myRecursiveDefinitions;
-  }
-
-  @Override
-  public Definition getPLevelsParent() {
-    return myPLevelsParent;
-  }
-
-  @Override
-  public Definition getHLevelsParent() {
-    return myHLevelsParent;
-  }
-
-  @Override
-  public void setPLevelsParent(Definition parent) {
-    myPLevelsParent = parent;
-  }
-
-  @Override
-  public void setHLevelsParent(Definition parent) {
-    myHLevelsParent = parent;
-  }
-
-  @Override
-  public boolean arePLevelsDerived() {
-    return myPLevelsDerived;
-  }
-
-  @Override
-  public boolean areHLevelsDerived() {
-    return myHLevelsDerived;
-  }
-
-  @Override
-  public void setPLevelsDerived(boolean derived) {
-    myPLevelsDerived = derived;
-  }
-
-  @Override
-  public void setHLevelsDerived(boolean derived) {
-    myHLevelsDerived = derived;
-  }
-
-  @Override
-  public List<LevelVariable> getLevelParameters() {
-    return myLevelParameters;
-  }
-
-  @Override
-  public void setLevelParameters(List<LevelVariable> parameters) {
-    myLevelParameters = parameters;
-  }
-
-  @Override
-  public List<? extends Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
-    return myParametersOriginalDefinitions;
-  }
-
-  @Override
-  public void setParametersOriginalDefinitions(List<Pair<TCDefReferable,Integer>> definitions) {
-    myParametersOriginalDefinitions = definitions;
   }
 
   @Override
@@ -136,7 +67,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
     myOmegaParameters = parameters;
   }
 
-  public void setRecursiveDefinitions(Set<Definition> recursiveDefinitions) {
+  public void setRecursiveDefinitions(Set<TopLevelDefinition> recursiveDefinitions) {
     myRecursiveDefinitions = recursiveDefinitions;
   }
 
@@ -283,27 +214,17 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   }
 
   @Override
-  public UniverseKind getUniverseKind() {
-    return myUniverseKind;
-  }
-
-  @Override
-  public void setUniverseKind(UniverseKind kind) {
-    myUniverseKind = kind;
-  }
-
-  @Override
   public List<? extends ParametersLevel> getParametersLevels() {
     return myParametersLevels.getList();
+  }
+
+  public void addParametersLevel(ParametersLevel parametersLevel) {
+    myParametersLevels.add(parametersLevel);
   }
 
   @Override
   public <P, R> R accept(DefinitionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitData(this, params);
-  }
-
-  public void addParametersLevel(ParametersLevel parametersLevel) {
-    myParametersLevels.add(parametersLevel);
   }
 
   @Override

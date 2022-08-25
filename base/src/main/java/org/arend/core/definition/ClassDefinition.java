@@ -1,7 +1,6 @@
 package org.arend.core.definition;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.FindBindingVisitor;
@@ -21,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class ClassDefinition extends Definition implements CoreClassDefinition {
+public class ClassDefinition extends TopLevelDefinition implements CoreClassDefinition {
   private final Set<ClassDefinition> mySuperClasses = new LinkedHashSet<>();
   private final LinkedHashSet<ClassField> myFields = new LinkedHashSet<>();
   private final List<ClassField> myPersonalFields = new ArrayList<>();
@@ -39,16 +38,9 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private Set<ClassField> myTypeClassParameters = Collections.emptySet();
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private FunctionDefinition mySquasher;
-  private List<? extends LevelVariable> myLevelParameters;
   private Map<ClassDefinition, Levels> mySuperLevels = Collections.emptyMap();
   private final Set<ClassField> myOmegaFields = new HashSet<>();
   private UniverseKind myBaseUniverseKind = UniverseKind.NO_UNIVERSES;
-  private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
-  private Definition myPLevelsParent;
-  private Definition myHLevelsParent;
-  private boolean myPLevelsDerived;
-  private boolean myHLevelsDerived;
-  private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
 
   public ClassDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -219,16 +211,6 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   @Override
   public CoerceData getCoerceData() {
     return myCoerce;
-  }
-
-  @Override
-  public UniverseKind getUniverseKind() {
-    return myUniverseKind;
-  }
-
-  @Override
-  public void setUniverseKind(UniverseKind kind) {
-    myUniverseKind = kind;
   }
 
   public static boolean isSubClassOf(ArrayDeque<CoreClassDefinition> classDefs, CoreClassDefinition classDef) {
@@ -472,66 +454,6 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public void addOmegaField(ClassField field) {
     myOmegaFields.add(field);
-  }
-
-  @Override
-  public Definition getPLevelsParent() {
-    return myPLevelsParent;
-  }
-
-  @Override
-  public Definition getHLevelsParent() {
-    return myHLevelsParent;
-  }
-
-  @Override
-  public void setPLevelsParent(Definition parent) {
-    myPLevelsParent = parent;
-  }
-
-  @Override
-  public void setHLevelsParent(Definition parent) {
-    myHLevelsParent = parent;
-  }
-
-  @Override
-  public boolean arePLevelsDerived() {
-    return myPLevelsDerived;
-  }
-
-  @Override
-  public boolean areHLevelsDerived() {
-    return myHLevelsDerived;
-  }
-
-  @Override
-  public void setPLevelsDerived(boolean derived) {
-    myPLevelsDerived = derived;
-  }
-
-  @Override
-  public void setHLevelsDerived(boolean derived) {
-    myHLevelsDerived = derived;
-  }
-
-  @Override
-  public List<? extends LevelVariable> getLevelParameters() {
-    return myLevelParameters;
-  }
-
-  @Override
-  public void setLevelParameters(List<LevelVariable> parameters) {
-    myLevelParameters = parameters;
-  }
-
-  @Override
-  public List<? extends Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
-    return myParametersOriginalDefinitions;
-  }
-
-  @Override
-  public void setParametersOriginalDefinitions(List<Pair<TCDefReferable,Integer>> definitions) {
-    myParametersOriginalDefinitions = definitions;
   }
 
   @Override

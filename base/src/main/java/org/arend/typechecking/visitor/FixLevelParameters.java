@@ -25,7 +25,7 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
     myRemoveHLevels = removeHLevels;
   }
 
-  public static void fix(Set<? extends Definition> definitions) {
+  public static void fix(Set<? extends TopLevelDefinition> definitions, Set<Definition> newDefs) {
     for (Definition definition : definitions) {
       if (definition.hasNonTrivialPLevelParameters() && definition.hasNonTrivialHLevelParameters()) return;
     }
@@ -64,7 +64,8 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
     }
     if (visitor.hasPLevels && visitor.hasHLevels) return;
 
-    for (Definition definition : definitions) {
+    for (TopLevelDefinition definition : definitions) {
+      if (!newDefs.contains(definition)) continue;
       if (!visitor.hasPLevels && !visitor.hasHLevels) {
         definition.setLevelParameters(Collections.emptyList());
       } else if (definition.getLevelParameters() == null) {
@@ -82,7 +83,7 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
 
     FixLevelParameters fixer = new FixLevelParameters(extendedDefs, !visitor.hasPLevels, !visitor.hasHLevels);
     for (Definition definition : definitions) {
-      definition.accept(fixer, null);
+      if (newDefs.contains(definition)) definition.accept(fixer, null);
     }
   }
 
@@ -179,7 +180,7 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
       expr.setLevels(removeVars((LevelPair) expr.getLevels()));
     } else {
       List<Level> list = new ArrayList<>();
-      List<LevelVariable> levelParameters = expr.getDefinition().getLevelParameters();
+      List<? extends LevelVariable> levelParameters = expr.getDefinition().getLevelParameters();
       List<? extends Level> oldList = expr.getLevels().toList();
       for (int i = 0; i < levelParameters.size(); i++) {
         if (myRemovePLevels && levelParameters.get(i).getType() == LevelVariable.LvlType.PLVL || myRemoveHLevels && levelParameters.get(i).getType() == LevelVariable.LvlType.HLVL) {

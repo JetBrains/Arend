@@ -1,6 +1,5 @@
 package org.arend.core.definition;
 
-import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
@@ -9,7 +8,6 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.level.LevelSubstitution;
-import org.arend.ext.util.Pair;
 import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class FunctionDefinition extends Definition implements Function, CoreFunctionDefinition {
+public class FunctionDefinition extends TopLevelDefinition implements Function, CoreFunctionDefinition {
   private DependentLink myParameters;
   private Expression myResultType;
   private Expression myResultTypeLevel;
@@ -29,17 +27,10 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private int myVisibleParameter = -1;
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
-  private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
+  private Set<TopLevelDefinition> myRecursiveDefinitions = Collections.emptySet();
   private boolean myHasEnclosingClass;
   private List<Boolean> myStrictParameters = Collections.emptyList();
   private List<Boolean> myOmegaParameters = Collections.emptyList();
-  private List<LevelVariable> myLevelParameters;
-  private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
-  private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
-  private Definition myPLevelsParent;
-  private Definition myHLevelsParent;
-  private boolean myPLevelsDerived;
-  private boolean myHLevelsDerived;
 
   public enum HiddenStatus { NOT_HIDDEN, HIDDEN, REALLY_HIDDEN }
 
@@ -111,71 +102,16 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   }
 
   @Override
-  public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
+  public @NotNull Set<? extends TopLevelDefinition> getRecursiveDefinitions() {
     return myRecursiveDefinitions;
   }
 
   @Override
-  public Definition getPLevelsParent() {
-    return myPLevelsParent;
+  public boolean isAxiom() {
+    return getAxioms().contains(this);
   }
 
-  @Override
-  public Definition getHLevelsParent() {
-    return myHLevelsParent;
-  }
-
-  @Override
-  public void setPLevelsParent(Definition parent) {
-    myPLevelsParent = parent;
-  }
-
-  @Override
-  public void setHLevelsParent(Definition parent) {
-    myHLevelsParent = parent;
-  }
-
-  @Override
-  public boolean arePLevelsDerived() {
-    return myPLevelsDerived;
-  }
-
-  @Override
-  public boolean areHLevelsDerived() {
-    return myHLevelsDerived;
-  }
-
-  @Override
-  public void setPLevelsDerived(boolean derived) {
-    myPLevelsDerived = derived;
-  }
-
-  @Override
-  public void setHLevelsDerived(boolean derived) {
-    myHLevelsDerived = derived;
-  }
-
-  @Override
-  public List<LevelVariable> getLevelParameters() {
-    return myLevelParameters;
-  }
-
-  @Override
-  public void setLevelParameters(List<LevelVariable> parameters) {
-    myLevelParameters = parameters;
-  }
-
-  @Override
-  public List<? extends Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
-    return myParametersOriginalDefinitions;
-  }
-
-  @Override
-  public void setParametersOriginalDefinitions(List<Pair<TCDefReferable,Integer>> definitions) {
-    myParametersOriginalDefinitions = definitions;
-  }
-
-  public void setRecursiveDefinitions(Set<Definition> recursiveDefinitions) {
+  public void setRecursiveDefinitions(Set<TopLevelDefinition> recursiveDefinitions) {
     myRecursiveDefinitions = recursiveDefinitions;
   }
 
@@ -269,16 +205,6 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
     myTypeClassParameters = typeClassParameters;
   }
 
-  @Override
-  public UniverseKind getUniverseKind() {
-    return myUniverseKind;
-  }
-
-  @Override
-  public void setUniverseKind(UniverseKind kind) {
-    myUniverseKind = kind;
-  }
-
   public void setTypeClassParameter(int index, TypeClassParameterKind kind) {
     if (index < myTypeClassParameters.size()) {
       myTypeClassParameters.set(index, kind);
@@ -290,13 +216,13 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
     return myParametersLevels.getList();
   }
 
+  public void addParametersLevel(ParametersLevel parametersLevel) {
+    myParametersLevels.add(parametersLevel);
+  }
+
   @Override
   public <P, R> R accept(DefinitionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitFunction(this, params);
-  }
-
-  public void addParametersLevel(ParametersLevel parametersLevel) {
-    myParametersLevels.add(parametersLevel);
   }
 
   @Override
