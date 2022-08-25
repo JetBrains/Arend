@@ -516,4 +516,12 @@ public class VarsTest extends TypeCheckingTestCase {
       "  | f => idp", 1);
     assertThatErrorsAre(Matchers.typecheckingError());
   }
+
+  @Test
+  public void piTest() {
+    typeCheckModule(
+      "\\func foo (var : \\Pi (x : Nat) -> x = x) => 0\n" +
+      "  \\where\n" +
+      "    \\func test => var");
+  }
 }

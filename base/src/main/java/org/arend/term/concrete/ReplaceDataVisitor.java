@@ -36,6 +36,7 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
       if (param instanceof Concrete.TypeParameter) {
         ((Concrete.TypeParameter) param).type = ((Concrete.TypeParameter) param).type.accept(this, null);
       }
+      result.add(param);
     }
     return result;
   }
