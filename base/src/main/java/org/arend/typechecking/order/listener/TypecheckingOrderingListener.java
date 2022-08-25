@@ -238,6 +238,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       throw new IllegalStateException();
     }
 
+    setParametersOriginalDefinitionsDependency(typechecked);
     if (typechecker.isNew()) {
       if (!(definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind().isCoclause())) {
         FixLevelParameters.fix(Collections.singleton((TopLevelDefinition) typechecked), Collections.singleton(typechecked));
@@ -264,6 +265,12 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     }
 
     myCurrentDefinitions = Collections.emptyList();
+  }
+
+  private void setParametersOriginalDefinitionsDependency(Definition definition) {
+    for (Pair<TCDefReferable, Integer> pair : definition.getParametersOriginalDefinitions()) {
+      myDependencyListener.dependsOn(definition.getRef(), pair.proj1);
+    }
   }
 
   @Override
@@ -427,6 +434,10 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       }, null)) {
         myErrorReporter.report(new TypecheckingError("Recursive call must have the same levels as the definition", definition));
       }
+    }
+
+    for (TopLevelDefinition definition : allDefinitions) {
+      setParametersOriginalDefinitionsDependency(definition);
     }
 
     findAxioms(definitions, newDefs);

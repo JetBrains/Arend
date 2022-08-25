@@ -70,8 +70,13 @@ public class DefinitionDeserialization implements ArendDeserializer {
     }
     def.setPLevelsDerived(defProto.getPLevelsDerived());
     def.setHLevelsDerived(defProto.getHLevelsDerived());
-    def.setParametersOriginalDefinitions(readParametersOriginalDefinitions(defProto.getParameterOriginalDefList()));
     def.setAxioms(readDefinitions(defProto.getAxiomList(), FunctionDefinition.class));
+
+    List<Pair<TCDefReferable, Integer>> parametersOriginalDefinitions = readParametersOriginalDefinitions(defProto.getParameterOriginalDefList());
+    def.setParametersOriginalDefinitions(parametersOriginalDefinitions);
+    for (Pair<TCDefReferable, Integer> pair : parametersOriginalDefinitions) {
+      myDependencyListener.dependsOn(def.getRef(), pair.proj1);
+    }
 
     for (Integer index : defProto.getMetaRefList()) {
       myDependencyListener.dependsOn(def.getRef(), myCallTargetProvider.getMetaCallTarget(index));
