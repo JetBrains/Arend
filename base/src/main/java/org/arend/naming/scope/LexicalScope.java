@@ -10,8 +10,8 @@ import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 @SuppressWarnings("Duplicates")
 public class LexicalScope implements Scope {
@@ -54,72 +54,73 @@ public class LexicalScope implements Scope {
     return opened(group, false);
   }
 
-  private void addReferable(Referable referable, List<Referable> elements) {
+  private Referable checkReferable(Referable referable, Predicate<Referable> pred) {
     String name = referable.textRepresentation();
     if (!name.isEmpty() && !"_".equals(name)) {
-      elements.add(referable);
+      if (pred.test(referable)) return referable;
     }
     if (referable instanceof GlobalReferable) {
       String alias = ((GlobalReferable) referable).getAliasName();
       if (alias != null && !alias.isEmpty() && !"_".equals(alias)) {
-        elements.add(new AliasReferable((GlobalReferable) referable));
+        Referable aliasRef = new AliasReferable((GlobalReferable) referable);
+        if (pred.test(aliasRef)) return aliasRef;
       }
     }
+    return null;
   }
 
-  private void addSubgroup(Group subgroup, List<Referable> elements) {
-    addReferable(subgroup.getReferable(), elements);
+  private Referable checkSubgroup(Group subgroup, Predicate<Referable> pred) {
+    Referable ref = checkReferable(subgroup.getReferable(), pred);
+    if (ref != null) return ref;
     for (Group.InternalReferable internalRef : subgroup.getInternalReferables()) {
       if (internalRef.isVisible()) {
-        addReferable(internalRef.getReferable(), elements);
+        ref = checkReferable(internalRef.getReferable(), pred);
+        if (ref != null) return ref;
       }
     }
+    return null;
   }
 
-  @NotNull
+  @Nullable
   @Override
-  public List<Referable> getElements(Referable.RefKind kind) {
-    List<Referable> elements = new ArrayList<>();
-
+  public Referable find(Predicate<Referable> pred) {
     for (Statement statement : myGroup.getStatements()) {
-      if (kind == Referable.RefKind.EXPR || kind == null) {
-        Group subgroup = statement.getGroup();
-        if (subgroup != null) {
-          addSubgroup(subgroup, elements);
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        Referable ref = checkSubgroup(subgroup, pred);
+        if (ref != null) return ref;
+      }
+      Abstract.LevelParameters pDef = statement.getPLevelsDefinition();
+      if (pDef != null) {
+        for (Referable referable : pDef.getReferables()) {
+          if (pred.test(referable)) return referable;
         }
       }
-      if (kind == Referable.RefKind.PLEVEL || kind == null) {
-        Abstract.LevelParameters pDef = statement.getPLevelsDefinition();
-        if (pDef != null) {
-          elements.addAll(pDef.getReferables());
-        }
-      }
-      if (kind == Referable.RefKind.HLEVEL || kind == null) {
-        Abstract.LevelParameters hDef = statement.getHLevelsDefinition();
-        if (hDef != null) {
-          elements.addAll(hDef.getReferables());
+      Abstract.LevelParameters hDef = statement.getHLevelsDefinition();
+      if (hDef != null) {
+        for (Referable referable : hDef.getReferables()) {
+          if (pred.test(referable)) return referable;
         }
       }
     }
 
-    if (kind == Referable.RefKind.EXPR || kind == null) {
-      if (myExtent == Extent.EVERYTHING) {
-        for (Group subgroup : myGroup.getDynamicSubgroups()) {
-          addSubgroup(subgroup, elements);
-        }
+    if (myExtent == Extent.EVERYTHING) {
+      for (Group subgroup : myGroup.getDynamicSubgroups()) {
+        checkSubgroup(subgroup, pred);
       }
+    }
 
-      if (myExtent != Extent.ONLY_EXTERNAL) {
-        for (Group.InternalReferable constructor : myGroup.getConstructors()) {
-          addReferable(constructor.getReferable(), elements);
-        }
-        GlobalReferable groupRef = myGroup.getReferable();
-        if (myKind != Kind.OPENED_INTERNAL && groupRef instanceof ClassReferable) {
-          elements.addAll(new ClassFieldImplScope((ClassReferable) groupRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC).getElements());
-        } else {
-          for (Group.InternalReferable field : myGroup.getFields()) {
-            addReferable(field.getReferable(), elements);
-          }
+    if (myExtent != Extent.ONLY_EXTERNAL) {
+      for (Group.InternalReferable constructor : myGroup.getConstructors()) {
+        checkReferable(constructor.getReferable(), pred);
+      }
+      GlobalReferable groupRef = myGroup.getReferable();
+      if (myKind != Kind.OPENED_INTERNAL && groupRef instanceof ClassReferable) {
+        Referable ref = new ClassFieldImplScope((ClassReferable) groupRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC).find(pred);
+        if (ref != null) return ref;
+      } else {
+        for (Group.InternalReferable field : myGroup.getFields()) {
+          checkReferable(field.getReferable(), pred);
         }
       }
     }
@@ -145,16 +146,18 @@ public class LexicalScope implements Scope {
           scope = cachingScope;
         }
         scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
-        elements.addAll(kind == null ? scope.getElements(null) : scope.getElements(kind));
+        Referable ref = scope.find(pred);
+        if (ref != null) return ref;
       }
     }
 
     if (myKind == Kind.INSIDE) {
-      elements.addAll(myGroup.getExternalParameters());
+      for (ParameterReferable ref : myGroup.getExternalParameters()) {
+        if (pred.test(ref)) return ref;
+      }
     }
 
-    elements.addAll(kind == null ? myParent.getElements(null) : myParent.getElements(kind));
-    return elements;
+    return myParent.find(pred);
   }
 
   private static GlobalReferable resolveInternal(Group group, String name, boolean onlyInternal) {
