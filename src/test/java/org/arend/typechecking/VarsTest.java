@@ -165,7 +165,7 @@ public class VarsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void mutualRecursiveTest() {
+  public void mutuallyRecursiveTest() {
     typeCheckModule(
       "\\func foo (x y : Nat) => baz\n" +
       "  \\where {\n" +
@@ -177,6 +177,17 @@ public class VarsTest extends TypeCheckingTestCase {
       "      | suc n => bar n Nat.+ y\n" +
       "  }\n" +
       "\\func test : (foo.bar 5 7 1, foo.baz 5 7 1) = (5, 7) => idp");
+  }
+
+  @Test
+  public void mutuallyRecursiveTest2() {
+    typeCheckModule(
+      "\\func foo (m n : Nat) : Nat \\elim n\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => bar n Nat.+ foo m n\n" +
+      "  \\where\n" +
+      "    \\func bar (n : Nat) : Nat => m Nat.+ foo m n\n" +
+      "\\func test : (foo 2 1, foo.bar 2 1) = (2,4) => idp");
   }
 
   @Test
