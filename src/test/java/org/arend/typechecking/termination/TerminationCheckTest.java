@@ -214,7 +214,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void testBug(){
-    typeCheckModule("\\data Bool | true | false\n\\func f (p : \\Sigma Bool Nat) => f p\n", 1);
+    typeCheckModule("\\data Bool | true | false\n\\func f (p : \\Sigma Bool Nat) => f p\n", 2);
   }
 
   @Test

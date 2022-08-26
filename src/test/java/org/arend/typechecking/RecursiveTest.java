@@ -155,7 +155,7 @@ public class RecursiveTest extends TypeCheckingTestCase {
 
   @Test
   public void withoutType() {
-    typeCheckDef("\\func f => f", 1);
+    typeCheckDef("\\func f => f", 2);
   }
 
   @Test
