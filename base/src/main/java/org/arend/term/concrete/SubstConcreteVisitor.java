@@ -222,6 +222,9 @@ public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> im
     } else if (Concrete.TuplePattern.class.equals(pattern.getClass())) {
       var tuplePattern = (Concrete.TuplePattern) pattern;
       return new Concrete.TuplePattern(data, tuplePattern.isExplicit(), visitPatterns(tuplePattern.getPatterns()), visitTypedReferable(tuplePattern.getAsReferable()));
+    } else if (Concrete.NumberPattern.class.equals(pattern.getClass())) {
+      var numberPattern = (Concrete.NumberPattern) pattern;
+      return new Concrete.NumberPattern(data, numberPattern.getNumber(), visitTypedReferable(numberPattern.getAsReferable()));
     } else {
       throw new IllegalArgumentException("Unhandled pattern: " + pattern.getClass());
     }
