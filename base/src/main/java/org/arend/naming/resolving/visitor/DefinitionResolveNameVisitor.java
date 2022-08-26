@@ -732,8 +732,20 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     if (def instanceof Concrete.ClassDefinition && (!statements.isEmpty() || !dynamicSubgroups.isEmpty())) {
       cachedScope = CachingScope.make(makeScope(group, scope, LexicalScope.Extent.EVERYTHING));
     }
-    if (!defParams.isEmpty()) {
-      myExternalParameters.put((TCDefReferable) def.getData(), new Concrete.ExternalParameters(defParams, def instanceof Concrete.Definition ? ((Concrete.Definition) def).getPLevelParameters() : null, def instanceof Concrete.Definition ? ((Concrete.Definition) def).getHLevelParameters() : null));
+    if (!myResolveTypeClassReferences && !defParams.isEmpty()) {
+      List<Concrete.Parameter> newParams = new ArrayList<>(defParams.size());
+      for (Concrete.Parameter defParam : defParams) {
+        if (defParam.getType() != null) {
+          Concrete.Parameter newParam = defParam.copy(defParam.getData());
+          if (newParam instanceof Concrete.TypeParameter) {
+            ((Concrete.TypeParameter) newParam).type = defParam.getType().accept(new SubstConcreteVisitor(null), null);
+          }
+          newParams.add(newParam);
+        } else {
+          newParams.add(defParam);
+        }
+      }
+      myExternalParameters.put((TCDefReferable) def.getData(), new Concrete.ExternalParameters(newParams, def instanceof Concrete.Definition ? ((Concrete.Definition) def).getPLevelParameters() : null, def instanceof Concrete.Definition ? ((Concrete.Definition) def).getHLevelParameters() : null));
     }
     for (Statement statement : statements) {
       Group subgroup = statement.getGroup();

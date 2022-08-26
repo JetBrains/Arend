@@ -360,6 +360,16 @@ public class VarsTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void levelsTest13() {
+    typeCheckModule(
+      "\\plevels p1 >= p2\n" +
+      "\\record R (A : \\Type p1)\n" +
+      "\\func foo (r : R) => 4\n" +
+      "  \\where\n" +
+      "    \\func bar => r");
+  }
+
+  @Test
   public void notUsedTest() {
     typeCheckModule(
       "\\func foo (x : Nat) => bar Nat.+ x\n" +
