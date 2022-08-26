@@ -237,4 +237,13 @@ public class RecursiveTest extends TypeCheckingTestCase {
       "\\data D \\hlevels lvl : \\Set | con (d : D) (E \\levels _ lvl d)\n" +
       "\\func E \\hlevels lvl (d : D \\levels _ (\\suc lvl)) : \\Set | con _ _ => Nat", 2);
   }
+
+  @Test
+  public void expectedTypeTest() {
+    typeCheckModule(
+      "\\func foo (n : Nat) : Nat\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => bar n\n" +
+      "\\func bar (n : Nat) => foo n", 1);
+  }
 }

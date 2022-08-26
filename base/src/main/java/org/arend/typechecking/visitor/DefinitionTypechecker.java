@@ -1035,6 +1035,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     FunctionKind kind = implementedField == null ? def.getKind() : implementedField.isProperty() && implementedField.getTypeLevel() == null ? FunctionKind.LEMMA : FunctionKind.FUNC;
     checkFunctionLevel(def, kind);
 
+    if (def.isRecursive() && def.getResultType() == null && !(def.getBody() instanceof Concrete.ElimFunctionBody)) {
+      errorReporter.report(new TypecheckingError("The type of a recursive function must be specified explictly", def));
+    }
+
     if (def.getKind() == FunctionKind.LEVEL) {
       Definition useParent = def.getUseParent().getTypechecked();
       if (def.getPLevelParameters() == null && useParent.hasNonTrivialPLevelParameters()) {
