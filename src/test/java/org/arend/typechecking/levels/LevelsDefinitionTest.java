@@ -1,8 +1,14 @@
 package org.arend.typechecking.levels;
 
 import org.arend.Matchers;
+import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
+
+import java.util.Objects;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class LevelsDefinitionTest extends TypeCheckingTestCase {
   @Test
@@ -60,5 +66,36 @@ public class LevelsDefinitionTest extends TypeCheckingTestCase {
       "}\n" +
       "\\open M(p1,p2)\n" +
       "\\func test (A : \\Type p1) : \\Type p2 => A");
+  }
+
+  @Test
+  public void derivedTest() {
+    typeCheckModule(
+      "\\plevels p1 <= p2\n" +
+      "\\record R (A : \\Type p2)\n" +
+      "\\func test (r : R) => 0");
+    assertEquals(3, getDefinition("test").getLevelParameters().size());
+    assertNotNull(((Concrete.ReferenceExpression) Objects.requireNonNull(getConcrete("test").getParameters().get(0).getType())).getPLevels());
+  }
+
+  @Test
+  public void derivedTest2() {
+    typeCheckModule(
+      "\\plevels p1 <= p2\n" +
+      "\\record R (A : \\Type p2)\n" +
+      "\\func test (r : R) (B : \\Type p2) => 0");
+    assertEquals(3, getDefinition("test").getLevelParameters().size());
+    assertNotNull(((Concrete.ReferenceExpression) Objects.requireNonNull(getConcrete("test").getParameters().get(0).getType())).getPLevels());
+  }
+
+  @Test
+  public void derivedTest3() {
+    typeCheckModule(
+      "\\plevels p1 <= p2\n" +
+      "\\record R (A : \\Type p1)\n" +
+      "\\record S (A : \\Type p2)\n" +
+      "\\func test (r : R) (s : S) => 0");
+    assertEquals(3, getDefinition("test").getLevelParameters().size());
+    assertNotNull(((Concrete.ReferenceExpression) Objects.requireNonNull(getConcrete("test").getParameters().get(0).getType())).getPLevels());
   }
 }

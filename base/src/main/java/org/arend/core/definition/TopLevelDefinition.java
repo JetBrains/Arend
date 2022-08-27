@@ -3,6 +3,7 @@ package org.arend.core.definition;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.ext.util.Pair;
 import org.arend.naming.reference.TCDefReferable;
+import org.arend.naming.reference.TCReferable;
 
 import java.util.Collections;
 import java.util.List;
@@ -11,8 +12,8 @@ import java.util.Set;
 public abstract class TopLevelDefinition extends Definition {
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
   private List<? extends LevelVariable> myLevelParameters;
-  private Definition myPLevelsParent;
-  private Definition myHLevelsParent;
+  private TCReferable myPLevelsParent;
+  private TCReferable myHLevelsParent;
   private boolean myPLevelsDerived;
   private boolean myHLevelsDerived;
   private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
@@ -46,20 +47,20 @@ public abstract class TopLevelDefinition extends Definition {
   }
 
   @Override
-  public Definition getPLevelsParent() {
+  public TCReferable getPLevelsParent() {
     return myPLevelsParent;
   }
 
   @Override
-  public Definition getHLevelsParent() {
+  public TCReferable getHLevelsParent() {
     return myHLevelsParent;
   }
 
-  public void setPLevelsParent(Definition parent) {
+  public void setPLevelsParent(TCReferable parent) {
     myPLevelsParent = parent;
   }
 
-  public void setHLevelsParent(Definition parent) {
+  public void setHLevelsParent(TCReferable parent) {
     myHLevelsParent = parent;
   }
 

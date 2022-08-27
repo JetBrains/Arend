@@ -3,8 +3,10 @@ package org.arend.module.serialization;
 import org.arend.core.definition.Definition;
 import org.arend.ext.serialization.DeserializationException;
 import org.arend.naming.reference.MetaReferable;
+import org.arend.naming.reference.TCReferable;
 
 public interface CallTargetProvider {
+  TCReferable getRef(int index) throws DeserializationException;
   Definition getCallTarget(int index) throws DeserializationException;
   MetaReferable getMetaCallTarget(int index) throws DeserializationException;
 

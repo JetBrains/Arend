@@ -860,10 +860,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private void findLevelsParentsInClass(ClassDefinition typedDef, Concrete.ClassDefinition cdef) {
     if (cdef.getPLevelParameters() != null) {
-      typedDef.setPLevelsParent(typedDef);
+      typedDef.setPLevelsParent(typedDef.getRef());
     }
     if (cdef.getHLevelParameters() != null) {
-      typedDef.setHLevelsParent(typedDef);
+      typedDef.setHLevelsParent(typedDef.getRef());
     }
     if (cdef.getPLevelParameters() != null && cdef.getHLevelParameters() != null) {
       return;
@@ -880,13 +880,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private void findLevelsParentsInParameters(TopLevelDefinition typedDef, Concrete.Definition cdef, List<? extends Concrete.Parameter> parameters) {
     if (cdef.getPLevelParameters() != null) {
-      typedDef.setPLevelsParent(typedDef);
+      typedDef.setPLevelsParent(typedDef.getRef());
     }
     if (cdef.getHLevelParameters() != null) {
-      typedDef.setHLevelsParent(typedDef);
-    }
-    if (cdef.getPLevelParameters() != null && cdef.getHLevelParameters() != null) {
-      return;
+      typedDef.setHLevelsParent(typedDef.getRef());
     }
 
     List<Concrete.ReferenceExpression> refs = new ArrayList<>();
@@ -939,44 +936,48 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private void findLevelsParents(TopLevelDefinition typedDef, Concrete.Definition cdef, List<? extends Concrete.ReferenceExpression> refs, int setLevelsParentsUpTo) {
-    boolean searchPLevels = cdef.getPLevelParameters() == null;
-    boolean searchHLevels = cdef.getHLevelParameters() == null;
-    Definition pLevelsParent = null;
-    Definition hLevelsParent = null;
+    boolean hadPLevels = cdef.getPLevelParameters() != null;
+    boolean hadHLevels = cdef.getHLevelParameters() != null;
+    boolean searchPLevels = !hadPLevels;
+    boolean searchHLevels = !hadHLevels;
+    TCReferable pLevelsParent = getFirstLevelParameter(cdef.getPLevelParameters());
+    TCReferable hLevelsParent = getFirstLevelParameter(cdef.getHLevelParameters());
     boolean pLevelsNotDerived = false;
     boolean hLevelsNotDerived = false;
     boolean allPLevelsDerived = true;
     boolean allHLevelsDerived = true;
 
-    for (int i = 0; i < refs.size(); i++) {
-      Concrete.ReferenceExpression ref = refs.get(i);
-      Definition def = ((TCDefReferable) ref.getReferent()).getTypechecked();
-      if (searchPLevels && def.getPLevelsParent() != null && (i < setLevelsParentsUpTo || !def.arePLevelsDerived()) && ref.getPLevels() == null) {
-        if (pLevelsParent == null) {
-          pLevelsParent = def.getPLevelsParent();
-          if (i < setLevelsParentsUpTo) {
-            pLevelsNotDerived = true;
+    if (searchPLevels || searchHLevels) {
+      for (int i = 0; i < refs.size(); i++) {
+        Concrete.ReferenceExpression ref = refs.get(i);
+        Definition def = ((TCDefReferable) ref.getReferent()).getTypechecked();
+        if (searchPLevels && def.getPLevelsParent() != null && (i < setLevelsParentsUpTo || !def.arePLevelsDerived()) && ref.getPLevels() == null) {
+          if (pLevelsParent == null) {
+            pLevelsParent = def.getPLevelsParent();
+            if (i < setLevelsParentsUpTo) {
+              pLevelsNotDerived = true;
+            }
+            if (!def.arePLevelsDerived()) {
+              allPLevelsDerived = false;
+            }
+          } else if (pLevelsParent != def.getPLevelsParent()) {
+            pLevelsParent = null;
+            searchPLevels = false;
           }
-          if (!def.arePLevelsDerived()) {
-            allPLevelsDerived = false;
-          }
-        } else if (pLevelsParent != def.getPLevelsParent()) {
-          pLevelsParent = null;
-          searchPLevels = false;
         }
-      }
-      if (searchHLevels && def.getHLevelsParent() != null && (i < setLevelsParentsUpTo || !def.areHLevelsDerived()) && ref.getHLevels() == null) {
-        if (hLevelsParent == null) {
-          hLevelsParent = def.getHLevelsParent();
-          if (i < setLevelsParentsUpTo) {
-            hLevelsNotDerived = true;
+        if (searchHLevels && def.getHLevelsParent() != null && (i < setLevelsParentsUpTo || !def.areHLevelsDerived()) && ref.getHLevels() == null) {
+          if (hLevelsParent == null) {
+            hLevelsParent = def.getHLevelsParent();
+            if (i < setLevelsParentsUpTo) {
+              hLevelsNotDerived = true;
+            }
+            if (!def.areHLevelsDerived()) {
+              allHLevelsDerived = false;
+            }
+          } else if (hLevelsParent != def.getHLevelsParent()) {
+            hLevelsParent = null;
+            searchHLevels = false;
           }
-          if (!def.areHLevelsDerived()) {
-            allHLevelsDerived = false;
-          }
-        } else if (hLevelsParent != def.getHLevelsParent()) {
-          hLevelsParent = null;
-          searchHLevels = false;
         }
       }
     }
@@ -986,19 +987,23 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
     List<Concrete.LevelExpression> pLevelExprs = null;
     if (pLevelsParent != null) {
-      cdef.setPLevelParameters(levelVariablesToParameters(cdef.getData(), pLevelsParent.getLevelParameters().subList(0, pLevelsParent.getNumberOfPLevelParameters()), true));
+      if (cdef.getPLevelParameters() == null) {
+        cdef.setPLevelParameters(referableToLevelParameters(pLevelsParent, cdef.getData(), true));
+      }
       if (cdef.getPLevelParameters() != null) {
         typedDef.setPLevelsParent(pLevelsParent);
-        typedDef.setPLevelsDerived(!pLevelsNotDerived || allPLevelsDerived);
+        typedDef.setPLevelsDerived(!hadPLevels && (!pLevelsNotDerived || allPLevelsDerived));
         pLevelExprs = levelParametersToExpressions(null, cdef.getPLevelParameters());
       }
     }
     List<Concrete.LevelExpression> hLevelExprs = null;
     if (hLevelsParent != null) {
-      cdef.setHLevelParameters(levelVariablesToParameters(cdef.getData(), hLevelsParent.getLevelParameters().subList(hLevelsParent.getNumberOfPLevelParameters(), hLevelsParent.getLevelParameters().size()), false));
+      if (cdef.getHLevelParameters() == null) {
+        cdef.setHLevelParameters(referableToLevelParameters(hLevelsParent, cdef.getData(), false));
+      }
       if (cdef.getHLevelParameters() != null) {
         typedDef.setHLevelsParent(hLevelsParent);
-        typedDef.setHLevelsDerived(!hLevelsNotDerived || allHLevelsDerived);
+        typedDef.setHLevelsDerived(!hadHLevels && (!hLevelsNotDerived || allHLevelsDerived));
         hLevelExprs = levelParametersToExpressions(null, cdef.getHLevelParameters());
       }
     }
@@ -1011,6 +1016,24 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (hLevelsParent != null && def.getHLevelsParent() == hLevelsParent && ref.getHLevels() == null) {
         ref.setHLevels(hLevelExprs);
       }
+    }
+  }
+
+  private TCLevelReferable getFirstLevelParameter(Concrete.LevelParameters levelParameters) {
+    if (levelParameters == null || levelParameters.referables.isEmpty()) return null;
+    LevelReferable ref = levelParameters.referables.get(0);
+    return ref instanceof TCLevelReferable ? (TCLevelReferable) ref : null;
+  }
+
+  private Concrete.LevelParameters referableToLevelParameters(TCReferable referable, Object data, boolean isPLevels) {
+    if (referable instanceof TCDefReferable) {
+      Definition def = ((TCDefReferable) referable).getTypechecked();
+      return levelVariablesToParameters(data, isPLevels ? def.getLevelParameters().subList(0, def.getNumberOfPLevelParameters()) : def.getLevelParameters().subList(def.getNumberOfPLevelParameters(), def.getLevelParameters().size()), isPLevels);
+    } else if (referable instanceof TCLevelReferable) {
+      LevelDefinition def = ((TCLevelReferable) referable).getDefParent();
+      return new Concrete.LevelParameters(data, def.getReferables(), def.isIncreasing());
+    } else {
+      throw new IllegalStateException();
     }
   }
 

@@ -14,6 +14,7 @@ import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.util.Pair;
 import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.naming.reference.TCDefReferable;
+import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.jetbrains.annotations.NotNull;
@@ -50,11 +51,11 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     return Collections.emptySet();
   }
 
-  public Definition getPLevelsParent() {
+  public TCReferable getPLevelsParent() {
     return null;
   }
 
-  public Definition getHLevelsParent() {
+  public TCReferable getHLevelsParent() {
     return null;
   }
 
