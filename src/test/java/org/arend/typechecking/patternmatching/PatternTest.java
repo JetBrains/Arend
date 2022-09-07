@@ -476,97 +476,97 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void infixPatterns() {
     typeCheckModule(
-            "\\data List | \\infix 10 :: Nat List\n" +
-            "\\func test (n : List) : 0 = 0\n" +
-            "  | n :: m => idp");
+      "\\data List | \\infix 10 :: Nat List\n" +
+      "\\func test (n : List) : 0 = 0\n" +
+      "  | n :: m => idp");
   }
 
   @Test
   public void infixPatterns2() {
     typeCheckModule(
-            "\\data List | \\infix 10 :: Nat List\n" +
-                    "\\func test (r : List) : Nat\n" +
-                    "  | n :: m => n");
+      "\\data List | \\infix 10 :: Nat List\n" +
+      "\\func test (r : List) : Nat\n" +
+      "  | n :: m => n");
   }
 
   @Test
   public void infixPatternsChain() {
     typeCheckModule(
-            "\\data List | \\infixr 10 :: Nat List\n" +
-                    "\\func test (r : List) : Nat\n" +
-                    "  | n :: m :: q => m");
+      "\\data List | \\infixr 10 :: Nat List\n" +
+      "\\func test (r : List) : Nat\n" +
+      "  | n :: m :: q => m");
   }
 
   @Test
   public void definedInfixPatterns() {
     typeCheckModule(
-            "\\data List | cons Nat List\n" +
-                    "\\cons \\infix 10 :: (n : Nat) (m : List) => cons n m" +
-                    "\\func test (r : List) : Nat\n" +
-                    "  | n :: m => n");
+      "\\data List | cons Nat List\n" +
+      "\\cons \\infix 10 :: (n : Nat) (m : List) => cons n m" +
+      "\\func test (r : List) : Nat\n" +
+      "  | n :: m => n");
   }
 
   @Test
   public void infixPatternsInTuple() {
     typeCheckModule(
-            "\\data List | cons Nat List\n" +
-                    "\\cons \\infix 10 :: (n : Nat) (m : List) => cons n m" +
-                    "\\func test (r : \\Sigma List List) : Nat\n" +
-                    "  | (n :: m, k :: l) => n");
+      "\\data List | cons Nat List\n" +
+      "\\cons \\infix 10 :: (n : Nat) (m : List) => cons n m" +
+      "\\func test (r : \\Sigma List List) : Nat\n" +
+      "  | (n :: m, k :: l) => n");
   }
 
   @Test
   public void infixPatternsInLambda() {
     typeCheckModule(
-            "\\data List | \\infixr 10 :: Nat List\n" +
-                    "\\func test (r : List ) : List -> Nat => \\lam (n :: m) => n\n");
+      "\\data List | \\infixr 10 :: Nat List\n" +
+      "\\func test (r : List ) : List -> Nat => \\lam (n :: m) => n\n");
   }
 
   @Test
   public void infixPatternsInLet() {
     typeCheckModule(
-            "\\data List | \\infixr 10 :: Nat List\n" +
-                    "\\func test (r : List ) : Nat => \\let (n :: m) => r \\in n \n");
+      "\\data List | \\infixr 10 :: Nat List\n" +
+      "\\func test (r : List ) : Nat => \\let (n :: m) => r \\in n \n");
   }
 
   @Test
   public void infixPatternFromNonfix() {
     typeCheckModule(
-            "\\data List | cons Nat List\n" +
-                    "\\func test (r : List) : Nat\n" +
-                    "  | n `cons` m => n");
+      "\\data List | cons Nat List\n" +
+      "\\func test (r : List) : Nat\n" +
+      "  | n `cons` m => n");
   }
 
   @Test
   public void redundantClause() {
     typeCheckModule(
-            "\\data List (A : \\Type) | nil | \\infix 6 :: A (List A)\n" +
-                    "\\func indices {A : \\Type} (is : List Nat) (l : List A) : List A \\elim is, l\n" +
-                    "  | nil, _ => nil\n" +
-                    "  | :: _ _, nil => nil\n" +
-                    "  | :: 0 is, :: a l => a :: indices is l\n" +
-                    "  | :: (suc n) is, :: _ l => indices (n :: is) l");
+      "\\data List (A : \\Type) | nil | \\infix 6 :: A (List A)\n" +
+      "\\func indices {A : \\Type} (is : List Nat) (l : List A) : List A \\elim is, l\n" +
+      "  | nil, _ => nil\n" +
+      "  | :: _ _, nil => nil\n" +
+      "  | :: 0 is, :: a l => a :: indices is l\n" +
+      "  | :: (suc n) is, :: _ l => indices (n :: is) l");
   }
 
   @Test
   public void redundantClause2() {
     typeCheckModule(
-            "\\data List (A : \\Type) | nil | \\infix 6 :: (\\Sigma A A) (List A)\n" +
-                    "\\func indices {A : \\Type} (is : List Nat) (l : List A) : List A \\elim is, l\n" +
-                    "  | nil, _ => nil\n" +
-                    "  | :: _ _, nil => nil\n" +
-                    "  | :: (0, _) is, :: a l => a :: indices is l\n" +
-                    "  | :: (suc n, _) is, :: _ l => indices ((n, 0) :: is) l");
+      "\\data List (A : \\Type) | nil | \\infix 6 :: (\\Sigma A A) (List A)\n" +
+      "\\func indices {A : \\Type} (is : List Nat) (l : List A) : List A \\elim is, l\n" +
+      "  | nil, _ => nil\n" +
+      "  | :: _ _, nil => nil\n" +
+      "  | :: (0, _) is, :: a l => a :: indices is l\n" +
+      "  | :: (suc n, _) is, :: _ l => indices ((n, 0) :: is) l");
   }
 
 
   @Test
   public void qualifiedConstructor() {
     typeCheckModule(
-                    "\\module M \\where {\n" +
-                    "  \\data List | nil | \\infixr 10 ::: Nat List\n" +
-                    "  \\func f (a b : M.List) : Nat \\elim a\n" +
-                    "    | M.nil => 0\n" +
-                    "}", 1);
+      "\\module M \\where {\n" +
+      "  \\data List | nil | \\infixr 10 ::: Nat List\n" +
+      "  \\func f (a b : M.List) : Nat \\elim a\n" +
+      "    | M.nil => 0\n" +
+      "}", 1);
   }
 }

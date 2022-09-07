@@ -1,9 +1,11 @@
 package org.arend.typechecking.definition;
 
+import org.arend.core.definition.DConstructor;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static org.arend.Matchers.*;
+import static org.junit.Assert.assertNotNull;
 
 public class ConstructorTest extends TypeCheckingTestCase {
   @Test
@@ -273,5 +275,13 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "\\cons con2 (x : Nat) : D x => con idp\n" +
       "\\func f (d : D 0) : Nat | con2 y => y\n" +
       "\\func test : f (con idp) = 0 => idp");
+  }
+
+  @Test
+  public void recordTest() {
+    typeCheckModule(
+      "\\record R (n m : Nat)\n" +
+      "\\cons con (n : Nat) : R => \\new R n 0");
+    assertNotNull(((DConstructor) getDefinition("con")).getPattern());
   }
 }
