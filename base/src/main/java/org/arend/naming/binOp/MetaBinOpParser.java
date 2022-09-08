@@ -173,7 +173,7 @@ public class MetaBinOpParser {
           }
           implicitArgs.add(new Concrete.Argument(sequence.get(i).getComponent(), false));
         }
-        metaResult = minMeta.resolveInfix(myVisitor, new ContextDataImpl(refExpr, implicitArgs, null, null, null, null), leftArg, minIndex + 1 == end ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(i + 1, end), null));
+        metaResult = minMeta.resolveInfix(myVisitor, new ContextDataImpl(refExpr, implicitArgs, null, null, null, null), leftArg, i >= end ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(i, end), null));
       }
       myResult.add(new Concrete.BinOpSequenceElem<>(myVisitor.convertMetaResult(metaResult, refExpr, resultArgs, null, null)));
     } else {
