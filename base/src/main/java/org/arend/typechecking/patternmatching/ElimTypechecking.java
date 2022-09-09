@@ -401,7 +401,9 @@ public class ElimTypechecking {
         conPatterns.add(new ConstructorExpressionPattern(new FunCallExpression(Prelude.EMPTY_ARRAY, LevelPair.STD, null, elementsType), null, isEmpty, Collections.emptyList()));
       }
       if (isEmpty == null || isEmpty.equals(false)) {
-        conPatterns.add(new ConstructorExpressionPattern(new FunCallExpression(Prelude.ARRAY_CONS, LevelPair.STD, ((ClassCallExpression) type).getAbsImplementationHere(Prelude.ARRAY_LENGTH), elementsType), ((ClassCallExpression) type).getThisBinding(), isEmpty, Collections.emptyList()));
+        Expression length = ((ClassCallExpression) type).getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+        ClassCallExpression.ClassCallBinding thisBinding = ((ClassCallExpression) type).getThisBinding();
+        conPatterns.add(new ConstructorExpressionPattern(new FunCallExpression(Prelude.ARRAY_CONS, LevelPair.STD, length == null ? FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(thisBinding)) : length, elementsType), thisBinding, isEmpty, Collections.emptyList()));
       }
     } else {
       conPatterns = null;

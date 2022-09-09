@@ -86,7 +86,7 @@ public interface CorePattern extends PrettyPrintable {
     if (definition != null) {
       docs.add(text(definition.getRef().getRefName()));
     }
-    CoreParameter param = definition == null ? null : definition.getParameters();
+    CoreParameter param = getParameters();
     for (CorePattern subPattern : getSubPatterns()) {
       LineDoc subDoc = subPattern.prettyPrint(ppConfig);
       docs.add(param != null && param.hasNext() && !param.isExplicit() ? braces(subDoc) : parens(subDoc, subPattern.getConstructor() != null && !subPattern.getSubPatterns().isEmpty()));
