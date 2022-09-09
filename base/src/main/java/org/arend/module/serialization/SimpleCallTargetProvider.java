@@ -2,10 +2,7 @@ package org.arend.module.serialization;
 
 import org.arend.core.definition.Definition;
 import org.arend.ext.serialization.DeserializationException;
-import org.arend.naming.reference.MetaReferable;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCDefReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +38,7 @@ public class SimpleCallTargetProvider implements CallTargetProvider {
   }
 
   public void putCallTarget(int index, TCReferable callTarget) throws DeserializationException {
-    if (!(callTarget instanceof MetaReferable || callTarget instanceof TCDefReferable && ((TCDefReferable) callTarget).getTypechecked() != null)) {
+    if (!(callTarget instanceof MetaReferable || callTarget instanceof LevelReferable || callTarget instanceof TCDefReferable && ((TCDefReferable) callTarget).getTypechecked() != null)) {
       throw new DeserializationException("Definition '" + callTarget.getRefName() + "' was not typechecked");
     }
     myMap.putIfAbsent(index, callTarget);

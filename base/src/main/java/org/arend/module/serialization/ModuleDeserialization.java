@@ -68,7 +68,7 @@ public class ModuleDeserialization {
 
   private void fillInCallTargetTree(String parentName, ModuleProtos.CallTargetTree callTargetTree, Scope scope, ModulePath module) throws DeserializationException {
     if (callTargetTree.getIndex() > 0) {
-      Referable referable1 = scope.resolveName(callTargetTree.getName());
+      Referable referable1 = scope.resolveName(callTargetTree.getName(), null);
       TCReferable referable = myReferableConverter == null
         ? (referable1 instanceof TCReferable ? (TCReferable) referable1 : null)
         : (referable1 instanceof LocatedReferable ? myReferableConverter.toDataLocatedReferable((LocatedReferable) referable1) : null);
