@@ -69,6 +69,7 @@ message Definition {
             int32 number_of_parameters = 4;
             bool isExplicit = 6;
             bool isParameter = 7;
+            bool isRealParameter = 13;
             bool isProperty = 8;
             bool isHideable = 9;
             UniverseKind universe_kind = 11;

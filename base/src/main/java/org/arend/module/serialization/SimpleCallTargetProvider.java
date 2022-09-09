@@ -10,6 +10,10 @@ import java.util.Map;
 public class SimpleCallTargetProvider implements CallTargetProvider {
   private final Map<Integer, TCReferable> myMap = new HashMap<>();
 
+  public boolean contains(int index) {
+    return myMap.containsKey(index);
+  }
+
   @Override
   public TCReferable getRef(int index) throws DeserializationException {
     TCReferable ref = myMap.get(index);

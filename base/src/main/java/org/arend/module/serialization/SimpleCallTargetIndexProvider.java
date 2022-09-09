@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class SimpleCallTargetIndexProvider implements CallTargetIndexProvider {
-  private final LinkedHashMap<Object, Integer> myCallTargets = new LinkedHashMap<>();
+  private final LinkedHashMap<TCReferable, Integer> myCallTargets = new LinkedHashMap<>();
 
   @Override
   public int getDefIndex(Definition definition) {
@@ -20,7 +20,7 @@ public class SimpleCallTargetIndexProvider implements CallTargetIndexProvider {
     return myCallTargets.computeIfAbsent(definition, k -> myCallTargets.size() + 1);
   }
 
-  public Collection<? extends Map.Entry<Object, Integer>> getCallTargets() {
+  public Collection<? extends Map.Entry<TCReferable, Integer>> getCallTargets() {
     return myCallTargets.entrySet();
   }
 }

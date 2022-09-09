@@ -139,6 +139,7 @@ public class DefinitionSerialization implements ArendSerializer {
       fBuilder.setNumberOfParameters(field.getNumberOfParameters());
       fBuilder.setIsExplicit(field.getReferable().isExplicitField());
       fBuilder.setIsParameter(field.getReferable().isParameterField());
+      fBuilder.setIsRealParameter(field.getReferable().isRealParameterField());
       fBuilder.setIsProperty(field.isProperty());
       fBuilder.setIsHideable(field.isHideable());
       fBuilder.setUniverseKind(defSerializer.writeUniverseKind(field.getUniverseKind()));

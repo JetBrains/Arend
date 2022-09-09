@@ -12,6 +12,7 @@ import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.term.group.*;
@@ -55,7 +56,7 @@ public class ModuleDeserialization {
       }
 
       for (ModuleProtos.CallTargetTree callTargetTree : moduleCallTargets.getCallTargetTreeList()) {
-        fillInCallTargetTree(null, callTargetTree, scope, module);
+        fillInCallTargetTree(null, callTargetTree, scope, module, EmptyScope.INSTANCE, null);
       }
     }
 
@@ -66,12 +67,31 @@ public class ModuleDeserialization {
     myDefinitions.clear();
   }
 
-  private void fillInCallTargetTree(String parentName, ModuleProtos.CallTargetTree callTargetTree, Scope scope, ModulePath module) throws DeserializationException {
+  private TCReferable convertReferable(Referable ref) {
+    return myReferableConverter == null
+      ? (ref instanceof TCReferable ? (TCReferable) ref : null)
+      : (ref instanceof LocatedReferable ? myReferableConverter.toDataLocatedReferable((LocatedReferable) ref) : null);
+  }
+
+  private void fillInCallTargetTree(String parentName, ModuleProtos.CallTargetTree callTargetTree, Scope scope, ModulePath module, Scope parentScope, TCReferable parent) throws DeserializationException {
+    TCReferable referable = null;
     if (callTargetTree.getIndex() > 0) {
       Referable referable1 = scope.resolveName(callTargetTree.getName(), null);
-      TCReferable referable = myReferableConverter == null
-        ? (referable1 instanceof TCReferable ? (TCReferable) referable1 : null)
-        : (referable1 instanceof LocatedReferable ? myReferableConverter.toDataLocatedReferable((LocatedReferable) referable1) : null);
+      if (referable1 == null) {
+        if (parent == null) parent = convertReferable(parentScope.resolveName(parentName));
+        if (parent instanceof TCDefReferable) {
+          Definition parentDef = ((TCDefReferable) parent).getTypechecked();
+          if (parentDef instanceof ClassDefinition) {
+            for (ClassField field : ((ClassDefinition) parentDef).getPersonalFields()) {
+              if (field.getName().equals(callTargetTree.getName())) {
+                referable1 = field.getReferable();
+                break;
+              }
+            }
+          }
+        }
+      }
+      referable = convertReferable(referable1);
       if (referable == null && module.equals(Prelude.MODULE_PATH) && "Fin".equals(parentName)) {
         if (callTargetTree.getName().equals("zero")) {
           referable = Prelude.FIN_ZERO.getReferable();
@@ -93,7 +113,7 @@ public class ModuleDeserialization {
       }
 
       for (ModuleProtos.CallTargetTree tree : subtreeList) {
-        fillInCallTargetTree(callTargetTree.getName(), tree, subscope, module);
+        fillInCallTargetTree(callTargetTree.getName(), tree, subscope, module, scope, referable);
       }
     }
   }
@@ -329,10 +349,10 @@ public class ModuleDeserialization {
     switch (defProto.getDefinitionDataCase()) {
       case CLASS: {
         ClassDefinition classDef = new ClassDefinition(referable);
-        if (fillInternalDefinitions) {
-          for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
-            DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
-            TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), referable);
+        for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
+          DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
+          if (fillInternalDefinitions || fieldProto.getIsRealParameter()) {
+            TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), fieldProto.getIsRealParameter(), referable);
             ClassField res = new ClassField(absField, classDef);
             classDef.addPersonalField(res);
             absField.setTypechecked(res);
