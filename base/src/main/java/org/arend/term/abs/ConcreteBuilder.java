@@ -511,6 +511,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       for (Abstract.Pattern abstractPattern : args) {
         binOps.add(new Concrete.BinOpSequenceElem<>(buildPattern(abstractPattern)));
       }
+      if (args.isEmpty()) {
+        myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Empty pattern is disallowed here", pattern.getData()));
+        return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), List.of(), buildTypedReferables(pattern.getAsPatterns()));
+      }
       return new Concrete.UnparsedConstructorPattern(pattern.getData(), pattern.isExplicit(), binOps, buildTypedReferables(pattern.getAsPatterns()));
     }
   }
