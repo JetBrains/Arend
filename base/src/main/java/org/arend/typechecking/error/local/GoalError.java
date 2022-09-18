@@ -22,6 +22,7 @@ public class GoalError extends GoalDataHolder {
   public final Concrete.Expression result;
   public final List<GeneralError> errors;
   public final GoalSolver goalSolver;
+  public final String goalName;
 
   private List<Condition> myConditions = Collections.emptyList();
 
@@ -37,6 +38,7 @@ public class GoalError extends GoalDataHolder {
     this.result = result;
     this.errors = errors;
     this.goalSolver = goalSolver;
+    goalName = expression.getName() == null ? "" : expression.getName();
   }
 
   @Override

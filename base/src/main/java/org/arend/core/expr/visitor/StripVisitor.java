@@ -119,9 +119,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public DataCallExpression visitDataCall(DataCallExpression expr, Void params) {
     List<Expression> args = expr.getDefCallArguments();
-    for (int i = 0; i < args.size(); i++) {
-      args.set(i, args.get(i).accept(this, null));
-    }
+    args.replaceAll(expression -> expression.accept(this, null));
     return expr;
   }
 
@@ -232,7 +230,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     if (expr instanceof GoalErrorExpression) {
       return expr.replaceExpression(expr.getExpression().accept(new StripVisitor(myBoundEvaluatingBindings, new ListErrorReporter(((GoalErrorExpression) expr).goalError.errors), myEvaluateBindings), null));
     } else {
-      return new ErrorExpression(null, expr.isGoal(), expr.useExpression());
+      return new ErrorExpression(null, expr.getGoalName(), expr.useExpression());
     }
   }
 
@@ -280,9 +278,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitCase(CaseExpression expr, Void params) {
-    for (int i = 0; i < expr.getArguments().size(); i++) {
-      expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
-    }
+    expr.getArguments().replaceAll(expression -> expression.accept(this, null));
     visitParameters(expr.getParameters());
     visitElimBody(expr.getElimBody());
     return new CaseExpression(expr.isSCase(), expr.getParameters(), expr.getResultType().accept(this, null), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null), expr.getElimBody(), expr.getArguments());
@@ -332,9 +328,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     List<Expression> args = expr.getClauseArguments();
-    for (int i = 0; i < args.size(); i++) {
-      args.set(i, args.get(i).accept(this, null));
-    }
+    args.replaceAll(expression -> expression.accept(this, null));
     expr.setArgument(expr.getArgument().accept(this, null));
     return expr;
   }
@@ -347,9 +341,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitArray(ArrayExpression expr, Void params) {
     List<Expression> elements = expr.getElements();
-    for (int i = 0; i < elements.size(); i++) {
-      elements.set(i, elements.get(i).accept(this, null));
-    }
+    elements.replaceAll(expression -> expression.accept(this, null));
     return ArrayExpression.make(expr.getLevels(), expr.getElementsType().accept(this, null), elements, expr.getTail() == null ? null : expr.getTail().accept(this, null));
   }
 

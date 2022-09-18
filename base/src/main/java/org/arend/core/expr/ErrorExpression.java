@@ -21,13 +21,13 @@ import org.jetbrains.annotations.Nullable;
 
 public class ErrorExpression extends Expression implements CoreErrorExpression, Type {
   private final Expression myExpression;
-  private final boolean myGoal;
+  private final String myGoalName;
   private final boolean myUseExpression;
   private LocalError myError;
 
   public ErrorExpression(Expression expression, LocalError error) {
     myExpression = expression;
-    myGoal = error != null && error.level == GeneralError.Level.GOAL;
+    myGoalName = error instanceof GoalError ? ((GoalError) error).goalName : error != null && error.level == GeneralError.Level.GOAL ? "" : null;
     myUseExpression = expression != null && error instanceof GoalError && ((GoalError) error).errors.isEmpty();
     myError = error;
   }
@@ -36,23 +36,23 @@ public class ErrorExpression extends Expression implements CoreErrorExpression, 
     this(null, error);
   }
 
-  public ErrorExpression(Expression expression, boolean isGoal, boolean useExpression) {
+  public ErrorExpression(Expression expression, String goalName, boolean useExpression) {
     myExpression = expression;
-    myGoal = isGoal;
+    myGoalName = goalName;
     myUseExpression = useExpression && expression != null;
     myError = null;
   }
 
   public ErrorExpression(Expression expression) {
     myExpression = expression;
-    myGoal = false;
+    myGoalName = null;
     myUseExpression = false;
     myError = null;
   }
 
   public ErrorExpression() {
     myExpression = null;
-    myGoal = false;
+    myGoalName = null;
     myUseExpression = false;
     myError = null;
   }
@@ -62,17 +62,21 @@ public class ErrorExpression extends Expression implements CoreErrorExpression, 
   }
 
   public ErrorExpression replaceExpression(Expression expr) {
-    return new ErrorExpression(expr, myGoal, myUseExpression);
+    return new ErrorExpression(expr, myGoalName, myUseExpression);
+  }
+
+  public String getGoalName() {
+    return myGoalName;
   }
 
   @Override
   public boolean isGoal() {
-    return myGoal;
+    return myGoalName != null;
   }
 
   @Override
   public boolean isError() {
-    return !myGoal;
+    return !isGoal();
   }
 
   @Override
@@ -98,7 +102,7 @@ public class ErrorExpression extends Expression implements CoreErrorExpression, 
 
   @Override
   public boolean isBoxed() {
-    return !myGoal;
+    return !isGoal();
   }
 
   @Override
@@ -164,7 +168,7 @@ public class ErrorExpression extends Expression implements CoreErrorExpression, 
       return this;
     }
 
-    return new ErrorExpression(myExpression.accept(visitor, null), myGoal, myUseExpression);
+    return new ErrorExpression(myExpression.accept(visitor, null), myGoalName, myUseExpression);
   }
 
   @Override

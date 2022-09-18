@@ -483,6 +483,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       builder.setExpression(expr.getExpression().accept(this, null));
     }
     builder.setIsGoal(expr.isGoal());
+    builder.setGoalName(expr.getGoalName());
     builder.setUseExpression(expr.useExpression());
     return ExpressionProtos.Expression.newBuilder().setError(builder).build();
   }

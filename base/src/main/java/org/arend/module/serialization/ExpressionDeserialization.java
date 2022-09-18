@@ -471,13 +471,7 @@ class ExpressionDeserialization {
   }
 
   private ErrorExpression readError(ExpressionProtos.Expression.Error proto) throws DeserializationException {
-    final Expression expr;
-    if (proto.hasExpression()) {
-      expr = readExpr(proto.getExpression());
-    } else {
-      expr = null;
-    }
-    return new ErrorExpression(expr, proto.getIsGoal(), proto.getUseExpression());
+    return new ErrorExpression(proto.hasExpression() ? readExpr(proto.getExpression()) : null, proto.getIsGoal() ? proto.getGoalName() : null, proto.getUseExpression());
   }
 
   private TupleExpression readTuple(ExpressionProtos.Expression.Tuple proto) throws DeserializationException {
