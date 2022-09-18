@@ -1,10 +1,13 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.sort.Level;
+import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.ListLevels;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.expr.CoreArrayExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
@@ -14,8 +17,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static org.arend.core.expr.ExpressionFactory.Fin;
+import static org.arend.core.expr.ExpressionFactory.Suc;
 
 public class ArrayExpression extends Expression implements CoreArrayExpression {
   private LevelPair myLevels;
@@ -55,11 +62,18 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
 
   public Expression drop(int n) {
     assert n <= myElements.size();
-    if (n >= myElements.size()) {
-      return myTail == null ? new ArrayExpression(myLevels, myElementsType, Collections.emptyList(), null) : myTail;
-    } else {
-      return new ArrayExpression(myLevels, myElementsType, myElements.subList(n, myElements.size()), myTail);
+    if (n == 0) return this;
+    if (n >= myElements.size() && myTail != null) {
+      return myTail;
     }
+
+    Expression newElementsLength = new SmallIntegerExpression(getElements().size() - n);
+    TypedSingleDependentLink param = new TypedSingleDependentLink(true, "j", Fin(myTail == null ? newElementsLength : FunCallExpression.make(Prelude.PLUS, new ListLevels(Collections.emptyList()), Arrays.asList(FieldCallExpression.make(Prelude.ARRAY_LENGTH, myTail), newElementsLength))));
+    Expression index = new ReferenceExpression(param);
+    for (int i = 0; i < n; i++) {
+      index = Suc(index);
+    }
+    return new ArrayExpression(myLevels, new LamExpression(myLevels.toSort().max(Sort.SET0), param, AppExpression.make(myElementsType, index, true)), myElements.subList(n, myElements.size()), myTail);
   }
 
   public Expression getLength() {

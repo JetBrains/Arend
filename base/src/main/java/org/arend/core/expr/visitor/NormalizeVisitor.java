@@ -340,24 +340,30 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     if (definition == Prelude.ARRAY_INDEX) {
       Expression arg = defCallArgs.get(0).normalize(NormalizationMode.WHNF);
       if (arg instanceof ArrayExpression) {
-        var pair = getNumber(defCallArgs.get(1));
-        if (pair.proj1 != null) {
+        Expression numExpr = defCallArgs.get(1).normalize(NormalizationMode.WHNF);
+        int n = 0;
+        while (numExpr instanceof ConCallExpression && ((ConCallExpression) numExpr).getDefinition() == Prelude.SUC) {
+          n++;
+          numExpr = ((ConCallExpression) numExpr).getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+        }
+        BigInteger num = numExpr instanceof IntegerExpression ? ((IntegerExpression) numExpr).getBigInteger().add(BigInteger.valueOf(n)) : numExpr instanceof ConCallExpression && ((ConCallExpression) numExpr).getDefinition() == Prelude.ZERO ? BigInteger.valueOf(n) : null;
+        if (num != null || n > 0) {
           ArrayExpression array = (ArrayExpression) arg;
           BigInteger s = BigInteger.valueOf(array.getElements().size());
-          if (pair.proj1.compareTo(s) < 0) {
-            return array.getElements().get(pair.proj1.intValue()).accept(this, mode);
+          if (num != null && num.compareTo(s) < 0) {
+            return array.getElements().get(num.intValue()).accept(this, mode);
           }
           if (array.getTail() != null) {
-            Expression indexArg = pair.proj2;
-            BigInteger b = pair.proj1.subtract(s);
-            if (indexArg instanceof IntegerExpression) {
-              indexArg = ((IntegerExpression) indexArg).plus(new BigIntegerExpression(b));
-            } else {
-              for (BigInteger i = BigInteger.ZERO; i.compareTo(b) < 0; i = i.add(BigInteger.ONE)) {
-                indexArg = Suc(indexArg);
-              }
+            if (num != null) {
+              return FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getLevels(), Arrays.asList(array.getTail(), new BigIntegerExpression(num.subtract(s)))).accept(this, mode);
             }
-            return FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getLevels(), Arrays.asList(array.getTail(), indexArg)).accept(this, mode);
+            if (n < array.getElements().size()) {
+              return array.drop(n);
+            }
+            for (int i = array.getElements().size(); i < n; i++) {
+              numExpr = Suc(numExpr);
+            }
+            return FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getLevels(), Arrays.asList(array.getTail(), numExpr)).accept(this, mode);
           }
         }
       } else {
@@ -990,16 +996,6 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     } else {
       return mode == NormalizationMode.WHNF ? ProjExpression.make(newExpr, expr.getField()) : ProjExpression.make(expr.getExpression().accept(this, mode), expr.getField());
     }
-  }
-
-  private static Pair<BigInteger,Expression> getNumber(Expression expr) {
-    expr = expr.normalize(NormalizationMode.WHNF);
-    int s = 0;
-    while (expr instanceof ConCallExpression && ((ConCallExpression) expr).getDefinition() == Prelude.SUC) {
-      s++;
-      expr = ((ConCallExpression) expr).getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
-    }
-    return new Pair<>(expr instanceof IntegerExpression || s > 0 ? (expr instanceof IntegerExpression ? ((IntegerExpression) expr).getBigInteger() : BigInteger.ZERO).add(BigInteger.valueOf(s)) : null, expr);
   }
 
   @Override
