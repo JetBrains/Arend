@@ -12,8 +12,8 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.local.*;
-import org.arend.typechecking.error.local.inference.ArgInferenceError;
-import org.arend.typechecking.error.local.inference.InstanceInferenceError;
+import org.arend.ext.error.ArgInferenceError;
+import org.arend.ext.error.InstanceInferenceError;
 import org.arend.typechecking.patternmatching.Condition;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -237,16 +237,16 @@ public class Matchers {
 
         InstanceInferenceError instanceInferenceError = (InstanceInferenceError) error;
         if (!instanceInferenceError.classRef.equals(classRef)) {
-          description.appendText("'Instance inference for class " + instanceInferenceError.classRef.textRepresentation() + "' error");
+          description.appendText("'Instance inference for class " + instanceInferenceError.classRef.getRefName() + "' error");
           return false;
         }
 
         if (!Objects.equals(instanceInferenceError.classifyingExpression, classifyingExpression)) {
-          description.appendText("'Instance inference for class " + instanceInferenceError.classRef.textRepresentation() + (instanceInferenceError.classifyingExpression == null ? " without classifying expression" : " with classifying expression " + instanceInferenceError.classifyingExpression) + "' error");
+          description.appendText("'Instance inference for class " + instanceInferenceError.classRef.getRefName() + (instanceInferenceError.classifyingExpression == null ? " without classifying expression" : " with classifying expression " + instanceInferenceError.classifyingExpression) + "' error");
           return false;
         }
 
-        description.appendText("Instance inference for class '" + instanceInferenceError.classRef.textRepresentation() + "'");
+        description.appendText("Instance inference for class '" + instanceInferenceError.classRef.getRefName() + "'");
         return true;
       }
 

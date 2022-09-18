@@ -5,7 +5,7 @@ import org.arend.core.expr.Expression;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.inference.ArgInferenceError;
+import org.arend.ext.error.ArgInferenceError;
 
 import java.util.Set;
 

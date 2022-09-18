@@ -26,8 +26,8 @@ import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.NotPiType;
-import org.arend.typechecking.error.local.inference.ArgInferenceError;
-import org.arend.typechecking.error.local.inference.InstanceInferenceError;
+import org.arend.ext.error.ArgInferenceError;
+import org.arend.typechecking.error.local.inference.RecursiveInstanceInferenceError;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 import org.arend.typechecking.result.DefCallResult;
@@ -108,7 +108,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
               }
               Expression instance;
               if (instanceResult == null) {
-                ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), expr, holeExpr, new Expression[0]);
+                ArgInferenceError error = new RecursiveInstanceInferenceError(classDef.getReferable(), expr, holeExpr, new Expression[0]);
                 myVisitor.getErrorReporter().report(error);
                 instance = new ErrorExpression(error);
               } else {

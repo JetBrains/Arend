@@ -22,9 +22,9 @@ import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.SubstConcreteVisitor;
 import org.arend.typechecking.error.local.GoalError;
-import org.arend.typechecking.error.local.inference.ArgInferenceError;
+import org.arend.ext.error.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.FunctionArgInferenceError;
-import org.arend.typechecking.error.local.inference.InstanceInferenceError;
+import org.arend.ext.error.InstanceInferenceError;
 import org.arend.typechecking.error.local.inference.LambdaInferenceError;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
@@ -419,7 +419,7 @@ class ErrorFixingConcreteExpressionVisitor extends BiConcreteVisitor {
             var fullResult = fullIterator.next();
             var incompleteArg = incompleteIterator.next().proj2;
             var param = fullResult.proj1;
-            if (param instanceof DependentLink && ((DependentLink) param).getType() instanceof DefCallExpression && ((DefCallExpression) ((DependentLink) param).getType()).getDefinition() == targetError.classRef.getTypechecked()) {
+            if (param instanceof DependentLink && ((DependentLink) param).getType() instanceof DefCallExpression && targetError.classRef instanceof TCDefReferable && ((DefCallExpression) ((DependentLink) param).getType()).getDefinition() == ((TCDefReferable) targetError.classRef).getTypechecked()) {
                 args.add((Concrete.Argument) fullResult.proj2);
                 inserted = true;
             } else if (incompleteArg != null) {

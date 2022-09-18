@@ -61,8 +61,8 @@ import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.ErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
-import org.arend.typechecking.error.local.inference.ArgInferenceError;
-import org.arend.typechecking.error.local.inference.InstanceInferenceError;
+import org.arend.ext.error.ArgInferenceError;
+import org.arend.typechecking.error.local.inference.RecursiveInstanceInferenceError;
 import org.arend.typechecking.implicitargs.ImplicitArgsInference;
 import org.arend.typechecking.implicitargs.StdImplicitArgsInference;
 import org.arend.typechecking.implicitargs.equations.*;
@@ -83,7 +83,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
+import static org.arend.ext.error.ArgInferenceError.expression;
 
 public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
   private final Equations myEquations;
@@ -1516,7 +1516,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (classDef.getClassifyingField() == null) {
         TypecheckingResult instance = myInstancePool.findInstance(null, type, new SubclassSearchParameters(classDef), implBody, holeExpr, myDefinition);
         if (instance == null) {
-          ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
+          ArgInferenceError error = new RecursiveInstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
           errorReporter.report(error);
           result = new TypecheckingResult(new ErrorExpression(error), type);
         } else {

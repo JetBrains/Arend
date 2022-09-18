@@ -11,7 +11,7 @@ import org.arend.core.sort.Level;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.PathEndpointMismatchError;
-import org.arend.typechecking.error.local.inference.ArgInferenceError;
+import org.arend.ext.error.ArgInferenceError;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 

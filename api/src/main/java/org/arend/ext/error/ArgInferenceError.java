@@ -1,10 +1,10 @@
-package org.arend.typechecking.error.local.inference;
+package org.arend.ext.error;
 
-import org.arend.core.expr.Expression;
+import org.arend.ext.concrete.ConcreteSourceNode;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
-import org.arend.term.concrete.Concrete;
-import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -12,23 +12,23 @@ import java.util.stream.Collectors;
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ArgInferenceError extends TypecheckingError {
-  public final Expression[] candidates;
-  public final Expression expected;
-  public final Expression actual;
+  public final CoreExpression[] candidates;
+  public final CoreExpression expected;
+  public final CoreExpression actual;
 
-  protected ArgInferenceError(String message, Expression expected, Expression actual, Concrete.SourceNode cause, Expression[] candidates) {
+  protected ArgInferenceError(String message, CoreExpression expected, CoreExpression actual, ConcreteSourceNode cause, CoreExpression[] candidates) {
     super(message, cause);
     this.candidates = candidates;
     this.expected = expected;
     this.actual = actual;
   }
 
-  public ArgInferenceError(String message, Concrete.SourceNode cause, Expression[] candidates) {
+  public ArgInferenceError(String message, ConcreteSourceNode cause, CoreExpression[] candidates) {
     this(message, null, null, cause, candidates);
   }
 
-  public ArgInferenceError(String message, Expression expected, Expression actual, Concrete.SourceNode cause, Expression candidate) {
-    this(message, expected, actual, cause, new Expression[1]);
+  public ArgInferenceError(String message, CoreExpression expected, CoreExpression actual, ConcreteSourceNode cause, CoreExpression candidate) {
+    this(message, expected, actual, cause, new CoreExpression[1]);
     candidates[0] = candidate;
   }
 
@@ -66,7 +66,7 @@ public class ArgInferenceError extends TypecheckingError {
       candidates.length == 0
         ? nullDoc()
         : hang(text(candidates.length == 1 ? "Candidate is:" : "Candidates are:"),
-            vList(Arrays.stream(candidates).map(expr -> termDoc(expr, ppConfig)).collect(Collectors.toList()))),
+            DocFactory.vList(Arrays.stream(candidates).map(expr -> termDoc(expr, ppConfig)).collect(Collectors.toList()))),
       expected == null && actual == null
         ? nullDoc()
         : vList(text("Since types of the candidates are not less than or equal to the expected type"),

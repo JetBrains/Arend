@@ -1,6 +1,7 @@
 package org.arend.typechecking.error.local.inference;
 
 import org.arend.core.expr.Expression;
+import org.arend.ext.error.ArgInferenceError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.Referable;

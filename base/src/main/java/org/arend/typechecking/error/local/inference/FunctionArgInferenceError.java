@@ -3,6 +3,7 @@ package org.arend.typechecking.error.local.inference;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
+import org.arend.ext.error.ArgInferenceError;
 import org.arend.term.concrete.Concrete;
 
 public class FunctionArgInferenceError extends ArgInferenceError {

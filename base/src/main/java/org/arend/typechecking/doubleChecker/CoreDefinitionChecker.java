@@ -22,7 +22,7 @@ import org.arend.prelude.Prelude;
 import org.arend.typechecking.UseTypechecking;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.CoreErrorWrapper;
-import org.arend.typechecking.error.local.inference.ArgInferenceError;
+import org.arend.ext.error.ArgInferenceError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
 import org.arend.typechecking.visitor.BaseDefinitionTypechecker;
