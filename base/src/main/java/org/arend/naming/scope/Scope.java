@@ -87,12 +87,17 @@ public interface Scope {
     return resolveName(scope, path, false);
   }
 
-  static Referable resolveName(Scope scope, List<? extends String> path, boolean withSuperClasses) {
+  static Referable resolveName(Scope scope, List<? extends String> path, boolean withFields) {
     for (int i = 0; i < path.size(); i++) {
       if (scope == null) {
         return null;
       }
-      if (withSuperClasses && i == path.size() - 2) {
+      if (withFields && i == path.size() - 2) {
+        Scope scope1 = scope.resolveNamespace(path.get(i), false);
+        if (scope1 != null) {
+          Referable ref = scope1.resolveName(path.get(i + 1));
+          if (ref != null) return ref;
+        }
         Referable parentRef = scope.resolveName(path.get(i));
         if (parentRef instanceof ClassReferable) {
           Referable result = new ClassFieldImplScope((ClassReferable) parentRef, false).resolveName(path.get(i + 1));
