@@ -133,7 +133,7 @@ public class DataDefinition extends TopLevelDefinition implements CoreDataDefini
   }
 
   @Override
-  protected boolean hasEnclosingClass() {
+  public boolean hasEnclosingClass() {
     return myHasEnclosingClass;
   }
 

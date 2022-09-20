@@ -190,7 +190,7 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     throw new IllegalStateException();
   }
 
-  protected boolean hasEnclosingClass() {
+  public boolean hasEnclosingClass() {
     return false;
   }
 

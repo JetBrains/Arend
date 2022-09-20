@@ -187,7 +187,7 @@ public class FunctionDefinition extends TopLevelDefinition implements Function, 
   }
 
   @Override
-  protected boolean hasEnclosingClass() {
+  public boolean hasEnclosingClass() {
     return myHasEnclosingClass;
   }
 

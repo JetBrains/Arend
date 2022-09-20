@@ -7,6 +7,8 @@ import org.arend.core.definition.Definition;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.ext.util.Pair;
+import org.arend.naming.reference.TCDefReferable;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -607,5 +609,17 @@ public class VarsTest extends TypeCheckingTestCase {
       "  \\where\n" +
       "    \\func test => (n,m,k,l)", 2);
     assertThatErrorsAre(Matchers.notInScope("n"), Matchers.notInScope("k"));
+  }
+
+  @Test
+  public void classTest() {
+    typeCheckModule(
+      "\\class C (x : Nat) {\n" +
+      "  \\func f (p : x = x) => test\n" +
+      "    \\where\n" +
+      "      \\func test => p\n" +
+      "}");
+    TCDefReferable f = getDefinition("C.f").getRef();
+    assertEquals(Collections.singletonList(new Pair<>(f, 0)), getDefinition("C.f.test").getParametersOriginalDefinitions());
   }
 }
