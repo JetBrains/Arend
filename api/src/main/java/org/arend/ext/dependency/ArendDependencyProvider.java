@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Provides access to definitions defined in the library.
  */
-public interface ArendDependencyProvider {
+public interface ArendDependencyProvider extends ArendReferenceProvider {
   /**
    * @return a definition of type {@code clazz} with name {@code name} defined in module {@code module}.
    */

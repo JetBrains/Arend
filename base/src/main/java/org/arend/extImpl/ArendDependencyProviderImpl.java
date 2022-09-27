@@ -3,7 +3,6 @@ package org.arend.extImpl;
 import org.arend.core.definition.Definition;
 import org.arend.ext.dependency.ArendDependencyProvider;
 import org.arend.ext.core.definition.CoreDefinition;
-import org.arend.ext.dependency.ArendReferenceProvider;
 import org.arend.ext.dependency.Dependency;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
@@ -22,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 import java.util.Collections;
 
-public class ArendDependencyProviderImpl extends Disableable implements ArendDependencyProvider, ArendReferenceProvider {
+public class ArendDependencyProviderImpl extends Disableable implements ArendDependencyProvider {
   private final TypecheckingOrderingListener myTypechecking;
   private final ModuleScopeProvider myModuleScopeProvider;
   private final DefinitionRequester myDefinitionRequester;
@@ -41,7 +40,7 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
   }
 
   @Override
-  public @NotNull ArendRef getReference(@NotNull ModulePath module, @NotNull LongName name) {
+  public @NotNull Referable getReference(@NotNull ModulePath module, @NotNull LongName name) {
     checkEnabled();
     Scope scope = myModuleScopeProvider.forModule(module);
     Referable ref = scope == null ? null : Scope.resolveName(scope, name.toList(), true);
@@ -55,8 +54,7 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
   @Override
   public <T extends CoreDefinition> T getDefinition(@NotNull ModulePath module, @NotNull LongName name, Class<T> clazz) {
     checkEnabled();
-    Scope scope = myModuleScopeProvider.forModule(module);
-    Referable ref = scope == null ? null : Scope.resolveName(scope, name.toList(), true);
+    Referable ref = getReference(module, name);
     Concrete.ReferableDefinition def;
     var generalDef = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
     if (generalDef instanceof Concrete.ReferableDefinition) {
@@ -78,12 +76,13 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     try {
       for (Field field : dependencyContainer.getClass().getDeclaredFields()) {
         Class<?> fieldType = field.getType();
-        if (CoreDefinition.class.isAssignableFrom(fieldType)) {
+        boolean isDef = CoreDefinition.class.isAssignableFrom(fieldType);
+        if (isDef || ArendRef.class.equals(fieldType)) {
           Dependency dependency = field.getAnnotation(Dependency.class);
           if (dependency != null) {
             field.setAccessible(true);
             String name = dependency.name();
-            field.set(dependencyContainer, getDefinition(ModulePath.fromString(dependency.module()), name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name), fieldType.asSubclass(CoreDefinition.class)));
+            field.set(dependencyContainer, isDef ? getDefinition(ModulePath.fromString(dependency.module()), name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name), fieldType.asSubclass(CoreDefinition.class)) : getReference(ModulePath.fromString(dependency.module()), name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name)));
           }
         }
       }
