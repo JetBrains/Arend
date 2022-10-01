@@ -727,6 +727,7 @@ public class TwoStageEquations implements Equations {
           ClassCallExpression classCall = pair.proj2.get(0);
           ClassCallExpression solution = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), new LinkedHashMap<>(), classCall.getSort(), classCall.getUniverseKind());
           copyArray(classCall, pair.proj1, solution);
+          solution.setSort(Prelude.DEP_ARRAY.computeSort(solution.getImplementedHere(), solution.getThisBinding()));
           solve(pair.proj1, solution, true);
         } else {
           solve(pair.proj1, pair.proj2.get(0), true);
