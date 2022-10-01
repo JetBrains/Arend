@@ -1912,9 +1912,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         ClassDefinition classDef = (ClassDefinition) useParent;
         ClassCallExpression thisType = new ClassCallExpression(classDef, classDef.makeIdLevels(), defaultImpl, classDef.getSort(), classDef.getUniverseKind());
         for (ClassField field : classDef.getFields()) {
-          AbsExpression defaultExpr = classDef.getDefault(field);
-          if (defaultExpr != null) {
-            defaultImpl.put(field, defaultExpr.apply(new ReferenceExpression(thisType.getThisBinding()), LevelSubstitution.EMPTY));
+          Pair<AbsExpression, Boolean> defaultPair = classDef.getDefaultPair(field);
+          if (defaultPair != null && defaultPair.proj2) {
+            defaultImpl.put(field, defaultPair.proj1.apply(new ReferenceExpression(thisType.getThisBinding()), LevelSubstitution.EMPTY));
           }
         }
         TypedSingleDependentLink thisBinding = new TypedSingleDependentLink(false, "this", thisType, true);
@@ -1924,7 +1924,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         Expression actualType = result.getType();
         Expression fieldType = ((ClassField) fieldDef).getType().applyExpression(new ReferenceExpression(thisBinding));
         if (actualType.isLessOrEquals(fieldType, DummyEquations.getInstance(), def)) {
-          classDef.addDefault((ClassField) fieldDef, new AbsExpression(thisBinding, result));
+          classDef.addDefault((ClassField) fieldDef, new AbsExpression(thisBinding, result), true);
         } else {
           errorReporter.report(new TypeMismatchError(fieldType, actualType, def));
         }
@@ -2899,7 +2899,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (ok) {
             AbsExpression abs = new AbsExpression(thisBinding, checkImplementations && result != null ? result.expression : new ErrorExpression());
             if (classFieldImpl.isDefault()) {
-              typedDef.addDefault(field, abs);
+              typedDef.addDefault(field, abs, false);
             } else {
               typedDef.implementField(field, abs);
             }
@@ -2933,9 +2933,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
         typedDef.addDefaultDependencies(entry.getKey(), dependencies);
       }
-      for (Map.Entry<ClassField, AbsExpression> entry : superClass.getDefaults()) {
+      for (Map.Entry<ClassField, Pair<AbsExpression, Boolean>> entry : superClass.getDefaults()) {
         Levels levels = typedDef.getSuperLevels().get(superClass);
-        typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue().subst(new ExprSubstitution(), levels == null ? idLevels.makeSubstitution(superClass) : levels.makeSubstitution(superClass)));
+        typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue().proj1.subst(new ExprSubstitution(), levels == null ? idLevels.makeSubstitution(superClass) : levels.makeSubstitution(superClass)), entry.getValue().proj2);
       }
       for (Map.Entry<ClassField, Set<ClassField>> entry : superClass.getDefaultImplDependencies().entrySet()) {
         typedDef.addDefaultImplDependencies(entry.getKey(), entry.getValue());

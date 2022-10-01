@@ -10,6 +10,7 @@ import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.core.subst.ListLevels;
 import org.arend.ext.core.ops.CMP;
+import org.arend.ext.util.Pair;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 
 import java.util.*;
@@ -209,9 +210,9 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
         entry.getValue().getBinding().getTypeExpr().accept(this, null);
       }
     }
-    for (Map.Entry<ClassField, AbsExpression> entry : def.getDefaults()) {
-      if (entry.getValue().getBinding() != null) {
-        entry.getValue().getBinding().getTypeExpr().accept(this, null);
+    for (Map.Entry<ClassField, Pair<AbsExpression, Boolean>> entry : def.getDefaults()) {
+      if (entry.getValue().proj1.getBinding() != null) {
+        entry.getValue().proj1.getBinding().getTypeExpr().accept(this, null);
       }
     }
     return super.visitClass(def, params);

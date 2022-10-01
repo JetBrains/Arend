@@ -25,7 +25,7 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
   private final LinkedHashSet<ClassField> myFields = new LinkedHashSet<>();
   private final List<ClassField> myPersonalFields = new ArrayList<>();
   private final Map<ClassField, AbsExpression> myImplemented = new HashMap<>();
-  private final Map<ClassField, AbsExpression> myDefaults = new HashMap<>();
+  private final Map<ClassField, Pair<AbsExpression,Boolean>> myDefaults = new HashMap<>();
   private final Map<ClassField, Set<ClassField>> myDefaultDependencies = new HashMap<>();
   private final Map<ClassField, Set<ClassField>> myDefaultImplDependencies = new HashMap<>();
   private final Map<ClassField, PiExpression> myOverridden = new HashMap<>();
@@ -309,20 +309,27 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
     return myImplemented.putIfAbsent(field, impl);
   }
 
-  public Set<Map.Entry<ClassField, AbsExpression>> getDefaults() {
+  public Set<Map.Entry<ClassField, Pair<AbsExpression, Boolean>>> getDefaults() {
     return myDefaults.entrySet();
   }
 
-  public AbsExpression getDefault(@NotNull CoreClassField field) {
-    return field instanceof ClassField ? myDefaults.get(field) : null;
+  public Pair<AbsExpression, Boolean> getDefaultPair(@NotNull ClassField field) {
+    return myDefaults.get(field);
   }
 
-  public AbsExpression addDefault(ClassField field, AbsExpression impl) {
-    return myDefaults.put(field, impl);
+  public AbsExpression getDefault(@NotNull ClassField field) {
+    Pair<AbsExpression, Boolean> pair = myDefaults.get(field);
+    return pair == null ? null : pair.proj1;
   }
 
-  public AbsExpression addDefaultIfAbsent(ClassField field, AbsExpression impl) {
-    return myDefaults.putIfAbsent(field, impl);
+  public AbsExpression addDefault(ClassField field, AbsExpression impl, boolean isFunc) {
+    Pair<AbsExpression, Boolean> pair = myDefaults.put(field, new Pair<>(impl, isFunc));
+    return pair == null ? null : pair.proj1;
+  }
+
+  public AbsExpression addDefaultIfAbsent(ClassField field, AbsExpression impl, boolean isFunc) {
+    Pair<AbsExpression, Boolean> pair = myDefaults.putIfAbsent(field, new Pair<>(impl, isFunc));
+    return pair == null ? null : pair.proj1;
   }
 
   public Map<ClassField, Set<ClassField>> getDefaultDependencies() {

@@ -40,12 +40,16 @@ message Definition {
       int32 index = 1;
       int32 definition = 2;
     }
+    message DefaultData {
+      Expression.Abs expr = 1;
+      bool is_func = 2;
+    }
     message ClassData {
         repeated int32 super_class_ref = 1;
         repeated Field personal_field = 2;
         repeated int32 field_ref = 3;
         map<int32, Expression.Abs> implementations = 4;
-        map<int32, Expression.Abs> defaults = 14;
+        map<int32, DefaultData> defaults = 17;
         map<int32, RefList> default_dependencies = 15;
         map<int32, RefList> default_impl_dependencies = 16;
         int32 coercing_field_ref = 5;

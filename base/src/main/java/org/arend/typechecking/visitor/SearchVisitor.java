@@ -10,6 +10,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -356,8 +357,8 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     for (Map.Entry<ClassField, AbsExpression> entry : def.getImplemented()) {
       if (entry.getValue().getExpression().accept(this, params)) return true;
     }
-    for (Map.Entry<ClassField, AbsExpression> entry : def.getDefaults()) {
-      if (entry.getValue().getExpression().accept(this, params)) return true;
+    for (Map.Entry<ClassField, Pair<AbsExpression, Boolean>> entry : def.getDefaults()) {
+      if (entry.getValue().proj1.getExpression().accept(this, params)) return true;
     }
     for (Map.Entry<ClassField, PiExpression> entry : def.getOverriddenFields()) {
       if (entry.getValue().getCodomain().accept(this, params)) return true;
