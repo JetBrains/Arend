@@ -180,4 +180,12 @@ public class FindMissingBindingVisitor extends SearchVisitor<Void> {
 
     return false;
   }
+
+  @Override
+  public Boolean visitClassCall(ClassCallExpression expression, Void param) {
+    myBindings.add(expression.getThisBinding());
+    Boolean result = super.visitClassCall(expression, param);
+    myBindings.remove(expression.getThisBinding());
+    return result;
+  }
 }
