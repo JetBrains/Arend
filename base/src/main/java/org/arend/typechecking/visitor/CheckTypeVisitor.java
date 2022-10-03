@@ -1491,16 +1491,18 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return checkResult(expectedType, new TypecheckingResult(resultClassCall, new UniverseExpression(resultClassCall.getSortOfType())), expr);
   }
 
-  static void setCaseLevel(Concrete.Expression expr, int level) {
+  static void setCaseLevel(Concrete.Expression expr, int level, boolean setSCase) {
     while (expr instanceof Concrete.LamExpression) {
       expr = ((Concrete.LamExpression) expr).getBody();
     }
     if (expr instanceof Concrete.CaseExpression) {
       Concrete.CaseExpression caseExpr = (Concrete.CaseExpression) expr;
       caseExpr.level = level;
-      caseExpr.setSCase(true);
+      if (setSCase) {
+        caseExpr.setSCase(true);
+      }
       for (Concrete.FunctionClause clause : caseExpr.getClauses()) {
-        setCaseLevel(clause.getExpression(), level);
+        setCaseLevel(clause.getExpression(), level, setSCase);
       }
     }
   }
@@ -1532,9 +1534,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (field.isProperty()) {
-      setCaseLevel(implBody, -1);
+      setCaseLevel(implBody, -1, true);
     } else if (field.getResultTypeLevel() >= -1) {
-      CheckTypeVisitor.setCaseLevel(implBody, field.getResultTypeLevel());
+      CheckTypeVisitor.setCaseLevel(implBody, field.getResultTypeLevel(), false);
     }
 
     if (addImplicitLambdas) {

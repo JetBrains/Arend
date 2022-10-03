@@ -1496,10 +1496,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (typeLevel != null && typedDef.isSFunc()) {
       if (body instanceof Concrete.ElimFunctionBody) {
         for (Concrete.FunctionClause clause : body.getClauses()) {
-          CheckTypeVisitor.setCaseLevel(clause.getExpression(), typeLevel);
+          CheckTypeVisitor.setCaseLevel(clause.getExpression(), typeLevel, true);
         }
       } else {
-        CheckTypeVisitor.setCaseLevel(body.getTerm(), typeLevel);
+        CheckTypeVisitor.setCaseLevel(body.getTerm(), typeLevel, true);
       }
     }
 
@@ -2863,9 +2863,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           instancePool.setInstancePool(localInstancePool);
           typechecker.setInstancePool(instancePool);
           if (field.isProperty()) {
-            CheckTypeVisitor.setCaseLevel(lamImpl.body, -1);
+            CheckTypeVisitor.setCaseLevel(lamImpl.body, -1, true);
           } else if (field.getResultTypeLevel() >= -1) {
-            CheckTypeVisitor.setCaseLevel(lamImpl.body, field.getResultTypeLevel());
+            CheckTypeVisitor.setCaseLevel(lamImpl.body, field.getResultTypeLevel(), false);
           }
           Levels superLevels = typedDef.getSuperLevels().get(field.getParentClass());
           Expression type = typedDef.getFieldType(field, superLevels == null ? idLevels.makeSubstitution(field) : superLevels.makeSubstitution(field), new ReferenceExpression(thisBinding));
