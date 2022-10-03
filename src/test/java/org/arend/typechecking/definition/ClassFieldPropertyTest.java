@@ -88,19 +88,23 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void fieldLevel() {
-    resolveNamesDef(
-      "\\class A {\n" +
-      "  \\field f (A : \\Type) (p : \\Pi (x y : A) -> x = y) : \\level A p\n" +
-      "}", 1);
-  }
-
-  @Test
   public void propertyLevel2() {
     typeCheckModule(
       "\\class A {\n" +
       "  | f (A : \\Type) : \\level ((\\Pi (x y : A) -> x = y) -> A) (\\lam (f g : (\\Pi (x y : A) -> x = y) -> A) => path (\\lam i (p : \\Pi (x y : A) -> x = y) => p (f p) (g p) @ i))\n" +
       "}");
     assertTrue(((ClassField) getDefinition("A.f")).isProperty());
+  }
+
+  @Test
+  public void fieldLevelTest() {
+    typeCheckModule(
+      "\\data S1 | base | loop : base = base\n" +
+      "\\record R {\n" +
+      "  \\field foo (A : \\Type) (a : A) (p : \\Pi (x y : A) -> x = y) (x : S1) : A\n" +
+      "    \\level \\lam a a' => path (\\lam i => p a a' @ i)\n" +
+      "}\n" +
+      "\\func test : R \\cowith\n" +
+      "  | foo A a _ (base) => a");
   }
 }

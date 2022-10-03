@@ -136,6 +136,7 @@ public class DefinitionSerialization implements ArendSerializer {
       if (field.getTypeLevel() != null) {
         fBuilder.setTypeLevel(defSerializer.writeExpr(field.getTypeLevel()));
       }
+      fBuilder.setResultTypeLevel(field.getResultTypeLevel());
       fBuilder.setNumberOfParameters(field.getNumberOfParameters());
       fBuilder.setIsExplicit(field.getReferable().isExplicitField());
       fBuilder.setIsParameter(field.getReferable().isParameterField());

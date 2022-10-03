@@ -18,6 +18,7 @@ public class ClassField extends Definition implements CoreClassField {
   private boolean myProperty;
   private PiExpression myType;
   private Expression myTypeLevel;
+  private int myResultTypeLevel = -2;
   private int myNumberOfParameters;
   private boolean myHideable;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
@@ -87,8 +88,13 @@ public class ClassField extends Definition implements CoreClassField {
     return myTypeLevel;
   }
 
-  public void setTypeLevel(Expression typeLevel) {
+  public int getResultTypeLevel() {
+    return myResultTypeLevel;
+  }
+
+  public void setTypeLevel(Expression typeLevel, int level) {
     myTypeLevel = typeLevel;
+    myResultTypeLevel = level;
   }
 
   @Override

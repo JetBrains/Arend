@@ -9,7 +9,6 @@ public class ParsingError extends GeneralError {
     MISPLACED_USE("\\use is allowed only in \\where block of \\data, \\class, or \\func"),
     MISPLACED_COERCE("\\coerce is allowed only in \\where block of \\data or \\class"),
     COERCE_WITHOUT_PARAMETERS("\\coerce must have at least one parameter"),
-    LEVEL_IGNORED(Level.WARNING_UNUSED, "\\level is ignored"),
     CLASSIFYING_FIELD_IN_RECORD(Level.WARNING_UNUSED, "Records cannot have classifying fields"),
     CLASSIFYING_IGNORED(Level.WARNING_UNUSED, "\\classifying is ignored"),
     INVALID_PRIORITY("The priority must be between 0 and 10"),

@@ -405,7 +405,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           funDef.setResultTypeLevel(result.expression);
         }
         if (!isOverridden && classField != null) {
-          classField.setTypeLevel(result.expression);
+          classField.setTypeLevel(result.expression, level);
         }
       }
     }
@@ -434,7 +434,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             funDef.setResultTypeLevel(result.expression);
           }
           if (!isOverridden && classField != null) {
-            classField.setTypeLevel(result.expression);
+            classField.setTypeLevel(result.expression, -1);
           }
         }
         return -1;
@@ -2864,6 +2864,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           typechecker.setInstancePool(instancePool);
           if (field.isProperty()) {
             CheckTypeVisitor.setCaseLevel(lamImpl.body, -1);
+          } else if (field.getResultTypeLevel() >= -1) {
+            CheckTypeVisitor.setCaseLevel(lamImpl.body, field.getResultTypeLevel());
           }
           Levels superLevels = typedDef.getSuperLevels().get(field.getParentClass());
           Expression type = typedDef.getFieldType(field, superLevels == null ? idLevels.makeSubstitution(field) : superLevels.makeSubstitution(field), new ReferenceExpression(thisBinding));
@@ -3212,17 +3214,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       if (ok && def.getResultTypeLevel() != null) {
-        if (kind == ClassFieldKind.FIELD) {
-          errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.LEVEL_IGNORED, def.getResultTypeLevel()));
+        var pair = addPiParametersToContext(def.getParameters(), piType);
+        if (!pair.proj1.hasNext() && pair.proj2 != null) {
+          Integer level = typecheckResultTypeLevel(def.getResultTypeLevel(), LevelMismatchError.TargetKind.PROPERTY, pair.proj2, null, typedDef, def instanceof Concrete.OverriddenField);
+          isProperty = level != null && level == -1;
         } else {
-          var pair = addPiParametersToContext(def.getParameters(), piType);
-          if (!pair.proj1.hasNext() && pair.proj2 != null) {
-            Integer level = typecheckResultTypeLevel(def.getResultTypeLevel(), LevelMismatchError.TargetKind.PROPERTY, pair.proj2, null, typedDef, def instanceof Concrete.OverriddenField);
-            isProperty = level != null && level == -1;
-          } else {
-            // Just reports an error
-            typechecker.getExpressionLevel(pair.proj1, null, null, DummyEquations.getInstance(), def.getResultTypeLevel());
-          }
+          // Just reports an error
+          typechecker.getExpressionLevel(pair.proj1, null, null, DummyEquations.getInstance(), def.getResultTypeLevel());
         }
       } else if (ok && kind != ClassFieldKind.FIELD) {
         Sort sort = typeResult.getSortOfType();

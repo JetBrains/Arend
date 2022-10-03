@@ -19,7 +19,6 @@ import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.*;
 import org.arend.naming.scope.local.ElimScope;
 import org.arend.prelude.Prelude;
-import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
@@ -640,11 +639,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         field.setResultType(classFields.get(i - 1).getResultType());
         field.setResultTypeLevel(classFields.get(i - 1).getResultTypeLevel());
       } else {
-        if (field.getResultTypeLevel() != null && field.getKind() == ClassFieldKind.FIELD) {
-          myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.LEVEL_IGNORED, field));
-          field.setResultTypeLevel(null);
-        }
-
         try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
           previousType = field.getParameters().isEmpty() ? fieldType : null;
           exprVisitor.visitParameters(field.getParameters(), null);

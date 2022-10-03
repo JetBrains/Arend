@@ -1533,6 +1533,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     if (field.isProperty()) {
       setCaseLevel(implBody, -1);
+    } else if (field.getResultTypeLevel() >= -1) {
+      CheckTypeVisitor.setCaseLevel(implBody, field.getResultTypeLevel());
     }
 
     if (addImplicitLambdas) {

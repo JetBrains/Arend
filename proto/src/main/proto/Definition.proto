@@ -70,6 +70,7 @@ message Definition {
             Referable referable = 1;
             Expression.Pi type = 2;
             Expression type_level = 3;
+            int32 result_type_level = 14;
             int32 number_of_parameters = 4;
             bool isExplicit = 6;
             bool isParameter = 7;
