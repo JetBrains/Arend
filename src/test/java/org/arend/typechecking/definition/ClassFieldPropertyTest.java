@@ -12,8 +12,7 @@ import org.junit.Test;
 
 import static org.arend.Matchers.typeMismatchError;
 import static org.arend.Matchers.typecheckingError;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ClassFieldPropertyTest extends TypeCheckingTestCase {
   @Test
@@ -106,5 +105,6 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "}\n" +
       "\\func test : R \\cowith\n" +
       "  | foo A a _ (base) => a");
+    assertFalse(((ClassField) getDefinition("R.foo")).isProperty());
   }
 }

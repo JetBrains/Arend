@@ -368,8 +368,9 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       if (level != null) {
         if (field.isProperty() && level == -1) {
           propertyOK = true;
-        } else {
-          errorReporter.report(CoreErrorWrapper.make(new CertainTypecheckingError(CertainTypecheckingError.Kind.USELESS_LEVEL, null), field.getTypeLevel()));
+        }
+        if (field.getResultTypeLevel() != level) {
+          errorReporter.report(CoreErrorWrapper.make(new TypecheckingError("The level (" + field.getResultTypeLevel() + ") of the type of the field does not match the level (" + level + ") inferred from the proof", null), fieldType));
         }
       }
 

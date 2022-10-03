@@ -3217,7 +3217,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         var pair = addPiParametersToContext(def.getParameters(), piType);
         if (!pair.proj1.hasNext() && pair.proj2 != null) {
           Integer level = typecheckResultTypeLevel(def.getResultTypeLevel(), LevelMismatchError.TargetKind.PROPERTY, pair.proj2, null, typedDef, def instanceof Concrete.OverriddenField);
-          isProperty = level != null && level == -1;
+          isProperty = level != null && level == -1 && kind != ClassFieldKind.FIELD;
         } else {
           // Just reports an error
           typechecker.getExpressionLevel(pair.proj1, null, null, DummyEquations.getInstance(), def.getResultTypeLevel());
