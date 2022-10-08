@@ -16,6 +16,7 @@ import java.util.List;
 public class ConCallExpression extends LeveledDefCallExpression implements CoreConCallExpression {
   private final List<Expression> myDataTypeArguments;
   private final List<Expression> myArguments;
+  private Boolean myValue;
 
   public ConCallExpression(Constructor definition, Levels levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
     super(definition, levels);
@@ -47,6 +48,20 @@ public class ConCallExpression extends LeveledDefCallExpression implements CoreC
       throw new IllegalArgumentException();
     }
     return (ConCallExpression) conCall;
+  }
+
+  @Override
+  public boolean isValue() {
+    if (myValue == null) {
+      myValue = areValues(myArguments);
+    }
+    return myValue;
+  }
+
+  public void resetValue() {
+    if (Boolean.FALSE.equals(myValue)) {
+      myValue = null;
+    }
   }
 
   @Override

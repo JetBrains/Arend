@@ -44,6 +44,11 @@ public abstract class IntegerExpression extends Expression implements CoreIntege
   public abstract TupleExpression divMod(IntegerExpression expr);
 
   @Override
+  public boolean isValue() {
+    return true;
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitInteger(this, params);
   }

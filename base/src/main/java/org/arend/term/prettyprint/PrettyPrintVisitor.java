@@ -1078,17 +1078,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   @Override
   public Void visitFunction(final Concrete.BaseFunctionDefinition def, Void ignored) {
     printIndent();
-    switch (def.getKind()) {
-      case FUNC: myBuilder.append("\\func "); break;
-      case FUNC_COCLAUSE: myBuilder.append("| "); break;
-      case CLASS_COCLAUSE: myBuilder.append("\\default "); break;
-      case TYPE: myBuilder.append("\\type "); break;
-      case LEMMA: myBuilder.append("\\lemma "); break;
-      case LEVEL: myBuilder.append("\\use \\level "); break;
-      case COERCE: myBuilder.append("\\use \\coerce "); break;
-      case INSTANCE: myBuilder.append("\\instance "); break;
-    }
-
+    myBuilder.append(def.getKind().getText()).append(" ");
     prettyPrintNameWithPrecedence(def.getData());
 
     if (def.getPLevelParameters() != null) {

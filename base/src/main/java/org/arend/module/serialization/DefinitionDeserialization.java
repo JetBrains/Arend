@@ -487,6 +487,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
       case SFUNC:
         kind = CoreFunctionDefinition.Kind.SFUNC;
         break;
+      case EFUNC:
+        kind = CoreFunctionDefinition.Kind.EFUNC;
+        break;
       case TYPE:
         kind = CoreFunctionDefinition.Kind.TYPE;
         break;

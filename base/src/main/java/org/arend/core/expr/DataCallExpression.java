@@ -29,10 +29,25 @@ import java.util.List;
 
 public class DataCallExpression extends LeveledDefCallExpression implements Type, CoreDataCallExpression {
   private final List<Expression> myArguments;
+  private Boolean myValue;
 
   public DataCallExpression(DataDefinition definition, Levels levels, List<Expression> arguments) {
     super(definition, levels);
     myArguments = arguments;
+  }
+
+  @Override
+  public boolean isValue() {
+    if (myValue == null) {
+      myValue = areValues(myArguments);
+    }
+    return myValue;
+  }
+
+  public void resetValue() {
+    if (Boolean.FALSE.equals(myValue)) {
+      myValue = null;
+    }
   }
 
   @NotNull

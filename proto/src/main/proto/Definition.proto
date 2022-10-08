@@ -171,6 +171,7 @@ message Definition {
     enum FunctionKind {
         FUNC = 0;
         SFUNC = 1;
+        EFUNC = 7;
         LEMMA = 2;
         TYPE = 6;
         INSTANCE = 3;

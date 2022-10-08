@@ -12,7 +12,6 @@ import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -56,6 +55,11 @@ public class NewExpression extends Expression implements CoreNewExpression {
 
   public NewExpression(Expression renewExpression, ClassCallExpression classCall) {
     this(renewExpression, classCall, true);
+  }
+
+  @Override
+  public boolean isValue() {
+    return myClassCall.isValue() && (myRenewExpression == null || myRenewExpression.isValue());
   }
 
   @Nullable

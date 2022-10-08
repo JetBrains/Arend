@@ -11,7 +11,6 @@ import org.arend.core.subst.UnfoldVisitor;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.expr.*;
 import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -59,6 +58,18 @@ public abstract class Expression implements Body, CoreExpression {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   public abstract <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2);
+
+  @Override
+  public boolean isValue() {
+    return false;
+  }
+
+  protected static boolean areValues(List<? extends Expression> expressions) {
+    for (Expression expression : expressions) {
+      if (!expression.isValue()) return false;
+    }
+    return true;
+  }
 
   @Override
   public String toString() {

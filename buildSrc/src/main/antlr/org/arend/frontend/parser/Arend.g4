@@ -57,6 +57,7 @@ returnExpr2 : expr2 ('\\level' expr2)?              # returnExprExpr2
 
 funcKw      : '\\func'            # funcKwFunc
             | '\\sfunc'           # funcKwSFunc
+            | '\\efunc'           # funcKwEFunc
             | '\\lemma'           # funcKwLemma
             | '\\type'            # funcKwType
             | '\\use' useMod      # funcKwUse

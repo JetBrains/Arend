@@ -2,7 +2,6 @@ package org.arend.ext.core.expr;
 
 import org.arend.ext.core.body.CoreBody;
 import org.arend.ext.core.context.CoreBinding;
-import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.CMP;
@@ -22,6 +21,13 @@ import java.util.function.Function;
  */
 public interface CoreExpression extends CoreBody, UncheckedExpression, AbstractedExpression, PrettyPrintable {
   <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params);
+
+  /**
+   * A value is an expression that consists only of constructors.
+   *
+   * @return true if this expression is a value; false otherwise.
+   */
+  boolean isValue();
 
   /**
    * Expressions produces during type-checking may not implement the correct interface.

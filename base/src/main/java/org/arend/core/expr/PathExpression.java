@@ -8,7 +8,6 @@ import org.arend.ext.core.expr.CorePathExpression;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class PathExpression extends Expression implements CorePathExpression {
   private LevelPair myLevels;
@@ -19,6 +18,11 @@ public class PathExpression extends Expression implements CorePathExpression {
     myLevels = levels;
     myArgumentType = argumentType;
     myArgument = argument;
+  }
+
+  @Override
+  public boolean isValue() {
+    return myArgument.isValue();
   }
 
   @Override

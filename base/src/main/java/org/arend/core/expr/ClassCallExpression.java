@@ -37,6 +37,7 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
   private final Map<ClassField, Expression> myImplementations;
   private Sort mySort;
   private UniverseKind myUniverseKind;
+  private Boolean myValue;
 
   public class ClassCallBinding implements Binding {
     @Override
@@ -84,6 +85,27 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
     myImplementations = implementations;
     mySort = sort;
     myUniverseKind = universeKind.max(definition.getBaseUniverseKind());
+  }
+
+  @Override
+  public boolean isValue() {
+    if (myValue == null) {
+      boolean isValue = true;
+      for (Map.Entry<ClassField, Expression> entry : myImplementations.entrySet()) {
+        if (!entry.getKey().isProperty() && !entry.getValue().isValue()) {
+          isValue = false;
+          break;
+        }
+      }
+      myValue = isValue;
+    }
+    return myValue;
+  }
+
+  public void resetValue() {
+    if (Boolean.FALSE.equals(myValue)) {
+      myValue = null;
+    }
   }
 
   @NotNull

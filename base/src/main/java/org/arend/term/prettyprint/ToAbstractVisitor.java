@@ -1001,6 +1001,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     switch (kind) {
       case FUNC: return FunctionKind.FUNC;
       case SFUNC: return FunctionKind.SFUNC;
+      case EFUNC: return FunctionKind.EFUNC;
       case TYPE: return FunctionKind.TYPE;
       case LEMMA: return FunctionKind.LEMMA;
       case INSTANCE: return FunctionKind.INSTANCE;

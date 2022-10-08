@@ -412,6 +412,9 @@ public class DefinitionSerialization implements ArendSerializer {
       case SFUNC:
         kind = DefinitionProtos.Definition.FunctionKind.SFUNC;
         break;
+      case EFUNC:
+        kind = DefinitionProtos.Definition.FunctionKind.EFUNC;
+        break;
       case TYPE:
         kind = DefinitionProtos.Definition.FunctionKind.TYPE;
         break;

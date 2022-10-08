@@ -78,6 +78,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       do {
         n++;
         List<Expression> args = ((ConCallExpression) it).getDefCallArguments();
+        ((ConCallExpression) it).resetValue();
         it = args.get(0).accept(this, null);
         args.set(0, it);
       } while (it instanceof ConCallExpression && ((ConCallExpression) it).getDefinition() == Prelude.SUC);
@@ -89,6 +90,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     int recursiveParam;
     do {
       ConCallExpression conCall = (ConCallExpression) it;
+      conCall.resetValue();
       args = conCall.getDataTypeArguments();
       for (int i = 0; i < args.size(); i++) {
         args.set(i, args.get(i).accept(this, null));
@@ -120,6 +122,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   public DataCallExpression visitDataCall(DataCallExpression expr, Void params) {
     List<Expression> args = expr.getDefCallArguments();
     args.replaceAll(expression -> expression.accept(this, null));
+    expr.resetValue();
     return expr;
   }
 
@@ -139,6 +142,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
       entry.setValue(entry.getValue().accept(this, null));
     }
+    expr.resetValue();
     return expr;
   }
 
@@ -210,6 +214,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
     visitParameters(expr.getParameters());
+    expr.resetValue();
     return expr;
   }
 

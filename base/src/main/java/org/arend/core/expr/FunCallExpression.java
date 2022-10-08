@@ -116,7 +116,7 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
     if (definition == Prelude.COERCE || definition == Prelude.COERCE2) {
       return Objects.requireNonNull(definition.getBody()).isWHNF(myArguments).min(Decision.MAYBE);
     } else {
-      return definition.getBody() != null ? definition.getBody().isWHNF(myArguments) : Decision.YES;
+      return definition.getBody() != null && NormalizeVisitor.doesEvaluate(this) ? definition.getBody().isWHNF(myArguments) : Decision.YES;
     }
   }
 
@@ -141,6 +141,6 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
       Expression stuck2 = myArguments.get(0).getStuckExpression();
       return stuck2 instanceof InferenceReferenceExpression ? stuck2 : stuck;
     }
-    return definition.getBody() != null ? definition.getBody().getStuckExpression(myArguments, this) : null;
+    return definition.getBody() != null && NormalizeVisitor.doesEvaluate(this) ? definition.getBody().getStuckExpression(myArguments, this) : null;
   }
 }

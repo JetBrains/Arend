@@ -63,6 +63,11 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
     myResultSort = sort;
   }
 
+  @Override
+  public boolean isValue() {
+    return myLink.getTypeExpr().isValue() && myCodomain.isValue();
+  }
+
   @NotNull
   @Override
   public SingleDependentLink getParameters() {

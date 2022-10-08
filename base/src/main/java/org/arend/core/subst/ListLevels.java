@@ -29,7 +29,7 @@ public class ListLevels implements Levels {
   public LevelSubstitution makeSubstitution(@NotNull Definition definition) {
     List<? extends LevelVariable> vars = definition.getLevelParameters();
     if (vars == null || vars.size() != myLevels.size()) {
-      throw new IllegalStateException();
+      throw new IllegalStateException(vars == null ? "'" + definition.getName() + "' does not have list levels" : "'" + definition.getName() + "' has " + vars.size() + " levels, but applied to " + myLevels.size());
     }
     SimpleLevelSubstitution result = new SimpleLevelSubstitution();
     for (int i = 0; i < vars.size(); i++) {

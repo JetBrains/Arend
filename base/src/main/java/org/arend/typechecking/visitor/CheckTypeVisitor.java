@@ -1606,14 +1606,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           Concrete.ReferenceExpression baseRefExpr = (Concrete.ReferenceExpression) baseExpr;
           boolean ok = ((ClassDefinition) actualDef).isSubClassOf(expectedClassCall.getDefinition());
           if (ok && (actualDef != expectedClassCall.getDefinition() || baseRefExpr.getPLevels() != null || baseRefExpr.getHLevels() != null)) {
-            boolean fieldsOK = true;
-            for (ClassField implField : expectedClassCall.getImplementedHere().keySet()) {
-              if (((ClassDefinition) actualDef).isImplemented(implField)) {
-                fieldsOK = false;
-                break;
+            boolean sameLevels = ((ClassDefinition) actualDef).getSuperLevels().get(expectedClassCall.getDefinition()) == null;
+            boolean fieldsOK = sameLevels;
+            if (fieldsOK) {
+              for (ClassField implField : expectedClassCall.getImplementedHere().keySet()) {
+                if (((ClassDefinition) actualDef).isImplemented(implField)) {
+                  fieldsOK = false;
+                  break;
+                }
               }
             }
-            actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, typecheckLevels(actualDef, baseRefExpr, expectedClassCall.getLevels((ClassDefinition) actualDef), false), new LinkedHashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
+            actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, typecheckLevels(actualDef, baseRefExpr, sameLevels ? expectedClassCall.getLevels() : null, false), new LinkedHashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
             if (fieldsOK) {
               actualClassCall.copyImplementationsFrom(expectedClassCall);
             }
@@ -3910,9 +3913,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     FunCallExpression funCall = result.expression instanceof FunCallExpression ? (FunCallExpression) result.expression : null;
     CaseExpression caseExpr = funCall != null ? null : result.expression instanceof CaseExpression ? (CaseExpression) result.expression : null;
-    if ((caseExpr == null || !caseExpr.isSCase()) && (funCall == null || funCall.getDefinition().getKind() != CoreFunctionDefinition.Kind.SFUNC)) {
+    if ((caseExpr == null || !caseExpr.isSCase()) && (funCall == null || !(funCall.getDefinition().getKind() == CoreFunctionDefinition.Kind.SFUNC || funCall.getDefinition().getKind() == CoreFunctionDefinition.Kind.EFUNC))) {
       errorReporter.report(new TypecheckingError(
-        funCall != null ? "Expected a function (defined as \\sfunc) applied to arguments" :
+        funCall != null ? "Expected a function (defined as \\sfunc or \\efunc) applied to arguments" :
         caseExpr != null ? "Expected an \\scase expression" :
           "Expected a function or an \\scase expression", expr.getExpression()));
       return null;

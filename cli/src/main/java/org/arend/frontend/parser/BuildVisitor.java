@@ -696,9 +696,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
             ? FunctionKind.TYPE
             : funcKw instanceof FuncKwSFuncContext
               ? FunctionKind.SFUNC
-              : funcKw instanceof FuncKwAxiomContext
-                ? FunctionKind.AXIOM
-                : FunctionKind.FUNC,
+              : funcKw instanceof FuncKwEFuncContext
+                ? FunctionKind.EFUNC
+                : funcKw instanceof FuncKwAxiomContext
+                  ? FunctionKind.AXIOM
+                  : FunctionKind.FUNC,
         referable, visitPlevelParams(topDefId.plevelParams()), visitHlevelParams(topDefId.hlevelParams()), visitLamTeles(ctx.tele(), true), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
       if (coClauses != null) {
         visitCoClauses(coClauses, statements, resultGroup, referable, enclosingClass, body.getCoClauseElements());

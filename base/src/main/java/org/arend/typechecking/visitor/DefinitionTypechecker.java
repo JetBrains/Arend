@@ -1150,7 +1150,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       typedDef.setResultType(expectedType);
-      typedDef.setKind(kind.isSFunc() ? (kind == FunctionKind.LEMMA || kind == FunctionKind.AXIOM ? CoreFunctionDefinition.Kind.LEMMA : kind == FunctionKind.TYPE ? CoreFunctionDefinition.Kind.TYPE : CoreFunctionDefinition.Kind.SFUNC) : kind == FunctionKind.INSTANCE ? CoreFunctionDefinition.Kind.INSTANCE : CoreFunctionDefinition.Kind.FUNC);
+      typedDef.setKind(kind.isSFunc() ? (kind == FunctionKind.LEMMA || kind == FunctionKind.AXIOM ? CoreFunctionDefinition.Kind.LEMMA : kind == FunctionKind.TYPE ? CoreFunctionDefinition.Kind.TYPE : CoreFunctionDefinition.Kind.SFUNC) : kind == FunctionKind.INSTANCE ? CoreFunctionDefinition.Kind.INSTANCE : kind == FunctionKind.EFUNC ? CoreFunctionDefinition.Kind.EFUNC : CoreFunctionDefinition.Kind.FUNC);
 
       calculateTypeClassParameters(def, typedDef);
       calculateParametersTypecheckingOrder(typedDef);
@@ -1316,7 +1316,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private void checkCanBeLemma(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def) {
-    if (!((def.getKind() == FunctionKind.FUNC || def.getKind() == FunctionKind.SFUNC) && isBoxed(typedDef))) return;
+    if (!((def.getKind() == FunctionKind.FUNC || def.getKind() == FunctionKind.SFUNC || def.getKind() == FunctionKind.EFUNC) && isBoxed(typedDef))) return;
     Expression type = typedDef.getResultType().normalize(NormalizationMode.WHNF);
     boolean ok = true;
     if (type instanceof ClassCallExpression) {
@@ -1681,8 +1681,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       throw new IllegalStateException();
     }
 
-    if (typedDef.getKind() == CoreFunctionDefinition.Kind.SFUNC && typedDef.getActualBody() instanceof IntervalElim) {
-      errorReporter.report(new TypecheckingError("\\sfunc cannot be defined by pattern matching on the interval", def));
+    if ((typedDef.getKind() == CoreFunctionDefinition.Kind.SFUNC || typedDef.getKind() == CoreFunctionDefinition.Kind.EFUNC) && typedDef.getActualBody() instanceof IntervalElim) {
+      errorReporter.report(new TypecheckingError("\\sfunc and \\efunc cannot be defined by pattern matching on the interval", def));
       typedDef.setKind(CoreFunctionDefinition.Kind.FUNC);
     }
 
@@ -1792,8 +1792,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      if (kind != FunctionKind.LEMMA && kind != FunctionKind.LEVEL && typedDef.getBody() instanceof DefCallExpression) {
-        Integer level = ((DefCallExpression) typedDef.getBody()).getUseLevel();
+      if (kind != FunctionKind.LEMMA && kind != FunctionKind.AXIOM && kind != FunctionKind.LEVEL && typedDef.getActualBody() instanceof DefCallExpression) {
+        Integer level = ((DefCallExpression) typedDef.getActualBody()).getUseLevel();
         if (level != null) {
           typedDef.addParametersLevel(new ParametersLevel(null, level));
         }
@@ -1826,7 +1826,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
         } else {
           typedDef.setUniverseKind(universeKind);
-          typedDef.setUniverseKind(universeKind.max(new UniverseKindChecker().getUniverseKind(typedDef.getBody())));
+          typedDef.setUniverseKind(universeKind.max(new UniverseKindChecker().getUniverseKind(typedDef.getActualBody())));
         }
       }
     }

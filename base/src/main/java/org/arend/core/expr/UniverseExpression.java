@@ -30,6 +30,11 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
     mySort = mySort.subst(substitution);
   }
 
+  @Override
+  public boolean isValue() {
+    return true;
+  }
+
   @NotNull
   @Override
   public Sort getSort() {

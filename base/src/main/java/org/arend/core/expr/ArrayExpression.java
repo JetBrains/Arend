@@ -29,6 +29,7 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
   private final Expression myElementsType;
   private final List<Expression> myElements;
   private final Expression myTail;
+  private Boolean myValue;
 
   private ArrayExpression(LevelPair levels, Expression elementsType, List<Expression> elements, Expression tail) {
     myLevels = levels;
@@ -50,6 +51,23 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
 
   public static ArrayExpression makeArray(LevelPair levels, Expression elementsType, List<Expression> elements, Expression tail) {
     return (ArrayExpression) make(levels, elementsType, elements, tail);
+  }
+
+  @Override
+  public boolean isValue() {
+    if (myValue == null) {
+      boolean isValue = myTail == null || myTail.isValue();
+      if (isValue) {
+        for (Expression element : myElements) {
+          if (!element.isValue()) {
+            isValue = false;
+            break;
+          }
+        }
+      }
+      myValue = isValue;
+    }
+    return myValue;
   }
 
   public void substLevels(LevelSubstitution substitution) {

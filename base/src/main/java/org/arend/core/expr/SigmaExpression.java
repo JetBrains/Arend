@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 public class SigmaExpression extends Expression implements Type, CoreSigmaExpression {
   private final DependentLink myLink;
   private Sort mySort;
+  private Boolean myValue;
 
   public SigmaExpression(Sort sort, DependentLink link) {
     assert link != null;
@@ -27,6 +28,28 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
 
   public void substSort(LevelSubstitution substitution) {
     mySort = mySort.subst(substitution);
+  }
+
+  @Override
+  public boolean isValue() {
+    if (myValue == null) {
+      boolean isValue = true;
+      for (DependentLink link = myLink; link.hasNext(); link = link.getNext()) {
+        link = link.getNextTyped(null);
+        if (!link.getTypeExpr().isValue()) {
+          isValue = false;
+          break;
+        }
+      }
+      myValue = isValue;
+    }
+    return myValue;
+  }
+
+  public void resetValue() {
+    if (Boolean.FALSE.equals(myValue)) {
+      myValue = null;
+    }
   }
 
   @NotNull

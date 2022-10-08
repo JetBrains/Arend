@@ -253,7 +253,7 @@ public class ConditionsChecking {
     }
 
     if (elimBody == null && definition instanceof Function) {
-      Body body = ((Function) definition).getBody();
+      Body body = definition instanceof FunctionDefinition && ((FunctionDefinition) definition).getKind() == CoreFunctionDefinition.Kind.EFUNC ? null : ((Function) definition).getBody();
       if (body instanceof ElimBody) {
         elimBody = (ElimBody) body;
       }
@@ -266,7 +266,7 @@ public class ConditionsChecking {
       }
 
       Expression evaluatedExpr1;
-      if (elimBody != null && (definition == null || definition instanceof FunctionDefinition && (((FunctionDefinition) definition).getKind() == CoreFunctionDefinition.Kind.SFUNC || ((FunctionDefinition) definition).getKind() == CoreFunctionDefinition.Kind.TYPE) || expr instanceof GoalErrorExpression)) {
+      if (elimBody != null && (definition == null || definition instanceof FunctionDefinition && (((FunctionDefinition) definition).getKind() == CoreFunctionDefinition.Kind.SFUNC || ((FunctionDefinition) definition).getKind() == CoreFunctionDefinition.Kind.TYPE || ((FunctionDefinition) definition).getKind() == CoreFunctionDefinition.Kind.EFUNC) || expr instanceof GoalErrorExpression)) {
         evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimBody, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY, null, null);
         if (evaluatedExpr1 == null && definition != null) {
           evaluatedExpr1 = definition.getDefCall(definition.makeIdLevels(), pair.proj1);

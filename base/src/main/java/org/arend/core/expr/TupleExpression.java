@@ -12,10 +12,19 @@ import java.util.List;
 public class TupleExpression extends Expression implements CoreTupleExpression {
   private final List<Expression> myFields;
   private final SigmaExpression myType;
+  private Boolean myValue;
 
   public TupleExpression(List<Expression> fields, SigmaExpression type) {
     myFields = fields;
     myType = type;
+  }
+
+  @Override
+  public boolean isValue() {
+    if (myValue == null) {
+      myValue = areValues(myFields);
+    }
+    return myValue;
   }
 
   @NotNull

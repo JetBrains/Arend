@@ -65,6 +65,11 @@ public class TypeConstructorExpression extends Expression implements CoreTypeCon
   }
 
   @Override
+  public boolean isValue() {
+    return myArgument != null && myArgument.isValue();
+  }
+
+  @Override
   public @NotNull FunctionDefinition getDefinition() {
     return myDefinition;
   }

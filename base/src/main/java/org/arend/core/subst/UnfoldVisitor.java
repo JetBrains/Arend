@@ -5,6 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.variable.Variable;
 
@@ -48,22 +49,24 @@ public class UnfoldVisitor extends SubstVisitor {
   @Override
   public Expression visitFunCall(FunCallExpression expr, Void params) {
     if (expr.getDefinition().getActualBody() instanceof Expression && myVariables.contains(expr.getDefinition())) {
-      if (myUnfolded != null) {
-        myUnfolded.add(expr.getDefinition());
-      }
-      List<Expression> newArgs = new ArrayList<>(expr.getDefCallArguments().size());
-      for (Expression argument : expr.getDefCallArguments()) {
-        newArgs.add(argument.accept(this, null));
-      }
+      FunCallExpression funCall = expr.getDefinition().getKind() == CoreFunctionDefinition.Kind.EFUNC ? NormalizeVisitor.INSTANCE.evaluateEFuncArgs(expr) : expr;
+      if (NormalizeVisitor.doesEvaluate(funCall) || expr.getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+        if (myUnfolded != null) {
+          myUnfolded.add(expr.getDefinition());
+        }
+        List<Expression> newArgs = new ArrayList<>(funCall.getDefCallArguments().size());
+        for (Expression argument : funCall.getDefCallArguments()) {
+          newArgs.add(argument.accept(this, null));
+        }
 
-      ExprSubstitution substitution = getExprSubstitution();
-      substitution.add(expr.getDefinition().getParameters(), newArgs);
-      Expression result = ((Expression) expr.getDefinition().getActualBody()).accept(new SubstVisitor(substitution, expr.getLevelSubstitution().subst(getLevelSubstitution())), null);
-      DependentLink.Helper.freeSubsts(expr.getDefinition().getParameters(), substitution);
-      return result;
-    } else {
-      return super.visitFunCall(expr, params);
+        ExprSubstitution substitution = getExprSubstitution();
+        substitution.add(expr.getDefinition().getParameters(), newArgs);
+        Expression result = ((Expression) expr.getDefinition().getActualBody()).accept(new SubstVisitor(substitution, expr.getLevelSubstitution().subst(getLevelSubstitution())), null);
+        DependentLink.Helper.freeSubsts(expr.getDefinition().getParameters(), substitution);
+        return result;
+      }
     }
+    return super.visitFunCall(expr, params);
   }
 
   @Override
