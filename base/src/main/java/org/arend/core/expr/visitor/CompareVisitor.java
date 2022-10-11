@@ -1536,4 +1536,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   public Boolean visitPEval(PEvalExpression expr, Expression other, Expression type) {
     return other.isInstance(PEvalExpression.class);
   }
+
+  @Override
+  public Boolean visitBox(BoxExpression expr, Expression other, Expression type) {
+    return other.isBoxed();
+  }
 }

@@ -20,6 +20,7 @@ public interface CoreExpressionVisitor<P, R> {
   R visitProj(@NotNull CoreProjExpression expr, P params);
   R visitNew(@NotNull CoreNewExpression expr, P params);
   R visitPEval(@NotNull CorePEvalExpression expr, P params);
+  R visitBox(@NotNull CoreBoxExpression expr, P params);
   R visitLet(@NotNull CoreLetExpression expr, P params);
   R visitCase(@NotNull CoreCaseExpression expr, P params);
   R visitInteger(@NotNull CoreIntegerExpression expr, P params);

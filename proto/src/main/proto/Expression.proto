@@ -30,6 +30,7 @@ message Expression {
         SmallInteger small_integer = 18;
         BigInteger big_integer = 19;
         PEval pEval = 20;
+        Box box = 29;
         TypeConstructor type_constructor = 27;
         TypeDestructor type_destructor = 28;
         Array array = 23;
@@ -127,6 +128,9 @@ message Expression {
     }
     message PEval {
         Expression expression = 1;
+    }
+    message Box {
+      Expression expression = 1;
     }
     message TypeConstructor {
         int32 fun_ref = 1;

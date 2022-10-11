@@ -154,6 +154,11 @@ public class SearchConcreteVisitor<P,R> implements ConcreteExpressionVisitor<P,R
   }
 
   @Override
+  public R visitBox(Concrete.BoxExpression expr, P params) {
+    return expr.getExpression().accept(this, params);
+  }
+
+  @Override
   public R visitProj(Concrete.ProjExpression expr, P params) {
     return expr.expression.accept(this, params);
   }

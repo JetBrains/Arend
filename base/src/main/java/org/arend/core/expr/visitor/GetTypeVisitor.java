@@ -477,4 +477,9 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     args.add(normExpr);
     return FunCallExpression.make(Prelude.PATH_INFIX, new LevelPair(sort.getPLevel(), sort.getHLevel()), args);
   }
+
+  @Override
+  public Expression visitBox(BoxExpression expr, Void params) {
+    return expr.getExpression().accept(this, null);
+  }
 }

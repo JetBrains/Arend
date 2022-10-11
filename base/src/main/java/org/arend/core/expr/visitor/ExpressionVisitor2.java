@@ -21,6 +21,7 @@ public interface ExpressionVisitor2<P1,P2,R> {
   R visitProj(ProjExpression expr, P1 param1, P2 param2);
   R visitNew(NewExpression expr, P1 param1, P2 param2);
   R visitPEval(PEvalExpression expr, P1 param1, P2 param2);
+  R visitBox(BoxExpression expr, P1 param1, P2 param2);
   R visitLet(LetExpression expr, P1 param1, P2 param2);
   R visitCase(CaseExpression expr, P1 param1, P2 param2);
   R visitOfType(OfTypeExpression expr, P1 param1, P2 param2);

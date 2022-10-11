@@ -17,8 +17,6 @@ import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
-import org.arend.ext.core.level.CoreLevel;
-import org.arend.ext.core.level.CoreLevels;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
@@ -194,10 +192,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * @param marker          a marker that will be used in errors if the equations produced by this comparison won't be satisfied
    * @param allowEquations  true if this method should produce equations.
    *                        If this parameter is false and there are some equations that should be generated, the method will return false immediately
+   * @param useTypes        true if the eta equivalence for records should be applied to types of the compared expressions if possible.
    * @param normalize       true if expressions and their subexpressions should be normalized during comparison
    * @return                true if expressions are equal modulo equations on inference variables; false otherwise
    */
-  boolean compare(@NotNull UncheckedExpression expr1, @NotNull UncheckedExpression expr2, @NotNull CMP cmp, @Nullable ConcreteSourceNode marker, boolean allowEquations, boolean normalize);
+  boolean compare(@NotNull UncheckedExpression expr1, @NotNull UncheckedExpression expr2, @NotNull CMP cmp, @Nullable ConcreteSourceNode marker, boolean allowEquations, boolean normalize, boolean useTypes);
 
   /**
    * Invokes the specified action with the specified error reporter.

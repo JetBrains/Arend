@@ -266,6 +266,11 @@ public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> im
   }
 
   @Override
+  public Concrete.Expression visitBox(Concrete.BoxExpression expr, Void params) {
+    return new Concrete.BoxExpression(myData != null ? myData : expr.getData(), expr.getExpression().accept(this, null));
+  }
+
+  @Override
   public Concrete.Expression visitProj(Concrete.ProjExpression expr, Void ignored) {
     return new Concrete.ProjExpression(myData != null ? myData : expr.getData(), expr.expression.accept(this, null), expr.getField());
   }

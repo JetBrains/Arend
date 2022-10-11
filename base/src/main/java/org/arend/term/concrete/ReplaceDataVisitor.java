@@ -153,6 +153,11 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
   }
 
   @Override
+  public Concrete.Expression visitBox(Concrete.BoxExpression expr, Void params) {
+    return new Concrete.BoxExpression(myData, expr.getExpression().accept(this, null));
+  }
+
+  @Override
   public Concrete.Expression visitProj(Concrete.ProjExpression expr, Void params) {
     return new Concrete.ProjExpression(myData, expr.expression.accept(this, null), expr.getField());
   }

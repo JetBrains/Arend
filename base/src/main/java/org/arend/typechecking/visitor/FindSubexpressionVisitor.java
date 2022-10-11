@@ -136,6 +136,15 @@ public class FindSubexpressionVisitor extends SearchVisitor<Void> {
   }
 
   @Override
+  public Boolean visitBox(BoxExpression expr, Void params) {
+    switch (myFunction.apply(expr)) {
+      case STOP: return true;
+      case SKIP: return false;
+      default: return super.visitBox(expr, null);
+    }
+  }
+
+  @Override
   public Boolean visitUniverse(UniverseExpression expression, Void param) {
     switch (myFunction.apply(expression)) {
       case STOP: return true;

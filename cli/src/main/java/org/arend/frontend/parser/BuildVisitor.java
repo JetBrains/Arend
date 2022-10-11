@@ -1841,14 +1841,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
 
     if (prefixCtx != null) {
+      TerminalNode box = prefixCtx.BOX();
       TerminalNode peval = prefixCtx.PEVAL();
-      if (peval != null) {
+      TerminalNode eval = prefixCtx.EVAL();
+      if (box != null) {
+        expr = new Concrete.BoxExpression(tokenPosition(box.getSymbol()), expr);
+      } else if (peval != null) {
         expr = new Concrete.EvalExpression(tokenPosition(peval.getSymbol()), true, expr);
-      } else {
-        TerminalNode eval = prefixCtx.EVAL();
-        if (eval != null) {
-          expr = new Concrete.EvalExpression(tokenPosition(eval.getSymbol()), false, expr);
-        }
+      } else if (eval != null) {
+        expr = new Concrete.EvalExpression(tokenPosition(eval.getSymbol()), false, expr);
       }
 
       TerminalNode newNode = prefixCtx.NEW();

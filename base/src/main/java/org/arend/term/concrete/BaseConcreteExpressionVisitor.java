@@ -83,9 +83,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
   @Override
   public Concrete.Expression visitTuple(Concrete.TupleExpression expr, P params) {
-    for (int i = 0; i < expr.getFields().size(); i++) {
-      expr.getFields().set(i, expr.getFields().get(i).accept(this, params));
-    }
+    expr.getFields().replaceAll(expression -> expression.accept(this, params));
     return expr;
   }
 
@@ -168,6 +166,12 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
   @Override
   public Concrete.Expression visitEval(Concrete.EvalExpression expr, P params) {
+    expr.setExpression(expr.getExpression().accept(this, params));
+    return expr;
+  }
+
+  @Override
+  public Concrete.Expression visitBox(Concrete.BoxExpression expr, P params) {
     expr.setExpression(expr.getExpression().accept(this, params));
     return expr;
   }

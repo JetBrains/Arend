@@ -292,4 +292,9 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
   public Result visitPEval(PEvalExpression expr, Boolean good) {
     return expr.getExpression().accept(this, good);
   }
+
+  @Override
+  public Result visitBox(BoxExpression expr, Boolean good) {
+    return expr.getExpression().accept(this, good);
+  }
 }

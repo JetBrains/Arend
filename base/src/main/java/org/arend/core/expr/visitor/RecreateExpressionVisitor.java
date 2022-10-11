@@ -193,6 +193,15 @@ public class RecreateExpressionVisitor extends SubstVisitor {
   }
 
   @Override
+  public Expression visitBox(BoxExpression expr, Void params) {
+    Expression result = UncheckedExpressionImpl.extract(myMapper.map(expr));
+    if (result != null) {
+      return result;
+    }
+    return super.visitBox(expr, params);
+  }
+
+  @Override
   public Expression visitLet(LetExpression expr, Void params) {
     Expression result = UncheckedExpressionImpl.extract(myMapper.map(expr));
     if (result != null) {

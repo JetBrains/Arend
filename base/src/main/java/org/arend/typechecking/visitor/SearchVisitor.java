@@ -241,6 +241,11 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
   }
 
   @Override
+  public Boolean visitBox(BoxExpression expr, P params) {
+    return expr.getExpression().accept(this, params);
+  }
+
+  @Override
   public Boolean visitUniverse(UniverseExpression expression, P param) {
     return false;
   }

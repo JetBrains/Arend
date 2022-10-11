@@ -38,7 +38,7 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
             }
             newArguments.add(myFactory.arg(argument.expression.accept(this, currentExtendedArgument.getExpression()), argument.isExplicit()));
         }
-        return (Concrete.Expression) myFactory.app(expr.getFunction().accept(this, bigExpr.getFunction()), newArguments);
+        return myFactory.app(expr.getFunction().accept(this, bigExpr.getFunction()), newArguments);
     }
 
     @Override
@@ -267,6 +267,11 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
     @Override
     public Concrete.Expression visitEval(Concrete.EvalExpression expr, Concrete.SourceNode params) {
         return new Concrete.EvalExpression(expr.getData(), expr.isPEval(), expr.getExpression().accept(this, ((Concrete.EvalExpression)params).getExpression()));
+    }
+
+    @Override
+    public Concrete.Expression visitBox(Concrete.BoxExpression expr, Concrete.SourceNode params) {
+        return new Concrete.BoxExpression(expr.getData(), expr.getExpression().accept(this, ((Concrete.BoxExpression)params).getExpression()));
     }
 
     @Override

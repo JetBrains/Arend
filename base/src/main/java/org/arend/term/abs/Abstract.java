@@ -141,7 +141,7 @@ public final class Abstract {
 
   // Expression
 
-  public enum EvalKind { EVAL, PEVAL }
+  public enum EvalKind { EVAL, PEVAL, BOX }
 
   public static final int INFINITY_LEVEL = -33;
 

@@ -360,4 +360,9 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   public Expression visitPEval(PEvalExpression expr, Void params) {
     return new PEvalExpression(expr.getExpression().accept(this, null));
   }
+
+  @Override
+  public Expression visitBox(BoxExpression expr, Void params) {
+    return new BoxExpression(expr.getExpression().accept(this, null));
+  }
 }

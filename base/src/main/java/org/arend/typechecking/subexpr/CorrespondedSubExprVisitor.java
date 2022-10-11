@@ -425,6 +425,13 @@ public class CorrespondedSubExprVisitor implements
   }
 
   @Override
+  public @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression> visitBox(Concrete.BoxExpression expr, @NotNull Expression coreExpr) {
+    if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
+    BoxExpression coreBox = coreExpr.cast(BoxExpression.class);
+    return coreBox == null ? null : expr.getExpression().accept(this, coreBox.getExpression());
+  }
+
+  @Override
   public Pair<Expression, Concrete.Expression> visitClassExt(Concrete.ClassExtExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     var coreClassExpr = coreExpr.cast(ClassCallExpression.class);

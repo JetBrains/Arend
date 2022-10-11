@@ -127,6 +127,11 @@ public class MinimizeLevelVisitor extends BaseExpressionVisitor<Void, Type> {
   }
 
   @Override
+  public Type visitBox(BoxExpression expr, Void params) {
+    return null;
+  }
+
+  @Override
   public Type visitLet(LetExpression expr, Void params) {
     return expr.getResult().accept(this, null);
   }

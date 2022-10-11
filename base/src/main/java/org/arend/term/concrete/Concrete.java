@@ -1468,6 +1468,29 @@ public final class Concrete {
     }
   }
 
+  public static class BoxExpression extends Expression {
+    public static final byte PREC = -7;
+    private Expression myExpression;
+
+    public BoxExpression(Object data, Expression expression) {
+      super(data);
+      myExpression = expression;
+    }
+
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    public void setExpression(Expression expression) {
+      myExpression = expression;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitBox(this, params);
+    }
+  }
+
   public static class FunctionClause extends Clause implements ConcreteClause {
     public Expression expression;
 

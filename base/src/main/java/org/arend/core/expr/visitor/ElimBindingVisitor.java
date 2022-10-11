@@ -359,6 +359,12 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
   }
 
   @Override
+  public Expression visitBox(BoxExpression expr, Void params) {
+    Expression result = expr.getExpression().accept(this, null);
+    return result != null ? new BoxExpression(result) : null;
+  }
+
+  @Override
   public LetExpression visitLet(LetExpression letExpression, Void params) {
     throw new IllegalStateException();
     /*

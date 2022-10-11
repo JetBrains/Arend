@@ -869,6 +869,15 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
+  public Void visitBox(Concrete.BoxExpression expr, Precedence prec) {
+    if (prec.priority > Concrete.BoxExpression.PREC) myBuilder.append('(');
+    myBuilder.append("\\box ");
+    expr.getExpression().accept(this, new Precedence(Concrete.Expression.PREC));
+    if (prec.priority > Concrete.BoxExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
+  @Override
   public Void visitProj(Concrete.ProjExpression expr, Precedence prec) {
     if (prec.priority > Concrete.ProjExpression.PREC) myBuilder.append('(');
     expr.getExpression().accept(this, new Precedence(Concrete.ProjExpression.PREC));

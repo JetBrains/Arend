@@ -134,6 +134,12 @@ public class SizeExpressionVisitor extends VoidExpressionVisitor<Void> {
   }
 
   @Override
+  public Void visitBox(BoxExpression expr, Void params) {
+    mySize++;
+    return super.visitBox(expr, params);
+  }
+
+  @Override
   public Void visitLet(LetExpression expr, Void params) {
     mySize++;
     return super.visitLet(expr, params);

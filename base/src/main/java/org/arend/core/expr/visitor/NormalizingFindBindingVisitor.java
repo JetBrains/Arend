@@ -158,11 +158,6 @@ public class NormalizingFindBindingVisitor extends SearchVisitor<Void> {
   }
 
   @Override
-  public Boolean visitPEval(PEvalExpression expr, Void params) {
-    return expr.getExpression().accept(this, null);
-  }
-
-  @Override
   public Boolean visitLet(LetExpression letExpression, Void params) {
     throw new IllegalStateException();
   }

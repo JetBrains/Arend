@@ -162,6 +162,12 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
   }
 
   @Override
+  public Void visitBox(BoxExpression expr, P params) {
+    expr.getExpression().accept(this, params);
+    return null;
+  }
+
+  @Override
   public Void visitLet(LetExpression expr, P params) {
     for (HaveClause clause : expr.getClauses()) {
       clause.getExpression().accept(this, params);
