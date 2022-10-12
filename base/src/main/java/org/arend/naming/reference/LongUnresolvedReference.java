@@ -22,7 +22,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
   }
 
   public static UnresolvedReference make(Object data, @NotNull List<String> path) {
-    return path.size() == 1 ? new NamedUnresolvedReference(data, path.get(0)) : new LongUnresolvedReference(data, path);
+    return path.isEmpty() ? null : path.size() == 1 ? new NamedUnresolvedReference(data, path.get(0)) : new LongUnresolvedReference(data, path);
   }
 
   public List<String> getPath() {
@@ -82,7 +82,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       if (scope == null) {
         if (!onlyTry) {
           Object data = getData();
-          resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), i + 1, myPath.get(i + 1));
+          resolved = new ErrorReference(data, make(data, myPath.subList(0, i)), i, myPath.get(i));
           if (resolvedRefs != null) {
             resolvedRefs.set(i, resolved);
           }
@@ -95,7 +95,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     resolved = scope.resolveName(name, kind);
     if (resolved == null && !onlyTry) {
       Object data = getData();
-      resolved = new ErrorReference(data, myPath.size() == 1 ? null : make(data, myPath.subList(0, myPath.size() - 1)), myPath.size() - 1, name);
+      resolved = new ErrorReference(data, make(data, myPath.subList(0, myPath.size() - 1)), myPath.size() - 1, name);
     }
     if (resolvedRefs != null && resolved != null) {
       resolvedRefs.add(resolved);
@@ -177,7 +177,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       if (wasResolved) {
         i++;
       }
-      resolved = new ErrorReference(data, i == 0 ? null : make(data, myPath.subList(0, i)), i, myPath.get(i));
+      resolved = new ErrorReference(data, make(data, myPath.subList(0, i)), i, myPath.get(i));
 
       if (resolvedRefs != null) {
         if (wasResolved) {
@@ -238,7 +238,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       scope = scope.resolveNamespace(myPath.get(i), true);
       if (scope == null) {
         Object data = getData();
-        resolved = new ErrorReference(data, i == 0 ? null : make(data, myPath.subList(0, i)), i, myPath.get(i));
+        resolved = new ErrorReference(data, make(data, myPath.subList(0, i)), i, myPath.get(i));
         return null;
       }
     }
