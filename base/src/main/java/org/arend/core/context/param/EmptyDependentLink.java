@@ -59,6 +59,11 @@ public class EmptyDependentLink implements SingleDependentLink {
   }
 
   @Override
+  public boolean isProperty() {
+    return false;
+  }
+
+  @Override
   public boolean hasNext() {
     return false;
   }

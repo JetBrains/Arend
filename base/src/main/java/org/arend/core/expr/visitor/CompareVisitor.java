@@ -1396,7 +1396,6 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution, boolean skipBoxed) {
-    assert !skipBoxed || list1.isEmpty() || list2.isEmpty() || link instanceof PropertyTypedDependentLink || link instanceof UntypedDependentLink;
     if (list1.size() != list2.size()) {
       return false;
     }
