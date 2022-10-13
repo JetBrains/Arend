@@ -123,7 +123,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       if (def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.FUNC_COCLAUSE) {
         ((Concrete.CoClauseFunctionDefinition) def).setNumberOfExternalParameters(((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() + 1);
       }
-      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass, def)));
+      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass, def), false));
       if (def.getBody().getEliminatedReferences().isEmpty()) {
         for (Concrete.FunctionClause clause : def.getBody().getClauses()) {
           clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter, null));
@@ -141,7 +141,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     // Add this parameter
     Referable thisParameter = checkDefinition(def);
     if (thisParameter != null) {
-      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass, def)));
+      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass, def), false));
       if (def.getEliminatedReferences() != null && def.getEliminatedReferences().isEmpty()) {
         for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
           clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter, null));
@@ -199,7 +199,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       } else {
         previousType = classField.getParameters().isEmpty() ? fieldType : null;
         classFieldChecker.visitParameters(classField.getParameters(), null);
-        classField.getParameters().add(0, new Concrete.TelescopeParameter(classField.getParameters().isEmpty() ? fieldType.getData() : classField.getParameters().get(0).getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(fieldType.getData(), def.getData(), null)));
+        classField.getParameters().add(0, new Concrete.TelescopeParameter(classField.getParameters().isEmpty() ? fieldType.getData() : classField.getParameters().get(0).getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(fieldType.getData(), def.getData(), null), false));
         classField.setResultType(fieldType.accept(classFieldChecker, null));
         if (classField.getResultTypeLevel() != null) {
           classField.setResultTypeLevel(classField.getResultTypeLevel().accept(classFieldChecker, null));
@@ -217,13 +217,13 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         Concrete.Expression impl = ((Concrete.ClassFieldImpl) element).implementation;
         Referable thisParameter = new HiddenLocalReferable("this");
         classFieldChecker.setThisParameter(thisParameter);
-        ((Concrete.ClassFieldImpl) element).implementation = new Concrete.LamExpression(impl.getData(), Collections.singletonList(new Concrete.TelescopeParameter(impl.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(impl.getData(), def.getData(), null))), impl.accept(classFieldChecker, null));
+        ((Concrete.ClassFieldImpl) element).implementation = new Concrete.LamExpression(impl.getData(), Collections.singletonList(new Concrete.TelescopeParameter(impl.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(impl.getData(), def.getData(), null), false)), impl.accept(classFieldChecker, null));
       } else if (element instanceof Concrete.OverriddenField) {
         Concrete.OverriddenField field = (Concrete.OverriddenField) element;
         Referable thisParameter = new HiddenLocalReferable("this");
         classFieldChecker.setThisParameter(thisParameter);
         classFieldChecker.visitParameters(field.getParameters(), null);
-        field.getParameters().add(0, new Concrete.TelescopeParameter(field.getResultType().getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(field.getResultType().getData(), def.getData(), null)));
+        field.getParameters().add(0, new Concrete.TelescopeParameter(field.getResultType().getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(field.getResultType().getData(), def.getData(), null), false));
         field.setResultType(field.getResultType().accept(classFieldChecker, null));
         if (field.getResultTypeLevel() != null) {
           field.setResultTypeLevel(field.getResultTypeLevel().accept(classFieldChecker, null));
@@ -364,7 +364,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         if (ref == null && pattern.getAsReferable() != null) ref = pattern.getAsReferable().referable;
         if (ref == null) ref = new LocalReferable("p" + j++);
         Concrete.Expression type = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).type : pattern.getAsReferable() != null ? pattern.getAsReferable().type : null;
-        newParams.add(type != null ? new Concrete.TelescopeParameter(pattern.getData(), pattern.isExplicit(), Collections.singletonList(ref), type.accept(this, null)) : new Concrete.NameParameter(pattern.getData(), pattern.isExplicit(), ref));
+        newParams.add(type != null ? new Concrete.TelescopeParameter(pattern.getData(), pattern.isExplicit(), Collections.singletonList(ref), type.accept(this, null), false) : new Concrete.NameParameter(pattern.getData(), pattern.isExplicit(), ref));
         pattern.setExplicit(true);
         clauses.add(new Concrete.LetClause(pattern, null, new Concrete.ReferenceExpression(pattern.getData(), ref)));
       }
@@ -399,7 +399,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         if (ref == null && pattern.getAsReferable() != null) ref = pattern.getAsReferable().referable;
         if (ref == null) ref = new LocalReferable("p" + j++);
         Concrete.Expression type = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).type : pattern.getAsReferable() != null ? pattern.getAsReferable().type : null;
-        newParams.add(type != null ? new Concrete.TelescopeParameter(pattern.getData(), pattern.isExplicit(), Collections.singletonList(ref), type.accept(this, null)) : new Concrete.NameParameter(pattern.getData(), pattern.isExplicit(), ref));
+        newParams.add(type != null ? new Concrete.TelescopeParameter(pattern.getData(), pattern.isExplicit(), Collections.singletonList(ref), type.accept(this, null), false) : new Concrete.NameParameter(pattern.getData(), pattern.isExplicit(), ref));
         caseArgs.add(new Concrete.CaseArgument(new Concrete.ReferenceExpression(pattern.getData(), ref), null));
         pattern.setExplicit(true);
         newPatterns.add(pattern);

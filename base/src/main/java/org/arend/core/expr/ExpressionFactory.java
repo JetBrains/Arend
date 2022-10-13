@@ -32,12 +32,12 @@ public class ExpressionFactory {
     return new TypedDependentLink(explicit, var, type, EmptyDependentLink.getInstance());
   }
 
-  public static SigmaTypedDependentLink sigmaParameter(boolean isProperty, String var, Type type) {
-    return new SigmaTypedDependentLink(var, type, EmptyDependentLink.getInstance(), isProperty);
+  public static TypedDependentLink sigmaParameter(boolean isProperty, String var, Type type) {
+    return isProperty ? new PropertyTypedDependentLink(var, type, EmptyDependentLink.getInstance()) : new TypedDependentLink(true, var, type, EmptyDependentLink.getInstance());
   }
 
   public static DependentLink sigmaParameter(boolean isProperty, List<String> names, Type type) {
-    DependentLink link = new SigmaTypedDependentLink(names.get(names.size() - 1), type, EmptyDependentLink.getInstance(), isProperty);
+    DependentLink link = isProperty ? new PropertyTypedDependentLink(names.get(names.size() - 1), type, EmptyDependentLink.getInstance()) : new TypedDependentLink(true, names.get(names.size() - 1), type, EmptyDependentLink.getInstance());
     for (int i = names.size() - 2; i >= 0; i--) {
       link = new UntypedDependentLink(names.get(i), link);
     }
@@ -77,7 +77,7 @@ public class ExpressionFactory {
   }
 
   public static SigmaExpression divModType(Type type) {
-    return new SigmaExpression(Sort.SET0, new SigmaTypedDependentLink( null, Nat(), new SigmaTypedDependentLink(null, type, EmptyDependentLink.getInstance(), false), false));
+    return new SigmaExpression(Sort.SET0, new TypedDependentLink(true, null, Nat(), new TypedDependentLink(true, null, type, EmptyDependentLink.getInstance())));
   }
 
   public static SigmaExpression finDivModType(Expression expr) {

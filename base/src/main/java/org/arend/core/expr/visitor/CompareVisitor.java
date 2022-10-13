@@ -1214,9 +1214,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     for (int i = 0; i < list1.size() && i < list2.size(); ++i) {
       DependentLink param1 = list1.get(i);
       DependentLink param2 = list2.get(i);
-      boolean differentBoxing = param1 instanceof SigmaTypedDependentLink && param2 instanceof SigmaTypedDependentLink &&
-              ((SigmaTypedDependentLink) param1).isProperty() != ((SigmaTypedDependentLink) param2).isProperty();
-      if (differentBoxing || !compare(param1.getTypeExpr(), param2.getTypeExpr(), Type.OMEGA, false)) {
+      if (param1.isProperty() != param2.isProperty() || !compare(param1.getTypeExpr(), param2.getTypeExpr(), Type.OMEGA, false)) {
         for (int j = 0; j < i; j++) {
           mySubstitution.remove(list2.get(j));
         }
@@ -1398,7 +1396,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution, boolean skipBoxed) {
-    assert !skipBoxed || list1.isEmpty() || list2.isEmpty() || link instanceof SigmaTypedDependentLink || link instanceof UntypedDependentLink;
+    assert !skipBoxed || list1.isEmpty() || list2.isEmpty() || link instanceof PropertyTypedDependentLink || link instanceof UntypedDependentLink;
     if (list1.size() != list2.size()) {
       return false;
     }
@@ -1411,7 +1409,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       
       boolean oldVarsValue = myOnlySolveVars;
       try {
-        myOnlySolveVars |= skipBoxed && ((SigmaTypedDependentLink) link.getNextTyped(null)).isProperty();
+        myOnlySolveVars |= skipBoxed && link.getNextTyped(null).isProperty();
         if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
           myCMP = origCMP;
           return false;

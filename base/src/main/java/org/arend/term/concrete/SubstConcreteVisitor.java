@@ -106,20 +106,16 @@ public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> im
   @SuppressWarnings("unchecked")
   protected <T extends Concrete.Parameter> T visitParameter(T parameter) {
     var data = myData != null ? myData : parameter.getData();
-    if (Concrete.SigmaTelescopeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.SigmaTelescopeParameter(data, new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()), parameter.getSigmaFieldKind());
-    } else if (Concrete.SigmaTypeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.SigmaTypeParameter(data, nullableMap(parameter.getType()), parameter.getSigmaFieldKind());
-    } else if (Concrete.NameParameter.class.equals(parameter.getClass())) {
+    if (Concrete.NameParameter.class.equals(parameter.getClass())) {
       return (T) new Concrete.NameParameter(data, parameter.isExplicit(), ((Concrete.NameParameter) parameter).getReferable());
     } else if (Concrete.TypeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.TypeParameter(data, parameter.isExplicit(), nullableMap(parameter.getType()));
+      return (T) new Concrete.TypeParameter(data, parameter.isExplicit(), nullableMap(parameter.getType()), parameter.isProperty());
     } else if (Concrete.DefinitionTypeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.DefinitionTypeParameter(data, parameter.isExplicit(), parameter.isStrict(), nullableMap(parameter.getType()));
+      return (T) new Concrete.DefinitionTypeParameter(data, parameter.isExplicit(), parameter.isStrict(), nullableMap(parameter.getType()), parameter.isProperty());
     } else if (Concrete.TelescopeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.TelescopeParameter(data, parameter.isExplicit(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()));
+      return (T) new Concrete.TelescopeParameter(data, parameter.isExplicit(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()), parameter.isProperty());
     } else if (Concrete.DefinitionTelescopeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.DefinitionTelescopeParameter(data, parameter.isExplicit(), parameter.isStrict(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()));
+      return (T) new Concrete.DefinitionTelescopeParameter(data, parameter.isExplicit(), parameter.isStrict(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()), parameter.isProperty());
     } else {
       throw new IllegalArgumentException("Unhandled parameter: " + parameter.getClass());
     }

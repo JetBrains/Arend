@@ -5,7 +5,6 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.variable.Variable;
@@ -19,7 +18,6 @@ import org.arend.term.concrete.Concrete.BinOpSequenceElem;
 import org.arend.term.concrete.Concrete.Expression;
 import org.arend.term.concrete.Concrete.ReferenceExpression;
 import org.arend.util.StringEscapeUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -324,13 +322,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }
     } else if (parameter instanceof Concrete.TelescopeParameter) {
       myBuilder.append(parameter.isExplicit() ? '(' : '{');
-      if (parameter instanceof Concrete.SigmaTelescopeParameter) {
-        SigmaFieldKind kind = parameter.getSigmaFieldKind();
-        myBuilder.append(getKindRepresentation(kind));
-      }
-      if (parameter.isStrict()) {
-        myBuilder.append("\\strict ");
-      }
+      appendAttrs(parameter);
       for (Referable referable : parameter.getReferableList()) {
         myBuilder.append(referable == null ? "_" : referable.textRepresentation()).append(' ');
       }
@@ -346,24 +338,17 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       Concrete.Expression type = parameter.getType();
       if (type != null) {
         if (parameter.isExplicit()) {
-          if (parameter.isStrict()) {
-            myBuilder.append("(\\strict ");
+          if (parameter.isStrict() || parameter.isProperty()) {
+            myBuilder.append("(");
           }
-          if (parameter instanceof Concrete.SigmaTypeParameter && parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
-            myBuilder.append("(").append(getKindRepresentation(parameter.getSigmaFieldKind()));
-          }
+          appendAttrs(parameter);
           type.accept(this, new Precedence((byte) (ReferenceExpression.PREC + 1)));
-          if (parameter.isStrict()) {
-            myBuilder.append(")");
-          }
-          if (parameter instanceof Concrete.SigmaTypeParameter && parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
+          if (parameter.isStrict() || parameter.isProperty()) {
             myBuilder.append(")");
           }
         } else {
           myBuilder.append('{');
-          if (parameter.isStrict()) {
-            myBuilder.append("\\strict ");
-          }
+          appendAttrs(parameter);
           type.accept(this, new Precedence(Concrete.Expression.PREC));
           printClosingBrace();
         }
@@ -371,9 +356,13 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
   }
 
-  @NotNull
-  private static String getKindRepresentation(SigmaFieldKind kind) {
-    return kind == SigmaFieldKind.PROPERTY ? "\\property " : "";
+  private void appendAttrs(Concrete.Parameter parameter) {
+    if (parameter.isStrict()) {
+      myBuilder.append("\\strict ");
+    }
+    if (parameter.isProperty()) {
+      myBuilder.append("\\property ");
+    }
   }
 
   @Override

@@ -23,7 +23,7 @@ classFieldOrImpl : classFieldDef    # classField
                  ;
 
 fieldMod  : '\\field'     # fieldField
-          | '\\property'  # fieldProperty
+          | PROPERTY      # fieldProperty
           ;
 
 classStat : '|' classFieldOrImpl                        # classFieldOrImplStat
@@ -144,7 +144,7 @@ letKw : HAVE | LET | HAVES | LETS;
 expr  : appPrefix? appExpr (implementStatements argument*)? withBody?     # app
       | <assoc=right> expr '->' expr                                      # arr
       | '\\Pi' tele+ '->' expr                                            # pi
-      | '\\Sigma' sigmaTele*                                              # sigma
+      | '\\Sigma' tele*                                                   # sigma
       | lamExpr                                                           # lam
       | letExpr                                                           # let
       | caseExpr                                                          # case
@@ -153,7 +153,7 @@ expr  : appPrefix? appExpr (implementStatements argument*)? withBody?     # app
 expr2 : appPrefix? appExpr (implementStatements argument*)?               # app2
       | <assoc=right> expr2 '->' expr2                                    # arr2
       | '\\Pi' tele+ '->' expr2                                           # pi2
-      | '\\Sigma' sigmaTele*                                              # sigma2
+      | '\\Sigma' tele*                                                   # sigma2
       | '\\lam' lamParam+ ('=>' expr2?)?                                  # lam2
       | letKw '|'? letClause ('|' letClause)* ('\\in' expr2?)?            # let2
       | caseExpr                                                          # case2
@@ -287,25 +287,19 @@ universeAtom : TRUNCATED_UNIVERSE       # uniTruncatedUniverse
              | SET                      # uniSetUniverse
              ;
 
-sigmaTele : literal                       # sigmaTeleLiteral
-          | universeAtom                  # sigmaTeleUniverse
-          | '(' sigmaMod? typedExpr ')'   # sigmaEntry
-          ;
-
-sigmaMod : '\\property' # sigmaProperty
-         ;
-
 tele : literal                          # teleLiteral
      | universeAtom                     # teleUniverse
      | '(' typedExpr ')'                # explicit
      | '{' typedExpr '}'                # implicit
      ;
 
-typedExpr : STRICT? expr (':' expr)? ;
+paramAttr : (STRICT | PROPERTY)?;
 
-nameTele : idOrUnknown                                  # nameId
-         | '(' idOrUnknown+ ':' expr ')'                # nameExplicit
-         | '{' idOrUnknown (idOrUnknown* ':' expr)? '}' # nameImplicit
+typedExpr : paramAttr expr (':' expr)? ;
+
+nameTele : idOrUnknown                                            # nameId
+         | '(' paramAttr idOrUnknown+ ':' expr ')'                # nameExplicit
+         | '{' paramAttr idOrUnknown (idOrUnknown* ':' expr)? '}' # nameImplicit
          ;
 
 idOrUnknown : ID            # iuId
@@ -314,8 +308,8 @@ idOrUnknown : ID            # iuId
 
 nameTypedExpr : expr ':' expr ;
 
-fieldTele : '(' (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldTele
-          | '{' (CLASSIFYING | COERCE)? ID+ ':' expr '}'        # implicitFieldTele
+fieldTele : '(' PROPERTY? (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldTele
+          | '{' PROPERTY? (CLASSIFYING | COERCE)? ID+ ':' expr '}'        # implicitFieldTele
           ;
 
 LET : '\\let';
@@ -334,6 +328,7 @@ USING : '\\using';
 TRUNCATED : '\\truncated';
 CLASSIFYING : '\\classifying';
 NO_CLASSIFYING : '\\noclassifying';
+PROPERTY : '\\property';
 NEW : '\\new';
 COERCE : '\\coerce';
 NUMBER : [0-9]+;

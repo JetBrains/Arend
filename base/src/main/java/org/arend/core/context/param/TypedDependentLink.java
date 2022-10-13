@@ -35,6 +35,11 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
+  public boolean isProperty() {
+    return false;
+  }
+
+  @Override
   public boolean isExplicit() {
     return myExplicit;
   }

@@ -8,7 +8,6 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.SigmaTypedDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
@@ -985,7 +984,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   public Expression visitProj(ProjExpression expr, NormalizationMode mode) {
     Expression holderType = expr.getExpression().getType().accept(this, NormalizationMode.WHNF);
     if (holderType instanceof SigmaExpression) {
-      if (((SigmaTypedDependentLink) DependentLink.Helper.get(((SigmaExpression) holderType).getParameters(), expr.getField()).getNextTyped(null)).isProperty()) {
+      if (DependentLink.Helper.get(((SigmaExpression) holderType).getParameters(), expr.getField()).getNextTyped(null).isProperty()) {
         return expr;
       }
     }

@@ -86,8 +86,8 @@ public interface ConcreteFactory {
   @NotNull ConcreteParameter param(boolean explicit, @Nullable ArendRef ref);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull ConcreteExpression type);
-  @NotNull ConcreteParameter sigmaParam(@NotNull SigmaFieldKind kind, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
-  @NotNull ConcreteParameter sigmaParam(@NotNull SigmaFieldKind kind, @NotNull ConcreteExpression type);
+  @NotNull ConcreteParameter param(boolean explicit, boolean isProperty, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
+  @NotNull ConcreteParameter param(boolean explicit, boolean isProperty, @NotNull ConcreteExpression type);
 
   default @NotNull ConcreteParameter param(@Nullable ArendRef ref) {
     return param(true, ref);

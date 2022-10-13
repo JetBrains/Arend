@@ -25,6 +25,11 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
+  public boolean isProperty() {
+    return myNext.isProperty();
+  }
+
+  @Override
   public Type getType() {
     return myNext.getType();
   }

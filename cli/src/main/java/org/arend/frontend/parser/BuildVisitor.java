@@ -5,7 +5,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.Precedence;
@@ -1031,7 +1030,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   private Concrete.PiExpression visitArr(ParserRuleContext ctx, Concrete.Expression domain, Concrete.Expression codomain) {
     List<Concrete.TypeParameter> arguments = new ArrayList<>(1);
-    arguments.add(new Concrete.TypeParameter(domain.getData(), true, domain));
+    arguments.add(new Concrete.TypeParameter(domain.getData(), true, domain, false));
     return new Concrete.PiExpression(tokenPosition(ctx.getToken(ARROW, 0).getSymbol()), arguments, codomain);
   }
 
@@ -1073,8 +1072,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private void checkStrict(TypedExprContext ctx) {
-    if (ctx.STRICT() != null) {
-      myErrorReporter.report(new ParserError(tokenPosition(ctx.STRICT().getSymbol()), "\\strict is not allowed here"));
+    if (ctx.paramAttr().STRICT() != null) {
+      myErrorReporter.report(new ParserError(tokenPosition(ctx.paramAttr().STRICT().getSymbol()), "\\strict is not allowed here"));
     }
   }
 
@@ -1087,11 +1086,12 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       List<ExprContext> exprs = typedExpr.expr();
       if (exprs.size() == 2) {
         getVarList(exprs.get(0), vars);
-        if (isDefinition && typedExpr.STRICT() != null) {
-          parameters.add(new Concrete.DefinitionTelescopeParameter(tokenPosition(tele.start), explicit, true, vars, visitExpr(exprs.get(1))));
+        ParamAttrContext paramAttr = typedExpr.paramAttr();
+        if (isDefinition && paramAttr.STRICT() != null) {
+          parameters.add(new Concrete.DefinitionTelescopeParameter(tokenPosition(tele.start), explicit, true, vars, visitExpr(exprs.get(1)), paramAttr.PROPERTY() != null));
         } else {
           checkStrict(typedExpr);
-          parameters.add(new Concrete.TelescopeParameter(tokenPosition(tele.start), explicit, vars, visitExpr(exprs.get(1))));
+          parameters.add(new Concrete.TelescopeParameter(tokenPosition(tele.start), explicit, vars, visitExpr(exprs.get(1)), paramAttr.PROPERTY() != null));
         }
       } else {
         getVarList(exprs.get(0), vars);
@@ -1157,7 +1157,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         for (IdOrUnknownContext id : ids) {
           vars.add(visitIdOrUnknown(id));
         }
-        parameters.add(new Concrete.TelescopeParameter(tokenPosition(tele.start), explicit, vars, visitExpr(type)));
+        parameters.add(new Concrete.TelescopeParameter(tokenPosition(tele.start), explicit, vars, visitExpr(type), (tele instanceof NameExplicitContext ? ((NameExplicitContext) tele).paramAttr() : ((NameImplicitContext) tele).paramAttr()).PROPERTY() != null));
       }
     }
     return parameters;
@@ -1637,11 +1637,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           typedExpr = ((ExplicitContext) tele).typedExpr();
         } else
         if (tele instanceof TeleLiteralContext) {
-          parameters.add(new Concrete.TypeParameter(true, visitExpr(((TeleLiteralContext) tele).literal())));
+          parameters.add(new Concrete.TypeParameter(true, visitExpr(((TeleLiteralContext) tele).literal()), false));
           continue;
         } else
         if (tele instanceof TeleUniverseContext) {
-          parameters.add(new Concrete.TypeParameter(true, visitExpr(((TeleUniverseContext) tele).universeAtom())));
+          parameters.add(new Concrete.TypeParameter(true, visitExpr(((TeleUniverseContext) tele).universeAtom()), false));
           continue;
         } else {
           throw new IllegalStateException();
@@ -1651,64 +1651,27 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       }
 
       List<ExprContext> exprs = typedExpr.expr();
+      ParamAttrContext paramAttr = typedExpr.paramAttr();
       if (exprs.size() == 2) {
         List<ParsedLocalReferable> vars = new ArrayList<>();
         getVarList(exprs.get(0), vars);
-        if (isDefinition && typedExpr.STRICT() != null) {
-          parameters.add(new Concrete.DefinitionTelescopeParameter(tokenPosition(tele.getStart()), explicit, true, vars, visitExpr(exprs.get(1))));
+        if (isDefinition && paramAttr.STRICT() != null) {
+          parameters.add(new Concrete.DefinitionTelescopeParameter(tokenPosition(tele.getStart()), explicit, true, vars, visitExpr(exprs.get(1)), paramAttr.PROPERTY() != null));
         } else {
           checkStrict(typedExpr);
-          parameters.add(new Concrete.TelescopeParameter(tokenPosition(tele.getStart()), explicit, vars, visitExpr(exprs.get(1))));
+          parameters.add(new Concrete.TelescopeParameter(tokenPosition(tele.getStart()), explicit, vars, visitExpr(exprs.get(1)), paramAttr.PROPERTY() != null));
         }
       } else {
-        if (isDefinition && typedExpr.STRICT() != null) {
-          parameters.add(new Concrete.DefinitionTypeParameter(explicit, true, visitExpr(exprs.get(0))));
+        if (isDefinition && paramAttr.STRICT() != null) {
+          parameters.add(new Concrete.DefinitionTypeParameter(explicit, true, visitExpr(exprs.get(0)), paramAttr.PROPERTY() != null));
         } else {
           checkStrict(typedExpr);
-          parameters.add(new Concrete.TypeParameter(explicit, visitExpr(exprs.get(0))));
+          parameters.add(new Concrete.TypeParameter(explicit, visitExpr(exprs.get(0)), paramAttr.PROPERTY() != null));
         }
       }
     }
     return parameters;
   }
-
-  private List<Concrete.TypeParameter> visitSigmaTeles(List<SigmaTeleContext> teles) {
-    List<Concrete.TypeParameter> parameters = new ArrayList<>(teles.size());
-    for (SigmaTeleContext tele : teles) {
-      if (tele instanceof SigmaTeleLiteralContext) {
-        parameters.add(new Concrete.SigmaTypeParameter(visitExpr(((SigmaTeleLiteralContext) tele).literal()), SigmaFieldKind.ANY));
-      } else if (tele instanceof SigmaTeleUniverseContext) {
-        parameters.add(new Concrete.SigmaTypeParameter(visitExpr(((SigmaTeleUniverseContext) tele).universeAtom()), SigmaFieldKind.ANY));
-      } else if (tele instanceof SigmaEntryContext) {
-        TypedExprContext typedExprContext = ((SigmaEntryContext) tele).typedExpr();
-        SigmaModContext modContext = ((SigmaEntryContext) tele).sigmaMod();
-        SigmaFieldKind kind;
-        if (modContext instanceof SigmaPropertyContext) {
-          kind = visitSigmaProperty((SigmaPropertyContext) modContext);
-        } else {
-          kind = SigmaFieldKind.ANY;
-        }
-        List<ExprContext> exprs = typedExprContext.expr();
-        checkStrict(typedExprContext);
-        if (exprs.size() == 2) {
-          List<ParsedLocalReferable> vars = new ArrayList<>();
-          getVarList(exprs.get(0), vars);
-          parameters.add(new Concrete.SigmaTelescopeParameter(tokenPosition(tele.getStart()), vars, visitExpr(exprs.get(1)), kind));
-        } else {
-          parameters.add(new Concrete.SigmaTypeParameter(visitExpr(exprs.get(0)), kind));
-        }
-      }
-    }
-    return parameters;
-  }
-
-
-
-  @Override
-  public SigmaFieldKind visitSigmaProperty(SigmaPropertyContext ctx) {
-    return SigmaFieldKind.PROPERTY;
-  }
-
 
   private void visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassElement> fields) {
     for (FieldTeleContext tele : teles) {
@@ -1717,18 +1680,21 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       ExprContext exprCtx;
       boolean forced;
       boolean coerced;
+      boolean isProperty;
       if (tele instanceof ExplicitFieldTeleContext) {
         explicit = true;
         vars = ((ExplicitFieldTeleContext) tele).ID();
         exprCtx = ((ExplicitFieldTeleContext) tele).expr();
         forced = ((ExplicitFieldTeleContext) tele).CLASSIFYING() != null;
         coerced = ((ExplicitFieldTeleContext) tele).COERCE() != null;
+        isProperty = ((ExplicitFieldTeleContext) tele).PROPERTY() != null;
       } else if (tele instanceof ImplicitFieldTeleContext) {
         explicit = false;
         vars = ((ImplicitFieldTeleContext) tele).ID();
         exprCtx = ((ImplicitFieldTeleContext) tele).expr();
         forced = ((ImplicitFieldTeleContext) tele).CLASSIFYING() != null;
         coerced = ((ImplicitFieldTeleContext) tele).COERCE() != null;
+        isProperty = ((ImplicitFieldTeleContext) tele).PROPERTY() != null;
       } else {
         throw new IllegalStateException();
       }
@@ -1736,7 +1702,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
         ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, null, Precedence.DEFAULT, false, explicit, true, classDef.getData());
-        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), type, null, coerced);
+        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, isProperty ? ClassFieldKind.PROPERTY : ClassFieldKind.ANY, new ArrayList<>(), type, null, coerced);
         fieldRef.setDefinition(field);
         fields.add(field);
         if (forced || explicit) {
@@ -1787,12 +1753,12 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.SigmaExpression visitSigma(SigmaContext ctx) {
-    return new Concrete.SigmaExpression(tokenPosition(ctx.start), visitSigmaTeles(ctx.sigmaTele()));
+    return new Concrete.SigmaExpression(tokenPosition(ctx.start), visitTeles(ctx.tele(), false));
   }
 
   @Override
   public Concrete.SigmaExpression visitSigma2(Sigma2Context ctx) {
-    return new Concrete.SigmaExpression(tokenPosition(ctx.start), visitSigmaTeles(ctx.sigmaTele()));
+    return new Concrete.SigmaExpression(tokenPosition(ctx.start), visitTeles(ctx.tele(), false));
   }
 
   @Override
@@ -1878,9 +1844,12 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
 
     Referable referable = LongUnresolvedReference.make(position, names);
-    return fixity == null
-      ? new Concrete.ReferenceExpression(position, referable)
-      : new Concrete.FixityReferenceExpression(position, referable, fixity);
+    assert referable != null;
+    if (fixity == null) {
+      return new Concrete.ReferenceExpression(position, referable);
+    } else {
+      return new Concrete.FixityReferenceExpression(position, referable, fixity);
+    }
   }
 
   @Override

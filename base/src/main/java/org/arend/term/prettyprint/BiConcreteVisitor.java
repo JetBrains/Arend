@@ -1,7 +1,6 @@
 package org.arend.term.prettyprint;
 
 import org.arend.ext.concrete.expr.ConcreteArgument;
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
@@ -53,17 +52,9 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
         } else {
             Concrete.Expression processedType = ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type);
             if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
-                if (parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
-                    return myFactory.sigmaParam(parameter.getSigmaFieldKind(), parameter.getRefList(), processedType);
-                } else {
-                    return myFactory.param(parameter.isExplicit(), parameter.getRefList(), processedType);
-                }
+                return myFactory.param(parameter.isExplicit(), parameter.isProperty(), parameter.getRefList(), processedType);
             } else {
-                if (parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
-                    return myFactory.sigmaParam(parameter.getSigmaFieldKind(), List.of(), processedType);
-                } else {
-                    return myFactory.param(parameter.isExplicit(), processedType);
-                }
+                return myFactory.param(parameter.isExplicit(), parameter.isProperty(), processedType);
             }
         }
     }
@@ -100,10 +91,7 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
         for (var existingParameter : parameters) {
             if (existingParameter instanceof Concrete.TelescopeParameter) {
                 for (Referable innerParameter : existingParameter.getReferableList()) {
-                  Concrete.TelescopeParameter param = existingParameter instanceof Concrete.SigmaTelescopeParameter ?
-                          new Concrete.SigmaTelescopeParameter(null, List.of(innerParameter), existingParameter.getType(), existingParameter.getSigmaFieldKind()) :
-                          new Concrete.TelescopeParameter(null, existingParameter.isExplicit(), List.of(innerParameter), existingParameter.getType());
-                  flattenedParameters.add(param);
+                  flattenedParameters.add(new Concrete.TelescopeParameter(null, existingParameter.isExplicit(), List.of(innerParameter), existingParameter.getType(), existingParameter.isProperty()));
                 }
             } else {
                 flattenedParameters.add(existingParameter);

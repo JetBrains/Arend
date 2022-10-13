@@ -4,7 +4,6 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.error.CountingErrorReporter;
 import org.arend.error.DummyErrorReporter;
 import org.arend.error.ParsingError;
-import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
@@ -229,7 +228,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
             if (forced || explicit) {
               setClassifyingField(classDef, (TCFieldReferable) referable, parameter, forced);
             }
-            elements.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), parameter.getType(), null, absParameter.isCoerce()));
+            elements.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, explicit, absParameter.getClassFieldKind(), new ArrayList<>(), parameter.getType(), null, absParameter.isCoerce()));
           } else {
             myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Incorrect field parameter", referable));
           }
@@ -403,17 +402,15 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     }
 
     boolean isStrict = parameter.isStrict();
+    boolean isProperty = parameter.isProperty();
     if (!isNamed && (referableList.isEmpty() || referableList.size() == 1 && referableList.get(0) == null)) {
       if (isDefinition && isStrict) {
-        return new Concrete.DefinitionTypeParameter(parameter.getData(), parameter.isExplicit(), true, cType);
+        return new Concrete.DefinitionTypeParameter(parameter.getData(), parameter.isExplicit(), true, cType, isProperty);
       } else {
         if (isStrict) {
           myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "\\strict is not allowed here", parameter.getData()));
         }
-        if (parameter instanceof Abstract.SigmaParameter) {
-          return new Concrete.SigmaTypeParameter(parameter.getData(), cType, ((Abstract.SigmaParameter) parameter).getFieldKind());
-        }
-        return new Concrete.TypeParameter(parameter.getData(), parameter.isExplicit(), cType);
+        return new Concrete.TypeParameter(parameter.getData(), parameter.isExplicit(), cType, isProperty);
       }
     } else {
       List<Referable> dataReferableList = new ArrayList<>(referableList.size());
@@ -421,15 +418,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         dataReferableList.add(referable instanceof LocatedReferable ? myReferableConverter.toDataLocatedReferable((LocatedReferable) referable) : DataLocalReferable.make(referable));
       }
       if (isDefinition && isStrict) {
-        return new Concrete.DefinitionTelescopeParameter(parameter.getData(), parameter.isExplicit(), true, dataReferableList, cType);
+        return new Concrete.DefinitionTelescopeParameter(parameter.getData(), parameter.isExplicit(), true, dataReferableList, cType, isProperty);
       } else {
         if (isStrict) {
           myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "\\strict is not allowed here", parameter.getData()));
         }
-        if (parameter instanceof Abstract.SigmaParameter) {
-          return new Concrete.SigmaTelescopeParameter(parameter.getData(), dataReferableList, cType, ((Abstract.SigmaParameter) parameter).getFieldKind());
-        }
-        return new Concrete.TelescopeParameter(parameter.getData(), parameter.isExplicit(), dataReferableList, cType);
+        return new Concrete.TelescopeParameter(parameter.getData(), parameter.isExplicit(), dataReferableList, cType, isProperty);
       }
     }
   }

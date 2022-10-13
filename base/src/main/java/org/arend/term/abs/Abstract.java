@@ -1,6 +1,5 @@
 package org.arend.term.abs;
 
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
@@ -47,19 +46,22 @@ public final class Abstract {
   public interface Parameter extends LamParameter, org.arend.naming.reference.Parameter {
     @Nullable Expression getType();
     boolean isStrict();
-  }
-
-  public interface SigmaParameter extends Parameter {
-    SigmaFieldKind getFieldKind();
+    boolean isProperty();
   }
 
   public interface FieldParameter extends Parameter {
     boolean isClassifying();
     boolean isCoerce();
+    ClassFieldKind getClassFieldKind();
 
     @Override
     default boolean isLocal() {
       return false;
+    }
+
+    @Override
+    default boolean isProperty() {
+      return getClassFieldKind() == ClassFieldKind.PROPERTY;
     }
   }
 

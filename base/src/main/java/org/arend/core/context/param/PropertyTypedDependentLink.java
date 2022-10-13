@@ -4,22 +4,20 @@ import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.subst.SubstVisitor;
 
-public class SigmaTypedDependentLink extends TypedDependentLink {
-  private final boolean myProperty;
-
-  public SigmaTypedDependentLink(String name, Type type, DependentLink next, boolean isProperty) {
+public class PropertyTypedDependentLink extends TypedDependentLink {
+  public PropertyTypedDependentLink(String name, Type type, DependentLink next) {
     super(true, name, type, false, next);
-    myProperty = isProperty;
   }
 
+  @Override
   public boolean isProperty() {
-    return myProperty;
+    return true;
   }
 
   @Override
   public DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
     if (size > 0) {
-      TypedDependentLink result = new SigmaTypedDependentLink(getName(), getType().subst(substVisitor), EmptyDependentLink.getInstance(), myProperty);
+      TypedDependentLink result = new PropertyTypedDependentLink(getName(), getType().subst(substVisitor), EmptyDependentLink.getInstance());
       if (updateSubst) {
         substVisitor.getExprSubstitution().addSubst(this, new ReferenceExpression(result));
       } else {

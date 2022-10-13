@@ -89,8 +89,8 @@ public final class Concrete {
       return false;
     }
 
-    public SigmaFieldKind getSigmaFieldKind() {
-      return SigmaFieldKind.ANY;
+    public boolean isProperty() {
+      return false;
     }
 
     @Override
@@ -155,15 +155,22 @@ public final class Concrete {
   }
 
   public static class TypeParameter extends Parameter {
+    private final boolean myProperty;
     public Expression type;
 
-    public TypeParameter(Object data, boolean explicit, Expression type) {
+    public TypeParameter(Object data, boolean explicit, Expression type, boolean isProperty) {
       super(data, explicit);
       this.type = type;
+      myProperty = isProperty;
     }
 
-    public TypeParameter(boolean explicit, Expression type) {
-      this(type.getData(), explicit, type);
+    public TypeParameter(boolean explicit, Expression type, boolean isProperty) {
+      this(type.getData(), explicit, type, isProperty);
+    }
+
+    @Override
+    public boolean isProperty() {
+      return myProperty;
     }
 
     @Override
@@ -185,15 +192,15 @@ public final class Concrete {
 
     @Override
     public TypeParameter copy(Object data) {
-      return new TypeParameter(data, isExplicit(), type);
+      return new TypeParameter(data, isExplicit(), type, isProperty());
     }
   }
 
   public static class TelescopeParameter extends TypeParameter {
     private List<? extends Referable> myReferableList;
 
-    public TelescopeParameter(Object data, boolean explicit, List<? extends Referable> referableList, Expression type) {
-      super(data, explicit, type);
+    public TelescopeParameter(Object data, boolean explicit, List<? extends Referable> referableList, Expression type, boolean isProperty) {
+      super(data, explicit, type, isProperty);
       myReferableList = referableList;
     }
 
@@ -214,7 +221,7 @@ public final class Concrete {
 
     @Override
     public TelescopeParameter copy(Object data) {
-      return new TelescopeParameter(data, isExplicit(), myReferableList, type);
+      return new TelescopeParameter(data, isExplicit(), myReferableList, type, isProperty());
     }
   }
 
@@ -234,13 +241,13 @@ public final class Concrete {
   public static class DefinitionTypeParameter extends TelescopeParameter {
     private final boolean myStrict;
 
-    public DefinitionTypeParameter(Object data, boolean explicit, boolean isStrict, Expression type) {
-      super(data, explicit, Collections.singletonList(null), type);
+    public DefinitionTypeParameter(Object data, boolean explicit, boolean isStrict, Expression type, boolean isProperty) {
+      super(data, explicit, Collections.singletonList(null), type, isProperty);
       myStrict = isStrict;
     }
 
-    public DefinitionTypeParameter(boolean explicit, boolean isStrict, Expression type) {
-      super(type.getData(), explicit, Collections.singletonList(null), type);
+    public DefinitionTypeParameter(boolean explicit, boolean isStrict, Expression type, boolean isProperty) {
+      super(type.getData(), explicit, Collections.singletonList(null), type, isProperty);
       myStrict = isStrict;
     }
 
@@ -251,15 +258,15 @@ public final class Concrete {
 
     @Override
     public DefinitionTypeParameter copy(Object data) {
-      return new DefinitionTypeParameter(data, isExplicit(), isStrict(), type);
+      return new DefinitionTypeParameter(data, isExplicit(), isStrict(), type, isProperty());
     }
   }
 
   public static class DefinitionTelescopeParameter extends TelescopeParameter {
     private final boolean myStrict;
 
-    public DefinitionTelescopeParameter(Object data, boolean explicit, boolean strict, List<? extends Referable> referableList, Expression type) {
-      super(data, explicit, referableList, type);
+    public DefinitionTelescopeParameter(Object data, boolean explicit, boolean strict, List<? extends Referable> referableList, Expression type, boolean isProperty) {
+      super(data, explicit, referableList, type, isProperty);
       myStrict = strict;
     }
 
@@ -270,50 +277,7 @@ public final class Concrete {
 
     @Override
     public TelescopeParameter copy(Object data) {
-      return new DefinitionTelescopeParameter(data, isExplicit(), isStrict(), getReferableList(), type);
-    }
-  }
-
-  public static class SigmaTypeParameter extends TypeParameter implements SourceNode {
-    private final SigmaFieldKind mySigmaFieldKind;
-
-    public SigmaTypeParameter(Object data, Expression type, @NotNull SigmaFieldKind sigmaFieldKind) {
-      super(data, true, type);
-      mySigmaFieldKind = sigmaFieldKind;
-    }
-
-    public SigmaTypeParameter(Expression type, @NotNull SigmaFieldKind sigmaFieldKind) {
-      super(true, type);
-      mySigmaFieldKind = sigmaFieldKind;
-    }
-
-    @Override
-    public SigmaFieldKind getSigmaFieldKind() {
-      return mySigmaFieldKind;
-    }
-
-    @Override
-    public SigmaTypeParameter copy(Object data) {
-      return new SigmaTypeParameter(data, type, mySigmaFieldKind);
-    }
-  }
-
-  public static class SigmaTelescopeParameter extends TelescopeParameter implements SourceNode {
-    private final SigmaFieldKind mySigmaFieldKind;
-
-    public SigmaTelescopeParameter(Object data, @NotNull List<? extends Referable> referableList, Expression type, @NotNull SigmaFieldKind sigmaFieldKind) {
-      super(data, true, referableList, type);
-      mySigmaFieldKind = sigmaFieldKind;
-    }
-
-    @Override
-    public SigmaFieldKind getSigmaFieldKind() {
-      return mySigmaFieldKind;
-    }
-
-    @Override
-    public SigmaTelescopeParameter copy(Object data) {
-      return new SigmaTelescopeParameter(data, getReferableList(), type, mySigmaFieldKind);
+      return new DefinitionTelescopeParameter(data, isExplicit(), isStrict(), getReferableList(), type, isProperty());
     }
   }
 
@@ -1742,7 +1706,7 @@ public final class Concrete {
           if (fieldParams.size() > 1 || !fieldParams.isEmpty() && !isDesugarized) {
             type = new PiExpression(field.getParameters().get(0).getData(), isDesugarized ? fieldParams.subList(1, fieldParams.size()) : fieldParams, type);
           }
-          parameters.add(new TypeParameter(field.getData(), field.getData().isExplicitField(), type));
+          parameters.add(new TypeParameter(field.getData(), field.getData().isExplicitField(), type, field.getKind() == ClassFieldKind.PROPERTY));
         }
       }
       return parameters;

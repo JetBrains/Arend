@@ -148,7 +148,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(domain instanceof Concrete.Expression && codomain instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.PiExpression(myData, Collections.singletonList(new Concrete.TypeParameter(myData, true, (Concrete.Expression) domain)), (Concrete.Expression) codomain);
+    return new Concrete.PiExpression(myData, Collections.singletonList(new Concrete.TypeParameter(myData, true, (Concrete.Expression) domain, false)), (Concrete.Expression) codomain);
   }
 
   @NotNull
@@ -693,52 +693,36 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public Concrete.Parameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
+  public Concrete.TypeParameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
+    return param(explicit, false, refs, type);
+  }
+
+  @Override
+  public @NotNull Concrete.TypeParameter param(boolean explicit, @NotNull ConcreteExpression type) {
+    return param(explicit, false, type);
+  }
+
+  @Override
+  public @NotNull Concrete.TypeParameter param(boolean explicit, boolean isProperty, @NotNull ConcreteExpression type) {
+    if (!(type instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.TypeParameter(myData, explicit, (Concrete.Expression) type, isProperty);
+  }
+
+  @Override
+  public @NotNull Concrete.TypeParameter param(boolean explicit, boolean isProperty, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
     if (!(type instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     if (refs.isEmpty()) {
-      return new Concrete.TypeParameter(myData, explicit, (Concrete.Expression) type);
+      return new Concrete.TypeParameter(myData, explicit, (Concrete.Expression) type, false);
     }
     List<Referable> cRefs = new ArrayList<>(refs.size());
     for (ArendRef ref : refs) {
       cRefs.add(makeLocalRef(ref));
     }
-    return new Concrete.TelescopeParameter(myData, explicit, cRefs, (Concrete.Expression) type);
-  }
-
-  @Override
-  public @NotNull Concrete.Parameter sigmaParam(@NotNull SigmaFieldKind kind, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
-    if (kind == SigmaFieldKind.ANY) {
-      return param(true, refs, type);
-    }
-    if (!(type instanceof Concrete.Expression)) {
-      throw new IllegalArgumentException();
-    }
-    if (refs.isEmpty()) {
-      return new Concrete.SigmaTypeParameter(myData, (Concrete.Expression) type, kind);
-    }
-    List<Referable> cRefs = new ArrayList<>(refs.size());
-    for (ArendRef ref : refs) {
-      cRefs.add(makeLocalRef(ref));
-    }
-    return new Concrete.SigmaTelescopeParameter(myData, cRefs, (Concrete.Expression) type, kind);
-  }
-
-  @Override
-  public @NotNull ConcreteParameter sigmaParam(@NotNull SigmaFieldKind kind, @NotNull ConcreteExpression type) {
-    if (!(type instanceof Concrete.Expression)) {
-      throw new IllegalArgumentException();
-    }
-    return new Concrete.SigmaTypeParameter(myData, (Concrete.Expression) type, kind);
-  }
-
-  @Override
-  public @NotNull Concrete.Parameter param(boolean explicit, @NotNull ConcreteExpression type) {
-    if (!(type instanceof Concrete.Expression)) {
-      throw new IllegalArgumentException();
-    }
-    return new Concrete.TypeParameter(myData, explicit, (Concrete.Expression) type);
+    return new Concrete.TelescopeParameter(myData, explicit, cRefs, (Concrete.Expression) type, false);
   }
 
   @NotNull

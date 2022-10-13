@@ -5,7 +5,6 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.SigmaTypedDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
@@ -24,7 +23,6 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -575,7 +573,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (varsCounter < refList.size()) {
         parameters = new ArrayList<>(parameters.subList(0, j));
         Concrete.Parameter param = parameters.get(j);
-        parameters.add(new Concrete.TelescopeParameter(param.getData(), param.isExplicit(), param.getReferableList().subList(0, refList.size() - varsCounter), param.getType()));
+        parameters.add(new Concrete.TelescopeParameter(param.getData(), param.isExplicit(), param.getReferableList().subList(0, refList.size() - varsCounter), param.getType(), false));
         break;
       }
       varsCounter -= refList.size();
@@ -607,10 +605,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return body.isInstance(ClassCallExpression.class) ? result : etaReduce(result);
   }
 
-  private SigmaFieldKind getSigmaFieldKind(boolean isProperty) {
-    return isProperty ? SigmaFieldKind.PROPERTY : SigmaFieldKind.ANY;
-  }
-
   private void visitDependentLink(DependentLink parameters, List<? super Concrete.TypeParameter> args, boolean isNamed) {
     visitDependentLink(parameters, args, isNamed, false);
   }
@@ -626,22 +620,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
       Referable referable = makeLocalReference(link, freeVars, genName || !link.isExplicit());
       if (referable == null && !isNamed && referableList.isEmpty()) {
-        Concrete.TypeParameter arg;
-        if (link instanceof SigmaTypedDependentLink) {
-          arg = cSigmaTypeArg(getSigmaFieldKind(((SigmaTypedDependentLink) link).isProperty()), link.getTypeExpr().accept(this, null));
-        } else {
-          arg = cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null));
-        }
-        args.add(arg);
+        args.add(new Concrete.TypeParameter(link.isExplicit(), link.getTypeExpr().accept(this, null), link.isProperty()));
       } else {
         referableList.add(referable);
-        Concrete.TelescopeParameter arg;
-        if (link instanceof SigmaTypedDependentLink) {
-          arg = cSigmaTele(getSigmaFieldKind(((SigmaTypedDependentLink) link).isProperty()), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null));
-        } else {
-          arg = cTele(link, link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null));
-        }
-        args.add(arg);
+        args.add(new Concrete.TelescopeParameter(null, link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null), link.isProperty()));
         referableList.clear();
       }
     }

@@ -100,7 +100,7 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
           if (params != null) {
             Pair<Concrete.Parameter, Referable> param = Concrete.getParameter(params.parameters, data.proj2);
             if (param != null) {
-              newParams.add(new Concrete.TelescopeParameter(definition.getData(), param.proj1.isExplicit(), Collections.singletonList(param.proj2), param.proj1.getType() == null ? null : param.proj1.getType()));
+              newParams.add(new Concrete.TelescopeParameter(definition.getData(), param.proj1.isExplicit(), Collections.singletonList(param.proj2), param.proj1.getType() == null ? null : param.proj1.getType(), param.proj1.isProperty()));
             }
           }
         }
@@ -114,9 +114,9 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
               i++;
               referables.addAll(newParams.get(i).getReferableList());
             }
-            newNewParams.add(new Concrete.TelescopeParameter(definition.getData(), param.isExplicit(), referables, param.getType() == null ? null : param.getType().accept(new ReplaceDataVisitor(definition.getData()), null)));
+            newNewParams.add(new Concrete.TelescopeParameter(definition.getData(), param.isExplicit(), referables, param.getType() == null ? null : param.getType().accept(new ReplaceDataVisitor(definition.getData()), null), param.isProperty()));
           } else {
-            newNewParams.add(new Concrete.TelescopeParameter(definition.getData(), param.isExplicit(), param.getReferableList(), param.getType() == null ? null : param.getType().accept(new ReplaceDataVisitor(definition.getData()), null)));
+            newNewParams.add(new Concrete.TelescopeParameter(definition.getData(), param.isExplicit(), param.getReferableList(), param.getType() == null ? null : param.getType().accept(new ReplaceDataVisitor(definition.getData()), null), param.isProperty()));
           }
         }
         newParams = newNewParams;
@@ -189,7 +189,7 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
           for (int i = 0; i < pair.proj1.size(); i++) {
             Concrete.Parameter param = pair.proj1.get(i);
             List<Referable> newRefs = new ArrayList<>(param.getRefList().size());
-            pair.proj1.set(i, new Concrete.TelescopeParameter(param.getData(), param.isExplicit(), newRefs, param.getType() == null ? null : param.getType().accept(visitor, null)));
+            pair.proj1.set(i, new Concrete.TelescopeParameter(param.getData(), param.isExplicit(), newRefs, param.getType() == null ? null : param.getType().accept(visitor, null), param.isProperty()));
             for (Referable referable : param.getRefList()) {
               FieldReferableImpl newRef = new FieldReferableImpl(Precedence.DEFAULT, referable.getRefName(), param.isExplicit(), true, true, definition.getData());
               newRefs.add(newRef);

@@ -18,7 +18,6 @@ import org.arend.core.subst.*;
 import org.arend.error.*;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.FreeBindingsModifier;
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
 import org.arend.ext.concrete.ConcreteParameter;
 import org.arend.ext.concrete.pattern.ConcretePattern;
@@ -2586,9 +2585,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (result == null) return false;
 
     Sort sort = result.getSortOfType();
-    SigmaFieldKind kind = arg.getSigmaFieldKind();
-    boolean isProp = kind == SigmaFieldKind.PROPERTY && Sort.compare(sort, Sort.PROP, CMP.LE, myEquations, arg);
-    if (!isProp && kind == SigmaFieldKind.PROPERTY) {
+    boolean isProperty = arg.isProperty();
+    boolean isProp = isProperty && Sort.compare(sort, Sort.PROP, CMP.LE, myEquations, arg);
+    if (!isProp && isProperty) {
       errorReporter.report(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, result.getSortOfType(), arg));
     }
     if (arg instanceof Concrete.TelescopeParameter) {
@@ -2659,7 +2658,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       fields.add(result.expression);
       Sort sort = getSortOfType(result.type, expr);
       sorts.add(sort);
-      list.append(ExpressionFactory.sigmaParameter(false, (String) null, result.type instanceof Type ? (Type) result.type : new TypeExpression(result.type, sort)));
+      list.append(ExpressionFactory.parameter(null, result.type instanceof Type ? (Type) result.type : new TypeExpression(result.type, sort)));
     }
 
     SigmaExpression type = new SigmaExpression(generateUpperBound(sorts, expr), list.getFirst());

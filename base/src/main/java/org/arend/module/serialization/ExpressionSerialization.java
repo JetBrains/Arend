@@ -7,7 +7,6 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.SigmaTypedDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
@@ -148,7 +147,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     tBuilder.setIsNotExplicit(!typed.isExplicit());
     tBuilder.setIsHidden(typed.isHidden());
     tBuilder.setType(writeType(typed.getType()));
-    tBuilder.setIsProperty(typed instanceof SigmaTypedDependentLink && ((SigmaTypedDependentLink) typed).isProperty());
+    tBuilder.setIsProperty(typed.isProperty());
     for (; link != typed; link = link.getNext()) {
       registerBinding(link);
     }
