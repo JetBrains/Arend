@@ -2592,14 +2592,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
     if (arg instanceof Concrete.TelescopeParameter) {
       List<? extends Referable> referableList = arg.getReferableList();
-      DependentLink link = ExpressionFactory.sigmaParameter(isProp, arg.getNames(), result);
+      DependentLink link = ExpressionFactory.parameter(true, isProp, arg.getNames(), result);
       list.append(link);
       int i = 0;
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
         addBinding(referableList.get(i), link1);
       }
     } else {
-      DependentLink link = ExpressionFactory.sigmaParameter(isProp, (String) null, result);
+      DependentLink link = ExpressionFactory.parameter(true, isProp, Collections.singletonList(null), result);
       list.append(link);
       addBinding(null, link);
     }

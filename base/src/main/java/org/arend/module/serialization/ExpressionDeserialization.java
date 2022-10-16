@@ -116,7 +116,7 @@ class ExpressionDeserialization {
       Type type = readType(proto.getType());
       DependentLink tele = proto.getIsHidden() && unfixedNames.size() == 1
         ? new TypedDependentLink(!proto.getIsNotExplicit(), unfixedNames.get(0), type, true, EmptyDependentLink.getInstance())
-        : ExpressionFactory.sigmaParameter(proto.getIsProperty(), unfixedNames, type);
+        : ExpressionFactory.parameter(!proto.getIsNotExplicit(), proto.getIsProperty(), unfixedNames, type);
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
         registerBinding(link);
       }

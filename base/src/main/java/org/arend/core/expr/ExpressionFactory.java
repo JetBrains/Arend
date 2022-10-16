@@ -32,20 +32,16 @@ public class ExpressionFactory {
     return new TypedDependentLink(explicit, var, type, EmptyDependentLink.getInstance());
   }
 
-  public static TypedDependentLink sigmaParameter(boolean isProperty, String var, Type type) {
-    return isProperty ? new PropertyTypedDependentLink(var, type, EmptyDependentLink.getInstance()) : new TypedDependentLink(true, var, type, EmptyDependentLink.getInstance());
+  public static TypedDependentLink parameter(String var, Type type) {
+    return new TypedDependentLink(true, var, type, EmptyDependentLink.getInstance());
   }
 
-  public static DependentLink sigmaParameter(boolean isProperty, List<String> names, Type type) {
-    DependentLink link = isProperty ? new PropertyTypedDependentLink(names.get(names.size() - 1), type, EmptyDependentLink.getInstance()) : new TypedDependentLink(true, names.get(names.size() - 1), type, EmptyDependentLink.getInstance());
+  public static DependentLink parameter(boolean explicit, boolean isProperty, List<String> names, Type type) {
+    DependentLink link = isProperty ? new PropertyTypedDependentLink(explicit, names.get(names.size() - 1), type, EmptyDependentLink.getInstance()) : new TypedDependentLink(explicit, names.get(names.size() - 1), type, EmptyDependentLink.getInstance());
     for (int i = names.size() - 2; i >= 0; i--) {
       link = new UntypedDependentLink(names.get(i), link);
     }
     return link;
-  }
-
-  public static TypedDependentLink parameter(String var, Type type) {
-    return new TypedDependentLink(true, var, type, EmptyDependentLink.getInstance());
   }
 
   public static DependentLink parameter(boolean explicit, List<String> names, Type type) {
