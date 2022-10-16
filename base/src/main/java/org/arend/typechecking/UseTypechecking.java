@@ -166,7 +166,7 @@ public class UseTypechecking {
       if (ok) {
         if (link.hasNext() || resultType != null) {
           type = useParent instanceof DataDefinition
-            ? new DataCallExpression((DataDefinition) useParent, useParent.makeIdLevels(), defCallArgs)
+            ? DataCallExpression.make((DataDefinition) useParent, useParent.makeIdLevels(), defCallArgs)
             : FunCallExpression.make((FunctionDefinition) useParent, useParent.makeIdLevels(), defCallArgs);
         } else {
           ok = false;

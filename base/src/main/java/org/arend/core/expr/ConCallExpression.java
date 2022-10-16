@@ -38,7 +38,9 @@ public class ConCallExpression extends LeveledDefCallExpression implements CoreC
         return intExpr.suc();
       }
     }
-    return new ConCallExpression(constructor, levels, dataTypeArguments, arguments);
+    ConCallExpression result = new ConCallExpression(constructor, levels, dataTypeArguments, arguments);
+    result.fixBoxes();
+    return result;
   }
 
   public static ConCallExpression makeConCall(Constructor constructor, Levels levels, List<Expression> dataTypeArguments, List<Expression> arguments) {

@@ -245,7 +245,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitBox(BoxExpression expr, Void params) {
-    return new BoxExpression(expr.getExpression().accept(this, null));
+    return BoxExpression.make(expr.getExpression().accept(this, null));
   }
 
   @Override

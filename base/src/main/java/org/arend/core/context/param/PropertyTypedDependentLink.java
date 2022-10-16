@@ -5,6 +5,10 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.subst.SubstVisitor;
 
 public class PropertyTypedDependentLink extends TypedDependentLink {
+  public PropertyTypedDependentLink(boolean isExplicit, String name, Type type, boolean isHidden, DependentLink next) {
+    super(isExplicit, name, type, isHidden, next);
+  }
+
   public PropertyTypedDependentLink(boolean isExplicit, String name, Type type, DependentLink next) {
     super(isExplicit, name, type, false, next);
   }

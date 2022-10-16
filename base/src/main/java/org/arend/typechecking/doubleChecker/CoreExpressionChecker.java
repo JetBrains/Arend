@@ -91,9 +91,20 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
   }
 
+  private void checkBoxes(DefCallExpression defCall) {
+    DependentLink param = defCall.getDefinition().getParameters();
+    for (Expression arg : defCall.getDefCallArguments()) {
+      if (param.isProperty() && !arg.isInstance(BoxExpression.class)) {
+        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Parameter '" + param.getName() + "' must be boxed", mySourceNode), defCall));
+      }
+      param = param.getNext();
+    }
+  }
+
   @Override
   public Expression visitFunCall(FunCallExpression expr, Expression expectedType) {
     checkLevels(expr.getLevels(), expr.getDefinition(), expr);
+    checkBoxes(expr);
     ExprSubstitution substitution = new ExprSubstitution();
     List<? extends Expression> args = expr.getDefCallArguments();
     checkList(args, expr.getDefinition().getParameters(), substitution, expr.getLevelSubstitution());
@@ -112,6 +123,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitConCall(ConCallExpression expr, Expression expectedType) {
     checkLevels(expr.getLevels(), expr.getDefinition(), expr);
+    checkBoxes(expr);
     if (expr.getDefinition() == Prelude.FIN_ZERO || expr.getDefinition() == Prelude.FIN_SUC) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("'Fin." + expr.getDefinition().getName() + "' is not allowed", mySourceNode), expr));
     }
@@ -129,7 +141,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         for (int i = 0; i < sucs; i++) {
           arg = Suc(arg);
         }
-        return check(expectedType, new DataCallExpression(dataCall.getDefinition(), dataCall.getLevels(), new SingletonList<>(arg)), expr);
+        return check(expectedType, DataCallExpression.make(dataCall.getDefinition(), dataCall.getLevels(), new SingletonList<>(arg)), expr);
       }
       return check(expectedType, Nat(), expr);
     }
@@ -175,6 +187,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitDataCall(DataCallExpression expr, Expression expectedType) {
     checkLevels(expr.getLevels(), expr.getDefinition(), expr);
+    checkBoxes(expr);
     checkList(expr.getDefCallArguments(), expr.getDefinition().getParameters(), new ExprSubstitution(), expr.getLevelSubstitution());
     return check(expectedType, GetTypeVisitor.INSTANCE.visitDataCall(expr, null), expr);
   }
@@ -917,13 +930,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       length = Suc(tailLength);
     }
     Sort sort = Sort.STD.subst(expr.getLevels());
-    expr.getElementsType().accept(this, new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, Levels.EMPTY, Collections.singletonList(length))), new UniverseExpression(sort)));
+    expr.getElementsType().accept(this, new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, DataCallExpression.make(Prelude.FIN, Levels.EMPTY, Collections.singletonList(length))), new UniverseExpression(sort)));
     List<Expression> elements = expr.getElements();
     for (int i = 0; i < elements.size(); i++) {
       elements.get(i).accept(this, AppExpression.make(expr.getElementsType(), new SmallIntegerExpression(i), true));
     }
     if (expr.getTail() != null) {
-      TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", new DataCallExpression(Prelude.FIN, Levels.EMPTY, Collections.singletonList(tailLength)));
+      TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", DataCallExpression.make(Prelude.FIN, Levels.EMPTY, Collections.singletonList(tailLength)));
       expr.getTail().accept(this, new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), Collections.singletonMap(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort.succ(), lamParam, AppExpression.make(expr.getElementsType(), Suc(new ReferenceExpression(lamParam)), true))), Sort.STD, UniverseKind.NO_UNIVERSES));
     }
     return check(expectedType, expr.getType(), expr);

@@ -251,7 +251,7 @@ public class PatternTypechecking {
             }
 
             intervalSubst.add(intervalBinding, new ReferenceExpression(lamBindings.get(i)));
-            exprType = new DataCallExpression(Prelude.PATH, levels, Arrays.asList(new LamExpression(hSort, lamBindings.get(i), exprType), leftArg, rightArg));
+            exprType = DataCallExpression.make(Prelude.PATH, levels, Arrays.asList(new LamExpression(hSort, lamBindings.get(i), exprType), leftArg, rightArg));
           }
         } else {
           intervalBindings = null;

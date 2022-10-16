@@ -92,6 +92,7 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
         }
         result.getDefCallArguments().add(newArg);
       }
+      result.fixBoxes();
     }
 
     return resultStack.get(0);
@@ -133,13 +134,14 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
 
     int recursiveParam = expr.getDefinition().getRecursiveParameter();
     Expression result = null;
-    List<Expression> args = null;
+    ConCallExpression prevConCall = null;
     while (true) {
       ConCallExpression conCall = (ConCallExpression) it;
       it = preVisitConCall(conCall, params);
       if (it != null) {
-        if (args != null) {
-          args.set(recursiveParam, it);
+        if (prevConCall != null) {
+          prevConCall.getDefCallArguments().set(recursiveParam, it);
+          prevConCall.fixBoxes();
           return result;
         } else {
           return it;
@@ -148,14 +150,14 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
 
       List<Expression> dataTypeArgs = visitDataTypeArguments(conCall.getDataTypeArguments(), params);
       if (dataTypeArgs == null) return null;
-      List<Expression> newArgs = new ArrayList<>();
-      it = makeConCall(conCall.getDefinition(), conCall.getLevels(), dataTypeArgs, newArgs);
-      if (args != null) {
-        args.set(recursiveParam, it);
+      it = makeConCall(conCall.getDefinition(), conCall.getLevels(), dataTypeArgs, new ArrayList<>());
+      if (prevConCall != null) {
+        prevConCall.getDefCallArguments().set(recursiveParam, it);
+        prevConCall.fixBoxes();
       } else {
         result = it;
       }
-      args = newArgs;
+      prevConCall = (ConCallExpression) it;
 
       recursiveParam = conCall.getDefinition().getRecursiveParameter();
       if (recursiveParam < 0) {
@@ -164,8 +166,9 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
           if (newArg == null) {
             return null;
           }
-          args.add(newArg);
+          prevConCall.getDefCallArguments().add(newArg);
         }
+        prevConCall.fixBoxes();
         return result;
       }
 
@@ -175,9 +178,9 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
           if (newArg == null) {
             return null;
           }
-          args.add(newArg);
+          prevConCall.getDefCallArguments().add(newArg);
         } else {
-          args.add(null);
+          prevConCall.getDefCallArguments().add(null);
         }
       }
 
@@ -186,15 +189,17 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
         break;
       }
       if (useStack((ConCallExpression) it)) {
-        return visitConCallWithStack((ConCallExpression) it, params);
+        Expression newArg = visitConCallWithStack((ConCallExpression) it, params);
+        if (newArg == null) return null;
+        prevConCall.getDefCallArguments().set(recursiveParam, newArg);
+        return result;
       }
     }
 
     Expression newArg = visit(it, params);
-    if (newArg == null) {
-      return null;
-    }
-    args.set(recursiveParam, newArg);
+    if (newArg == null) return null;
+    prevConCall.getDefCallArguments().set(recursiveParam, newArg);
+    prevConCall.fixBoxes();
     return result;
   }
 }

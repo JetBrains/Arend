@@ -371,15 +371,12 @@ class ExpressionDeserialization {
       throw new DeserializationException("Empty constructors list");
     }
 
-    if (conCalls.size() == 1) {
-      return readConCall(conCalls.get(0), true);
-    }
-
-    ConCallExpression result = readConCall(conCalls.get(0), false);
+    ConCallExpression result = readConCall(conCalls.get(0), conCalls.size() == 1);
     ConCallExpression expr = result;
     for (int i = 1; i < conCalls.size(); i++) {
       ConCallExpression arg = readConCall(conCalls.get(i), i == conCalls.size() - 1);
       expr.getDefCallArguments().set(conCalls.get(i - 1).getRecursiveParam(), arg);
+      expr.fixBoxes();
       expr = arg;
     }
 
@@ -410,13 +407,16 @@ class ExpressionDeserialization {
     if (!last && protos.size() == recursiveParam) {
       args.add(null);
     }
+    if (last) {
+      result.fixBoxes();
+    }
     return result;
   }
 
   private DataCallExpression readDataCall(ExpressionProtos.Expression.DataCall proto) throws DeserializationException {
     DataDefinition dataDefinition = myCallTargetProvider.getCallTarget(proto.getDataRef(), DataDefinition.class);
     myDependencyListener.dependsOn(myDefinition.getRef(), dataDefinition.getReferable());
-    return new DataCallExpression(dataDefinition, readLevels(proto.getLevels()), readExprList(proto.getArgumentList()));
+    return DataCallExpression.make(dataDefinition, readLevels(proto.getLevels()), readExprList(proto.getArgumentList()));
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationException {

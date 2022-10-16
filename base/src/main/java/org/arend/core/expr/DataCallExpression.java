@@ -30,9 +30,15 @@ import java.util.List;
 public class DataCallExpression extends LeveledDefCallExpression implements Type, CoreDataCallExpression {
   private final List<Expression> myArguments;
 
-  public DataCallExpression(DataDefinition definition, Levels levels, List<Expression> arguments) {
+  private DataCallExpression(DataDefinition definition, Levels levels, List<Expression> arguments) {
     super(definition, levels);
     myArguments = arguments;
+  }
+
+  public static DataCallExpression make(DataDefinition definition, Levels levels, List<Expression> arguments) {
+    DataCallExpression result = new DataCallExpression(definition, levels, arguments);
+    result.fixBoxes();
+    return result;
   }
 
   @NotNull

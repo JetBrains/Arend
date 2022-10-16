@@ -1,5 +1,6 @@
 package org.arend.core.expr;
 
+import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.ParametersLevel;
 import org.arend.core.definition.UniverseKind;
@@ -18,7 +19,7 @@ public abstract class DefCallExpression extends Expression implements CoreDefCal
   }
 
   @Override
-  public @NotNull List<? extends Expression> getDefCallArguments() {
+  public @NotNull List<Expression> getDefCallArguments() {
     return Collections.emptyList();
   }
 
@@ -42,6 +43,18 @@ public abstract class DefCallExpression extends Expression implements CoreDefCal
 
   public UniverseKind getUniverseKind() {
     return myDefinition.getUniverseKind();
+  }
+
+  public void fixBoxes() {
+    DependentLink param = myDefinition.getParameters();
+    List<Expression> args = getDefCallArguments();
+    for (int i = 0; i < args.size(); i++) {
+      if (!param.hasNext()) break;
+      if (param.isProperty()) {
+        args.set(i, BoxExpression.make(args.get(i)));
+      }
+      param = param.getNext();
+    }
   }
 
   @Override

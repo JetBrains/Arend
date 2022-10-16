@@ -17,7 +17,7 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Interval() {
-    return new DataCallExpression(Prelude.INTERVAL, Levels.EMPTY, Collections.emptyList());
+    return DataCallExpression.make(Prelude.INTERVAL, Levels.EMPTY, Collections.emptyList());
   }
 
   public static ConCallExpression Left() {
@@ -28,12 +28,12 @@ public class ExpressionFactory {
     return (ConCallExpression) ConCallExpression.make(Prelude.RIGHT, Levels.EMPTY, Collections.emptyList(), Collections.emptyList());
   }
 
-  public static DependentLink parameter(boolean explicit, String var, Type type) {
-    return new TypedDependentLink(explicit, var, type, EmptyDependentLink.getInstance());
-  }
-
   public static TypedDependentLink parameter(String var, Type type) {
     return new TypedDependentLink(true, var, type, EmptyDependentLink.getInstance());
+  }
+
+  public static DependentLink parameter(boolean explicit, boolean isProperty, String name, Type type, boolean isHidden) {
+    return isProperty ? new PropertyTypedDependentLink(explicit, name, type, isHidden, EmptyDependentLink.getInstance()) : new TypedDependentLink(explicit, name, type, isHidden, EmptyDependentLink.getInstance());
   }
 
   public static DependentLink parameter(boolean explicit, boolean isProperty, List<String> names, Type type) {
@@ -61,7 +61,7 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return new DataCallExpression(Prelude.NAT, Levels.EMPTY, Collections.emptyList());
+    return DataCallExpression.make(Prelude.NAT, Levels.EMPTY, Collections.emptyList());
   }
 
   public static DataCallExpression Fin(int cardinality) {
@@ -69,7 +69,7 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Fin(Expression cardinality) {
-    return new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(cardinality));
+    return DataCallExpression.make(Prelude.FIN, Levels.EMPTY, new SingletonList<>(cardinality));
   }
 
   public static SigmaExpression divModType(Type type) {
@@ -81,7 +81,7 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Int() {
-    return new DataCallExpression(Prelude.INT, Levels.EMPTY, Collections.emptyList());
+    return DataCallExpression.make(Prelude.INT, Levels.EMPTY, Collections.emptyList());
   }
 
   public static IntegerExpression Zero() {

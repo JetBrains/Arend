@@ -9,6 +9,7 @@ public class CertainTypecheckingError extends TypecheckingError {
     BODY_IGNORED(Level.WARNING_UNUSED, "Body is ignored"),
     AS_PATTERN_IGNORED(Level.WARNING_UNUSED, "As-pattern is ignored"),
     PATTERN_IGNORED(Level.WARNING_UNUSED, "Pattern is ignored"),
+    PROPERTY_IGNORED(Level.WARNING_UNUSED, "\\property is ignored"),
     TOO_MANY_PATTERNS("Too many patterns"),
     EXPECTED_EXPLICIT_PATTERN("Expected an explicit pattern"),
     IMPLICIT_PATTERN(Level.WARNING, "All patterns must be explicit"),

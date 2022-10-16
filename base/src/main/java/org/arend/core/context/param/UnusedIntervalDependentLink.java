@@ -10,6 +10,6 @@ public class UnusedIntervalDependentLink extends TypedSingleDependentLink {
   public static final UnusedIntervalDependentLink INSTANCE = new UnusedIntervalDependentLink();
 
   private UnusedIntervalDependentLink() {
-    super(true, null, new DataCallExpression(Prelude.INTERVAL, Levels.EMPTY, Collections.emptyList()));
+    super(true, null, DataCallExpression.make(Prelude.INTERVAL, Levels.EMPTY, Collections.emptyList()));
   }
 }

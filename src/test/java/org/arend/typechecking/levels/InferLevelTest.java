@@ -410,7 +410,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\func test : \\Set0 => Wrap \\levels 1 1 Nat");
     DataDefinition wrap = (DataDefinition) getDefinition("Wrap");
     assertEquals(UniverseKind.NO_UNIVERSES, wrap.getUniverseKind());
-    new DataCallExpression(wrap, new LevelPair(new Level(1), new Level(1)), Collections.singletonList(ExpressionFactory.Nat())).accept(new CoreExpressionChecker(new HashSet<>(), DummyEquations.getInstance(), null), new UniverseExpression(new Sort(new Level(0), new Level(0))));
+    DataCallExpression.make(wrap, new LevelPair(new Level(1), new Level(1)), Collections.singletonList(ExpressionFactory.Nat())).accept(new CoreExpressionChecker(new HashSet<>(), DummyEquations.getInstance(), null), new UniverseExpression(new Sort(new Level(0), new Level(0))));
   }
 
   @Ignore

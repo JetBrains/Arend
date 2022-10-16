@@ -557,8 +557,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
       }
+      boolean isProperty = parameter.isProperty();
       if (paramResult == null) {
         paramResult = new TypeExpression(new ErrorExpression(), Sort.SET0);
+      } else if (isProperty && !paramResult.getSortOfType().isProp()) {
+        errorReporter.report(new TypecheckingError("The type of the parameter should live in \\Prop, but lives in " + paramResult.getSortOfType(), parameter));
+        isProperty = false;
       }
       if (!(def instanceof Concrete.Constructor)) {
         sort = sort.max(paramResult.getSortOfType());
@@ -578,8 +582,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         param = oldParameters != null
           ? oldParameters
           : referableList.size() == 1 && referableList.get(0) instanceof HiddenLocalReferable
-            ? new TypedDependentLink(parameter.isExplicit(), names.get(0), paramResult, true, EmptyDependentLink.getInstance())
-            : parameter(parameter.isExplicit(), names, paramResult);
+            ? parameter(parameter.isExplicit(), isProperty, names.get(0), paramResult, true)
+            : parameter(parameter.isExplicit(), isProperty, names, paramResult);
         numberOfParameters = names.size();
 
         if (oldParameters == null) {
@@ -610,7 +614,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         } else {
           Referable ref = parameter.getReferableList().get(0);
-          param = parameter(parameter.isExplicit(), ref == null ? null : ref.getRefName(), paramResult);
+          param = parameter(parameter.isExplicit(), isProperty, Collections.singletonList(ref == null ? null : ref.getRefName()), paramResult);
           typechecker.addBinding(ref, param);
         }
       }
@@ -2277,7 +2281,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           args.add(new LamExpression(((LamExpression) lamExpr).getResultSort(), ((LamExpression) lamExpr).getParameters(), newType));
           args.add(pathArgs.get(1));
           args.add(pathArgs.get(2));
-          return new DataCallExpression(Prelude.PATH, ((DataCallExpression) type).getLevels(), args);
+          return DataCallExpression.make(Prelude.PATH, ((DataCallExpression) type).getLevels(), args);
         }
       } else {
         type = null;

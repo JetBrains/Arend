@@ -52,7 +52,9 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
     if (definition == Prelude.ARRAY_CONS && arguments.size() == 4) {
       return ArrayExpression.make(levels.toLevelPair(), arguments.get(1), new SingletonList<>(arguments.get(2)), arguments.get(3));
     }
-    return new FunCallExpression(definition, levels, arguments);
+    FunCallExpression result = new FunCallExpression(definition, levels, arguments);
+    result.fixBoxes();
+    return result;
   }
 
   public static FunCallExpression makeFunCall(FunctionDefinition definition, Levels levels, List<Expression> arguments) {
@@ -65,7 +67,7 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
 
   @NotNull
   @Override
-  public List<? extends Expression> getDefCallArguments() {
+  public List<Expression> getDefCallArguments() {
     return myArguments;
   }
 

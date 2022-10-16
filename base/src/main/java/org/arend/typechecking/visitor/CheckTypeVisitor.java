@@ -1956,7 +1956,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (Prelude.ZERO != null && expr.getReferent() == Prelude.ZERO.getRef() && expectedType != null) {
       expectedType = expectedType.normalize(NormalizationMode.WHNF);
       if (expectedType instanceof DataCallExpression && ((DataCallExpression) expectedType).getDefinition() == Prelude.FIN) {
-        return checkResult(expectedType, new TypecheckingResult(new SmallIntegerExpression(0), new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(new SmallIntegerExpression(1)))), expr);
+        return checkResult(expectedType, new TypecheckingResult(new SmallIntegerExpression(0), DataCallExpression.make(Prelude.FIN, Levels.EMPTY, new SingletonList<>(new SmallIntegerExpression(1)))), expr);
       }
     }
 
@@ -2216,7 +2216,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         addBinding(referableList.get(i), link1);
       }
     } else {
-      DependentLink link = ExpressionFactory.parameter(arg.isExplicit(), (String) null, result);
+      DependentLink link = ExpressionFactory.parameter(arg.isExplicit(), Collections.singletonList(null), result);
       list.append(link);
       addBinding(null, link);
     }
@@ -2339,6 +2339,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       ParametersProvider newProvider = pair.proj1;
       SingleDependentLink piParam = pair.proj2;
       Concrete.Parameter param = parameters.get(0);
+      if (param.isProperty()) {
+        errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.PROPERTY_IGNORED, param));
+      }
       if (piParam != null && !piParam.isExplicit() && param.isExplicit()) {
         for (SingleDependentLink link = piParam; link.hasNext(); link = link.getNext()) {
           addBinding(null, link);
@@ -2395,7 +2398,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
             if (levels != null) {
               if (definition instanceof DataDefinition) {
-                paramType = new DataCallExpression((DataDefinition) definition, levels, new ArrayList<>(defCallParamType.getDefCallArguments()));
+                paramType = DataCallExpression.make((DataDefinition) definition, levels, new ArrayList<>(defCallParamType.getDefCallArguments()));
               } else if (definition instanceof FunctionDefinition) {
                 paramType = new TypeExpression(FunCallExpression.make((FunctionDefinition) definition, levels, new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
               } else {
@@ -2526,6 +2529,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     try (var ignored = new Utils.SetContextSaver<>(context)) {
       for (Concrete.TypeParameter arg : expr.getParameters()) {
+        if (arg.isProperty()) {
+          errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.PROPERTY_IGNORED, arg));
+        }
         SingleDependentLink link = visitTypeParameter(arg, sorts, null);
         if (link == null) {
           return null;
@@ -2771,6 +2777,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     Concrete.Parameter param = parameters.get(0);
+    if (param.isProperty()) {
+      errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.PROPERTY_IGNORED, param));
+    }
     if (param instanceof Concrete.NameParameter) {
       return bodyToLam(visitNameParameter((Concrete.NameParameter) param, letClause), typecheckLetClause(parameters.subList(1, parameters.size()), letClause, false), letClause);
     } else if (param instanceof Concrete.TypeParameter) {
@@ -3966,6 +3975,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       errorReporter.report(sort != null ? new TypecheckingError("The type of the expression should live in \\Prop, but lives in " + sort, expr) : new TypeMismatchError("The type of the expression does not live in \\Prop", expectedTypeType, typeType, expr));
       return null;
     }
-    return new TypecheckingResult(new BoxExpression(result.expression), result.type);
+    return new TypecheckingResult(BoxExpression.make(result.expression), result.type);
   }
 }

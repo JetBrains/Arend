@@ -864,9 +864,6 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       List<SingleDependentLink> params = new ArrayList<>();
       if (classCall1 == null) {
         List<Expression> newDataArgs = new ArrayList<>(oldDataArgs.subList(0, numberOfOldArgs));
-        lam = defCall1.getDefinition().getDefCall(defCall1.getLevels(), newDataArgs);
-        codSort = defCall1 instanceof DataCallExpression ? ((DataCallExpression) defCall1).getDefinition().getSort() : ((UniverseExpression) ((FunCallExpression) defCall1).getDefinition().getResultType()).getSort();
-
         SingleDependentLink firstParam = null;
         SingleDependentLink lastParam = null;
         for (; dataParams.hasNext(); dataParams = dataParams.getNext()) {
@@ -891,6 +888,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
             lastParam = null;
           }
         }
+        lam = defCall1.getDefinition().getDefCall(defCall1.getLevels(), newDataArgs);
+        codSort = defCall1 instanceof DataCallExpression ? ((DataCallExpression) defCall1).getDefinition().getSort() : ((UniverseExpression) ((FunCallExpression) defCall1).getDefinition().getResultType()).getSort();
       } else {
         Map<ClassField, Expression> implementations = new LinkedHashMap<>();
         codSort = classCall1.getSortOfType();

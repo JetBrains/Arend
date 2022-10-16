@@ -115,7 +115,7 @@ public class Prelude implements ArendPrelude {
           FIN.addConstructor(FIN_ZERO);
           FIN_SUC = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "suc", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
           FIN_SUC.setPatterns(patterns);
-          FIN_SUC.setParameters(new TypedDependentLink(true, null, new DataCallExpression(FIN, Levels.EMPTY, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
+          FIN_SUC.setParameters(new TypedDependentLink(true, null, DataCallExpression.make(FIN, Levels.EMPTY, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
           FIN_SUC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           FIN_SUC.getReferable().setTypechecked(FIN_SUC);
           FIN.addConstructor(FIN_SUC);
@@ -164,7 +164,7 @@ public class Prelude implements ArendPrelude {
         PATH_INFIX.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1))));
         DataCallExpression dataCall = (DataCallExpression) PATH_INFIX.getBody();
         assert dataCall != null;
-        PATH_INFIX.setBody(new DataCallExpression(dataCall.getDefinition(), dataCall.getLevels(), Arrays.asList(new LamExpression(new Sort(new Level(LevelVariable.PVAR, 1), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) dataCall.getDefCallArguments().get(0)).getBody()), dataCall.getDefCallArguments().get(1), dataCall.getDefCallArguments().get(2))));
+        PATH_INFIX.setBody(DataCallExpression.make(dataCall.getDefinition(), dataCall.getLevels(), Arrays.asList(new LamExpression(new Sort(new Level(LevelVariable.PVAR, 1), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) dataCall.getDefCallArguments().get(0)).getBody()), dataCall.getDefCallArguments().get(1), dataCall.getDefCallArguments().get(2))));
         break;
       }
       case "idp": {

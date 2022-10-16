@@ -154,7 +154,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
 
         DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
         if (!(dataCall != null && dataCall.getDefinition() == Prelude.INTERVAL)) {
-          errorReporter.report(new TypeMismatchError(new DataCallExpression(Prelude.INTERVAL, Levels.EMPTY, Collections.emptyList()), link.getTypeExpr(), null));
+          errorReporter.report(new TypeMismatchError(DataCallExpression.make(Prelude.INTERVAL, Levels.EMPTY, Collections.emptyList()), link.getTypeExpr(), null));
           return false;
         }
 

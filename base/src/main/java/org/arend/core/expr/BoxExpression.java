@@ -10,8 +10,12 @@ import org.jetbrains.annotations.NotNull;
 public class BoxExpression extends Expression implements CoreBoxExpression {
   private final Expression myExpression;
 
-  public BoxExpression(Expression expression) {
+  private BoxExpression(Expression expression) {
     myExpression = expression;
+  }
+
+  public static BoxExpression make(Expression expression) {
+    return expression instanceof BoxExpression ? (BoxExpression) expression : new BoxExpression(expression);
   }
 
   @Override

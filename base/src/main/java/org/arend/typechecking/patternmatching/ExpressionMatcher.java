@@ -151,7 +151,7 @@ public class ExpressionMatcher {
     }
 
     List<Expression> newArgs = matchExpressions(dataCall.getDefCallArguments(), constructor.getPatterns(), computeData, matchResults);
-    return computeData ? new DataCallExpression(dataCall.getDefinition(), dataCall.getLevels(), newArgs) : dataCall;
+    return computeData ? DataCallExpression.make(dataCall.getDefinition(), dataCall.getLevels(), newArgs) : dataCall;
   }
 
   public static @Nullable ConCallExpression computeMatchingPatterns(DataCallExpression dataCall, Constructor constructor, @Nullable ExprSubstitution substitution, Map<Binding, ExpressionPattern> result) {

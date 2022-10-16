@@ -240,6 +240,6 @@ public class DataDefinition extends TopLevelDefinition implements CoreDataDefini
 
   @Override
   public DataCallExpression getDefCall(Levels levels, List<Expression> arguments) {
-    return new DataCallExpression(this, levels, arguments);
+    return DataCallExpression.make(this, levels, arguments);
   }
 }

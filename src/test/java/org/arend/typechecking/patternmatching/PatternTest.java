@@ -161,7 +161,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
     List<Concrete.Pattern> patternsArgs = funDef.getBody().getClauses().get(0).getPatterns();
     LocalErrorReporter localErrorReporter = new LocalErrorReporter(funDef.getData(), errorReporter);
-    Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(PatternTypechecking.Mode.DATA, new CheckTypeVisitor(localErrorReporter, null, null), true, null, Collections.emptyList()).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, LevelPair.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(PatternTypechecking.Mode.DATA, new CheckTypeVisitor(localErrorReporter, null, null), true, null, Collections.emptyList()).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, DataCallExpression.make(data, LevelPair.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
@@ -215,7 +215,7 @@ public class PatternTest extends TypeCheckingTestCase {
     data.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     List<Concrete.Pattern> patternsArgs = funDef.getBody().getClauses().get(0).getPatterns();
-    Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(new LocalErrorReporter(funDef.getData(), errorReporter), PatternTypechecking.Mode.DATA).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, LevelPair.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(new LocalErrorReporter(funDef.getData(), errorReporter), PatternTypechecking.Mode.DATA).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, DataCallExpression.make(data, LevelPair.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNotNull(res);
     assertEquals(0, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
@@ -236,7 +236,7 @@ public class PatternTest extends TypeCheckingTestCase {
     data.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     List<Concrete.Pattern> patternsArgs = funDef.getBody().getClauses().get(0).getPatterns();
-    Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(new LocalErrorReporter(funDef.getData(), errorReporter), PatternTypechecking.Mode.DATA).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, LevelPair.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(new LocalErrorReporter(funDef.getData(), errorReporter), PatternTypechecking.Mode.DATA).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, DataCallExpression.make(data, LevelPair.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNotNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);

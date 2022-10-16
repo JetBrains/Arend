@@ -15,7 +15,6 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.level.LevelSubstitution;
 
@@ -44,11 +43,11 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Levels levels, List<Expression> arguments) {
-    return new DataCallExpression(definition, levels, arguments);
+    return DataCallExpression.make(definition, levels, arguments);
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Levels levels, Expression... arguments) {
-    return new DataCallExpression(definition, levels, Arrays.asList(arguments));
+    return DataCallExpression.make(definition, levels, Arrays.asList(arguments));
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition) {

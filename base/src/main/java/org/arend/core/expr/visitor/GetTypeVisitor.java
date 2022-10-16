@@ -266,7 +266,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
         for (int i = 0; i < sucs; i++) {
           arg = Suc(arg);
         }
-        return new DataCallExpression(dataCall.getDefinition(), dataCall.getLevels(), new SingletonList<>(arg));
+        return DataCallExpression.make(dataCall.getDefinition(), dataCall.getLevels(), new SingletonList<>(arg));
       }
       return Nat();
     }
@@ -445,7 +445,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   public Expression visitPath(PathExpression expr, Void params) {
     Expression left = AppExpression.make(expr.getArgument(), ExpressionFactory.Left(), true);
     Expression right = AppExpression.make(expr.getArgument(), ExpressionFactory.Right(), true);
-    return new DataCallExpression(Prelude.PATH, expr.getLevels(), Arrays.asList(expr.getArgumentType(), left, right));
+    return DataCallExpression.make(Prelude.PATH, expr.getLevels(), Arrays.asList(expr.getArgumentType(), left, right));
   }
 
   @Override

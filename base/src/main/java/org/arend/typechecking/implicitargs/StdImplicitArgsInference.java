@@ -270,7 +270,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.SUC) {
       Expression type = argResult.type.normalize(NormalizationMode.WHNF);
       if (type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.FIN) {
-        return new TypecheckingResult(Suc(argResult.expression), new DataCallExpression(Prelude.FIN, ((DataCallExpression) type).getLevels(), new SingletonList<>(Suc(((DataCallExpression) type).getDefCallArguments().get(0)))));
+        return new TypecheckingResult(Suc(argResult.expression), DataCallExpression.make(Prelude.FIN, ((DataCallExpression) type).getLevels(), new SingletonList<>(Suc(((DataCallExpression) type).getDefCallArguments().get(0)))));
       }
     }
 
@@ -406,7 +406,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
           result = result
             .applyExpression(length, false, myVisitor, fun)
-            .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(Suc(length)))), constType), false, myVisitor, fun);
+            .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, DataCallExpression.make(Prelude.FIN, Levels.EMPTY, new SingletonList<>(Suc(length)))), constType), false, myVisitor, fun);
         }
       }
 
@@ -417,12 +417,12 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (var != null) {
           if (length == null) length = classCall == null ? null : classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
           if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
-          Expression actualElementsType = new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(length))), result1.type);
+          Expression actualElementsType = new LamExpression(sort0, new TypedSingleDependentLink(true, null, DataCallExpression.make(Prelude.FIN, Levels.EMPTY, new SingletonList<>(length))), result1.type);
           if (new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).normalizedCompare(actualElementsType, elementsType, null, false)) {
             checked = true;
             result = result
               .applyExpression(length, false, myVisitor, fun)
-              .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(Suc(length)))), result1.type), false, myVisitor, fun);
+              .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, DataCallExpression.make(Prelude.FIN, Levels.EMPTY, new SingletonList<>(Suc(length)))), result1.type), false, myVisitor, fun);
           }
         }
 
@@ -436,7 +436,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           }
           Map<ClassField, Expression> impls = new LinkedHashMap<>();
           impls.put(Prelude.ARRAY_LENGTH, args.get(0));
-          TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(args.get(0))));
+          TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", DataCallExpression.make(Prelude.FIN, Levels.EMPTY, new SingletonList<>(args.get(0))));
           impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort0, lamParam, AppExpression.make(args.get(1), Suc(new ReferenceExpression(lamParam)), true)));
           Expression expected2 = new ClassCallExpression(Prelude.DEP_ARRAY, defCallResult.getLevels(), impls, Sort.STD, UniverseKind.NO_UNIVERSES);
           if (!new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).normalizedCompare(result2.type, expected2, null, false)) {
@@ -580,7 +580,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             }
 
             if (!ok) {
-              myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, new DataCallExpression(dataCall.getDefinition(), defCallResult.getLevels(), args1), fun));
+              myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, DataCallExpression.make(dataCall.getDefinition(), defCallResult.getLevels(), args1), fun));
               return null;
             }
 

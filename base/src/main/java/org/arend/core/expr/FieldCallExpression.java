@@ -69,7 +69,7 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
   }
 
   @Override
-  public @NotNull List<? extends Expression> getDefCallArguments() {
+  public @NotNull List<Expression> getDefCallArguments() {
     return Collections.singletonList(myArgument);
   }
 
