@@ -85,9 +85,9 @@ public class UnfoldVisitor extends SubstVisitor {
     if (myUnfoldLet) {
       ExprSubstitution substitution = new ExprSubstitution();
       for (HaveClause clause : let.getClauses()) {
-        substitution.add(clause, clause.getExpression().subst(substitution));
+        substitution.add(clause, clause.getExpression().accept(this, null).subst(substitution));
       }
-      return let.getExpression().subst(substitution);
+      return let.getExpression().accept(this, null).subst(substitution);
     }
     return super.visitLet(let, null);
   }
