@@ -1680,21 +1680,18 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       ExprContext exprCtx;
       boolean forced;
       boolean coerced;
-      boolean isProperty;
       if (tele instanceof ExplicitFieldTeleContext) {
         explicit = true;
         vars = ((ExplicitFieldTeleContext) tele).ID();
         exprCtx = ((ExplicitFieldTeleContext) tele).expr();
         forced = ((ExplicitFieldTeleContext) tele).CLASSIFYING() != null;
         coerced = ((ExplicitFieldTeleContext) tele).COERCE() != null;
-        isProperty = ((ExplicitFieldTeleContext) tele).PROPERTY() != null;
       } else if (tele instanceof ImplicitFieldTeleContext) {
         explicit = false;
         vars = ((ImplicitFieldTeleContext) tele).ID();
         exprCtx = ((ImplicitFieldTeleContext) tele).expr();
         forced = ((ImplicitFieldTeleContext) tele).CLASSIFYING() != null;
         coerced = ((ImplicitFieldTeleContext) tele).COERCE() != null;
-        isProperty = ((ImplicitFieldTeleContext) tele).PROPERTY() != null;
       } else {
         throw new IllegalStateException();
       }
@@ -1702,7 +1699,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
         ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, null, Precedence.DEFAULT, false, explicit, true, classDef.getData());
-        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, isProperty ? ClassFieldKind.PROPERTY : ClassFieldKind.ANY, new ArrayList<>(), type, null, coerced);
+        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), type, null, coerced);
         fieldRef.setDefinition(field);
         fields.add(field);
         if (forced || explicit) {
