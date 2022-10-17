@@ -308,8 +308,8 @@ idOrUnknown : ID            # iuId
 
 nameTypedExpr : expr ':' expr ;
 
-fieldTele : '(' PROPERTY? (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldTele
-          | '{' PROPERTY? (CLASSIFYING | COERCE)? ID+ ':' expr '}'        # implicitFieldTele
+fieldTele : '(' (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldTele
+          | '{' (CLASSIFYING | COERCE)? ID+ ':' expr '}'        # implicitFieldTele
           ;
 
 LET : '\\let';

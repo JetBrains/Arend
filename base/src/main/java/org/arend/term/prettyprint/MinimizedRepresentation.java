@@ -196,7 +196,7 @@ final public class MinimizedRepresentation {
                 } else {
                     Concrete.Expression processedType = ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type);
                     if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
-                        return myFactory.param(parameter.isExplicit(), parameter.isProperty(), parameter.getRefList(), processedType);
+                        return myFactory.param(parameter.isExplicit(), parameter.isProperty(), wideParameter.getRefList(), processedType);
                     } else {
                         return myFactory.param(parameter.isExplicit(), parameter.isProperty(), processedType);
                     }
