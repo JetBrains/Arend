@@ -6,11 +6,8 @@ import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.dependency.Dependency;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
-import org.arend.ext.reference.ArendRef;
 import org.arend.library.Library;
-import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
-import org.arend.naming.reference.FullModuleReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.Scope;
@@ -34,13 +31,7 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     myLibrary = library;
   }
 
-  @Override
-  public @NotNull ArendRef getGeneratedModuleReference(@NotNull ModulePath module) {
-    return new FullModuleReferable(new ModuleLocation(myLibrary, ModuleLocation.LocationKind.GENERATED, module));
-  }
-
-  @Override
-  public @NotNull Referable getReference(@NotNull ModulePath module, @NotNull LongName name) {
+  private @NotNull Referable getReference(@NotNull ModulePath module, @NotNull LongName name) {
     checkEnabled();
     Scope scope = myModuleScopeProvider.forModule(module);
     Referable ref = scope == null ? null : Scope.resolveName(scope, name.toList(), true);
@@ -76,13 +67,12 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     try {
       for (Field field : dependencyContainer.getClass().getDeclaredFields()) {
         Class<?> fieldType = field.getType();
-        boolean isDef = CoreDefinition.class.isAssignableFrom(fieldType);
-        if (isDef || ArendRef.class.equals(fieldType)) {
+        if (CoreDefinition.class.isAssignableFrom(fieldType)) {
           Dependency dependency = field.getAnnotation(Dependency.class);
           if (dependency != null) {
             field.setAccessible(true);
             String name = dependency.name();
-            field.set(dependencyContainer, isDef ? getDefinition(ModulePath.fromString(dependency.module()), name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name), fieldType.asSubclass(CoreDefinition.class)) : getReference(ModulePath.fromString(dependency.module()), name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name)));
+            field.set(dependencyContainer, getDefinition(ModulePath.fromString(dependency.module()), name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name), fieldType.asSubclass(CoreDefinition.class)));
           }
         }
       }

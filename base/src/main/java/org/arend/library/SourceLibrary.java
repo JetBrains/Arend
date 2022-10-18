@@ -271,9 +271,8 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), myAdditionalModuleScopeProvider);
-    ArendDependencyProviderImpl provider = new ArendDependencyProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
     try {
-      myExtension.declareDefinitions(provider, contributor);
+      myExtension.declareDefinitions(contributor);
     } finally {
       contributor.disable();
     }
@@ -314,6 +313,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     myExtension.setDefinitionProvider(DefinitionProviderImpl.INSTANCE);
+    ArendDependencyProviderImpl provider = new ArendDependencyProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
     try {
       myExtension.load(provider);
     } finally {

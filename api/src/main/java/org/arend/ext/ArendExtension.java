@@ -2,7 +2,6 @@ package org.arend.ext;
 
 import org.arend.ext.concrete.ConcreteFactory;
 import org.arend.ext.dependency.ArendDependencyProvider;
-import org.arend.ext.dependency.ArendReferenceProvider;
 import org.arend.ext.serialization.SerializableKeyRegistry;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.LevelProver;
@@ -57,7 +56,7 @@ public interface ArendExtension {
    * This method is invoked first, so it does not have access to the library itself.
    * All definitions must be declared in this method, that is {@code contributor} cannot be stored and invoked later.
    */
-  default void declareDefinitions(@NotNull ArendReferenceProvider provider, @NotNull DefinitionContributor contributor) {}
+  default void declareDefinitions(@NotNull DefinitionContributor contributor) {}
 
   /**
    * Can be used to get access to definitions.
