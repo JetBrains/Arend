@@ -852,7 +852,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitEval(Concrete.EvalExpression expr, Precedence prec) {
     if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.append('(');
     myBuilder.append(expr.isPEval() ? "\\peval " : "\\eval ");
-    expr.getExpression().accept(this, new Precedence(Concrete.Expression.PREC));
+    expr.getExpression().accept(this, new Precedence(Concrete.BinOpSequenceExpression.PREC));
     if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.append(')');
     return null;
   }
@@ -861,7 +861,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitBox(Concrete.BoxExpression expr, Precedence prec) {
     if (prec.priority > Concrete.BoxExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\box ");
-    expr.getExpression().accept(this, new Precedence(Concrete.Expression.PREC));
+    expr.getExpression().accept(this, new Precedence(Concrete.BinOpSequenceExpression.PREC));
     if (prec.priority > Concrete.BoxExpression.PREC) myBuilder.append(')');
     return null;
   }

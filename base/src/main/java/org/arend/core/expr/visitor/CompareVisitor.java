@@ -1535,6 +1535,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   @Override
   public Boolean visitBox(BoxExpression expr, Expression other, Expression type) {
-    return other.isBoxed();
+    if (!other.isBoxed()) return false;
+    if (!(other instanceof BoxExpression)) return true;
+    boolean onlySolveVars = myOnlySolveVars;
+    myOnlySolveVars = true;
+    compare(expr.getExpression(), ((BoxExpression) other).getExpression(), type, true);
+    myOnlySolveVars = onlySolveVars;
+    return true;
   }
 }

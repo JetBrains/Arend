@@ -560,7 +560,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       boolean isProperty = parameter.isProperty();
       if (paramResult == null) {
         paramResult = new TypeExpression(new ErrorExpression(), Sort.SET0);
-      } else if (isProperty && !paramResult.getSortOfType().isProp()) {
+      } else if (isProperty && !Sort.compare(paramResult.getSortOfType(), Sort.PROP, CMP.LE, typechecker.getEquations(), parameter)) {
         errorReporter.report(new TypecheckingError("The type of the parameter should live in \\Prop, but lives in " + paramResult.getSortOfType(), parameter));
         isProperty = false;
       }

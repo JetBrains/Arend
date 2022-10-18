@@ -223,6 +223,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     int implicitArgumentsCounter = 0;
     for (Expression arg : arguments) {
       implicitArgumentsCounter += parameters.isExplicit() ? 0 : 1;
+      if (parameters.isProperty()) {
+        BoxExpression boxArg = arg.cast(BoxExpression.class);
+        if (boxArg != null) {
+          arg = boxArg.getExpression();
+        }
+      }
       visitArgument(arg, parameters.isExplicit(), concreteArguments, false, (parentVerboseLevel >= implicitArgumentsCounter));
       if (parameters.hasNext()) {
         parameters = parameters.getNext();
@@ -803,7 +809,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitBox(BoxExpression expr, Void params) {
-    return new Concrete.BoxExpression(null, expr.accept(this, null));
+    return new Concrete.BoxExpression(null, expr.getExpression().accept(this, null));
   }
 
   private Concrete.Pattern makeLetClausePattern(LetClausePattern pattern) {
