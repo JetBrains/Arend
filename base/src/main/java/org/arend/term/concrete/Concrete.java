@@ -1742,7 +1742,7 @@ public final class Concrete {
     }
   }
 
-  public enum Stage { NOT_RESOLVED, TYPE_CLASS_REFERENCES_RESOLVED, RESOLVED, DESUGARIZED, TYPECHECKED }
+  public enum Stage { NOT_RESOLVED, TYPE_CLASS_REFERENCES_RESOLVED, HEADER_RESOLVED, RESOLVED, DESUGARIZED, TYPECHECKED }
 
   public enum Status {
     NO_ERRORS { @Override public org.arend.core.definition.Definition.TypeCheckingStatus getTypecheckingStatus() { return org.arend.core.definition.Definition.TypeCheckingStatus.NO_ERRORS; } },
@@ -1800,6 +1800,10 @@ public final class Concrete {
     @Override
     public @NotNull Stage getStage() {
       return stage;
+    }
+
+    public void setHeaderResolved() {
+      stage = Stage.HEADER_RESOLVED;
     }
 
     public void setResolved() {

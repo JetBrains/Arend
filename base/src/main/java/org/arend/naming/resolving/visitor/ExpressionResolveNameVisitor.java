@@ -9,7 +9,6 @@ import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
-import org.arend.ext.module.LongName;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.DataContainer;
 import org.arend.ext.reference.ExpressionResolver;
@@ -64,6 +63,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public @NotNull CountingErrorReporter getErrorReporter() {
     return myErrorReporter;
+  }
+
+  public List<Referable> getContext() {
+    return myContext;
   }
 
   @Override
@@ -891,7 +894,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       List<Concrete.LetClause> letClauses = new ArrayList<>();
       for (Concrete.LetClause clause : expr.getClauses()) {
-        Concrete.Expression newClauseTerm = null;
+        Concrete.Expression newClauseTerm;
         Concrete.Expression clauseResultType = null;
         try (Utils.ContextSaver ignored1 = new Utils.ContextSaver(myContext)) {
           visitParameters(clause.getParameters(), null);
