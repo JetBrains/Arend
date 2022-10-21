@@ -157,6 +157,10 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         return Neg(conCall2);
       }
 
+      if (intExpr1.isZero()) {
+        return Neg(arg2);
+      }
+
       List<Expression> newDefCallArgs = new ArrayList<>(2);
       newDefCallArgs.add(intExpr1);
       newDefCallArgs.add(mode == NormalizationMode.WHNF ? arg2 : arg2.accept(this, mode));
@@ -186,6 +190,10 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
       if (conCall1 != null && conCall1.getDefinition() == Prelude.SUC) {
         return Pos(conCall1);
+      }
+
+      if (intExpr2.isZero()) {
+        return Pos(arg1);
       }
 
       List<Expression> newDefCallArgs = new ArrayList<>(2);
