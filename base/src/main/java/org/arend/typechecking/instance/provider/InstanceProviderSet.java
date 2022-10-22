@@ -127,14 +127,11 @@ public class InstanceProviderSet {
         for (Statement statement : subgroup.getStatements()) {
           Group subSubgroup = statement.getGroup();
           if (subSubgroup != null) {
-            LocatedReferable subRef = subSubgroup.getReferable();
-            if (subRef.getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION) {
-              subRef = predicate.referableConverter.toDataLocatedReferable(subRef);
-              if (subRef instanceof TCDefReferable) {
-                myProviders.put((TCDefReferable) subRef, predicate.instanceProvider);
-              }
-            }
+            processCoclauseFunction(subSubgroup, predicate);
           }
+        }
+        for (Group dynamicSubgroup : subgroup.getDynamicSubgroups()) {
+          processCoclauseFunction(dynamicSubgroup, predicate);
         }
       }
 
@@ -144,6 +141,16 @@ public class InstanceProviderSet {
       predicate.test(size, ref);
 
       processSubgroups(parentScope, predicate, subgroup.getDynamicSubgroups());
+    }
+  }
+
+  private void processCoclauseFunction(Group subgroup, MyPredicate predicate) {
+    LocatedReferable subRef = subgroup.getReferable();
+    if (subRef.getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION) {
+      subRef = predicate.referableConverter.toDataLocatedReferable(subRef);
+      if (subRef instanceof TCDefReferable) {
+        myProviders.put((TCDefReferable) subRef, predicate.instanceProvider);
+      }
     }
   }
 }

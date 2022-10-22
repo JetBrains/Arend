@@ -13,7 +13,7 @@ import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 
-public class TypeClassesGlobal extends TypeCheckingTestCase {
+public class TypeClassesGlobalTest extends TypeCheckingTestCase {
   @Test
   public void inferInstance() {
     typeCheckModule(
@@ -442,5 +442,16 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "  | f => 0\n" +
       "  \\where\n" +
       "    \\func test => f", 1);
+  }
+
+  @Test
+  public void defaultTest() {
+    typeCheckModule(
+      "\\class C | x : Nat\n" +
+      "\\instance c : C | x => 3\n" +
+      "\\record R (f : Nat -> Nat)\n" +
+      "\\record S \\extends R {\n" +
+      "  \\default f (n : Nat) : Nat => x\n" +
+      "}");
   }
 }
