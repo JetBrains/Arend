@@ -321,6 +321,8 @@ class ExpressionDeserialization {
         return readNew(proto.getNew());
       case PEVAL:
         return readPEval(proto.getPEval());
+      case BOX:
+        return readBox(proto.getBox());
       case TYPE_CONSTRUCTOR:
         return readTypeConstructor(proto.getTypeConstructor());
       case TYPE_DESTRUCTOR:
@@ -487,6 +489,10 @@ class ExpressionDeserialization {
 
   private PEvalExpression readPEval(ExpressionProtos.Expression.PEval proto) throws DeserializationException {
     return new PEvalExpression(readExpr(proto.getExpression()));
+  }
+
+  private BoxExpression readBox(ExpressionProtos.Expression.Box proto) throws DeserializationException {
+    return BoxExpression.make(readExpr(proto.getExpression()));
   }
 
   private Expression readTypeConstructor(ExpressionProtos.Expression.TypeConstructor proto) throws DeserializationException {
