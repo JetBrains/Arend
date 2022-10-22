@@ -223,13 +223,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     int implicitArgumentsCounter = 0;
     for (Expression arg : arguments) {
       implicitArgumentsCounter += parameters.isExplicit() ? 0 : 1;
+      boolean genGoal = false;
       if (parameters.isProperty()) {
+        genGoal = !hasFlag(PrettyPrinterFlag.SHOW_PROOFS);
         BoxExpression boxArg = arg.cast(BoxExpression.class);
         if (boxArg != null) {
           arg = boxArg.getExpression();
         }
       }
-      visitArgument(arg, parameters.isExplicit(), concreteArguments, false, (parentVerboseLevel >= implicitArgumentsCounter));
+      visitArgument(arg, parameters.isExplicit(), concreteArguments, genGoal, (parentVerboseLevel >= implicitArgumentsCounter));
       if (parameters.hasNext()) {
         parameters = parameters.getNext();
       }
