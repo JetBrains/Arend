@@ -9,8 +9,9 @@ import java.util.List;
 public class CollectingOrderingListener implements OrderingListener {
   public interface Element {
     void feedTo(OrderingListener listener);
-    void getDefinitions(List<Concrete.ResolvableDefinition> result);
-    Concrete.ResolvableDefinition getAnyDefinition();
+    default Concrete.ResolvableDefinition getAnyDefinition() {
+      return getAllDefinitions().get(0);
+    }
     List<? extends Concrete.ResolvableDefinition> getAllDefinitions();
   }
 
@@ -24,11 +25,6 @@ public class CollectingOrderingListener implements OrderingListener {
     @Override
     public void feedTo(OrderingListener listener) {
       listener.headerFound(definition);
-    }
-
-    @Override
-    public void getDefinitions(List<Concrete.ResolvableDefinition> result) {
-      result.add(definition);
     }
 
     @Override
@@ -57,8 +53,26 @@ public class CollectingOrderingListener implements OrderingListener {
     }
 
     @Override
-    public void getDefinitions(List<Concrete.ResolvableDefinition> result) {
-      result.add(definition);
+    public Concrete.ResolvableDefinition getAnyDefinition() {
+      return definition;
+    }
+
+    @Override
+    public List<? extends Concrete.ResolvableDefinition> getAllDefinitions() {
+      return Collections.singletonList(definition);
+    }
+  }
+
+  private static class MyClass implements Element {
+    private final Concrete.ClassDefinition definition;
+
+    private MyClass(Concrete.ClassDefinition definition) {
+      this.definition = definition;
+    }
+
+    @Override
+    public void feedTo(OrderingListener listener) {
+      listener.classFinished(definition);
     }
 
     @Override
@@ -98,16 +112,6 @@ public class CollectingOrderingListener implements OrderingListener {
     }
 
     @Override
-    public void getDefinitions(List<Concrete.ResolvableDefinition> result) {
-      result.addAll(definitions);
-    }
-
-    @Override
-    public Concrete.ResolvableDefinition getAnyDefinition() {
-      return definitions.get(0);
-    }
-
-    @Override
     public List<? extends Concrete.ResolvableDefinition> getAllDefinitions() {
       return definitions;
     }
@@ -126,7 +130,7 @@ public class CollectingOrderingListener implements OrderingListener {
   public List<Concrete.ResolvableDefinition> getAllDefinitions() {
     List<Concrete.ResolvableDefinition> result = new ArrayList<>();
     for (Element element : myElements) {
-      element.getDefinitions(result);
+      result.addAll(element.getAllDefinitions());
     }
     return result;
   }
@@ -159,6 +163,11 @@ public class CollectingOrderingListener implements OrderingListener {
   @Override
   public void useFound(List<Concrete.UseDefinition> definitions) {
     myElements.add(new MyDefinitions(definitions, MyDefinitions.Kind.USE));
+  }
+
+  @Override
+  public void classFinished(Concrete.ClassDefinition definition) {
+    myElements.add(new MyClass(definition));
   }
 
   public void feed(OrderingListener listener) {

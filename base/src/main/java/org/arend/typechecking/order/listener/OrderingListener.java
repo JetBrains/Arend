@@ -11,4 +11,5 @@ public interface OrderingListener {
   void headerFound(Concrete.Definition definition);
   void bodiesFound(List<Concrete.Definition> definitions);
   void useFound(List<Concrete.UseDefinition> definitions);
+  void classFinished(Concrete.ClassDefinition definition);
 }

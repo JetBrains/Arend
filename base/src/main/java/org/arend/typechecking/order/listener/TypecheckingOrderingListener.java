@@ -462,6 +462,11 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     myCurrentDefinitions = Collections.emptyList();
   }
 
+  @Override
+  public void classFinished(Concrete.ClassDefinition definition) {
+    DefinitionTypechecker.setDefaultDependencies(definition);
+  }
+
   private void findAxioms(List<? extends Concrete.ResolvableDefinition> definitions, Set<Definition> newDefs) {
     Set<FunctionDefinition> axioms = new HashSet<>();
     VoidExpressionVisitor<Void> visitor = new VoidExpressionVisitor<>() {

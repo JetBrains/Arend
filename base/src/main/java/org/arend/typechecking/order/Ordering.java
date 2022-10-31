@@ -17,7 +17,6 @@ import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.listener.OrderingListener;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.CollectDefCallsVisitor;
-import org.arend.typechecking.visitor.DefinitionTypechecker;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -259,7 +258,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
         if (definition instanceof Concrete.UseDefinition) {
           useDefinitions.add((Concrete.UseDefinition) definition);
         } else if (definition instanceof Concrete.ClassDefinition) {
-          DefinitionTypechecker.setDefaultDependencies((Concrete.ClassDefinition) definition);
+          myOrderingListener.classFinished((Concrete.ClassDefinition) definition);
         }
       }
       myOrderingListener.useFound(useDefinitions);
