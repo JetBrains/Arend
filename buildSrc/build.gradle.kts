@@ -4,7 +4,9 @@ plugins {
     antlr
 }
 
-repositories { jcenter() }
+repositories {
+    mavenCentral()
+}
 
 tasks.withType<AntlrTask> {
     outputDirectory = projectDir.parentFile.resolve("parser/src/main/java")

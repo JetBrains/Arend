@@ -17,7 +17,6 @@ allprojects {
     group = "org.arend"
     version = "1.8.0"
     repositories {
-        jcenter()
         mavenCentral()
     }
 
