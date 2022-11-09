@@ -1581,50 +1581,42 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     } else if (body instanceof Concrete.CoelimFunctionBody) {
       if (def.getResultType() != null) {
-        if (def.getStatus() != Concrete.Status.HAS_ERRORS) {
-          fixClassElements(typedDef, def, body.getCoClauseElements());
-          checkCanBeLemma = false;
-          Pair<Expression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, kind, body.getCoClauseElements());
-          if (result != null) {
-            if (myNewDef && !def.isRecursive()) {
-              if (kind == FunctionKind.CONS) {
-                typedDef.setResultType(result.proj1.getType());
-              } else {
-                ClassCallExpression resultType = result.proj2;
-                boolean hasProperties = false;
-                for (ClassField field : resultType.getImplementedHere().keySet()) {
-                  if (field.isProperty()) {
-                    hasProperties = true;
-                    break;
-                  }
-                }
-                if (hasProperties) {
-                  Map<ClassField, Expression> resultTypeImpls = new LinkedHashMap<>();
-                  resultType = new ClassCallExpression(result.proj2.getDefinition(), result.proj2.getLevels(), resultTypeImpls, Sort.PROP, UniverseKind.NO_UNIVERSES);
-                  ExprSubstitution substitution = new ExprSubstitution(result.proj2.getThisBinding(), new ReferenceExpression(resultType.getThisBinding()));
-                  for (Map.Entry<ClassField, Expression> entry : result.proj2.getImplementedHere().entrySet()) {
-                    if (!entry.getKey().isProperty()) {
-                      resultTypeImpls.put(entry.getKey(), entry.getValue().subst(substitution));
-                    }
-                  }
-                  typechecker.fixClassExtSort(resultType, def.getResultType());
-                  resultType.updateHasUniverses();
-                }
-                typedDef.setResultType(resultType);
-                if (hasProperties || result.proj2.getNumberOfNotImplementedFields() > 0) {
-                  typedDef.setBody(result.proj1);
-                  if (hasProperties) typedDef.reallyHideBody();
+        fixClassElements(typedDef, def, body.getCoClauseElements());
+        checkCanBeLemma = false;
+        Pair<Expression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, kind, body.getCoClauseElements());
+        if (result != null) {
+          if (myNewDef && !def.isRecursive()) {
+            if (kind == FunctionKind.CONS) {
+              typedDef.setResultType(result.proj1.getType());
+            } else {
+              ClassCallExpression resultType = result.proj2;
+              boolean hasProperties = false;
+              for (ClassField field : resultType.getImplementedHere().keySet()) {
+                if (field.isProperty()) {
+                  hasProperties = true;
+                  break;
                 }
               }
+              if (hasProperties) {
+                Map<ClassField, Expression> resultTypeImpls = new LinkedHashMap<>();
+                resultType = new ClassCallExpression(result.proj2.getDefinition(), result.proj2.getLevels(), resultTypeImpls, Sort.PROP, UniverseKind.NO_UNIVERSES);
+                ExprSubstitution substitution = new ExprSubstitution(result.proj2.getThisBinding(), new ReferenceExpression(resultType.getThisBinding()));
+                for (Map.Entry<ClassField, Expression> entry : result.proj2.getImplementedHere().entrySet()) {
+                  if (!entry.getKey().isProperty()) {
+                    resultTypeImpls.put(entry.getKey(), entry.getValue().subst(substitution));
+                  }
+                }
+                typechecker.fixClassExtSort(resultType, def.getResultType());
+                resultType.updateHasUniverses();
+              }
+              typedDef.setResultType(resultType);
+              if (hasProperties || result.proj2.getNumberOfNotImplementedFields() > 0) {
+                typedDef.setBody(result.proj1);
+                if (hasProperties) typedDef.reallyHideBody();
+              }
             }
-            consType = result.proj2;
           }
-        } else {
-          TypecheckingResult result = typechecker.finalCheckExpr(def.getResultType(), Type.OMEGA);
-          if (myNewDef && result != null) {
-            typedDef.setResultType(result.expression);
-            typedDef.addStatus(typechecker.getStatus());
-          }
+          consType = result.proj2;
         }
         bodyIsOK = true;
       }
