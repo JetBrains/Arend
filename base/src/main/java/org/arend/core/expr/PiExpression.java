@@ -43,7 +43,7 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   }
 
   public static Sort generateUpperBound(Sort domSort, Sort codSort, Equations equations, Concrete.SourceNode sourceNode) {
-    if (domSort.getPLevel().getVar() == null || codSort.getPLevel().getVar() == null || domSort.getPLevel().getVar() == codSort.getPLevel().getVar()) {
+    if (domSort.getPLevel().getVar() == null || codSort.getPLevel().getVar() == null || domSort.getPLevel().getVar().max(codSort.getPLevel().getVar()) != null) {
       return new Sort(domSort.getPLevel().max(codSort.getPLevel()), codSort.getHLevel());
     }
 
