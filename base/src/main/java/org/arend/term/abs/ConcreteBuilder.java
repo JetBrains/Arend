@@ -707,7 +707,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
 
     resultTypeLevel = checkResultTypeLevel(resultType, resultTypeLevel);
     Concrete.Expression result = new Concrete.CaseExpression(data, isSFunc, concreteCaseArgs, resultType == null ? null : resultType.accept(this, null), resultTypeLevel == null ? null : resultTypeLevel.accept(this, null), buildClauses(clauses));
-    return evalKind != null ? new Concrete.EvalExpression(data, evalKind == Abstract.EvalKind.PEVAL, result) : result;
+    return evalKind == Abstract.EvalKind.BOX ? new Concrete.BoxExpression(data, result) : evalKind != null ? new Concrete.EvalExpression(data, evalKind == Abstract.EvalKind.PEVAL, result) : result;
   }
 
   private Abstract.Expression checkResultTypeLevel(Abstract.Expression resultType, Abstract.Expression resultTypeLevel) {
@@ -741,7 +741,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       result = Concrete.ClassExtExpression.make(data, result, new Concrete.Coclauses(coclausesData, buildImplementations(data, implementations)));
     }
     if (evalKind != null) {
-      result = new Concrete.EvalExpression(data, evalKind == Abstract.EvalKind.PEVAL, result);
+      result = evalKind == Abstract.EvalKind.BOX ? new Concrete.BoxExpression(data, result) : new Concrete.EvalExpression(data, evalKind == Abstract.EvalKind.PEVAL, result);
     }
     if (isNew) {
       result = new Concrete.NewExpression(data, result);
