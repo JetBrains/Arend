@@ -822,6 +822,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     new ListLayout<Concrete.CaseArgument>() {
       @Override
       void printListElement(PrettyPrintVisitor ppv, Concrete.CaseArgument caseArg) {
+        if (caseArg.isElim) {
+          ppv.myBuilder.append("\\elim ");
+        }
         caseArg.expression.accept(ppv, new Precedence(Concrete.Expression.PREC));
         if (caseArg.referable != null) {
           ppv.myBuilder.append(" \\as ").append(caseArg.referable.textRepresentation());
