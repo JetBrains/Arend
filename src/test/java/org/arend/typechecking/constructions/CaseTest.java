@@ -9,6 +9,7 @@ import org.arend.core.subst.LevelPair;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.TruncatedDataError;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -273,5 +274,18 @@ public class CaseTest extends TypeCheckingTestCase {
     "    | suc x, con1 => idp\n" +
     "    | suc x, con2 => idp\n" +
     "  }");
+  }
+
+  // TODO: Fix this
+  @Ignore
+  @Test
+  public void elimDepTest() {
+    typeCheckModule(
+      "\\func f (n : Nat) : Nat\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => n\n" +
+      "\\func test (n : Nat) : Nat => \\case \\elim n, f n \\as x, idp : f n = x \\with {\n" +
+      "  | n, e, p => 0\n" +
+      "}");
   }
 }
