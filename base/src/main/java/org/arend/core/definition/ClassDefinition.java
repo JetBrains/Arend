@@ -145,8 +145,15 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
   public Integer getUseLevel(Map<ClassField,Expression> implemented, Binding thisBinding, boolean isStrict) {
     loop:
     for (ParametersLevel parametersLevel : myParametersLevels.getList()) {
-      if (isStrict && parametersLevel.strictList == null || parametersLevel.fields.size() != implemented.size()) {
+      if (isStrict && parametersLevel.strictList == null || parametersLevel.fields.size() > implemented.size()) {
         continue;
+      }
+      if (parametersLevel.fields.size() != implemented.size()) {
+        for (ClassField field : implemented.keySet()) {
+          if (!field.isProperty() && !parametersLevel.fields.contains(field)) {
+            continue loop;
+          }
+        }
       }
       List<Expression> expressions = new ArrayList<>();
       for (ClassField field : parametersLevel.fields) {
