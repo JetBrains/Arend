@@ -325,7 +325,17 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
       Expression type = piExpr.getCodomain().accept(new SubstVisitor(new ExprSubstitution(thisBindings, newExpr), LevelSubstitution.EMPTY) {
         private Expression makeNewExpression(Expression arg, Expression type) {
           arg = arg.getUnderlyingExpression();
-          if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings) {
+          boolean ok = arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings;
+          if (!ok && arg instanceof NewExpression) {
+            NewExpression newExpr = (NewExpression) arg;
+            if (newExpr.getRenewExpression() != null && newExpr.getClassCall().getImplementedHere().isEmpty()) {
+              ReferenceExpression refExpr = newExpr.getRenewExpression().cast(ReferenceExpression.class);
+              if (refExpr != null && refExpr.getBinding() == thisBindings) {
+                ok = true;
+              }
+            }
+          }
+          if (ok) {
             type = type.normalize(NormalizationMode.WHNF);
             if (type instanceof ClassCallExpression && getDefinition().isSubClassOf(((ClassCallExpression) type).getDefinition())) {
               ClassCallExpression classCall = (ClassCallExpression) type;
