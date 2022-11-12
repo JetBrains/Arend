@@ -511,9 +511,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return typeDef instanceof ClassDefinition && !((ClassDefinition) typeDef).isRecord();
   }
 
-  private Pair<Sort,Expression> typecheckParameters(Concrete.ReferableDefinition def, Definition typedDef, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort, DependentLink oldParameters, PiExpression fieldType) {
+  private Pair<Sort,Expression> typecheckParameters(Concrete.ReferableDefinition def, Definition typedDef, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort, DependentLink oldParameters, ClassField implementedField) {
     Sort sort = Sort.PROP;
 
+    PiExpression fieldType = implementedField == null ? null : implementedField.getType();
     if (oldParameters != null) {
       list.append(oldParameters);
       fieldType = null;
@@ -536,7 +537,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (parameter.getType() != null) {
         paramResult = def instanceof Concrete.Constructor ? typechecker.checkType(parameter.getType(), expectedType) : typechecker.finalCheckType(parameter.getType(), expectedType, false);
       } else if (skip == 0) {
-        if (resultType instanceof PiExpression) {
+        if (resultType instanceof PiExpression && typedDef != null) {
           SingleDependentLink param = ((PiExpression) resultType).getParameters();
           if (param.isExplicit() != parameter.isExplicit()) {
             errorReporter.report(new ArgumentExplicitnessError(param.isExplicit(), parameter));
@@ -546,10 +547,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (thisRef != null && paramType.getExpr().findBinding(thisRef)) {
             errorReporter.report(new TypeFromFieldError(TypeFromFieldError.parameter(), paramType.getExpr(), parameter));
           } else {
-            paramResult = paramType.subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY));
+            paramResult = paramType.subst(new SubstVisitor(substitution, typedDef.makeIdLevels().makeSubstitution(implementedField.getParentClass())));
           }
-        } else if (resultType == null || !resultType.reportIfError(errorReporter, parameter)) {
-          if (resultType == null) {
+        } else if (resultType == null || typedDef == null || !resultType.reportIfError(errorReporter, parameter)) {
+          if (resultType == null || typedDef == null) {
             errorReporter.report(new TypecheckingError("Expected a typed parameter", parameter));
           } else {
             errorReporter.report(new FieldTypeParameterError(fieldType.getCodomain(), parameter));
@@ -1082,7 +1083,27 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         List<? extends LevelVariable> params = enclosingClass.getLevelParameters();
         if (params != null) {
           if (typedDef.getLevelParameters() == null) {
-            typedDef.setLevelParameters(new ArrayList<>(params));
+            int n = enclosingClass.getNumberOfPLevelParameters();
+            Concrete.LevelParameters pLevelParams = levelVariablesToParameters(def.getData(), enclosingClass.getLevelParameters().subList(0, n), true);
+            Concrete.LevelParameters hLevelParams = levelVariablesToParameters(def.getData(), enclosingClass.getLevelParameters().subList(n, enclosingClass.getLevelParameters().size()), false);
+            def.setPLevelParameters(pLevelParams);
+            def.setHLevelParameters(hLevelParams);
+            if (!def.getParameters().isEmpty()) {
+              Concrete.Expression type = def.getParameters().get(0).getType();
+              if (type instanceof Concrete.ClassExtExpression) {
+                type = ((Concrete.ClassExtExpression) type).getBaseClassExpression();
+              }
+              if (type instanceof Concrete.ReferenceExpression) {
+                Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) type;
+                if (pLevelParams != null) {
+                  refExpr.setPLevels(levelParametersToExpressions(refExpr.getData(), pLevelParams));
+                }
+                if (hLevelParams != null) {
+                  refExpr.setHLevels(levelParametersToExpressions(refExpr.getData(), hLevelParams));
+                }
+              }
+            }
+            typedDef.setLevelParameters(typecheckLevelParameters(def));
             typedDef.setPLevelsParent(enclosingClass.getPLevelsParent());
             typedDef.setHLevelsParent(enclosingClass.getHLevelsParent());
           } else {
@@ -1103,10 +1124,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           Definition useParent = def.getUseParent().getTypechecked();
           int n = useParent.getNumberOfPLevelParameters();
           if (def.getPLevelParameters() != null) {
-            compareUseLevelParameters(def.getPLevelParameters(), levelVariablesToParameters(def.getPLevelParameters(), useParent.getLevelParameters().subList(0, n), true));
+            compareUseLevelParameters(def.getPLevelParameters(), levelVariablesToParameters(def.getPLevelParameters().getData(), useParent.getLevelParameters().subList(0, n), true));
           }
           if (def.getHLevelParameters() != null) {
-            compareUseLevelParameters(def.getHLevelParameters(), levelVariablesToParameters(def.getHLevelParameters(), useParent.getLevelParameters().subList(n, useParent.getLevelParameters().size()), false));
+            compareUseLevelParameters(def.getHLevelParameters(), levelVariablesToParameters(def.getHLevelParameters().getData(), useParent.getLevelParameters().subList(n, useParent.getLevelParameters().size()), false));
           }
         }
         findLevelsParentsInParameters(typedDef, def, def.getParameters());
@@ -1115,7 +1136,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     LinkList list = new LinkList();
-    Pair<Sort, Expression> pair = typecheckParameters(def, typedDef, list, localInstancePool, null, myNewDef ? null : typedDef.getParameters(), implementedField == null ? null : implementedField.getType());
+    Pair<Sort, Expression> pair = typecheckParameters(def, typedDef, list, localInstancePool, null, myNewDef ? null : typedDef.getParameters(), implementedField);
     if (def.getBody() instanceof Concrete.CoelimFunctionBody || def.getBody() instanceof Concrete.ElimFunctionBody && def.getBody().getClauses().isEmpty()) {
       checkNoStrictParameters(def.getParameters());
     } else if (myNewDef) {
@@ -1916,7 +1937,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         TypedSingleDependentLink thisBinding = new TypedSingleDependentLink(false, "this", thisType, true);
         thisType.setSort(classDef.computeSort(defaultImpl, thisBinding));
         thisType.updateHasUniverses();
-        Expression result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, typedDef.makeIdLevels()).applyExpression(new ReferenceExpression(thisBinding), false, typechecker, def).toResult(typechecker).expression;
+        Expression result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, classDef.makeIdLevels()).applyExpression(new ReferenceExpression(thisBinding), false, typechecker, def).toResult(typechecker).expression;
         Expression actualType = result.getType();
         Expression fieldType = ((ClassField) fieldDef).getType().applyExpression(new ReferenceExpression(thisBinding));
         if (actualType.isLessOrEquals(fieldType, DummyEquations.getInstance(), def)) {

@@ -351,7 +351,7 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
                   }
                 }
               }
-              return new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getLevels().subst(getLevelSubstitution()), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
+              return new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), getLevels(((ClassCallExpression) type).getDefinition()), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
             }
           }
           return null;
