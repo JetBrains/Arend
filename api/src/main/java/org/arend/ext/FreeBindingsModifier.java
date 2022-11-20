@@ -2,7 +2,6 @@ package org.arend.ext;
 
 import org.arend.ext.concrete.ConcreteParameter;
 import org.arend.ext.core.context.CoreBinding;
-import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -28,8 +27,8 @@ public class FreeBindingsModifier {
   /**
    * Adds a binding to the context.
    */
-  public @NotNull FreeBindingsModifier add(@NotNull CoreBinding binding) {
-    return add(Collections.singletonList(binding));
+  public @NotNull FreeBindingsModifier add(@Nullable CoreBinding binding) {
+    return binding == null ? this : add(Collections.singletonList(binding));
   }
 
   /**
@@ -43,8 +42,8 @@ public class FreeBindingsModifier {
   /**
    * Adds a binding to the context.
    */
-  public @NotNull FreeBindingsModifier addRef(@Nullable ArendRef ref, @NotNull CoreBinding binding) {
-    return addRef(Collections.singletonList(new Pair<>(ref, binding)));
+  public @NotNull FreeBindingsModifier addRef(@Nullable ArendRef ref, @Nullable CoreBinding binding) {
+    return binding == null ? this : addRef(Collections.singletonList(new Pair<>(ref, binding)));
   }
 
   /**
@@ -58,8 +57,8 @@ public class FreeBindingsModifier {
   /**
    * Typechecks {@code parameter} and adds the result to the context.
    */
-  public @NotNull FreeBindingsModifier addParams(@NotNull ConcreteParameter parameter) {
-    return addParams(Collections.singletonList(parameter));
+  public @NotNull FreeBindingsModifier addParams(@Nullable ConcreteParameter parameter) {
+    return parameter == null ? this : addParams(Collections.singletonList(parameter));
   }
 
   /**
@@ -74,8 +73,8 @@ public class FreeBindingsModifier {
   /**
    * Removes a binding from the context.
    */
-  public @NotNull FreeBindingsModifier remove(@NotNull CoreBinding binding) {
-    return remove(Collections.singleton(binding));
+  public @NotNull FreeBindingsModifier remove(@Nullable CoreBinding binding) {
+    return binding == null ? this : remove(Collections.singleton(binding));
   }
 
   /**
@@ -89,8 +88,8 @@ public class FreeBindingsModifier {
   /**
    * Removes all bindings except for the given one.
    */
-  public @NotNull FreeBindingsModifier retain(@NotNull CoreBinding binding) {
-    return retain(Collections.singleton(binding));
+  public @NotNull FreeBindingsModifier retain(@Nullable CoreBinding binding) {
+    return binding == null ? this : retain(Collections.singleton(binding));
   }
 
   /**
@@ -112,8 +111,8 @@ public class FreeBindingsModifier {
   /**
    * Replaces a binding with a new one.
    */
-  public @NotNull FreeBindingsModifier replace(@NotNull CoreBinding oldBinding, @NotNull CoreBinding newBinding) {
-    return replace(Collections.singletonMap(oldBinding, newBinding));
+  public @NotNull FreeBindingsModifier replace(@Nullable CoreBinding oldBinding, @NotNull CoreBinding newBinding) {
+    return oldBinding == null ? this : replace(Collections.singletonMap(oldBinding, newBinding));
   }
 
   /**
