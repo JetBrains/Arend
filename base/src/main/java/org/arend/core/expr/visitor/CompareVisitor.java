@@ -829,7 +829,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       } else {
         List<Expression> classArgs = new ArrayList<>();
         for (ClassField field : classCall1.getDefinition().getFields()) {
-          if (!field.getReferable().isParameterField()) {
+          if (field.isProperty() || !field.getReferable().isParameterField()) {
             break;
           }
           Expression implementation = classCall1.getAbsImplementationHere(field);
@@ -844,7 +844,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         if (args.size() > classArgs.size() || classCall1.getImplementedHere().size() > classArgs.size() && !(correctOrder && myCMP == CMP.LE || !correctOrder && myCMP == CMP.GE)) {
           return null;
         }
-        dataParams = classCall1.getClassFieldParameters();
+        dataParams = new ClassCallExpression(classCall1.getDefinition(), classCall1.getLevels(), new LinkedHashMap<>(), classCall1.getDefinition().getSort(), classCall1.getDefinition().getUniverseKind()).getClassFieldParameters();
         oldDataArgs = classArgs;
       }
 
