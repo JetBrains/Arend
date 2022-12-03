@@ -1,5 +1,6 @@
 package org.arend.core.subst;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
@@ -9,6 +10,7 @@ import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.variable.Variable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -17,6 +19,7 @@ public class UnfoldVisitor extends SubstVisitor {
   private final Set<Variable> myUnfolded;
   private final boolean myUnfoldLet;
   private final UnfoldFields myUnfoldFields;
+  private final Set<HaveClause> myBoundLetVars = new HashSet<>();
 
   public enum UnfoldFields { ALL_FIELDS, ONLY_PARAMETERS, ONLY_SPECIFIED }
 
@@ -33,9 +36,13 @@ public class UnfoldVisitor extends SubstVisitor {
     return !myUnfoldLet && myUnfoldFields == UnfoldFields.ONLY_SPECIFIED && myVariables.isEmpty() && super.isEmpty();
   }
 
+  private boolean unfoldBinding(Binding binding) {
+    return binding instanceof HaveClause && !myBoundLetVars.contains(binding);
+  }
+
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    if (expr.getBinding() instanceof EvaluatingBinding && myVariables.contains(expr.getBinding())) {
+    if (expr.getBinding() instanceof EvaluatingBinding && (myVariables.contains(expr.getBinding()) || myUnfoldFields == UnfoldFields.ALL_FIELDS && unfoldBinding(expr.getBinding()))) {
       if (myUnfolded != null) {
         myUnfolded.add(expr.getBinding());
       }
@@ -86,8 +93,13 @@ public class UnfoldVisitor extends SubstVisitor {
       ExprSubstitution substitution = new ExprSubstitution();
       for (HaveClause clause : let.getClauses()) {
         substitution.add(clause, clause.getExpression().accept(this, null).subst(substitution));
+        myBoundLetVars.add(clause);
       }
-      return let.getExpression().accept(this, null).subst(substitution);
+      Expression result = let.getExpression().accept(this, null).subst(substitution);
+      for (HaveClause clause : let.getClauses()) {
+        myBoundLetVars.remove(clause);
+      }
+      return result;
     }
     return super.visitLet(let, null);
   }
