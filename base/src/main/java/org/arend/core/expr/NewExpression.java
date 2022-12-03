@@ -12,7 +12,6 @@ import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -39,7 +38,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
           }
           Expression impl = classCall.getImplementationHere(field, myNewExpr);
           if (impl == null) {
-            impl = newExpr.myClassCall.getImplementationHere(field, newExpr);
+            impl = newExpr.getImplementationHere(field);
           }
           implementations.put(field, impl);
         }
