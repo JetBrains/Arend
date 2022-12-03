@@ -23,6 +23,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.ext.util.Pair;
@@ -855,7 +856,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         dataParams = dataParams.getNext();
       }
       List<? extends Expression> oldList = oldDataArgs.subList(numberOfOldArgs, oldDataArgs.size());
-      if (!compareLists(correctOrder ? oldList : args, correctOrder ? args : oldList, dataParams, defCall1.getDefinition(), substitution)) {
+      if (!compareLists(correctOrder ? oldList : args, correctOrder ? args : oldList, null, defCall1.getDefinition(), substitution)) {
         return false;
       }
 
@@ -1404,15 +1405,42 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       
       boolean oldVarsValue = myOnlySolveVars;
       try {
-        myOnlySolveVars |= skipBoxed && link.getNextTyped(null).isProperty();
-        if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
+        myOnlySolveVars |= skipBoxed && link != null && link.getNextTyped(null).isProperty();
+        boolean ok;
+        if (link == null) {
+          Expression type1 = list1.get(i).getType().normalize(NormalizationMode.WHNF);
+          Expression type2 = list2.get(i).getType().normalize(NormalizationMode.WHNF);
+          boolean isGE;
+          if (type1 instanceof ClassCallExpression && type2 instanceof ClassCallExpression) {
+            ClassCallExpression classCall1 = (ClassCallExpression) type1;
+            ClassCallExpression classCall2 = (ClassCallExpression) type2;
+            isGE = classCall1.getDefinition() == classCall2.getDefinition() ? classCall2.getImplementedHere().size() > classCall1.getImplementedHere().size() : ((ClassCallExpression) type2).getDefinition().isSubClassOf(((ClassCallExpression) type1).getDefinition());
+          } else {
+            isGE = type2 instanceof DataCallExpression && ((DataCallExpression) type2).getDefinition() == Prelude.FIN || type1 instanceof DataCallExpression && ((DataCallExpression) type1).getDefinition() == Prelude.NAT;
+          }
+          myCMP = isGE ? CMP.GE : CMP.LE;
+          TypecheckerState state = new TypecheckerState(null, 0, 0, null, null, null);
+          myEquations.saveState(state);
+          ok = normalizedCompare(type1, type2, Type.OMEGA, false);
+          myCMP = origCMP;
+          if (ok) {
+            ok = compare(list1.get(i), list2.get(i), isGE ? type1 : type2, true);
+          }
+          if (!ok) {
+            state.numberOfLevelVariables = Integer.MAX_VALUE;
+            myEquations.loadState(state);
+          }
+        } else {
+          ok = compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true);
+        }
+        if (!ok) {
           myCMP = origCMP;
           return false;
         }
       } finally {
         myOnlySolveVars = oldVarsValue;
       }
-      if (substitution != null && link.hasNext()) {
+      if (substitution != null && link != null && link.hasNext()) {
         substitution.add(link, (myCMP == CMP.LE ? list2 : list1).get(i));
         link = link.getNext();
       }
