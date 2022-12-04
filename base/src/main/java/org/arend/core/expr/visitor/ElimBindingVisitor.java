@@ -307,7 +307,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
   @Override
   public Expression visitProj(ProjExpression expr, Void params) {
     Expression newExpr = acceptSelf(expr.getExpression(), false);
-    return newExpr == null ? null : ProjExpression.make(newExpr, expr.getField());
+    return newExpr == null ? null : ProjExpression.make(newExpr, expr.getField(), expr.isBoxed());
   }
 
   private boolean visitDependentLink(DependentLink parameters) {

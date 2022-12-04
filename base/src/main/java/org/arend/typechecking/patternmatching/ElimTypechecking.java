@@ -503,8 +503,7 @@ public class ElimTypechecking {
 
         Map<DependentLink, List<ExpressionPattern>> map = new HashMap<>();
         for (Map.Entry<Binding, ExpressionPattern> entry : result.entrySet()) {
-          if (entry.getKey() instanceof DependentLink) {
-            DependentLink key = (DependentLink) entry.getKey();
+          if (entry.getKey() instanceof DependentLink key) {
             if (!(entry.getValue() instanceof BindingPattern) && !elimParams.isEmpty() && !elimParams.contains(key)) {
               myErrorReporter.report(new ImpossibleEliminationError(dataCall, mySourceNode, null, parameters, param, elimParams, null));
               return null;
@@ -826,8 +825,7 @@ public class ElimTypechecking {
       List<ConCallExpression> conCalls = null;
       List<BranchKey> branchKeys;
       DataDefinition dataType;
-      if (someConPattern.getDefinition() instanceof Constructor) {
-        Constructor constructor = (Constructor) someConPattern.getDefinition();
+      if (someConPattern.getDefinition() instanceof Constructor constructor) {
         dataType = constructor.getDataType();
         if (dataType.hasIndexedConstructors() || dataType == Prelude.PATH) {
           DataCallExpression dataCall;
@@ -860,11 +858,18 @@ public class ElimTypechecking {
         }
         dataType = null;
       } else {
-        if (someConPattern.getDataExpression() instanceof ClassCallExpression) {
-          ClassCallExpression classCall = (ClassCallExpression) someConPattern.getDataExpression();
+        if (someConPattern.getDataExpression() instanceof ClassCallExpression classCall) {
           branchKeys = Collections.singletonList(new ClassConstructor(classCall.getDefinition(), classCall.getLevels(), classCall.getImplementedHere().keySet()));
         } else if (someConPattern.getDataExpression() instanceof SigmaExpression) {
-          branchKeys = Collections.singletonList(new TupleConstructor(someConPattern.getLength()));
+          Set<Integer> propertyIndices = Collections.emptySet();
+          int i = 0;
+          for (DependentLink link = ((SigmaExpression) someConPattern.getDataExpression()).getParameters(); link.hasNext(); link = link.getNext(), i++) {
+            if (link.isProperty()) {
+              if (propertyIndices.isEmpty()) propertyIndices = new HashSet<>();
+              propertyIndices.add(i);
+            }
+          }
+          branchKeys = Collections.singletonList(new TupleConstructor(someConPattern.getLength(), propertyIndices));
         } else {
           assert someConPattern.getDefinition() == Prelude.IDP;
           branchKeys = Collections.singletonList(new IdpConstructor());
@@ -984,8 +989,7 @@ public class ElimTypechecking {
             } else if (branchKey instanceof SingleConstructor) {
               conParameters = someConPattern.getParameters();
               Expression someExpr = someConPattern.getDataExpression();
-              if (someExpr instanceof ClassCallExpression) {
-                ClassCallExpression classCall = (ClassCallExpression) someExpr;
+              if (someExpr instanceof ClassCallExpression classCall) {
                 Map<ClassField, Expression> implementations = new LinkedHashMap<>();
                 DependentLink link = conParameters;
                 for (ClassField field : classCall.getDefinition().getFields()) {
@@ -1003,12 +1007,11 @@ public class ElimTypechecking {
               } else {
                 throw new IllegalStateException();
               }
-            } else if (branchKey instanceof Constructor) {
+            } else if (branchKey instanceof Constructor constructor) {
               List<Expression> dataTypesArgs = new ArrayList<>();
               for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
                 dataTypesArgs.add(dataTypeArg.subst(conClause.substitution));
               }
-              Constructor constructor = (Constructor) branchKey;
               substExpr = ConCallExpression.make(constructor, someConPattern.getLevels(), dataTypesArgs, arguments);
               conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), someConPattern.getDataTypeArguments()));
             } else if (branchKey instanceof ArrayConstructor) {

@@ -504,7 +504,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (i == expr.getField()) {
         break;
       }
-      substitution.add(param, ProjExpression.make(expr.getExpression(), i));
+      substitution.add(param, ProjExpression.make(expr.getExpression(), i, param.isProperty()));
       param = param.getNext();
     }
 
@@ -671,15 +671,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       }
     }
 
-    if (pattern instanceof ConstructorPattern && pattern.getConstructor() instanceof DConstructor) {
-      DConstructor constructor = (DConstructor) pattern.getConstructor();
+    if (pattern instanceof ConstructorPattern && pattern.getConstructor() instanceof DConstructor constructor) {
       if (constructor != Prelude.EMPTY_ARRAY && constructor != Prelude.ARRAY_CONS) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Expected either '" + Prelude.EMPTY_ARRAY.getName() + "' or '" + Prelude.ARRAY_CONS.getName() + "'", mySourceNode), errorExpr));
       }
-      if (!(type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.DEP_ARRAY)) {
+      if (!(type instanceof ClassCallExpression classCall && ((ClassCallExpression) type).getDefinition() == Prelude.DEP_ARRAY)) {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.STD), type, mySourceNode), errorExpr));
       }
-      ClassCallExpression classCall = (ClassCallExpression) type;
       Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(classCall);
       if (isEmpty != null && isEmpty != (constructor == Prelude.EMPTY_ARRAY)) {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text(Prelude.DEP_ARRAY.getName() + " " + (isEmpty ? "0" : "(" + Prelude.SUC + " _)")), type, mySourceNode), errorExpr));
@@ -687,10 +685,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       return checkElimPatterns(constructor.getArrayParameters(classCall), pattern.getSubPatterns(), new ExprSubstitution(), newBindings, idpSubst, patternSubst, reversePatternSubst, errorExpr, null);
     }
 
-    if (!(type instanceof DataCallExpression)) {
+    if (!(type instanceof DataCallExpression dataCall)) {
       throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a data type"), type, mySourceNode), errorExpr));
     }
-    DataCallExpression dataCall = (DataCallExpression) type;
 
     if (pattern instanceof EmptyPattern) {
       List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();

@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 public interface RedirectingReferable extends GlobalReferable {
   @NotNull Referable getOriginalReferable();
 
-  static @NotNull Referable getOriginalReferable(Referable ref) {
+  static Referable getOriginalReferable(Referable ref) {
     while (ref instanceof RedirectingReferable) {
       ref = ((RedirectingReferable) ref).getOriginalReferable();
     }

@@ -98,14 +98,12 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
         argParam = argParam.getNext();
       }
       return !(paramParam.hasNext() || argParam.hasNext());
-    } else if (paramType instanceof ClassCallExpression) {
+    } else if (paramType instanceof ClassCallExpression paramClassCall) {
       argType = argType.dropPiParameter(skip);
       argType = argType == null ? null : argType.normalize(NormalizationMode.WHNF);
-      if (!(argType instanceof ClassCallExpression)) {
+      if (!(argType instanceof ClassCallExpression argClassCall)) {
         return false;
       }
-      ClassCallExpression paramClassCall = (ClassCallExpression) paramType;
-      ClassCallExpression argClassCall = (ClassCallExpression) argType;
       if (paramClassCall.getUniverseKind() != UniverseKind.NO_UNIVERSES && !matchLevels(paramClassCall.getLevels(), minimizeLevelsToSuperClass(argClassCall, paramClassCall.getDefinition()), levelMap)) {
         return false;
       }
@@ -127,8 +125,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     }
     boolean ok = true;
     Map<LevelVariable, Level> levelMap = new HashMap<>();
-    if (defCall instanceof ClassCallExpression) {
-      ClassCallExpression classCall = (ClassCallExpression) defCall;
+    if (defCall instanceof ClassCallExpression classCall) {
       Levels idLevels = classCall.getDefinition().makeIdLevels();
       for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
         ClassField field = entry.getKey();
@@ -235,8 +232,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     if (myNormalizing) {
       type = type.normalize(NormalizationMode.WHNF);
     }
-    if (type instanceof ClassCallExpression) {
-      ClassCallExpression classCall = (ClassCallExpression) type;
+    if (type instanceof ClassCallExpression classCall) {
       if (classCall.getDefinition().getOverriddenType(expr.getDefinition()) != null) {
         return classCall.getDefinition().getOverriddenType(expr.getDefinition(), myMinimal ? minimizeLevels(classCall) : classCall.getLevels()).applyExpression(expr.getArgument());
       }
@@ -354,7 +350,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
     ExprSubstitution subst = new ExprSubstitution();
     for (int i = 0; i < expr.getField(); i++) {
-      subst.add(params, ProjExpression.make(expr.getExpression(), i));
+      subst.add(params, ProjExpression.make(expr.getExpression(), i, params.isProperty()));
       params = params.getNext();
     }
     return params.getTypeExpr().subst(subst);
@@ -405,11 +401,10 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     } else {
       type = type.getUnderlyingExpression();
     }
-    if (!(type instanceof FunCallExpression && ((FunCallExpression) type).getDefinition() == expr.getDefinition())) {
+    if (!(type instanceof FunCallExpression funCall && ((FunCallExpression) type).getDefinition() == expr.getDefinition())) {
       return type instanceof ErrorExpression ? type : new ErrorExpression();
     }
 
-    FunCallExpression funCall = (FunCallExpression) type;
     return NormalizeVisitor.INSTANCE.visitBody(funCall.getDefinition().getActualBody(), funCall.getDefCallArguments(), funCall, NormalizationMode.WHNF);
   }
 

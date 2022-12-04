@@ -198,23 +198,23 @@ class ExpressionDeserialization {
 
   private Pattern readPattern(ExpressionProtos.Pattern proto, LinkList list) throws DeserializationException {
     switch (proto.getKindCase()) {
-      case BINDING: {
+      case BINDING -> {
         DependentLink param = readParameter(proto.getBinding().getVar());
         list.append(param);
         return new BindingPattern(param);
       }
-      case EMPTY: {
+      case EMPTY -> {
         DependentLink param = readParameter(proto.getEmpty().getVar());
         list.append(param);
         return new EmptyPattern(param);
       }
-      case CONSTRUCTOR: {
+      case CONSTRUCTOR -> {
         ExpressionProtos.Pattern.Constructor conProto = proto.getConstructor();
         int def = conProto.getDefinition();
         List<Pattern> patterns = readPatterns(conProto.getPatternList(), list);
         return ConstructorPattern.make(def == 0 ? null : myCallTargetProvider.getCallTarget(def), patterns);
       }
-      case EXPRESSION_CONSTRUCTOR: {
+      case EXPRESSION_CONSTRUCTOR -> {
         ExpressionProtos.Pattern.ExpressionConstructor conProto = proto.getExpressionConstructor();
         Expression expression = readExpr(conProto.getExpression());
         List<ExpressionPattern> patterns = readExpressionPatterns(conProto.getPatternList(), list);
@@ -235,14 +235,13 @@ class ExpressionDeserialization {
         }
         throw new DeserializationException("Wrong pattern expression");
       }
-      default:
-        throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
+      default -> throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
     }
   }
 
   private ElimTree readElimTree(ExpressionProtos.ElimTree proto) throws DeserializationException {
     switch (proto.getKindCase()) {
-      case BRANCH: {
+      case BRANCH -> {
         ExpressionProtos.ElimTree.Branch branchProto = proto.getBranch();
         BranchElimTree result = new BranchElimTree(proto.getSkip(), branchProto.getKeepConCall());
         for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : branchProto.getClausesMap().entrySet()) {
@@ -252,7 +251,8 @@ class ExpressionDeserialization {
           ExpressionProtos.ElimTree.Branch.SingleConstructorClause singleClause = branchProto.getSingleClause();
           ElimTree elimTree = readElimTree(singleClause.getElimTree());
           if (singleClause.hasTuple()) {
-            result.addChild(new TupleConstructor(singleClause.getTuple().getLength()), elimTree);
+            ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple tupleProto = singleClause.getTuple();
+            result.addChild(new TupleConstructor(tupleProto.getLength(), new HashSet<>(tupleProto.getPropertyIndexList())), elimTree);
           }
           if (singleClause.hasIdp()) {
             result.addChild(new IdpConstructor(), elimTree);
@@ -278,74 +278,45 @@ class ExpressionDeserialization {
         }
         return result;
       }
-      case LEAF: {
+      case LEAF -> {
         ExpressionProtos.ElimTree.Leaf leaf = proto.getLeaf();
         return new LeafElimTree(proto.getSkip(), leaf.getHasIndices() ? leaf.getIndexList() : null, leaf.getClauseIndex());
       }
-      default:
-        throw new DeserializationException("Unknown ElimTreeNode kind: " + proto.getKindCase());
+      default -> throw new DeserializationException("Unknown ElimTreeNode kind: " + proto.getKindCase());
     }
   }
 
   Expression readExpr(ExpressionProtos.Expression proto) throws DeserializationException {
-    switch (proto.getKindCase()) {
-      case APP:
-        return readApp(proto.getApp());
-      case FUN_CALL:
-        return readFunCall(proto.getFunCall());
-      case CON_CALLS:
-        return readConCalls(proto.getConCalls());
-      case DATA_CALL:
-        return readDataCall(proto.getDataCall());
-      case CLASS_CALL:
-        return readClassCall(proto.getClassCall());
-      case REFERENCE:
-        return readReference(proto.getReference());
-      case EVALUATING_REFERENCE:
-        return readEvaluatingReference(proto.getEvaluatingReference());
-      case LAM:
-        return readLam(proto.getLam());
-      case PI:
-        return readPi(proto.getPi());
-      case UNIVERSE:
-        return readUniverse(proto.getUniverse());
-      case ERROR:
-        return readError(proto.getError());
-      case TUPLE:
-        return readTuple(proto.getTuple());
-      case SIGMA:
-        return readSigma(proto.getSigma());
-      case PROJ:
-        return readProj(proto.getProj());
-      case NEW:
-        return readNew(proto.getNew());
-      case PEVAL:
-        return readPEval(proto.getPEval());
-      case BOX:
-        return readBox(proto.getBox());
-      case TYPE_CONSTRUCTOR:
-        return readTypeConstructor(proto.getTypeConstructor());
-      case TYPE_DESTRUCTOR:
-        return readTypeDestructor(proto.getTypeDestructor());
-      case ARRAY:
-        return readArray(proto.getArray());
-      case LET:
-        return readLet(proto.getLet());
-      case CASE:
-        return readCase(proto.getCase());
-      case FIELD_CALL:
-        return readFieldCall(proto.getFieldCall());
-      case SMALL_INTEGER:
-        return readSmallInteger(proto.getSmallInteger());
-      case BIG_INTEGER:
-        return readBigInteger(proto.getBigInteger());
-      case PATH:
-        return readPath(proto.getPath());
-      case AT:
-        return readAt(proto.getAt());
-      default:
-        throw new DeserializationException("Unknown Expression kind: " + proto.getKindCase());
-    }
+    return switch (proto.getKindCase()) {
+      case APP -> readApp(proto.getApp());
+      case FUN_CALL -> readFunCall(proto.getFunCall());
+      case CON_CALLS -> readConCalls(proto.getConCalls());
+      case DATA_CALL -> readDataCall(proto.getDataCall());
+      case CLASS_CALL -> readClassCall(proto.getClassCall());
+      case REFERENCE -> readReference(proto.getReference());
+      case EVALUATING_REFERENCE -> readEvaluatingReference(proto.getEvaluatingReference());
+      case LAM -> readLam(proto.getLam());
+      case PI -> readPi(proto.getPi());
+      case UNIVERSE -> readUniverse(proto.getUniverse());
+      case ERROR -> readError(proto.getError());
+      case TUPLE -> readTuple(proto.getTuple());
+      case SIGMA -> readSigma(proto.getSigma());
+      case PROJ -> readProj(proto.getProj());
+      case NEW -> readNew(proto.getNew());
+      case PEVAL -> readPEval(proto.getPEval());
+      case BOX -> readBox(proto.getBox());
+      case TYPE_CONSTRUCTOR -> readTypeConstructor(proto.getTypeConstructor());
+      case TYPE_DESTRUCTOR -> readTypeDestructor(proto.getTypeDestructor());
+      case ARRAY -> readArray(proto.getArray());
+      case LET -> readLet(proto.getLet());
+      case CASE -> readCase(proto.getCase());
+      case FIELD_CALL -> readFieldCall(proto.getFieldCall());
+      case SMALL_INTEGER -> readSmallInteger(proto.getSmallInteger());
+      case BIG_INTEGER -> readBigInteger(proto.getBigInteger());
+      case PATH -> readPath(proto.getPath());
+      case AT -> readAt(proto.getAt());
+      default -> throw new DeserializationException("Unknown Expression kind: " + proto.getKindCase());
+    };
   }
 
   private List<Expression> readExprList(List<ExpressionProtos.Expression> protos) throws DeserializationException {
@@ -436,12 +407,12 @@ class ExpressionDeserialization {
   }
 
   UniverseKind readUniverseKind(ExpressionProtos.UniverseKind kind) throws DeserializationException {
-    switch (kind) {
-      case NO_UNIVERSES: return UniverseKind.NO_UNIVERSES;
-      case ONLY_COVARIANT: return UniverseKind.ONLY_COVARIANT;
-      case WITH_UNIVERSES: return UniverseKind.WITH_UNIVERSES;
-      default: throw new DeserializationException("Unrecognized universe kind: " + kind);
-    }
+    return switch (kind) {
+      case NO_UNIVERSES -> UniverseKind.NO_UNIVERSES;
+      case ONLY_COVARIANT -> UniverseKind.ONLY_COVARIANT;
+      case WITH_UNIVERSES -> UniverseKind.WITH_UNIVERSES;
+      default -> throw new DeserializationException("Unrecognized universe kind: " + kind);
+    };
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationException {
@@ -480,7 +451,7 @@ class ExpressionDeserialization {
   }
 
   private Expression readProj(ExpressionProtos.Expression.Proj proto) throws DeserializationException {
-    return ProjExpression.make(readExpr(proto.getExpression()), proto.getField());
+    return ProjExpression.make(readExpr(proto.getExpression()), proto.getField(), proto.getBoxed());
   }
 
   private NewExpression readNew(ExpressionProtos.Expression.New proto) throws DeserializationException {
@@ -535,7 +506,7 @@ class ExpressionDeserialization {
 
   private LetClausePattern readLetClausePattern(ExpressionProtos.Expression.Let.Pattern proto) throws DeserializationException {
     switch (proto.getKind()) {
-      case RECORD: {
+      case RECORD -> {
         List<ClassField> fields = new ArrayList<>();
         for (Integer fieldIndex : proto.getFieldList()) {
           fields.add(myCallTargetProvider.getCallTarget(fieldIndex, ClassField.class));
@@ -546,17 +517,17 @@ class ExpressionDeserialization {
         }
         return new RecordLetClausePattern(fields, patterns);
       }
-      case TUPLE: {
+      case TUPLE -> {
         List<LetClausePattern> patterns = new ArrayList<>();
         for (ExpressionProtos.Expression.Let.Pattern pattern : proto.getPatternList()) {
           patterns.add(readLetClausePattern(pattern));
         }
         return new TupleLetClausePattern(patterns);
       }
-      case NAME:
+      case NAME -> {
         return new NameLetClausePattern(validName(proto.getName()));
-      default:
-        throw new DeserializationException("Unrecognized \\let pattern kind: " + proto.getKind());
+      }
+      default -> throw new DeserializationException("Unrecognized \\let pattern kind: " + proto.getKind());
     }
   }
 

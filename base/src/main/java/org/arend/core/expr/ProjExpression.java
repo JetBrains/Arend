@@ -10,15 +10,17 @@ import org.jetbrains.annotations.NotNull;
 public class ProjExpression extends Expression implements CoreProjExpression {
   private final Expression myExpression;
   private final int myField;
+  private final boolean myProperty;
 
-  private ProjExpression(Expression expression, int field) {
+  private ProjExpression(Expression expression, int field, boolean isProperty) {
     myExpression = expression;
     myField = field;
+    myProperty = isProperty;
   }
 
-  public static Expression make(Expression expression, int field) {
-    TupleExpression tuple = expression.cast(TupleExpression.class);
-    return tuple != null ? tuple.getFields().get(field) : new ProjExpression(expression, field);
+  public static Expression make(Expression expression, int field, boolean isProperty) {
+    TupleExpression tuple = isProperty ? null : expression.cast(TupleExpression.class);
+    return tuple != null ? tuple.getFields().get(field) : new ProjExpression(expression, field, isProperty);
   }
 
   @NotNull
@@ -50,6 +52,11 @@ public class ProjExpression extends Expression implements CoreProjExpression {
   @Override
   public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitProj(this, params);
+  }
+
+  @Override
+  public boolean isBoxed() {
+    return myProperty;
   }
 
   @Override

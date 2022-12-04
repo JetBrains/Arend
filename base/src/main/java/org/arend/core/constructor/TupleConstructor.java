@@ -8,16 +8,23 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public final class TupleConstructor extends SingleConstructor {
   private final int myLength;
+  private final Set<Integer> myPropertyIndices;
 
-  public TupleConstructor(int length) {
+  public TupleConstructor(int length, Set<Integer> propertyIndices) {
     myLength = length;
+    myPropertyIndices = propertyIndices;
   }
 
   public int getNumberOfParameters() {
     return myLength;
+  }
+
+  public Set<? extends Integer> getPropertyIndices() {
+    return myPropertyIndices;
   }
 
   @Override
@@ -29,7 +36,7 @@ public final class TupleConstructor extends SingleConstructor {
     } else {
       args = new ArrayList<>(myLength);
       for (int i = 0; i < myLength; i++) {
-        args.add(ProjExpression.make(argument, i));
+        args.add(ProjExpression.make(argument, i, myPropertyIndices.contains(i)));
       }
     }
     return args;

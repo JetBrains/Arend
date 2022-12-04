@@ -202,8 +202,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     Referable ref = expr.getReferent();
     if (ref instanceof CoreReferable && ((CoreReferable) ref).printExpression()) {
       ToAbstractVisitor.convert(((CoreReferable) ref).result.expression, PrettyPrinterConfig.DEFAULT).accept(this, prec == null ? new Precedence(ReferenceExpression.PREC) : prec);
-    } else if (ref instanceof AbstractedReferable) {
-      AbstractedReferable abs = (AbstractedReferable) ref;
+    } else if (ref instanceof AbstractedReferable abs) {
       List<Binding> bindings = new ArrayList<>();
       org.arend.core.expr.Expression core = AbstractedExpressionImpl.getExpression(abs.expression, bindings);
       Map<Variable, Concrete.Expression> mapper = new HashMap<>();
@@ -1080,14 +1079,14 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitFunction(final Concrete.BaseFunctionDefinition def, Void ignored) {
     printIndent();
     switch (def.getKind()) {
-      case FUNC: myBuilder.append("\\func "); break;
-      case FUNC_COCLAUSE: myBuilder.append("| "); break;
-      case CLASS_COCLAUSE: myBuilder.append("\\default "); break;
-      case TYPE: myBuilder.append("\\type "); break;
-      case LEMMA: myBuilder.append("\\lemma "); break;
-      case LEVEL: myBuilder.append("\\use \\level "); break;
-      case COERCE: myBuilder.append("\\use \\coerce "); break;
-      case INSTANCE: myBuilder.append("\\instance "); break;
+      case FUNC -> myBuilder.append("\\func ");
+      case FUNC_COCLAUSE -> myBuilder.append("| ");
+      case CLASS_COCLAUSE -> myBuilder.append("\\default ");
+      case TYPE -> myBuilder.append("\\type ");
+      case LEMMA -> myBuilder.append("\\lemma ");
+      case LEVEL -> myBuilder.append("\\use \\level ");
+      case COERCE -> myBuilder.append("\\use \\coerce ");
+      case INSTANCE -> myBuilder.append("\\instance ");
     }
 
     prettyPrintNameWithPrecedence(def.getData());
@@ -1297,8 +1296,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       myBuilder.append("{");
     }
 
-    if (pattern instanceof Concrete.NamePattern) {
-      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+    if (pattern instanceof Concrete.NamePattern namePattern) {
       Referable referable = namePattern.getReferable();
       String name = referable == null ? null : referable.textRepresentation();
       if (name == null) {
@@ -1323,11 +1321,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         prettyPrintPattern(arg, Concrete.Pattern.PREC, false);
       }
       myBuilder.append(')');
-    } else if (pattern instanceof Concrete.ConstructorPattern) {
-      Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
+    } else if (pattern instanceof Concrete.ConstructorPattern conPattern) {
       if ((withParens || !conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC) && pattern.isExplicit()) myBuilder.append('(');
 
-      myBuilder.append(conPattern.getConstructor().textRepresentation());
+      myBuilder.append(conPattern.getConstructor() == null ? "_" : conPattern.getConstructor().textRepresentation());
       for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
         myBuilder.append(' ');
         prettyPrintPattern(patternArg, (byte) (Concrete.Pattern.PREC + 1), false);
@@ -1398,9 +1395,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   public void prettyPrintClassField(Concrete.ClassField field) {
     switch (field.getKind()) {
-      case FIELD: myBuilder.append("\\field "); break;
-      case PROPERTY: myBuilder.append("\\property "); break;
-      default: myBuilder.append("| ");
+      case FIELD -> myBuilder.append("\\field ");
+      case PROPERTY -> myBuilder.append("\\property ");
+      default -> myBuilder.append("| ");
     }
     prettyPrintNameWithPrecedence(field.getData());
     if (!field.getParameters().isEmpty()) {

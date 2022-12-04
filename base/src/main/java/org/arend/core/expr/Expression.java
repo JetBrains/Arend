@@ -11,7 +11,6 @@ import org.arend.core.subst.UnfoldVisitor;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.expr.*;
 import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -340,11 +339,10 @@ public abstract class Expression implements Body, CoreExpression {
     if (expr instanceof IntegerExpression) {
       return !n.equals(((IntegerExpression) expr).getBigInteger());
     }
-    if (!(expr instanceof ConCallExpression)) {
+    if (!(expr instanceof ConCallExpression conCall)) {
       return false;
     }
 
-    ConCallExpression conCall = (ConCallExpression) expr;
     if (conCall.getDefinition() == Prelude.ZERO) {
       return !n.equals(BigInteger.ZERO);
     }
@@ -364,9 +362,7 @@ public abstract class Expression implements Body, CoreExpression {
     if (expr2 instanceof IntegerExpression) {
       return checkInteger(((IntegerExpression) expr2).getBigInteger(), expr1);
     }
-    if (expr1 instanceof ArrayExpression && expr2 instanceof ArrayExpression) {
-      ArrayExpression array1 = (ArrayExpression) expr1;
-      ArrayExpression array2 = (ArrayExpression) expr2;
+    if (expr1 instanceof ArrayExpression array1 && expr2 instanceof ArrayExpression array2) {
       if (array1.getTail() == null && array1.getElements().size() < array2.getElements().size() || array2.getTail() == null && array2.getElements().size() < array1.getElements().size()) {
         return true;
       }
@@ -377,12 +373,10 @@ public abstract class Expression implements Body, CoreExpression {
       }
       return array1.getTail() != null && Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(array1.getTail().getType())) || array2.getTail() != null && Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(array2.getTail().getType()));
     }
-    if (!(expr1 instanceof ConCallExpression) || !(expr2 instanceof ConCallExpression)) {
+    if (!(expr1 instanceof ConCallExpression conCall1) || !(expr2 instanceof ConCallExpression conCall2)) {
       return false;
     }
 
-    ConCallExpression conCall1 = (ConCallExpression) expr1;
-    ConCallExpression conCall2 = (ConCallExpression) expr2;
     Constructor con1 = conCall1.getDefinition();
     Constructor con2 = conCall2.getDefinition();
     if (con1.getDataType() != con2.getDataType() || con1.getDataType() == Prelude.INTERVAL) {
@@ -521,8 +515,7 @@ public abstract class Expression implements Body, CoreExpression {
     }
 
     List<PiExpression> piExprs = new ArrayList<>();
-    while (expr instanceof PiExpression) {
-      PiExpression piExpr = (PiExpression) expr;
+    while (expr instanceof PiExpression piExpr) {
       piExprs.add(piExpr);
       if (parameters != null) {
         for (SingleDependentLink link = piExpr.getParameters(); link.hasNext(); link = link.getNext()) {
@@ -564,6 +557,7 @@ public abstract class Expression implements Body, CoreExpression {
     return true;
   }
 
+  @Override
   public boolean isBoxed() {
     return false;
   }

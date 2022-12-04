@@ -172,6 +172,7 @@ message Expression {
     message Proj {
         Expression expression = 1;
         int32 field = 2;
+        bool boxed = 3;
     }
     message Reference {
         int32 binding_ref = 1;
@@ -284,6 +285,7 @@ message ElimTree {
 
             message Tuple {
                 int32 length = 1;
+                repeated int32 property_index = 2;
             }
 
             message Class {

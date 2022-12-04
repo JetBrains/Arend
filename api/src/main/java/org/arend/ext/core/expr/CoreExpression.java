@@ -2,7 +2,6 @@ package org.arend.ext.core.expr;
 
 import org.arend.ext.core.body.CoreBody;
 import org.arend.ext.core.context.CoreBinding;
-import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.CMP;
@@ -151,4 +150,11 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
    * @return the list of constructors with data arguments matching this type or {@code null} if it cannot be determined
    */
   @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments();
+
+  /**
+   * Boxed expressions are those that never evaluate even after a substitution.
+   *
+   * @return true if the expression is boxed, false otherwise.
+   */
+  boolean isBoxed();
 }

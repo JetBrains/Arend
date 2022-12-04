@@ -45,8 +45,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitReference(Concrete.ReferenceExpression expr1, Concrete.Expression expr2) {
-    if (!(expr2 instanceof Concrete.ReferenceExpression)) return false;
-    Concrete.ReferenceExpression defCallExpr2 = (Concrete.ReferenceExpression) expr2;
+    if (!(expr2 instanceof Concrete.ReferenceExpression defCallExpr2)) return false;
     Referable ref1 = mySubstitution.get(expr1.getReferent());
     if (ref1 == null) {
       ref1 = expr1.getReferent();
@@ -102,11 +101,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitUniverse(Concrete.UniverseExpression expr1, Concrete.Expression expr2) {
-    if (!(expr2 instanceof Concrete.UniverseExpression)) {
-      return false;
-    }
-    Concrete.UniverseExpression uni2 = (Concrete.UniverseExpression) expr2;
-    return compareLevel(expr1.getPLevel(), uni2.getPLevel()) && compareLevel(expr1.getHLevel(), uni2.getHLevel());
+    return expr2 instanceof Concrete.UniverseExpression uni2 && compareLevel(expr1.getPLevel(), uni2.getPLevel()) && compareLevel(expr1.getHLevel(), uni2.getHLevel());
   }
 
   private boolean compareLevel(Concrete.LevelExpression level1, Concrete.LevelExpression level2) {
@@ -128,13 +123,8 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     if (level1 instanceof Concrete.SucLevelExpression) {
       return level2 instanceof Concrete.SucLevelExpression && compareLevel(((Concrete.SucLevelExpression) level1).getExpression(), ((Concrete.SucLevelExpression) level2).getExpression());
     }
-    if (level1 instanceof Concrete.MaxLevelExpression) {
-      if (!(level2 instanceof Concrete.MaxLevelExpression)) {
-        return false;
-      }
-      Concrete.MaxLevelExpression max1 = (Concrete.MaxLevelExpression) level1;
-      Concrete.MaxLevelExpression max2 = (Concrete.MaxLevelExpression) level2;
-      return compareLevel(max1.getLeft(), max2.getLeft()) && compareLevel(max1.getRight(), max2.getRight());
+    if (level1 instanceof Concrete.MaxLevelExpression max1) {
+      return level2 instanceof Concrete.MaxLevelExpression max2 && compareLevel(max1.getLeft(), max2.getLeft()) && compareLevel(max1.getRight(), max2.getRight());
     }
     throw new IllegalStateException();
   }
@@ -167,8 +157,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitBinOpSequence(Concrete.BinOpSequenceExpression expr1, Concrete.Expression expr2) {
-    if (!(expr2 instanceof Concrete.BinOpSequenceExpression)) return false;
-    Concrete.BinOpSequenceExpression binOpExpr2 = (Concrete.BinOpSequenceExpression) expr2;
+    if (!(expr2 instanceof Concrete.BinOpSequenceExpression binOpExpr2)) return false;
     if (expr1.getSequence().size() != binOpExpr2.getSequence().size()) return false;
     for (int i = 0; i < expr1.getSequence().size(); i++) {
       if (expr1.getSequence().get(i).fixity != binOpExpr2.getSequence().get(i).fixity || expr1.getSequence().get(i).isExplicit != binOpExpr2.getSequence().get(i).isExplicit) return false;
@@ -217,14 +206,12 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return ((Concrete.NumberPattern) pattern1).getNumber() == ((Concrete.NumberPattern) pattern2).getNumber();
     }
 
-    if (pattern1 instanceof Concrete.ConstructorPattern) {
-      if (!(pattern2 instanceof Concrete.ConstructorPattern)) {
+    if (pattern1 instanceof Concrete.ConstructorPattern conPattern1) {
+      if (!(pattern2 instanceof Concrete.ConstructorPattern conPattern2)) {
         return false;
       }
 
-      Concrete.ConstructorPattern conPattern1 = (Concrete.ConstructorPattern) pattern1;
-      Concrete.ConstructorPattern conPattern2 = (Concrete.ConstructorPattern) pattern2;
-      return conPattern1.getConstructor().equals(conPattern2.getConstructor()) && comparePatterns(conPattern1.getPatterns(), conPattern2.getPatterns());
+      return Objects.equals(conPattern1.getConstructor(), conPattern2.getConstructor()) && comparePatterns(conPattern1.getPatterns(), conPattern2.getPatterns());
     }
 
     if (pattern1 instanceof Concrete.TuplePattern) {
@@ -280,10 +267,9 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitCase(Concrete.CaseExpression expr1, Concrete.Expression expr2) {
-    if (!(expr2 instanceof Concrete.CaseExpression)) {
+    if (!(expr2 instanceof Concrete.CaseExpression case2)) {
       return false;
     }
-    Concrete.CaseExpression case2 = (Concrete.CaseExpression) expr2;
     if (expr1.getArguments().size() != case2.getArguments().size()) {
       return false;
     }
@@ -302,11 +288,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitEval(Concrete.EvalExpression expr, Concrete.Expression expr2) {
-    if (!(expr2 instanceof Concrete.EvalExpression)) {
-      return false;
-    }
-    Concrete.EvalExpression eval2 = (Concrete.EvalExpression) expr2;
-    return expr.isPEval() == eval2.isPEval() && compare(expr.getExpression(), eval2.getExpression());
+    return expr2 instanceof Concrete.EvalExpression eval2 && expr.isPEval() == eval2.isPEval() && compare(expr.getExpression(), eval2.getExpression());
   }
 
   @Override
@@ -356,9 +338,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitClassExt(Concrete.ClassExtExpression expr1, Concrete.Expression expr2) {
-    if (!(expr2 instanceof Concrete.ClassExtExpression)) return false;
-    Concrete.ClassExtExpression classExtExpr2 = (Concrete.ClassExtExpression) expr2;
-    return compare(expr1.getBaseClassExpression(), classExtExpr2.getBaseClassExpression()) && compareImplementStatements(expr1.getStatements(), classExtExpr2.getStatements());
+    return expr2 instanceof Concrete.ClassExtExpression classExtExpr2 && compare(expr1.getBaseClassExpression(), classExtExpr2.getBaseClassExpression()) && compareImplementStatements(expr1.getStatements(), classExtExpr2.getStatements());
   }
 
   @Override
@@ -372,8 +352,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitLet(Concrete.LetExpression expr1, Concrete.Expression expr2) {
-    if (!(expr2 instanceof Concrete.LetExpression)) return false;
-    Concrete.LetExpression letExpr2 = (Concrete.LetExpression) expr2;
+    if (!(expr2 instanceof Concrete.LetExpression letExpr2)) return false;
     if (expr1.getClauses().size() != letExpr2.getClauses().size()) {
       return false;
     }
@@ -429,10 +408,9 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitFunction(Concrete.BaseFunctionDefinition def, Concrete.Definition def2) {
-    if (!(def2 instanceof Concrete.BaseFunctionDefinition)) {
+    if (!(def2 instanceof Concrete.BaseFunctionDefinition fun2)) {
       return false;
     }
-    Concrete.BaseFunctionDefinition fun2 = (Concrete.BaseFunctionDefinition) def2;
 
     if (def.getKind() != fun2.getKind()) {
       return false;
@@ -452,13 +430,8 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     if (def.getBody() instanceof Concrete.CoelimFunctionBody) {
       return fun2.getBody() instanceof Concrete.CoelimFunctionBody && compareCoClauseElements(def.getBody().getCoClauseElements(), fun2.getBody().getCoClauseElements());
     }
-    if (def.getBody() instanceof Concrete.ElimFunctionBody) {
-      if (!(fun2.getBody() instanceof Concrete.ElimFunctionBody)) {
-        return false;
-      }
-      Concrete.ElimFunctionBody elim1 = (Concrete.ElimFunctionBody) def.getBody();
-      Concrete.ElimFunctionBody elim2 = (Concrete.ElimFunctionBody) fun2.getBody();
-      return compareExpressionList(elim1.getEliminatedReferences(), elim2.getEliminatedReferences()) && compareFunctionClauses(elim1.getClauses(), elim2.getClauses());
+    if (def.getBody() instanceof Concrete.ElimFunctionBody elim1) {
+      return fun2.getBody() instanceof Concrete.ElimFunctionBody elim2 && compareExpressionList(elim1.getEliminatedReferences(), elim2.getEliminatedReferences()) && compareFunctionClauses(elim1.getClauses(), elim2.getClauses());
     } else {
       return false;
     }
@@ -466,10 +439,9 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitData(Concrete.DataDefinition def, Concrete.Definition def2) {
-    if (!(def2 instanceof Concrete.DataDefinition)) {
+    if (!(def2 instanceof Concrete.DataDefinition data2)) {
       return false;
     }
-    Concrete.DataDefinition data2 = (Concrete.DataDefinition) def2;
 
     if (!compareParameters(def.getParameters(), data2.getParameters())) {
       return false;
@@ -518,10 +490,9 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitClass(Concrete.ClassDefinition def, Concrete.Definition def2) {
-    if (!(def2 instanceof Concrete.ClassDefinition)) {
+    if (!(def2 instanceof Concrete.ClassDefinition class2)) {
       return false;
     }
-    Concrete.ClassDefinition class2 = (Concrete.ClassDefinition) def2;
 
     if (!compareExpressionList(def.getSuperClasses(), class2.getSuperClasses())) {
       return false;

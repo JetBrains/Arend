@@ -394,8 +394,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     boolean hasMeta = false;
     List<MetaBinOpParser.ResolvedReference> resolvedRefs = new ArrayList<>();
     for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : expr.getSequence()) {
-      if (elem.getComponent() instanceof Concrete.ReferenceExpression) {
-        Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) elem.getComponent();
+      if (elem.getComponent() instanceof Concrete.ReferenceExpression refExpr) {
         Referable ref = refExpr.getReferent();
         while (ref instanceof RedirectingReferable) {
           ref = ((RedirectingReferable) ref).getOriginalReferable();
@@ -580,8 +579,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public void visitClause(Concrete.Clause clause, Void params) {
-    if (clause instanceof Concrete.FunctionClause) {
-      Concrete.FunctionClause functionClause = (Concrete.FunctionClause) clause;
+    if (clause instanceof Concrete.FunctionClause functionClause) {
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         visitPatterns(clause.getPatterns(), new HashMap<>(), true);
         if (functionClause.expression != null) {
@@ -614,8 +612,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       pattern.getAsReferable().type = pattern.getAsReferable().type.accept(this, null);
     }
 
-    if (pattern instanceof Concrete.NamePattern) {
-      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+    if (pattern instanceof Concrete.NamePattern namePattern) {
       if (namePattern.type != null) {
         namePattern.type = namePattern.type.accept(this, null);
       }
@@ -680,7 +677,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (pattern.getAsReferable() != null) {
       addReferable(pattern.getAsReferable().referable, pattern.getAsReferable().type, usedNames);
     }
-    return new Concrete.ConstructorPattern(data, pattern.isExplicit(), myReferableConverter.convert(constructor), newPatterns, pattern.getAsReferable());
+    return new Concrete.ConstructorPattern(data, pattern.isExplicit(), constructor == null ? null : myReferableConverter.convert(constructor), newPatterns, pattern.getAsReferable());
   }
 
   private List<Concrete.BinOpSequenceElem<Concrete.Pattern>> resolveBinOpComponents(Concrete.UnparsedConstructorPattern pattern) {

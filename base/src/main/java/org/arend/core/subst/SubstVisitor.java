@@ -225,7 +225,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitProj(ProjExpression expr, Void params) {
-    return ProjExpression.make(expr.getExpression().accept(this, null), expr.getField());
+    return ProjExpression.make(expr.getExpression().accept(this, null), expr.getField(), expr.isBoxed());
   }
 
   @Override
@@ -291,8 +291,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     BranchElimTree result = new BranchElimTree(elimTree.getSkip(), ((BranchElimTree) elimTree).keepConCall());
     for (Map.Entry<BranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
       BranchKey key;
-      if (entry.getKey() instanceof ClassConstructor) {
-        ClassConstructor classCon = (ClassConstructor) entry.getKey();
+      if (entry.getKey() instanceof ClassConstructor classCon) {
         key = new ClassConstructor(classCon.getClassDefinition(), classCon.getLevels().subst(myLevelSubstitution), classCon.getImplementedFields());
       } else {
         key = entry.getKey();

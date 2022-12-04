@@ -146,8 +146,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   public Expression visitReference(ReferenceExpression expr, Void params) {
     Binding binding = expr.getBinding();
     if (binding instanceof EvaluatingBinding && myEvaluateBindings && !myBoundEvaluatingBindings.contains(binding)) {
-      if (binding instanceof PersistentEvaluatingBinding) {
-        PersistentEvaluatingBinding evaluating = (PersistentEvaluatingBinding) binding;
+      if (binding instanceof PersistentEvaluatingBinding evaluating) {
         evaluating.setExpression(evaluating.getExpression().accept(this, null));
         myBoundEvaluatingBindings.add(evaluating);
         return expr;
@@ -245,7 +244,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitProj(ProjExpression expr, Void params) {
-    return ProjExpression.make(expr.getExpression().accept(this, null), expr.getField());
+    return ProjExpression.make(expr.getExpression().accept(this, null), expr.getField(), expr.isBoxed());
   }
 
   @Override
@@ -294,8 +293,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   public Body visitBody(Body body) {
-    if (body instanceof IntervalElim) {
-      IntervalElim intervalElim = (IntervalElim) body;
+    if (body instanceof IntervalElim intervalElim) {
       List<IntervalElim.CasePair> cases = intervalElim.getCases();
       for (int i = 0; i < cases.size(); i++) {
         Pair<Expression, Expression> pair = cases.get(i);

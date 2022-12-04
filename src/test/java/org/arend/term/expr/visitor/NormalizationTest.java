@@ -39,18 +39,20 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Before
   public void initialize() {
     typeCheckModule(
-      "\\func \\infixl 6 + (x y : Nat) : Nat \\elim x\n" +
-      "  | zero => y\n" +
-      "  | suc x => suc (x + y)\n" +
-      "\\func \\infixl 7 * (x y : Nat) : Nat \\elim x\n" +
-      "  | zero => zero\n" +
-      "  | suc x => y + x * y\n" +
-      "\\func fac (x : Nat) : Nat\n" +
-      "  | zero => 1\n" +
-      "  | suc x => suc x * fac x\n" +
-      "\\func nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat \\elim x\n" +
-      "  | zero => z\n" +
-      "  | suc x => s x (nelim z s x)");
+      """
+      \\func \\infixl 6 + (x y : Nat) : Nat \\elim x
+        | zero => y
+        | suc x => suc (x + y)
+      \\func \\infixl 7 * (x y : Nat) : Nat \\elim x
+        | zero => zero
+        | suc x => y + x * y
+      \\func fac (x : Nat) : Nat
+        | zero => 1
+        | suc x => suc x * fac x
+      \\func nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat \\elim x
+        | zero => z
+        | suc x => s x (nelim z s x)
+      """);
     plus = (FunctionDefinition) getDefinition("+");
     mul = (FunctionDefinition) getDefinition("*");
     fac = (FunctionDefinition) getDefinition("fac");
@@ -371,18 +373,20 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testAppProj() {
     SingleDependentLink x = singleParam("x", Nat());
-    Expression expr = Apps(ProjExpression.make(Tuple(new SigmaExpression(Sort.SET0, param("_", Pi(Nat(), Nat()))), Lam(x, Ref(x))), 0), Zero());
+    Expression expr = Apps(ProjExpression.make(Tuple(new SigmaExpression(Sort.SET0, param("_", Pi(Nat(), Nat()))), Lam(x, Ref(x))), 0, false), Zero());
     assertEquals(Zero(), expr.normalize(NormalizationMode.NF));
   }
 
   @Test
   public void testConCallEta() {
     typeCheckModule(
-        "\\func \\infixl 1 $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
-        "\\data Fin Nat \\with\n" +
-        "  | suc n => fzero\n" +
-        "  | suc n => fsuc (Fin n)\n" +
-        "\\func f (n : Nat) (x : Fin n) => fsuc $ x");
+      """
+      \\func \\infixl 1 $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x
+      \\data Fin Nat \\with
+        | suc n => fzero
+        | suc n => fsuc (Fin n)
+      \\func f (n : Nat) (x : Fin n) => fsuc $ x
+      """);
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     Expression term = ((Expression) Objects.requireNonNull(f.getBody())).normalize(NormalizationMode.NF);
     ConCallExpression conCall = term.cast(ConCallExpression.class);

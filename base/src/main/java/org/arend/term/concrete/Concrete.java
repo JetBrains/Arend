@@ -524,8 +524,7 @@ public final class Concrete {
     }
 
     public Precedence getReferencePrecedence() {
-      if (binOpComponent instanceof Expression) {
-        Expression expr = (Expression) binOpComponent;
+      if (binOpComponent instanceof Expression expr) {
         // after the reference is resolved, it may become an application
         if (binOpComponent instanceof AppExpression && fixity != Fixity.NONFIX) {
           expr = ((AppExpression) binOpComponent).getFunction();
@@ -1698,8 +1697,7 @@ public final class Concrete {
     if (definition instanceof ClassDefinition) {
       List<TypeParameter> parameters = new ArrayList<>();
       for (ClassElement element : ((ClassDefinition) definition).getElements()) {
-        if (element instanceof ClassField && ((ClassField) element).getData().isParameterField()) {
-          ClassField field = (ClassField) element;
+        if (element instanceof ClassField field && ((ClassField) element).getData().isParameterField()) {
           Expression type = field.getResultType();
           List<TypeParameter> fieldParams = field.getParameters();
           boolean isDesugarized = definition.getStage().ordinal() >= Stage.DESUGARIZED.ordinal();
@@ -3000,7 +2998,6 @@ public final class Concrete {
     }
 
     @Override
-    @NotNull
     public Referable getConstructor() {
       return myConstructor;
     }

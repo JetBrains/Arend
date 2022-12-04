@@ -274,12 +274,14 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
             branchBuilder.putClauses(0, writeElimTree(entry.getValue()));
           } else if (entry.getKey() instanceof SingleConstructor) {
             ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Builder singleClauseBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.newBuilder();
-            if (entry.getKey() instanceof TupleConstructor) {
-              singleClauseBuilder.setTuple(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple.newBuilder().setLength(((TupleConstructor) entry.getKey()).getNumberOfParameters()).build());
+            if (entry.getKey() instanceof TupleConstructor tuple) {
+              singleClauseBuilder.setTuple(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple.newBuilder()
+                .setLength(tuple.getNumberOfParameters())
+                .addAllPropertyIndex(tuple.getPropertyIndices())
+                .build());
             } else if (entry.getKey() instanceof IdpConstructor) {
               singleClauseBuilder.setIdp(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Idp.newBuilder());
-            } else if (entry.getKey() instanceof ClassConstructor) {
-              ClassConstructor classCon = (ClassConstructor) entry.getKey();
+            } else if (entry.getKey() instanceof ClassConstructor classCon) {
               ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.Builder conBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.newBuilder();
               conBuilder.setClassRef(myCallTargetIndexProvider.getDefIndex(classCon.getClassDefinition()));
               conBuilder.setLevels(writeLevels(classCon.getLevels(), classCon.getClassDefinition()));
@@ -401,15 +403,11 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   }
 
   ExpressionProtos.UniverseKind writeUniverseKind(UniverseKind kind) {
-    switch (kind) {
-      case NO_UNIVERSES:
-        return ExpressionProtos.UniverseKind.NO_UNIVERSES;
-      case ONLY_COVARIANT:
-        return ExpressionProtos.UniverseKind.ONLY_COVARIANT;
-      case WITH_UNIVERSES:
-        return ExpressionProtos.UniverseKind.WITH_UNIVERSES;
-    }
-    throw new IllegalStateException();
+    return switch (kind) {
+      case NO_UNIVERSES -> ExpressionProtos.UniverseKind.NO_UNIVERSES;
+      case ONLY_COVARIANT -> ExpressionProtos.UniverseKind.ONLY_COVARIANT;
+      case WITH_UNIVERSES -> ExpressionProtos.UniverseKind.WITH_UNIVERSES;
+    };
   }
 
   @Override
@@ -517,6 +515,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     ExpressionProtos.Expression.Proj.Builder builder = ExpressionProtos.Expression.Proj.newBuilder();
     builder.setExpression(expr.getExpression().accept(this, null));
     builder.setField(expr.getField());
+    builder.setBoxed(expr.isBoxed());
     return ExpressionProtos.Expression.newBuilder().setProj(builder).build();
   }
 

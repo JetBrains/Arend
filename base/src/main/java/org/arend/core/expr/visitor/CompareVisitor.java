@@ -79,9 +79,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
     if (elimTree1 instanceof LeafElimTree && elimTree2 instanceof LeafElimTree) {
       return ((LeafElimTree) elimTree1).getClauseIndex() == ((LeafElimTree) elimTree2).getClauseIndex() && Objects.equals(((LeafElimTree) elimTree1).getArgumentIndices(), ((LeafElimTree) elimTree2).getArgumentIndices());
-    } else if (elimTree1 instanceof BranchElimTree && elimTree2 instanceof BranchElimTree) {
-      BranchElimTree branchElimTree1 = (BranchElimTree) elimTree1;
-      BranchElimTree branchElimTree2 = (BranchElimTree) elimTree2;
+    } else if (elimTree1 instanceof BranchElimTree branchElimTree1 && elimTree2 instanceof BranchElimTree branchElimTree2) {
       if (branchElimTree1.keepConCall() != branchElimTree2.keepConCall() || branchElimTree1.getChildren().size() > branchElimTree2.getChildren().size() || myCMP == CMP.EQ && branchElimTree1.getChildren().size() != branchElimTree2.getChildren().size() ) {
         return false;
       }
@@ -332,9 +330,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       e2 = e2.getFunction().getUnderlyingExpression();
       n2++;
     }
-    if (!(n1 == n2 && e1 instanceof FieldCallExpression && e2 instanceof FieldCallExpression)) return null;
-    FieldCallExpression fieldCall1 = (FieldCallExpression) e1;
-    FieldCallExpression fieldCall2 = (FieldCallExpression) e2;
+    if (!(n1 == n2 && e1 instanceof FieldCallExpression fieldCall1 && e2 instanceof FieldCallExpression fieldCall2)) return null;
     if (fieldCall1.getDefinition() == fieldCall2.getDefinition() && (fieldCall1.getArgument().getInferenceVariable() != null && isInstance(fieldCall2) || fieldCall2.getArgument().getInferenceVariable() != null && isInstance(fieldCall1))) {
       if (!e1.accept(this, e2, type)) {
         return false;
@@ -1256,7 +1252,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     } else {
       List<Expression> args2 = new ArrayList<>(expr1.getFields().size());
       for (int i = 0; i < expr1.getFields().size(); i++) {
-        args2.add(ProjExpression.make(expr2, i));
+        args2.add(ProjExpression.make(expr2, i, expr1.getFields().get(i).isBoxed()));
       }
       return correctOrder ? compareLists(expr1.getFields(), args2, expr1.getSigmaType().getParameters(), null, new ExprSubstitution(), true) : compareLists(args2, expr1.getFields(), expr1.getSigmaType().getParameters(), null, new ExprSubstitution(), true);
     }
@@ -1411,9 +1407,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           Expression type1 = list1.get(i).getType().normalize(NormalizationMode.WHNF);
           Expression type2 = list2.get(i).getType().normalize(NormalizationMode.WHNF);
           boolean isGE;
-          if (type1 instanceof ClassCallExpression && type2 instanceof ClassCallExpression) {
-            ClassCallExpression classCall1 = (ClassCallExpression) type1;
-            ClassCallExpression classCall2 = (ClassCallExpression) type2;
+          if (type1 instanceof ClassCallExpression classCall1 && type2 instanceof ClassCallExpression classCall2) {
             isGE = classCall1.getDefinition() == classCall2.getDefinition() ? classCall2.getImplementedHere().size() > classCall1.getImplementedHere().size() : ((ClassCallExpression) type2).getDefinition().isSubClassOf(((ClassCallExpression) type1).getDefinition());
           } else {
             isGE = type2 instanceof DataCallExpression && ((DataCallExpression) type2).getDefinition() == Prelude.FIN || type1 instanceof DataCallExpression && ((DataCallExpression) type1).getDefinition() == Prelude.NAT;
@@ -1530,11 +1524,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   @Override
   public Boolean visitArray(ArrayExpression expr, Expression other, Expression type) {
-    if (!(other instanceof ArrayExpression)) {
+    if (!(other instanceof ArrayExpression array2)) {
       return false;
     }
 
-    ArrayExpression array2 = (ArrayExpression) other;
     if (!(compare(expr.getElementsType(), array2.getElementsType(), null, false) && expr.getElements().size() == array2.getElements().size() && (expr.getTail() == null) == (array2.getTail() == null))) {
       return false;
     }
