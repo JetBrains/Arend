@@ -1,10 +1,12 @@
 package org.arend.ext.module;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 import java.util.List;
 
 public class ModulePath extends LongName {
-  public ModulePath(List<String> path) {
+  public ModulePath(@NotNull List<String> path) {
     super(path);
   }
 
