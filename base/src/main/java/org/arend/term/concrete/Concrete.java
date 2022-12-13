@@ -2823,7 +2823,7 @@ public final class Concrete {
     @NotNull
     @Override
     public ConcretePattern as(@NotNull ArendRef ref, @Nullable ConcreteExpression type) {
-      if (!(ref instanceof Referable && type instanceof Expression)) {
+      if (!(ref instanceof Referable && (type == null || type instanceof Expression))) {
         throw new IllegalArgumentException();
       }
       myAsReferable = new TypedReferable(getData(), (Referable) ref, (Expression) type);
