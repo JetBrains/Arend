@@ -7,73 +7,89 @@ public class PatternTest extends NameResolverTestCase {
   @Test
   public void implicitAvailable() {
     resolveNamesModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\func tests {n : Nat} (m : Nat) : Nat\n" +
-      "  | suc m => m\n" +
-      "  | zero => n", 1);
+      """
+        \\data Nat | zero | suc Nat
+        \\func tests {n : Nat} (m : Nat) : Nat
+          | suc m => m
+          | zero => n
+        """, 1);
   }
 
   @Test
   public void matchedImplicitAvailable() {
     resolveNamesModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\func tests {n : Nat} (k : Nat) {n : Nat} (m : Nat) : Nat\n" +
-      "  | k, suc m => m\n" +
-      "  | {_}, k, zero => n", 1);
+      """
+        \\data Nat | zero | suc Nat
+        \\func tests {n : Nat} (k : Nat) {n : Nat} (m : Nat) : Nat
+          | k, suc m => m
+          | {_}, k, zero => n
+        """, 1);
   }
 
   @Test
   public void matchedImplicitAvailable2() {
     resolveNamesModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\func tests {n : Nat} (k : Nat) {n : Nat} (m : Nat) : Nat\n" +
-      "  | k, suc m => m\n" +
-      "  | k, {_}, zero => n", 1);
+      """
+        \\data Nat | zero | suc Nat
+        \\func tests {n : Nat} (k : Nat) {n : Nat} (m : Nat) : Nat
+          | k, suc m => m
+          | k, {_}, zero => n
+        """, 1);
   }
 
   @Test
   public void explicitAvailable() {
     resolveNamesModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\func tests {n : Nat} (m : Nat) : Nat\n" +
-      "  | {n}, suc m => n\n" +
-      "  | {k}, zero => k");
+      """
+        \\data Nat | zero | suc Nat
+        \\func tests {n : Nat} (m : Nat) : Nat
+          | {n}, suc m => n
+          | {k}, zero => k
+        """);
   }
 
   @Test
   public void explicitNotAvailable() {
     resolveNamesModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\func tests {n : Nat} (m : Nat) : Nat\n" +
-      "  | suc _ => m\n" +
-      "  | zero => zero", 1);
+      """
+        \\data Nat | zero | suc Nat
+        \\func tests {n : Nat} (m : Nat) : Nat
+          | suc _ => m
+          | zero => zero
+        """, 1);
   }
 
   @Test
   public void duplicateError() {
     resolveNamesModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\func tests (n m : Nat) : Nat\n" +
-      "  | suc n, suc n => zero\n" +
-      "  | _, _ => zero", 1);
+      """
+        \\data Nat | zero | suc Nat
+        \\func tests (n m : Nat) : Nat
+          | suc n, suc n => zero
+          | _, _ => zero
+        """, 1);
   }
 
   @Test
   public void duplicateError2() {
     resolveNamesModule(
-      "\\data Nat | zero | suc Nat Nat\n" +
-      "\\func tests (n : Nat) : Nat\n" +
-      "  | suc n n => zero\n" +
-      "  | _ => zero", 1);
+      """
+        \\data Nat | zero | suc Nat Nat
+        \\func tests (n : Nat) : Nat
+          | suc n n => zero
+          | _ => zero
+        """, 1);
   }
 
   @Test
   public void eliminateOverridden() {
     resolveNamesModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\func tests (n : Nat) (n : Nat) : Nat \\elim n\n" +
-      "  | suc _ => zero\n" +
-      "  | zero => n");
+      """
+        \\data Nat | zero | suc Nat
+        \\func tests (n : Nat) (n : Nat) : Nat \\elim n
+          | suc _ => zero
+          | zero => n
+        """);
   }
 
   @Test
@@ -115,18 +131,32 @@ public class PatternTest extends NameResolverTestCase {
   @Test
   public void longName() {
     resolveNamesModule(
-      "\\data D | c1 | c2\n" +
-      "\\func f (d : D) : D\n" +
-      "  | D.c1 => c1\n" +
-      "  | c2 => D.c2");
+      """
+        \\data D | c1 | c2
+        \\func f (d : D) : D
+          | D.c1 => c1
+          | c2 => D.c2
+        """);
   }
 
   @Test
   public void longName2() {
     resolveNamesModule(
-      "\\func f (n : Nat) : Nat\n" +
-      "  | suc (Nat.suc Nat.zero) => 0\n" +
-      "  | Nat.zero => 1\n" +
-      "  | Nat.suc zero => 2");
+      """
+        \\func f (n : Nat) : Nat
+          | suc (Nat.suc Nat.zero) => 0
+          | Nat.zero => 1
+          | Nat.suc zero => 2
+        """);
+  }
+
+  @Test
+  public void asPatternTest() {
+    resolveNamesDef(
+      """
+        \\func test (n : Nat) : Nat
+          | zero \\as z => z
+          | suc n => n
+        """);
   }
 }
