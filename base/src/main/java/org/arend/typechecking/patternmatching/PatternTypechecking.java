@@ -317,8 +317,7 @@ public class PatternTypechecking {
         if (expr.getDefinition() == def) {
           Expression result = NormalizeVisitor.INSTANCE.eval(expr);
           if (result != null) {
-            if (result instanceof FunCallExpression && ((FunCallExpression) result).getDefinition() == def) {
-              FunCallExpression funCall = (FunCallExpression) result;
+            if (result instanceof FunCallExpression funCall && ((FunCallExpression) result).getDefinition() == def) {
               List<Expression> args = new ArrayList<>();
               for (Expression arg : funCall.getDefCallArguments()) {
                 args.add(arg.accept(this, null).normalize(NormalizationMode.WHNF));
@@ -529,8 +528,7 @@ public class PatternTypechecking {
         Referable referable = null;
         DependentLink newParam = parameters.subst(new SubstVisitor(paramsSubst, LevelSubstitution.EMPTY), 1, false);
         myLinkList.append(newParam);
-        if (pattern instanceof Concrete.NamePattern) {
-          Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+        if (pattern instanceof Concrete.NamePattern namePattern) {
           referable = namePattern.getReferable();
           String name = referable == null ? null : referable.textRepresentation();
           if (name != null) {
@@ -610,15 +608,13 @@ public class PatternTypechecking {
       }
 
       // Defined constructor patterns
-      if (pattern instanceof Concrete.ConstructorPattern) {
-        Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
+      if (pattern instanceof Concrete.ConstructorPattern conPattern) {
         Definition def = conPattern.getConstructor() instanceof TCDefReferable ? ((TCDefReferable) conPattern.getConstructor()).getTypechecked() : null;
-        if (def instanceof DConstructor && def != Prelude.EMPTY_ARRAY && def != Prelude.ARRAY_CONS) {
+        if (def instanceof DConstructor constructor && def != Prelude.EMPTY_ARRAY && def != Prelude.ARRAY_CONS) {
           if (myVisitor == null || ((DConstructor) def).getPattern() == null) {
             return null;
           }
 
-          DConstructor constructor = (DConstructor) def;
           Levels levels;
           DependentLink link = constructor.getParameters();
           ExprSubstitution substitution = new ExprSubstitution();
@@ -885,10 +881,9 @@ public class PatternTypechecking {
         continue;
       }
 
-      if (!(pattern instanceof Concrete.ConstructorPattern)) {
+      if (!(pattern instanceof Concrete.ConstructorPattern conPattern)) {
         throw new IllegalStateException();
       }
-      Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
 
       if (dataCall != null && dataCall.getDefinition() == Prelude.INT && (conPattern.getConstructor() == Prelude.ZERO.getReferable() || conPattern.getConstructor() == Prelude.SUC.getReferable())) {
         boolean isExplicit = conPattern.isExplicit();
@@ -937,6 +932,9 @@ public class PatternTypechecking {
         }
       }
 
+      Expression length = classCall == null ? null : classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+      Expression length1 = length == null || constructor == Prelude.EMPTY_ARRAY ? null : length.normalize(NormalizationMode.WHNF).pred();
+
       ConstructorExpressionPattern resultPattern;
       if (dataCall != null) {
         if (!conResult.varSubst.isEmpty()) {
@@ -945,13 +943,13 @@ public class PatternTypechecking {
         resultPattern = new ConstructorExpressionPattern(conCall, conResult.patterns);
       } else {
         Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-        Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+        Expression arrayLength = length;
         if (!conResult.varSubst.isEmpty()) {
           SubstVisitor visitor = new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY);
           if (elementsType != null) elementsType = elementsType.accept(visitor, null);
-          if (length != null) length = length.accept(visitor, null);
+          if (arrayLength != null) arrayLength = arrayLength.accept(visitor, null);
         }
-        resultPattern = new ConstructorExpressionPattern(new FunCallExpression((DConstructor) constructor, classCall.getLevels(), length, elementsType), classCall.getThisBinding(), length, conResult.patterns);
+        resultPattern = new ConstructorExpressionPattern(new FunCallExpression((DConstructor) constructor, classCall.getLevels(), length1, elementsType), classCall.getThisBinding(), arrayLength, conResult.patterns);
       }
       result.add(resultPattern);
       if (conResult.addedIntervalVars > 0) {
@@ -974,15 +972,14 @@ public class PatternTypechecking {
           newConCall = ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), conResult.exprs);
         } else {
           List<Expression> funCallArgs;
-          Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
           Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
           if (elementsType != null) {
             elementsType = elementsType.subst(classCall.getThisBinding(), new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), Collections.singletonMap(Prelude.ARRAY_LENGTH, constructor == Prelude.EMPTY_ARRAY ? Zero() : length != null ? length : Suc(conResult.exprs.get(0))), Sort.STD.succ(), UniverseKind.NO_UNIVERSES)));
           }
-          if (elementsType != null || length != null && constructor == Prelude.ARRAY_CONS) {
+          if (elementsType != null || length1 != null && constructor == Prelude.ARRAY_CONS) {
             funCallArgs = new ArrayList<>();
-            if (length != null && constructor == Prelude.ARRAY_CONS) {
-              funCallArgs.add(length);
+            if (length1 != null && constructor == Prelude.ARRAY_CONS) {
+              funCallArgs.add(length1);
               if (elementsType != null) funCallArgs.add(elementsType);
               funCallArgs.addAll(conResult.exprs);
             } else {
