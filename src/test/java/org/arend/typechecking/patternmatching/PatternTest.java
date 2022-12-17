@@ -58,13 +58,12 @@ public class PatternTest extends TypeCheckingTestCase {
         assertTrue(patterns.get(j) instanceof BindingPattern);
         actual.put(referable, ((BindingPattern) patterns.get(j)).getBinding());
       } else
-      if (pattern1 instanceof Concrete.ConstructorPattern) {
+      if (pattern1 instanceof Concrete.ConstructorPattern conPattern1) {
         while (hasImplicit && patterns.get(j) instanceof BindingPattern) {
           j++;
         }
         assertTrue(patterns.get(j) instanceof ConstructorExpressionPattern);
 
-        Concrete.ConstructorPattern conPattern1 = (Concrete.ConstructorPattern) pattern1;
         ConstructorExpressionPattern conPattern2 = (ConstructorExpressionPattern) patterns.get(j);
         assertNotNull(conPattern2.getDefinition());
         assertEquals(conPattern1.getConstructor(), conPattern2.getDefinition().getReferable());
@@ -148,9 +147,11 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void incorrectDataType() {
     Group module = resolveNamesModule(
-      "\\data D | con\n" +
-      "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
-      "  | suc n, zero, suc k => k");
+      """
+        \\data D | con
+        \\func f (n : Nat) (d : D) (k : Nat) : Nat
+          | suc n, zero, suc k => k
+        """);
     Iterator<? extends Statement> it = module.getStatements().iterator();
     TCDefReferable dataDef = (TCDefReferable) it.next().getGroup().getReferable();
     Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
@@ -203,9 +204,11 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void emptyDataType() {
     Group module = resolveNamesModule(
-      "\\data D\n" +
-      "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
-      "  | suc n, (), k => k");
+      """
+        \\data D
+        \\func f (n : Nat) (d : D) (k : Nat) : Nat
+          | suc n, (), k => k
+        """);
     Iterator<? extends Statement> it = module.getStatements().iterator();
     TCDefReferable dataDef = (TCDefReferable) it.next().getGroup().getReferable();
     Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
@@ -224,9 +227,11 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void emptyDataTypeWarning() {
     Group module = resolveNamesModule(
-      "\\data D\n" +
-      "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
-      "  | suc n, (), suc k => k");
+      """
+        \\data D
+        \\func f (n : Nat) (d : D) (k : Nat) : Nat
+          | suc n, (), suc k => k
+        """);
     Iterator<? extends Statement> it = module.getStatements().iterator();
     TCDefReferable dataDef = (TCDefReferable) it.next().getGroup().getReferable();
     Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
@@ -245,147 +250,181 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void elimBefore() {
     typeCheckDef(
-      "\\func if (n : Nat) {A : \\Type} (a a' : A) : A \\elim n\n" +
-      "  | zero => a\n" +
-      "  | suc _ => a'");
+      """
+        \\func if (n : Nat) {A : \\Type} (a a' : A) : A \\elim n
+          | zero => a
+          | suc _ => a'
+        """);
   }
 
   @Test
   public void elimAfter() {
     typeCheckDef(
-      "\\func if {A : \\Type} (a a' : A) (n : Nat) : A \\elim n\n" +
-      "  | zero => a\n" +
-      "  | suc _ => a'");
+      """
+        \\func if {A : \\Type} (a a' : A) (n : Nat) : A \\elim n
+          | zero => a
+          | suc _ => a'
+        """);
   }
 
   @Test
   public void dependentElim() {
     typeCheckModule(
-      "\\func if {A : \\Type} (n : Nat) (a a' : A) : A \\elim n\n" +
-      "  | zero => a\n" +
-      "  | suc _ => a'\n" +
-      "\\func f (n : Nat) (x : if n Nat (Nat -> Nat)) : Nat \\elim n\n" +
-      "  | zero => x\n" +
-      "  | suc _ => x 0");
+      """
+        \\func if {A : \\Type} (n : Nat) (a a' : A) : A \\elim n
+          | zero => a
+          | suc _ => a'
+        \\func f (n : Nat) (x : if n Nat (Nat -> Nat)) : Nat \\elim n
+          | zero => x
+          | suc _ => x 0
+        """);
   }
 
   @Test
   public void elimLess() {
     typeCheckModule(
-      "\\data D Nat \\with | suc n => dsuc\n" +
-      "\\func tests (n : Nat) (d : D n) : Nat \\elim n, d\n" +
-      "  | suc n => 0\n" +
-      "  | zero => 0", 1);
+      """
+        \\data D Nat \\with | suc n => dsc
+        \\func tests (n : Nat) (d : D n) : Nat \\elim n, d
+          | suc n => 0
+          | zero => 0
+        """, 1);
   }
 
   @Test
   public void withoutElimLess() {
     typeCheckModule(
-      "\\data D Nat \\with | suc n => dsuc\n" +
-      "\\func tests (n : Nat) (d : D n) : Nat\n" +
-      "  | suc n => 0\n" +
-      "  | zero => 0", 2);
+      """
+        \\data D Nat \\with | suc n => dsc
+        \\func tests (n : Nat) (d : D n) : Nat
+          | suc n => 0
+          | zero => 0
+        """, 2);
   }
 
   @Test
   public void elimMore() {
     typeCheckModule(
-      "\\func tests (n m : Nat) : Nat \\elim n\n" +
-      "  | suc n, zero => 0\n" +
-      "  | zero, suc m => 0", 1);
+      """
+        \\func tests (n m : Nat) : Nat \\elim n
+          | suc n, zero => 0
+          | zero, suc m => 0
+        """, 1);
   }
 
   @Test
   public void elimEvenMore() {
     typeCheckModule(
-      "\\func tests (n m : Nat) : Nat \\elim n\n" +
-      "  | suc n, zero => 0\n" +
-      "  | zero, zero => 0\n" +
-      "  | suc n, suc m => 0\n" +
-      "  | zero, suc m => 0", 1);
+      """
+        \\func tests (n m : Nat) : Nat \\elim n
+          | suc n, zero => 0
+          | zero, zero => 0
+          | suc n, suc m => 0
+          | zero, suc m => 0
+        """, 1);
   }
 
   @Test
   public void withoutElimMore() {
     typeCheckModule(
-      "\\func tests (n : Nat) : Nat\n" +
-        "  | suc n, zero => 0\n" +
-        "  | zero, suc m => 0", 2);
+      """
+        \\func tests (n : Nat) : Nat
+          | suc n, zero => 0
+          | zero, suc m => 0
+        """, 2);
   }
 
   @Test
   public void implicitParameter() {
     typeCheckModule(
-      "\\func tests {n : Nat} (m : Nat) : Nat\n" +
-      "  | {suc n}, zero => 0\n" +
-      "  | {zero}, suc m => 0\n" +
-      "  | {suc n}, suc m => 0\n" +
-      "  | {zero}, zero => 0");
+      """
+        \\func tests {n : Nat} (m : Nat) : Nat
+          | {suc n}, zero => 0
+          | {zero}, suc m => 0
+          | {suc n}, suc m => 0
+          | {zero}, zero => 0
+        """);
   }
 
   @Test
   public void skipImplicitParameter() {
     typeCheckModule(
-      "\\func tests {n : Nat} (m : Nat) : Nat\n" +
-      "  | suc m => 0\n" +
-      "  | zero => 0");
+      """
+        \\func tests {n : Nat} (m : Nat) : Nat
+          | suc m => 0
+          | zero => 0
+        """);
   }
 
   @Test
   public void implicitParameterError() {
     typeCheckModule(
-      "\\func tests {n : Nat} : Nat\n" +
-      "  | suc n => 0\n" +
-      "  | zero => 0", 2);
+      """
+        \\func tests {n : Nat} : Nat
+          | suc n => 0
+          | zero => 0
+        """, 2);
   }
 
   @Test
   public void withThis() {
     typeCheckClass(
-      "\\func tests (n : Nat) : Nat\n" +
-      "  | suc n => 0\n" +
-      "  | zero => 0", "");
+      """
+        \\func tests (n : Nat) : Nat
+          | suc n => 0
+          | zero => 0
+        """, "");
   }
 
   @Test
   public void withThisAndElim() {
     typeCheckClass(
-      "\\func tests (n : Nat) : Nat\n" +
-      "  | suc n => 0\n" +
-      "  | zero => 0", "");
+      """
+        \\func tests (n : Nat) : Nat
+          | suc n => 0
+          | zero => 0
+        """, "");
   }
 
   @Test
   public void nonEliminatedAvailable() {
     typeCheckModule(
-      "\\func tests {n : Nat} (m : Nat) : Nat \\elim m\n" +
-      "  | suc m => m\n" +
-      "  | zero => n");
+      """
+        \\func tests {n : Nat} (m : Nat) : Nat \\elim m
+          | suc m => m
+          | zero => n
+        """);
   }
 
   @Test
   public void explicitAvailable() {
     typeCheckModule(
-      "\\func tests {n : Nat} (m : Nat) : Nat\n" +
-      "  | {n}, suc m => n\n" +
-      "  | {k}, zero => k");
+      """
+        \\func tests {n : Nat} (m : Nat) : Nat
+          | {n}, suc m => n
+          | {k}, zero => k
+        """);
   }
 
   @Test
   public void eliminateOverridden() {
     typeCheckModule(
-      "\\func f (n : Nat) (n : Nat) : Nat \\elim n\n" +
-      "  | suc _ => 2\n" +
-      "  | zero => n\n" +
-      "\\func g : f 1 0 = 1 => idp");
+      """
+        \\func f (n : Nat) (n : Nat) : Nat \\elim n
+          | suc _ => 2
+          | zero => n
+        \\func g : f 1 0 = 1 => idp
+        """);
   }
 
   @Test
   public void redundantPattern() {
     typeCheckDef(
-      "\\func f (n : Nat) : Nat\n" +
-      "  | _ => 0\n" +
-      "  | zero => 1", 1);
+      """
+        \\func f (n : Nat) : Nat
+          | _ => 0
+          | zero => 1
+        """, 1);
     assertThatErrorsAre(typecheckingError(RedundantClauseError.class));
   }
 
@@ -406,10 +445,12 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void patternWrongDefinition() {
     resolveNamesModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\data D (n m : Nat) | d\n" +
-      "\\data C | c (n m : Nat) (D n m)\n" +
-      "\\data E C \\with | E (c zero (suc zero) d) => e", 1);
+      """
+        \\data Nat | zero | suc Nat
+        \\data D (n m : Nat) | d
+        \\data C | c (n m : Nat) (D n m)
+        \\data E C \\with | E (c zero (suc zero) d) => e
+        """, 1);
   }
 
   @Test
@@ -422,151 +463,183 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void fakeNatTest() {
     typeCheckModule(
-      "\\data Nat' | suc' Nat' | zero'\n" +
-      "\\data Foo | foo Nat'\n" +
-      "\\func ff (x : Foo) : Nat'\n" +
-      "  | foo (suc' (suc' (suc' zero'))) => zero'\n" +
-      "  | foo n => n\n" +
-      "\\func test : ff (foo (suc' (suc' zero'))) = suc' (suc' zero') => idp");
+      """
+        \\data Nat' | suc' Nat' | zero'
+        \\data Foo | foo Nat'
+        \\func ff (x : Foo) : Nat'
+          | foo (suc' (suc' (suc' zero'))) => zero'
+          | foo n => n
+        \\func test : ff (foo (suc' (suc' zero'))) = suc' (suc' zero') => idp
+        """);
   }
 
   @Test
   public void natTest() {
     typeCheckModule(
-      "\\func ff (x : Nat) : Nat\n" +
-      "  | suc zero => zero\n" +
-      "  | n => n\n" +
-      "\\func test : ff (suc (suc (suc zero))) = 3 => idp");
+      """
+        \\func ff (x : Nat) : Nat
+          | suc zero => zero
+          | n => n
+        \\func test : ff (suc (suc (suc zero))) = 3 => idp
+        """);
   }
 
   @Test
   public void typeTest() {
     typeCheckModule(
-      "\\class A (f : Nat)\n" +
-      "\\data D | con A\n" +
-      "\\func foo (d : D) : Nat | con (a : A) => a.f");
+      """
+        \\class A (f : Nat)
+        \\data D | con A
+        \\func foo (d : D) : Nat | con (a : A) => a.f
+        """);
   }
 
   @Test
   public void typeTestError() {
     typeCheckModule(
-      "\\class A (f : Nat)\n" +
-      "\\data D | con Nat\n" +
-      "\\func foo (n : Nat) (d : D) : Nat | n, con (a : A) => n", 1);
+      """
+        \\class A (f : Nat)
+        \\data D | con Nat
+        \\func foo (n : Nat) (d : D) : Nat | n, con (a : A) => n
+        """, 1);
     assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
   public void implicitParametersAndCase() {
     typeCheckModule(
-      "\\data D | con {n : Nat} (p : n = n)\n" +
-      "\\func foo (d : D) => \\case d \\as d \\return d = d \\with {\n" +
-      "  | con p => idp\n" +
-      "}");
+      """
+        \\data D | con {n : Nat} (p : n = n)
+        \\func foo (d : D) => \\case d \\as d \\return d = d \\with {
+          | con p => idp
+        }
+        """);
   }
 
   @Test
   public void implicitPatternTest() {
     typeCheckModule(
-      "\\func test {n : Nat} {x : Nat} : x = x\n" +
-      "  | {0} => idp\n" +
-      "  | {suc n} => idp");
+      """
+        \\func test {n : Nat} {x : Nat} : x = x
+          | {0} => idp
+          | {suc n} => idp
+        """);
   }
 
   @Test
   public void infixPatterns() {
     typeCheckModule(
-      "\\data List | \\infix 10 :: Nat List\n" +
-      "\\func test (n : List) : 0 = 0\n" +
-      "  | n :: m => idp");
+      """
+        \\data List | \\infix 10 :: Nat List
+        \\func test (n : List) : 0 = 0
+          | n :: m => idp
+        """);
   }
 
   @Test
   public void infixPatterns2() {
     typeCheckModule(
-      "\\data List | \\infix 10 :: Nat List\n" +
-      "\\func test (r : List) : Nat\n" +
-      "  | n :: m => n");
+      """
+        \\data List | \\infix 10 :: Nat List
+        \\func test (r : List) : Nat
+          | n :: m => n
+        """);
   }
 
   @Test
   public void infixPatternsChain() {
     typeCheckModule(
-      "\\data List | \\infixr 10 :: Nat List\n" +
-      "\\func test (r : List) : Nat\n" +
-      "  | n :: m :: q => m");
+      """
+        \\data List | \\infixr 10 :: Nat List
+        \\func test (r : List) : Nat
+          | n :: m :: q => m
+        """);
   }
 
   @Test
   public void definedInfixPatterns() {
     typeCheckModule(
-      "\\data List | cons Nat List\n" +
-      "\\cons \\infix 10 :: (n : Nat) (m : List) => cons n m" +
-      "\\func test (r : List) : Nat\n" +
-      "  | n :: m => n");
+      """
+        \\data List | cons Nat List
+        \\cons \\infix 10 :: (n : Nat) (m : List) => cons n m\\func test (r : List) : Nat
+          | n :: m => n
+        """);
   }
 
   @Test
   public void infixPatternsInTuple() {
     typeCheckModule(
-      "\\data List | cons Nat List\n" +
-      "\\cons \\infix 10 :: (n : Nat) (m : List) => cons n m" +
-      "\\func test (r : \\Sigma List List) : Nat\n" +
-      "  | (n :: m, k :: l) => n");
+      """
+        \\data List | cons Nat List
+        \\cons \\infix 10 :: (n : Nat) (m : List) => cons n m\\func test (r : \\Sigma List List) : Nat
+          | (n :: m, k :: l) => n
+        """);
   }
 
   @Test
   public void infixPatternsInLambda() {
     typeCheckModule(
-      "\\data List | \\infixr 10 :: Nat List\n" +
-      "\\func test (r : List ) : List -> Nat => \\lam (n :: m) => n\n");
+      """
+        \\data List | \\infixr 10 :: Nat List
+        \\func test (r : List ) : List -> Nat => \\lam (n :: m) => n
+        """);
   }
 
   @Test
   public void infixPatternsInLet() {
     typeCheckModule(
-      "\\data List | \\infixr 10 :: Nat List\n" +
-      "\\func test (r : List ) : Nat => \\let (n :: m) => r \\in n \n");
+      """
+        \\data List | \\infixr 10 :: Nat List
+        \\func test (r : List ) : Nat => \\let (n :: m) => r \\in n\s
+        """);
   }
 
   @Test
   public void infixPatternFromNonfix() {
     typeCheckModule(
-      "\\data List | cons Nat List\n" +
-      "\\func test (r : List) : Nat\n" +
-      "  | n `cons` m => n");
+      """
+        \\data List | cons Nat List
+        \\func test (r : List) : Nat
+          | n `cons` m => n
+        """);
   }
 
   @Test
   public void redundantClause() {
     typeCheckModule(
-      "\\data List (A : \\Type) | nil | \\infix 6 :: A (List A)\n" +
-      "\\func indices {A : \\Type} (is : List Nat) (l : List A) : List A \\elim is, l\n" +
-      "  | nil, _ => nil\n" +
-      "  | :: _ _, nil => nil\n" +
-      "  | :: 0 is, :: a l => a :: indices is l\n" +
-      "  | :: (suc n) is, :: _ l => indices (n :: is) l");
+      """
+        \\data List (A : \\Type) | nil | \\infix 6 :: A (List A)
+        \\func indices {A : \\Type} (is : List Nat) (l : List A) : List A \\elim is, l
+          | nil, _ => nil
+          | :: _ _, nil => nil
+          | :: 0 is, :: a l => a :: indices is l
+          | :: (suc n) is, :: _ l => indices (n :: is) l
+        """);
   }
 
   @Test
   public void redundantClause2() {
     typeCheckModule(
-      "\\data List (A : \\Type) | nil | \\infix 6 :: (\\Sigma A A) (List A)\n" +
-      "\\func indices {A : \\Type} (is : List Nat) (l : List A) : List A \\elim is, l\n" +
-      "  | nil, _ => nil\n" +
-      "  | :: _ _, nil => nil\n" +
-      "  | :: (0, _) is, :: a l => a :: indices is l\n" +
-      "  | :: (suc n, _) is, :: _ l => indices ((n, 0) :: is) l");
+      """
+        \\data List (A : \\Type) | nil | \\infix 6 :: (\\Sigma A A) (List A)
+        \\func indices {A : \\Type} (is : List Nat) (l : List A) : List A \\elim is, l
+          | nil, _ => nil
+          | :: _ _, nil => nil
+          | :: (0, _) is, :: a l => a :: indices is l
+          | :: (suc n, _) is, :: _ l => indices ((n, 0) :: is) l
+        """);
   }
 
 
   @Test
   public void qualifiedConstructor() {
     typeCheckModule(
-      "\\module M \\where {\n" +
-      "  \\data List | nil | \\infixr 10 ::: Nat List\n" +
-      "  \\func f (a b : M.List) : Nat \\elim a\n" +
-      "    | M.nil => 0\n" +
-      "}", 1);
+      """
+        \\module M \\where {
+          \\data List | nil | \\infixr 10 ::: Nat List
+          \\func f (a b : M.List) : Nat \\elim a
+            | M.nil => 0
+        }
+        """, 1);
   }
 }

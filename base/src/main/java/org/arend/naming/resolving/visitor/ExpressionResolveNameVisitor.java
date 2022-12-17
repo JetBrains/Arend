@@ -646,6 +646,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       if (parsedPattern instanceof Concrete.ConstructorPattern) {
         return fixParsedConstructorPattern(pattern.getData(), pattern, usedNames, parsedPattern);
       }
+      if (parsedPattern instanceof Concrete.UnparsedConstructorPattern) {
+        myErrorReporter.report(new NameResolverError("Cannot parse pattern", pattern));
+        return null;
+      }
     } else if (!(pattern instanceof Concrete.NumberPattern)) {
       throw new IllegalStateException();
     }

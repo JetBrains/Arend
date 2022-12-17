@@ -159,4 +159,11 @@ public class PatternTest extends NameResolverTestCase {
           | suc n => n
         """);
   }
+
+  @Test
+  public void numberTest() {
+    resolveNamesDef(
+      "\\func test (n : Nat) : Nat\n" +
+      "  | 0 x => 0", 1);
+  }
 }
