@@ -19,7 +19,7 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.expr.ConcreteCompareVisitor;
+import org.arend.term.concrete.ConcreteCompareVisitor;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;

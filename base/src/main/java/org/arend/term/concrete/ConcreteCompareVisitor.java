@@ -1,9 +1,6 @@
-package org.arend.term.expr;
+package org.arend.term.concrete;
 
 import org.arend.naming.reference.Referable;
-import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.ConcreteDefinitionVisitor;
-import org.arend.term.concrete.ConcreteExpressionVisitor;
 
 import java.util.HashMap;
 import java.util.List;
