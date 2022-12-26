@@ -55,6 +55,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   private final ReferableConverter myReferableConverter;
   private final PartialComparator<TCDefReferable> myComparator;
   private final ArendExtensionProvider myExtensionProvider;
+  private final Map<TCDefReferable, Concrete.Definition> myDesugaredDefinitions = new HashMap<>();
   private List<TCDefReferable> myCurrentDefinitions = Collections.emptyList();
   private boolean myHeadersAreOK = true;
 
@@ -203,11 +204,10 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   public void unitFound(Concrete.ResolvableDefinition resolvableDefinition, boolean recursive) {
     myHeadersAreOK = true;
 
-    if (!(resolvableDefinition instanceof Concrete.Definition)) {
+    if (!(resolvableDefinition instanceof Concrete.Definition definition)) {
       return;
     }
 
-    Concrete.Definition definition = (Concrete.Definition) resolvableDefinition;
     if (recursive) {
       Set<TCReferable> dependencies = new HashSet<>();
       definition.accept(new CollectDefCallsVisitor(dependencies, false), null);
@@ -225,7 +225,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(new LocalErrorReporter(definition.getData(), myErrorReporter), null, extension);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
     WhereVarsFixVisitor.fixDefinition(Collections.singletonList(definition), myErrorReporter);
-    DesugarVisitor.desugar(definition, checkTypeVisitor.getErrorReporter());
+    definition = (Concrete.Definition) DesugarVisitor.desugar(definition, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingUnitStarted(definition.getData());
     DefinitionTypechecker typechecker = new DefinitionTypechecker(checkTypeVisitor);
@@ -281,8 +281,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
         cycle.add(definition.getData());
       }
 
-      if (definition instanceof Concrete.Definition) {
-        Concrete.Definition def = (Concrete.Definition) definition;
+      if (definition instanceof Concrete.Definition def) {
         Definition typechecked = def.getData().getTypechecked();
         if (typechecked == null) {
           typechecked = newDefinition(def);
@@ -309,7 +308,8 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(myErrorReporter);
     CheckTypeVisitor visitor = new CheckTypeVisitor(new LocalErrorReporter(definition.getData(), countingErrorReporter), null, myExtensionProvider.getArendExtension(definition.getData()));
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
-    DesugarVisitor.desugar(definition, visitor.getErrorReporter());
+    definition = (Concrete.Definition) DesugarVisitor.desugar(definition, visitor.getErrorReporter());
+    myDesugaredDefinitions.put(definition.getData(), definition);
     Definition oldTypechecked = definition.getData().getTypechecked();
     DefinitionTypechecker typechecker = new DefinitionTypechecker(visitor);
     TopLevelDefinition typechecked = typechecker.typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);
@@ -333,12 +333,14 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     List<Concrete.Definition> orderedDefinitions = new ArrayList<>(definitions.size());
     List<Concrete.Definition> otherDefs = new ArrayList<>();
     for (Concrete.Definition definition : definitions) {
-      Definition typechecked = definition.getData().getTypechecked();
+      Concrete.Definition newDef = myDesugaredDefinitions.get(definition.getData());
+      if (newDef == null) newDef = definition;
+      Definition typechecked = newDef.getData().getTypechecked();
       if (typechecked instanceof DataDefinition) {
         dataDefinitions.add((DataDefinition) typechecked);
-        orderedDefinitions.add(definition);
+        orderedDefinitions.add(newDef);
       } else {
-        otherDefs.add(definition);
+        otherDefs.add(newDef);
       }
     }
     orderedDefinitions.addAll(otherDefs);
@@ -440,7 +442,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       setParametersOriginalDefinitionsDependency(definition);
     }
 
-    findAxioms(definitions, newDefs);
+    findAxioms(orderedDefinitions, newDefs);
 
     for (Definition definition : allDefinitions) {
       typecheckingBodyFinished(definition.getReferable(), definition);
