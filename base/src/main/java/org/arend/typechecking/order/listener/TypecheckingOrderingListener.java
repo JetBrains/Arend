@@ -22,6 +22,7 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.ReplaceDataVisitor;
 import org.arend.term.group.Group;
 import org.arend.typechecking.*;
 import org.arend.typechecking.computation.BooleanComputationRunner;
@@ -224,8 +225,9 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     ArendExtension extension = myExtensionProvider.getArendExtension(definition.getData());
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(new LocalErrorReporter(definition.getData(), myErrorReporter), null, extension);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
+    definition = (Concrete.Definition) definition.accept(new ReplaceDataVisitor(), null);
     WhereVarsFixVisitor.fixDefinition(Collections.singletonList(definition), myErrorReporter);
-    definition = (Concrete.Definition) DesugarVisitor.desugar(definition, checkTypeVisitor.getErrorReporter());
+    DesugarVisitor.desugar(definition, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingUnitStarted(definition.getData());
     DefinitionTypechecker typechecker = new DefinitionTypechecker(checkTypeVisitor);
@@ -297,19 +299,26 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
 
   @Override
   public void preBodiesFound(List<Concrete.Definition> definitions) {
-    WhereVarsFixVisitor.fixDefinition(definitions, myErrorReporter);
+    List<Concrete.Definition> newDefs = new ArrayList<>(definitions.size());
+    for (Concrete.Definition definition : definitions) {
+      Concrete.Definition def = (Concrete.Definition) definition.accept(new ReplaceDataVisitor(), null);
+      myDesugaredDefinitions.put(definition.getData(), def);
+      newDefs.add(def);
+    }
+    WhereVarsFixVisitor.fixDefinition(newDefs, myErrorReporter);
   }
 
   @Override
   public void headerFound(Concrete.Definition definition) {
+    Concrete.Definition newDef = myDesugaredDefinitions.get(definition.getData());
+    if (newDef != null) definition = newDef;
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingHeaderStarted(definition.getData());
 
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(myErrorReporter);
     CheckTypeVisitor visitor = new CheckTypeVisitor(new LocalErrorReporter(definition.getData(), countingErrorReporter), null, myExtensionProvider.getArendExtension(definition.getData()));
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
-    definition = (Concrete.Definition) DesugarVisitor.desugar(definition, visitor.getErrorReporter());
-    myDesugaredDefinitions.put(definition.getData(), definition);
+    DesugarVisitor.desugar(definition, visitor.getErrorReporter());
     Definition oldTypechecked = definition.getData().getTypechecked();
     DefinitionTypechecker typechecker = new DefinitionTypechecker(visitor);
     TopLevelDefinition typechecked = typechecker.typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);

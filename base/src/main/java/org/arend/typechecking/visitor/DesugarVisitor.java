@@ -14,7 +14,6 @@ import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.LocalFreeReferableVisitor;
-import org.arend.term.concrete.ReplaceDataVisitor;
 import org.arend.typechecking.error.local.WrongReferable;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,9 +27,8 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     myErrorReporter = errorReporter;
   }
 
-  public static Concrete.ResolvableDefinition desugar(Concrete.ResolvableDefinition definition, ErrorReporter errorReporter) {
+  public static void desugar(Concrete.ResolvableDefinition definition, ErrorReporter errorReporter) {
     DesugarVisitor visitor = new DesugarVisitor(errorReporter);
-    definition = definition.accept(new ReplaceDataVisitor(), null);
     definition.accept(visitor, null);
 
     if (!visitor.myLevelRefs.isEmpty() && definition instanceof Concrete.Definition) {
@@ -45,7 +43,6 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     }
 
     definition.setDesugarized();
-    return definition;
   }
 
   private static void processLevelDefinitions(Concrete.Definition def, Set<LevelDefinition> defs, ErrorReporter errorReporter, String kind) {
