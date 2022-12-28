@@ -24,6 +24,7 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.*;
 import org.arend.naming.scope.local.ElimScope;
+import org.arend.naming.scope.local.LocalListScope;
 import org.arend.term.Fixity;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
@@ -53,7 +54,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   public ExpressionResolveNameVisitor(ReferableConverter referableConverter, Scope parentScope, List<Referable> context, ErrorReporter errorReporter, ResolverListener resolverListener, List<? extends Referable> pLevels, List<? extends Referable> hLevels) {
-    this(referableConverter, parentScope, context == null && pLevels.isEmpty() && hLevels.isEmpty() ? parentScope : new MergeScope(new ListScope(context == null ? Collections.emptyList() : context, pLevels, hLevels), parentScope), context, errorReporter, resolverListener);
+    this(referableConverter, parentScope, context == null && pLevels.isEmpty() && hLevels.isEmpty() ? parentScope : new ListScope(parentScope, context == null ? Collections.emptyList() : context, pLevels, hLevels), context, errorReporter, resolverListener);
   }
 
   public ExpressionResolveNameVisitor(ReferableConverter referableConverter, Scope parentScope, List<Referable> context, ErrorReporter errorReporter, ResolverListener resolverListener) {
@@ -115,7 +116,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   public @NotNull ExpressionResolver useRefs(@NotNull List<? extends ArendRef> refs, boolean allowContext) {
     Scope scope;
     if (allowContext) {
-      scope = new org.arend.naming.scope.local.ListScope(myScope, refs);
+      scope = new LocalListScope(myScope, refs);
     } else {
       List<Referable> newRefs = new ArrayList<>(refs.size());
       for (ArendRef ref : refs) {
