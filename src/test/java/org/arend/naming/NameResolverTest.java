@@ -101,52 +101,62 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void whereTest() {
     resolveNamesModule(
-        "\\func f (x : \\Type0) => B.b (a x) \\where {\n" +
-        "  \\func a (x : \\Type0) => x\n" +
-        "  \\data D | D1 | D2\n" +
-        "  \\class B \\where {\n" +
-        "    \\data C | cr\n" +
-        "    \\func b (x : \\Type0) => D1\n" +
-        "  }\n" +
-        "}");
+      """
+        \\func f (x : \\Type0) => B.b (a x) \\where {
+          \\func a (x : \\Type0) => x
+          \\data D | D1 | D2
+          \\class B \\where {
+            \\data C | cr
+            \\func b (x : \\Type0) => D1
+          }
+        }
+        """);
   }
 
   @Test
   public void whereTestDefCmd() {
     resolveNamesModule(
-        "\\func f (x : \\Type0) => a \\where {\n" +
-        "  \\class A \\where { \\func a => 0 }\n" +
-        "  \\open A\n" +
-        "}");
+      """
+        \\func f (x : \\Type0) => a \\where {
+          \\class A \\where { \\func a => 0 }
+          \\open A
+        }
+        """);
   }
 
   @Test
   public void whereOpenFunction() {
     resolveNamesModule(
-        "\\func f => x \\where {\n" +
-        "  \\func b => 0 \\where\n" +
-        "    \\func x => 0\n" +
-        "  \\open b(x)\n" +
-        "}");
+      """
+        \\func f => x \\where {
+          \\func b => 0 \\where
+            \\func x => 0
+          \\open b(x)
+        }
+        """);
   }
 
   @Test
   public void whereNested() {
     resolveNamesModule(
-        "\\func f => x \\where {\n" +
-        "  \\data B | b\n" +
-        "  \\func x => a \\where\n" +
-        "    \\func a => b\n" +
-        "}");
+      """
+        \\func f => x \\where {
+          \\data B | b
+          \\func x => a \\where
+            \\func a => b
+        }
+        """);
   }
 
   @Test
   public void whereOuterScope() {
     resolveNamesModule(
-        "\\func f => 0 \\where {\n" +
-        "  \\func g => 0\n" +
-        "  \\func h => g\n" +
-        "}");
+      """
+        \\func f => 0 \\where {
+          \\func g => 0
+          \\func h => g
+        }
+        """);
   }
 
   @Test
@@ -159,20 +169,24 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void whereAccessOuter() {
     resolveNamesModule(
-        "\\func f => 0 \\where\n" +
-        "  \\func x => 0\n" +
-        "\\func g => f.x");
+      """
+        \\func f => 0 \\where
+          \\func x => 0
+        \\func g => f.x
+        """);
   }
 
   @Test
   public void whereNonStaticOpen() {
     resolveNamesModule(
-        "\\func f => 0 \\where {\n" +
-        "  \\func x => 0\n" +
-        "  \\func y => x\n" +
-        "}\n" +
-        "\\func g => 0 \\where\n" +
-        "  \\open f(y)");
+      """
+        \\func f => 0 \\where {
+          \\func x => 0
+          \\func y => x
+        }
+        \\func g => 0 \\where
+          \\open f(y)
+        """);
   }
 
   @Test
@@ -269,11 +283,13 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void staticDynamicDuplicateError() {
     resolveNamesDef(
-      "\\class Test {\n" +
-      "  \\func A => 0\n" +
-      "} \\where {\n" +
-      "  \\class A { }\n" +
-      "}", 1);
+      """
+        \\class Test {
+          \\func A => 0
+        } \\where {
+          \\class A { }
+        }
+        """, 1);
     assertThatErrorsAre(error());
   }
 
@@ -304,12 +320,14 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void openInsideTest() {
     resolveNamesModule(
-      "\\class A \\where {\n" +
-      "  \\class B \\where\n" +
-      "    \\func x => 0\n" +
-      "  \\open B\n" +
-      "}\n" +
-      "\\func y => A.x", 1);
+      """
+        \\class A \\where {
+          \\class B \\where
+            \\func x => 0
+          \\open B
+        }
+        \\func y => A.x
+        """, 1);
     assertThatErrorsAre(error());
   }
 
@@ -322,20 +340,24 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void classExtensionWhereTestError() {
     resolveNamesModule(
-        "\\func f => 0 \\where {\n" +
-        "  \\class A {}\n" +
-        "  \\class A { \\func x => 0 }\n" +
-        "}", 1);
+      """
+        \\func f => 0 \\where {
+          \\class A {}
+          \\class A { \\func x => 0 }
+        }
+        """, 1);
     assertThatErrorsAre(error());
   }
 
   @Test
   public void multipleDefsWhere() {
     resolveNamesModule(
-        "\\func f => 0 \\where {\n" +
-        "  \\func d => 0\n" +
-        "  \\func d => 1\n" +
-        "}", 1);
+      """
+        \\func f => 0 \\where {
+          \\func d => 0
+          \\func d => 1
+        }
+        """, 1);
     assertThatErrorsAre(error());
   }
 
@@ -358,95 +380,113 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void openDefined() {
     resolveNamesModule(
-        "\\func f => \\Type0\n" +
-        "\\class X \\where { \\func f => \\Type0 }\n" +
-        "\\open X\n" +
-        "\\func g => f");
+      """
+        \\func f => \\Type0
+        \\class X \\where { \\func f => \\Type0 }
+        \\open X
+        \\func g => f
+        """);
   }
 
   @Test
   public void openUsingDefined() {
     resolveNamesModule(
-        "\\func f => \\Type0\n" +
-        "\\class X \\where { \\func f => \\Type0 }\n" +
-        "\\open X(f)\n" +
-        "\\func g => f", 1);
+      """
+        \\func f => \\Type0
+        \\class X \\where { \\func f => \\Type0 }
+        \\open X(f)
+        \\func g => f
+        """, 1);
     assertThatErrorsAre(warning());
   }
 
   @Test
   public void openRenaming() {
     resolveNamesModule(
-        "\\func f => \\Type0\n" +
-        "\\class X \\where { \\func f => \\Type0 }\n" +
-        "\\open X(f \\as f')\n" +
-        "\\func g => f\n" +
-        "\\func g' => f'");
+      """
+        \\func f => \\Type0
+        \\class X \\where { \\func f => \\Type0 }
+        \\open X(f \\as f')
+        \\func g => f
+        \\func g' => f'
+        """);
   }
 
   @Test
   public void openRenamingDefined() {
     resolveNamesModule(
-        "\\func f' => \\Type0\n" +
-        "\\class X \\where { \\func f => \\Type0 }\n" +
-        "\\open X(f \\as f')", 1);
+      """
+        \\func f' => \\Type0
+        \\class X \\where { \\func f => \\Type0 }
+        \\open X(f \\as f')
+        """, 1);
     assertThatErrorsAre(warning());
   }
 
   @Test
   public void openDuplicateName() {
     resolveNamesModule(
-        "\\class X \\where { \\func f => \\Type0 }\n" +
-        "\\class Y \\where { \\func f => \\Type0 }\n" +
-        "\\open X\n" +
-        "\\open Y\n" +
-        "\\func g => f", 1);
+      """
+        \\class X \\where { \\func f => \\Type0 }
+        \\class Y \\where { \\func f => \\Type0 }
+        \\open X
+        \\open Y
+        \\func g => f
+        """, 1);
     assertThatErrorsAre(warning());
   }
 
   @Test
   public void openDuplicateModuleHiding() {
     resolveNamesModule(
-        "\\class X \\where { \\func f => \\Type0 }\n" +
-        "\\class Y \\where { \\func f => \\Type0 }\n" +
-        "\\open X\n" +
-        "\\open Y \\hiding (f)\n" +
-        "\\func g => f");
+      """
+        \\class X \\where { \\func f => \\Type0 }
+        \\class Y \\where { \\func f => \\Type0 }
+        \\open X
+        \\open Y \\hiding (f)
+        \\func g => f
+        """);
   }
 
   @Test
   public void openUsingDuplicate() {
     resolveNamesModule(
-        "\\class X \\where { \\func f => \\Type0 }\n" +
-        "\\class Y \\where { \\func f => \\Type0 }\n" +
-        "\\open X(f)\n" +
-        "\\open Y(f)\n" +
-        "\\func g => f", 1);
+      """
+        \\class X \\where { \\func f => \\Type0 }
+        \\class Y \\where { \\func f => \\Type0 }
+        \\open X(f)
+        \\open Y(f)
+        \\func g => f
+        """, 1);
     assertThatErrorsAre(warning());
   }
 
   @Test
   public void conditionsTest() {
     resolveNamesModule(
-      "\\data I | left | right\n" +
-      "\\data D (A : \\Type)\n" +
-      "  | con1 A\n" +
-      "  | con2 (D A) I {\n" +
-      "    | left => d\n" +
-      "    | right => d\n" +
-      "  }", 2);
+      """
+        \\data I | left | right
+        \\data D (A : \\Type)
+          | con1 A
+          | con2 (D A) I {
+            | left => d
+            | right => d
+          }
+        """, 2);
     assertThatErrorsAre(error(), error());
   }
 
   @Test
   public void patternsTest() {
     resolveNamesModule(
-      "\\data K\n" +
-      "  | k1 \\Prop\n" +
-      "  | k2 \\Prop\n" +
-      "\\func crash (k : K) : \\Prop\n" +
-      "  | k1 a => a\n" +
-      "  | k2 b => a", 1);
+      """
+        \\data K
+          | k1 \\Prop
+          | k2 \\Prop
+        \\func crash (k : K) : \\Prop
+          | k1 a => a
+          | k2 b => a
+        """, 1);
     assertThatErrorsAre(error());
   }
 
@@ -511,9 +551,11 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void whereNoOpenFunctionError() {
     resolveNamesModule(
-      "\\func f => x \\where\n" +
-      "  \\func b => 0 \\where\n" +
-      "    \\func x => 0", 1);
+      """
+        \\func f => x \\where
+          \\func b => 0 \\where
+            \\func x => 0
+        """, 1);
     assertThatErrorsAre(error());
   }
 
@@ -538,10 +580,12 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void duplicateInternalName() {
     resolveNamesModule(
-      "\\class A {\n" +
-      "  | x : Nat\n" +
-      "}\n" +
-      "\\data D | x Nat", 1);
+      """
+        \\class A {
+          | x : Nat
+        }
+        \\data D | x Nat
+        """, 1);
     assertThatErrorsAre(warning());
   }
 
@@ -556,51 +600,61 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void classExtensionDuplicateFieldName() {
     resolveNamesModule(
-      "\\class A {\n" +
-      "  | f : Nat\n" +
-      "}\n" +
-      "\\class C {\n" +
-      "  \\class B \\extends A {\n" +
-      "    | f : Nat\n" +
-      "  }\n" +
-      "}", 1);
+      """
+        \\class A {
+          | f : Nat
+        }
+        \\class C {
+          \\class B \\extends A {
+            | f : Nat
+          }
+        }
+        """, 1);
     assertThatErrorsAre(warning());
   }
 
   @Test
   public void openHideTest() {
     resolveNamesModule(
-      "\\class X \\where { \\func f => 0 }\n" +
-      "\\open X(f) \\hiding(f)\n" +
-      "\\func g => f", 1);
+      """
+        \\class X \\where { \\func f => 0 }
+        \\open X(f) \\hiding(f)
+        \\func g => f
+        """, 1);
     assertThatErrorsAre(notInScope("f"));
   }
 
   @Test
   public void openRenameHideOldTest() {
     resolveNamesModule(
-      "\\class X \\where { \\func f => 0 }\n" +
-      "\\open X(f \\as f') \\hiding(f)\n" +
-      "\\func g => f'");
+      """
+        \\class X \\where { \\func f => 0 }
+        \\open X(f \\as f') \\hiding(f)
+        \\func g => f'
+        """);
   }
 
   @Test
   public void openRenameHideNewTest() {
     resolveNamesModule(
-      "\\class X \\where { \\func f => 0 }\n" +
-      "\\open X(f \\as f') \\hiding(f')\n" +
-      "\\func g => f\n" +
-      "\\func g' => f'", 3);
+      """
+        \\class X \\where { \\func f => 0 }
+        \\open X(f \\as f') \\hiding(f')
+        \\func g => f
+        \\func g' => f'
+        """, 3);
     assertThatErrorsAre(notInScope("f"), notInScope("f'"), notInScope("f'"));
   }
 
   @Test
   public void openElementsTest() {
     ChildGroup group = resolveNamesModule(
-      "\\import Prelude()\n" +
-      "\\module X \\where { \\func f => 0 }\n" +
-      "\\open X\n" +
-      "\\func g => f");
+      """
+        \\import Prelude()
+        \\module X \\where { \\func f => 0 }
+        \\open X
+        \\func g => f
+        """);
     List<String> names = new ArrayList<>();
     for (Referable element : group.getGroupScope().getElements()) {
       names.add(element.textRepresentation());
@@ -631,18 +685,22 @@ public class NameResolverTest extends NameResolverTestCase {
   public void importHidingName() {
     setModuleScopeProvider(module -> EmptyScope.INSTANCE);
     resolveNamesModule(
-      "\\import Mod\n" +
-      "\\import Mod.Path\n" +
-      "\\func foo => Path");
+      """
+        \\import Mod
+        \\import Mod.Path
+        \\func foo => Path
+        """);
   }
 
   @Test
   public void importHidingNamespace() {
     setModuleScopeProvider(module -> EmptyScope.INSTANCE);
     resolveNamesModule(
-      "\\import Mod\n" +
-      "\\import Mod.Path\n" +
-      "\\func foo => Path.path");
+      """
+        \\import Mod
+        \\import Mod.Path
+        \\func foo => Path.path
+        """);
   }
 
   @Test
@@ -658,13 +716,26 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\func bar => foo");
     */
     resolveNamesModule(
-      "\\import Mod.Path\n" +
-      "\\import Mod\n" +
-      "\\func bar => foo");
+      """
+        \\import Mod.Path
+        \\import Mod
+        \\func bar => foo
+        """);
   }
 
   @Test
   public void unicodeError() {
     resolveNamesModule("\\func ∀ => 0", 1);
+  }
+
+  @Test
+  public void localNamespaceTest() {
+    resolveNamesModule("""
+      \\module M \\where {
+        \\func foo => 0
+      }
+      \\func test (M : \\Type) (X : 0 = M.foo) => X
+      """, 1);
+    assertThatErrorsAre(notInScope("foo"));
   }
 }

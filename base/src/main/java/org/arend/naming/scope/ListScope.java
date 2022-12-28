@@ -78,6 +78,11 @@ public class ListScope implements Scope {
     return null;
   }
 
+  @Override
+  public @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
+    return resolveName(name) == null ? null : EmptyScope.INSTANCE;
+  }
+
   @NotNull
   @Override
   public Scope getGlobalSubscope() {
