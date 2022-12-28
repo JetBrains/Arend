@@ -1,7 +1,6 @@
 package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
-import org.arend.term.abs.Abstract;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -69,24 +68,8 @@ public class ConcreteResolvedClassReferable extends ConcreteLocatedReferable imp
   }
 
   @Override
-  public @Nullable Abstract.LevelParameters getPLevelParameters() {
-    return getDefinition().getPLevelParameters();
-  }
-
-  @Override
-  public @Nullable Abstract.LevelParameters getHLevelParameters() {
-    return getDefinition().getHLevelParameters();
-  }
-
-  @Override
   public @NotNull List<? extends ClassReferable> getSuperClassReferences() {
     return superClasses;
-  }
-
-  @Override
-  public boolean hasLevels(int index) {
-    List<Concrete.ReferenceExpression> superClasses = getDefinition().getSuperClasses();
-    return index < superClasses.size() && (superClasses.get(index).getPLevels() != null || superClasses.get(index).getHLevels() != null);
   }
 
   @Override
