@@ -238,7 +238,7 @@ public class ScopeFactory {
         if (elimExprs != null) {
           for (Abstract.Reference elimExpr : elimExprs) {
             if (sourceNode.equals(elimExpr)) {
-              return new TelescopeScope(EmptyScope.INSTANCE, ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getParameters());
+              return TelescopeScope.make(EmptyScope.INSTANCE, ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getParameters());
             }
           }
         }
@@ -252,14 +252,14 @@ public class ScopeFactory {
             return parentScope;
           } else {
             List<Referable> excluded = new ArrayList<>(elimExprs.size());
-            Scope parametersScope = new TelescopeScope(EmptyScope.INSTANCE, ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getParameters());
+            Scope parametersScope = TelescopeScope.make(EmptyScope.INSTANCE, ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getParameters());
             for (Abstract.Reference elimExpr : elimExprs) {
               Referable ref = ExpressionResolveNameVisitor.resolve(elimExpr.getReferent(), parametersScope);
               if (!(ref == null || ref instanceof ErrorReference)) {
                 excluded.add(ref);
               }
             }
-            return new TelescopeScope(parentScope, ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getParameters(), excluded);
+            return TelescopeScope.make(parentScope, ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getParameters(), excluded);
           }
         }
       }
@@ -318,9 +318,9 @@ public class ScopeFactory {
           }
           parameters1.add(parameter);
         }
-        return new TelescopeScope(parentScope, parameters1);
+        return TelescopeScope.make(parentScope, parameters1);
       } else {
-        return new TelescopeScope(parentScope, parameters);
+        return TelescopeScope.make(parentScope, parameters);
       }
     }
 

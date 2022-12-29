@@ -111,8 +111,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    if (expr instanceof Concrete.BinOpSequenceExpression) {
-      Concrete.BinOpSequenceExpression binOpExpr = (Concrete.BinOpSequenceExpression) expr;
+    if (expr instanceof Concrete.BinOpSequenceExpression binOpExpr) {
       for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : binOpExpr.getSequence()) {
         if (elem.getComponent() instanceof Concrete.ReferenceExpression) {
           if (!tryResolve((Concrete.ReferenceExpression) elem.getComponent(), exprVisitor)) {
@@ -255,8 +254,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         }
       }
 
-      if (def instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
-        Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
+      if (def instanceof Concrete.CoClauseFunctionDefinition function && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
         if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
           List<Concrete.Parameter> parameters = new SubstConcreteVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
           for (Concrete.Parameter parameter : parameters) {
@@ -268,8 +266,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         if (function.getImplementedField() instanceof UnresolvedReference || function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet()) {
           Referable classRef = null;
           List<? extends Concrete.ClassElement> elements = Collections.emptyList();
-          if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
-            Concrete.BaseFunctionDefinition enclosingFunction = (Concrete.BaseFunctionDefinition) enclosingDef;
+          if (enclosingDef instanceof Concrete.BaseFunctionDefinition enclosingFunction) {
             if (enclosingFunction.getResultType() != null) {
               if (enclosingFunction.getStage().ordinal() < Concrete.Stage.RESOLVED.ordinal()) {
                 resolveTypeClassReference(enclosingFunction.getParameters(), enclosingFunction.getResultType(), scope, true);
@@ -407,8 +404,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     SyntacticDesugarVisitor.desugar(def, myLocalErrorReporter);
 
-    if (def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.FUNC_COCLAUSE && ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() > 0) {
-      Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
+    if (def instanceof Concrete.CoClauseFunctionDefinition function && def.getKind() == FunctionKind.FUNC_COCLAUSE && ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() > 0) {
       BaseConcreteExpressionVisitor<Void> visitor = new BaseConcreteExpressionVisitor<>() {
         @Override
         public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
@@ -676,8 +672,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         if (ref instanceof ClassReferable) {
           exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, (ClassReferable) ref);
         }
-      } else if (element instanceof Concrete.OverriddenField) {
-        Concrete.OverriddenField field = (Concrete.OverriddenField) element;
+      } else if (element instanceof Concrete.OverriddenField field) {
         Referable ref = def.getData().getUnderlyingReferable();
         if (!(ref instanceof ClassReferable)) {
           ref = ref.getUnderlyingReferable();
@@ -721,7 +716,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       for (int i = groups.size() - 2; i >= 0; i--) {
         LocatedReferable groupRef = groups.get(i).getReferable();
         var def = myConcreteProvider.getConcrete(groupRef);
-        scope = CachingScope.make(makeScope(groups.get(i), scope, def instanceof Concrete.ClassDefinition ? LexicalScope.Extent.EXTERNAL_AND_FIELDS : LexicalScope.Extent.EVERYTHING));
+        scope = CachingScope.make(makeScope(groups.get(i), scope, LexicalScope.Extent.EVERYTHING));
         if (def instanceof Concrete.FunctionDefinition) {
           resolveFunctionHeader((Concrete.BaseFunctionDefinition) def, scope);
         } else if (def instanceof Concrete.DataDefinition) {
