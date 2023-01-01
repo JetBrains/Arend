@@ -776,7 +776,7 @@ public class PatternTypechecking {
               myErrorReporter.report(new NotEnoughPatternsError(DependentLink.Helper.size(param), conPattern));
             }
 
-            patterns.set(k--, constructor.getPattern().toConcrete(conPattern.getData(), conPattern.isExplicit(), concretePatterns));
+            patterns.set(k--, constructor.getPattern().toConcrete(conPattern.getData(), conPattern.isExplicit(), conPattern.getConstructorData(), concretePatterns));
             continue;
           }
           myVisitor.getEquations().solveEquations();
@@ -888,7 +888,7 @@ public class PatternTypechecking {
       if (dataCall != null && dataCall.getDefinition() == Prelude.INT && (conPattern.getConstructor() == Prelude.ZERO.getReferable() || conPattern.getConstructor() == Prelude.SUC.getReferable())) {
         boolean isExplicit = conPattern.isExplicit();
         conPattern.setExplicit(true);
-        conPattern = new Concrete.ConstructorPattern(conPattern.getData(), isExplicit, Prelude.POS.getReferable(), Collections.singletonList(conPattern), conPattern.getAsReferable());
+        conPattern = new Concrete.ConstructorPattern(conPattern.getData(), isExplicit, conPattern.getConstructorData(), Prelude.POS.getReferable(), Collections.singletonList(conPattern), conPattern.getAsReferable());
       }
 
       Definition constructor;

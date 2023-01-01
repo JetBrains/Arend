@@ -61,7 +61,7 @@ public class EmptyPattern implements ExpressionPattern {
   }
 
   @Override
-  public Concrete.Pattern toConcrete(Object data, boolean isExplicit, Map<DependentLink, Concrete.Pattern> subPatterns) {
+  public Concrete.Pattern toConcrete(Object data, boolean isExplicit, Object constructorData, Map<DependentLink, Concrete.Pattern> subPatterns) {
     return new Concrete.TuplePattern(data, isExplicit, Collections.emptyList(), null);
   }
 

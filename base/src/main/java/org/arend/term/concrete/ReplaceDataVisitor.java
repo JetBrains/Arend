@@ -67,12 +67,12 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
     Concrete.Pattern result;
     if (pattern instanceof Concrete.NamePattern namePattern) {
       result = new Concrete.NamePattern(getData(pattern), pattern.isExplicit(), namePattern.getReferable(), namePattern.type == null ? null : namePattern.type.accept(this, null), namePattern.fixity);
-    } else if (pattern instanceof Concrete.ConstructorPattern) {
+    } else if (pattern instanceof Concrete.ConstructorPattern conPattern) {
       List<Concrete.Pattern> args = new ArrayList<>(pattern.getPatterns().size());
       for (Concrete.Pattern subPattern : pattern.getPatterns()) {
         args.add(visitPattern(subPattern));
       }
-      result = new Concrete.ConstructorPattern(getData(pattern), pattern.isExplicit(), ((Concrete.ConstructorPattern) pattern).getConstructor(), args, null);
+      result = new Concrete.ConstructorPattern(getData(pattern), pattern.isExplicit(), myReplace ? myData : conPattern.getConstructorData(), conPattern.getConstructor(), args, null);
     } else if (pattern instanceof Concrete.TuplePattern) {
       List<Concrete.Pattern> args = new ArrayList<>(pattern.getPatterns().size());
       for (Concrete.Pattern subPattern : pattern.getPatterns()) {
@@ -309,7 +309,7 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
     } else if (body instanceof Concrete.ElimFunctionBody) {
       newBody = new Concrete.ElimFunctionBody(getData(body), visitReferenceExpressions(body.getEliminatedReferences()), visitFunctionClauses(body.getClauses()));
     } else if (body instanceof Concrete.TermFunctionBody) {
-      newBody = new Concrete.TermFunctionBody(getData(body), body.getTerm().accept(this, null));
+      newBody = new Concrete.TermFunctionBody(getData(body), body.getTerm() == null ? null : body.getTerm().accept(this, null));
     } else {
       throw new IllegalStateException();
     }

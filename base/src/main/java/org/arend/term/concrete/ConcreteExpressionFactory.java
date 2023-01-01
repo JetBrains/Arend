@@ -225,7 +225,7 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.ConstructorPattern cConPattern(boolean isExplicit, Referable referable, List<Concrete.Pattern> patternArgs) {
-    return new Concrete.ConstructorPattern(null, isExplicit, referable, patternArgs, null);
+    return new Concrete.ConstructorPattern(null, isExplicit, null, referable, patternArgs, null);
   }
 
   public static Concrete.TuplePattern cTuplePattern(boolean isExplicit, List<Concrete.Pattern> patternArgs) {

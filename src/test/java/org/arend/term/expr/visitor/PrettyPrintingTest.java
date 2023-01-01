@@ -143,29 +143,35 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintData1() {
     testDefinition(
-      "\\data S1 \n" +
-      "| base\n" +
-      "| loop Nat \\with {\n" +
-      "  | left => base\n" +
-      "  | right => base\n" +
-      "}");
+      """
+        \\data S1\s
+        | base
+        | loop Nat \\with {
+          | left => base
+          | right => base
+        }
+        """);
   }
 
   @Test
   public void prettyPrintClass1() {
     testDefinition(
-      "\\class C0 {\n" +
-      "  | f0 : \\Pi {X Y : \\Type0} -> X -> Y -> \\Type0\n" +
-      "  | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> x = y\n" +
-      "}");
+      """
+        \\class C0 {
+          | f0 : \\Pi {X Y : \\Type0} -> X -> Y -> \\Type0
+          | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> x = y
+        }
+      """);
   }
 
   @Test
   public void prettyPrintData2() {
     testDefinition(
-      "\\data D2 {A : \\Type0} (y : Nat) (x : Nat) \\elim x\n" +
-      "    | suc x' => c0 (y = x')\n" +
-      "    | suc x' => c1 (p : D2 y x')");
+      """
+        \\data D2 {A : \\Type0} (y : Nat) (x : Nat) \\elim x
+            | suc x' => c0 (y = x')
+            | suc x' => c1 (p : D2 y x')
+        """);
   }
 
   @Test
@@ -298,7 +304,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void letTest2() {
-    String expr = "\n  \\let (x,y) => (0, 1)\n  \\in (x, y)";
+    String expr = "\n  \\let (x, y) => (0, 1)\n  \\in (x, y)";
     typeCheckModule("\\func test =>" + expr);
     assertEquals(expr, printTestExpr());
   }

@@ -93,20 +93,20 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
   }
 
   @Override
-  public Concrete.Pattern toConcrete(Object data, boolean isExplicit, Map<DependentLink, Concrete.Pattern> subPatterns) {
+  public Concrete.Pattern toConcrete(Object data, boolean isExplicit, Object constructorData, Map<DependentLink, Concrete.Pattern> subPatterns) {
     Definition definition = getConstructor();
     DependentLink param = definition != null ? getParameters() : EmptyDependentLink.getInstance();
 
     List<Concrete.Pattern> patterns = new ArrayList<>();
     for (ExpressionPattern subPattern : getSubPatterns()) {
-      patterns.add(subPattern.toConcrete(data, !param.hasNext() || param.isExplicit(), subPatterns));
+      patterns.add(subPattern.toConcrete(data, !param.hasNext() || param.isExplicit(), constructorData, subPatterns));
       if (param.hasNext()) {
         param = param.getNext();
       }
     }
 
     if (definition != null) {
-      return new Concrete.ConstructorPattern(data, isExplicit, definition.getRef(), patterns, null);
+      return new Concrete.ConstructorPattern(data, isExplicit, constructorData, definition.getRef(), patterns, null);
     } else {
       return new Concrete.TuplePattern(data, isExplicit, patterns, null);
     }
@@ -134,9 +134,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
   public Expression getArrayLength() {
     Expression dataExpr = getDataExpression();
-    if (!(dataExpr instanceof FunCallExpression)) return null;
-    FunCallExpression funCall = (FunCallExpression) dataExpr;
-    return funCall.getDefinition() == Prelude.ARRAY_CONS && funCall.getDefCallArguments().size() >= 1 ? funCall.getDefCallArguments().get(0) : null;
+    return dataExpr instanceof FunCallExpression funCall && funCall.getDefinition() == Prelude.ARRAY_CONS && funCall.getDefCallArguments().size() >= 1 ? funCall.getDefCallArguments().get(0) : null;
   }
 
   public Binding getArrayThisBinding() {
@@ -145,8 +143,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
   public Expression getArrayElementsType() {
     Expression dataExpr = getDataExpression();
-    if (!(dataExpr instanceof FunCallExpression)) return null;
-    FunCallExpression funCall = (FunCallExpression) dataExpr;
+    if (!(dataExpr instanceof FunCallExpression funCall)) return null;
     Definition def = funCall.getDefinition();
     return def == Prelude.EMPTY_ARRAY && funCall.getDefCallArguments().size() >= 1 ? funCall.getDefCallArguments().get(0) :
            def == Prelude.ARRAY_CONS  && funCall.getDefCallArguments().size() >= 2 ? funCall.getDefCallArguments().get(1) : null;
@@ -197,8 +194,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       return new TupleExpression(arguments, (SigmaExpression) dataExpr);
     }
 
-    if (dataExpr instanceof ConCallExpression) {
-      ConCallExpression conCall = (ConCallExpression) dataExpr;
+    if (dataExpr instanceof ConCallExpression conCall) {
       return ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), arguments);
     }
 
@@ -206,8 +202,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       return dataExpr;
     }
 
-    if (dataExpr instanceof FunCallExpression) {
-      FunCallExpression funCall = (FunCallExpression) dataExpr;
+    if (dataExpr instanceof FunCallExpression funCall) {
       List<Expression> newArgs;
       if (!funCall.getDefCallArguments().isEmpty()) {
         newArgs = new ArrayList<>(funCall.getDefCallArguments().size() + arguments.size());
@@ -285,11 +280,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       FunctionDefinition function = ((FunCallExpression) dataExpr).getDefinition();
       expression = expression.getUnderlyingExpression();
       if (function == Prelude.EMPTY_ARRAY || function == Prelude.ARRAY_CONS) {
-        if (!(expression instanceof ArrayExpression)) {
-          return null;
-        }
-        ArrayExpression array = (ArrayExpression) expression;
-        return array.getElements().isEmpty() == (function == Prelude.EMPTY_ARRAY) ? array.getConstructorArguments(getArrayElementsType() == null, getArrayLength() == null) : null;
+        return expression instanceof ArrayExpression array && array.getElements().isEmpty() == (function == Prelude.EMPTY_ARRAY) ? array.getConstructorArguments(getArrayElementsType() == null, getArrayLength() == null) : null;
       }
       if (function != Prelude.IDP) {
         return null;
@@ -381,8 +372,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       return true;
     }
 
-    if (other instanceof ConstructorExpressionPattern) {
-      ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) other;
+    if (other instanceof ConstructorExpressionPattern conPattern) {
       Expression dataExpr = getDataExpression();
       Expression otherExpr = conPattern.getDataExpression();
       return (dataExpr instanceof SigmaExpression && otherExpr instanceof SigmaExpression ||
@@ -400,11 +390,10 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     if (other instanceof BindingPattern) {
       return this;
     }
-    if (!(other instanceof ConstructorExpressionPattern)) {
+    if (!(other instanceof ConstructorExpressionPattern conPattern)) {
       return null;
     }
 
-    ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) other;
     Expression dataExpr = getDataExpression();
     Expression otherExpr = conPattern.getDataExpression();
     if (dataExpr instanceof SigmaExpression && otherExpr instanceof SigmaExpression ||
@@ -435,18 +424,14 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       patterns.add(pattern.subst(exprSubst, levelSubst, patternSubst));
     }
 
-    if (data instanceof ArrayData) {
-      ArrayData arrayData = (ArrayData) data;
+    if (data instanceof ArrayData arrayData) {
       return new ConstructorExpressionPattern(new ArrayData((FunCallExpression) arrayData.funCall.subst(exprSubst, levelSubst), arrayData.isEmpty, arrayData.thisBinding), patterns);
-    } else if (data instanceof ConCallExpression) {
-      ConCallExpression conCall = (ConCallExpression) data;
-      if (conCall.getDefinition() == Prelude.FIN_ZERO || conCall.getDefinition() == Prelude.FIN_SUC) {
-        List<Expression> dataArgs = new ArrayList<>(conCall.getDataTypeArguments().size());
-        for (Expression arg : conCall.getDataTypeArguments()) {
-          dataArgs.add(arg.subst(exprSubst));
-        }
-        return new ConstructorExpressionPattern(new ConCallExpression(conCall.getDefinition(), conCall.getLevels().subst(levelSubst), dataArgs, Collections.emptyList()), patterns);
+    } else if (data instanceof ConCallExpression conCall && (conCall.getDefinition() == Prelude.FIN_ZERO || conCall.getDefinition() == Prelude.FIN_SUC)) {
+      List<Expression> dataArgs = new ArrayList<>(conCall.getDataTypeArguments().size());
+      for (Expression arg : conCall.getDataTypeArguments()) {
+        dataArgs.add(arg.subst(exprSubst));
       }
+      return new ConstructorExpressionPattern(new ConCallExpression(conCall.getDefinition(), conCall.getLevels().subst(levelSubst), dataArgs, Collections.emptyList()), patterns);
     }
     return new ConstructorExpressionPattern(getDataExpression().subst(exprSubst, levelSubst), patterns);
   }

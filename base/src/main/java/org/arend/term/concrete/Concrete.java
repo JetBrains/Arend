@@ -2913,7 +2913,7 @@ public final class Concrete {
 
     @Override
     public Pattern toConstructor() {
-      return myReferable == null || type != null ? this : new ConstructorPattern(getData(), isExplicit(), new NamedUnresolvedReference(getData(), myReferable.getRefName()), Collections.emptyList(), getAsReferable());
+      return myReferable == null || type != null ? this : new ConstructorPattern(getData(), isExplicit(), getData(), new NamedUnresolvedReference(getData(), myReferable.getRefName()), Collections.emptyList(), getAsReferable());
     }
 
     @Override
@@ -2986,20 +2986,27 @@ public final class Concrete {
   }
 
   public static class ConstructorPattern extends Pattern implements PatternHolder, ConcreteConstructorPattern {
+    private final Object myConstructorData;
     private Referable myConstructor;
     private final List<Pattern> myArguments;
 
-    public ConstructorPattern(Object data, boolean isExplicit, Referable constructor, List<Pattern> arguments, TypedReferable asReferable) {
+    public ConstructorPattern(Object data, boolean isExplicit, Object constructorData, Referable constructor, List<Pattern> arguments, TypedReferable asReferable) {
       super(data, asReferable);
       setExplicit(isExplicit);
+      myConstructorData = constructorData;
       myConstructor = constructor;
       myArguments = arguments;
     }
 
-    public ConstructorPattern(Object data, Referable constructor, List<Pattern> arguments, TypedReferable asReferable) {
+    public ConstructorPattern(Object data, Object constructorData, Referable constructor, List<Pattern> arguments, TypedReferable asReferable) {
       super(data, asReferable);
+      myConstructorData = constructorData;
       myConstructor = constructor;
       myArguments = arguments;
+    }
+
+    public Object getConstructorData() {
+      return myConstructorData;
     }
 
     @Override
@@ -3024,7 +3031,7 @@ public final class Concrete {
 
     @Override
     public Pattern copy() {
-      return new ConstructorPattern(getData(), isExplicit(), myConstructor, myArguments, getAsReferable());
+      return new ConstructorPattern(getData(), isExplicit(), myConstructorData, myConstructor, myArguments, getAsReferable());
     }
   }
 
