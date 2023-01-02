@@ -99,17 +99,8 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     }
   }
 
-  private static List<Concrete.LevelExpression> makeIdLevels(Object data, Concrete.LevelParameters parameters) {
-    if (parameters == null) return null;
-    List<Concrete.LevelExpression> result = new ArrayList<>(parameters.referables.size());
-    for (LevelReferable ref : parameters.referables) {
-      result.add(new Concrete.IdLevelExpression(data, ref));
-    }
-    return result;
-  }
-
-  private static Concrete.Expression makeThisClassCall(Object data, Referable classRef, Concrete.Definition def) {
-    return Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classRef, def != null && def.pOriginalDef == classRef ? makeIdLevels(data, def.getPLevelParameters()) : null, def != null && def.hOriginalDef == classRef ? makeIdLevels(data, def.getHLevelParameters()) : null), new Concrete.Coclauses(data, Collections.emptyList()));
+  private static Concrete.Expression makeThisClassCall(Object data, Referable classRef) {
+    return Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classRef), new Concrete.Coclauses(data, Collections.emptyList()));
   }
 
   @Override
@@ -123,7 +114,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       if (def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.FUNC_COCLAUSE) {
         ((Concrete.CoClauseFunctionDefinition) def).setNumberOfExternalParameters(((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() + 1);
       }
-      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass, def), false));
+      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass), false));
       if (def.getBody().getEliminatedReferences().isEmpty()) {
         for (Concrete.FunctionClause clause : def.getBody().getClauses()) {
           clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter, null));
@@ -141,7 +132,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     // Add this parameter
     Referable thisParameter = checkDefinition(def);
     if (thisParameter != null) {
-      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass, def), false));
+      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass), false));
       if (def.getEliminatedReferences() != null && def.getEliminatedReferences().isEmpty()) {
         for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
           clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter, null));
@@ -199,7 +190,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       } else {
         previousType = classField.getParameters().isEmpty() ? fieldType : null;
         classFieldChecker.visitParameters(classField.getParameters(), null);
-        classField.getParameters().add(0, new Concrete.TelescopeParameter(classField.getParameters().isEmpty() ? fieldType.getData() : classField.getParameters().get(0).getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(fieldType.getData(), def.getData(), null), false));
+        classField.getParameters().add(0, new Concrete.TelescopeParameter(classField.getParameters().isEmpty() ? fieldType.getData() : classField.getParameters().get(0).getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(fieldType.getData(), def.getData()), false));
         classField.setResultType(fieldType.accept(classFieldChecker, null));
         if (classField.getResultTypeLevel() != null) {
           classField.setResultTypeLevel(classField.getResultTypeLevel().accept(classFieldChecker, null));
@@ -217,12 +208,12 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         Concrete.Expression impl = ((Concrete.ClassFieldImpl) element).implementation;
         Referable thisParameter = new HiddenLocalReferable("this");
         classFieldChecker.setThisParameter(thisParameter);
-        ((Concrete.ClassFieldImpl) element).implementation = new Concrete.LamExpression(impl.getData(), Collections.singletonList(new Concrete.TelescopeParameter(impl.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(impl.getData(), def.getData(), null), false)), impl.accept(classFieldChecker, null));
+        ((Concrete.ClassFieldImpl) element).implementation = new Concrete.LamExpression(impl.getData(), Collections.singletonList(new Concrete.TelescopeParameter(impl.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(impl.getData(), def.getData()), false)), impl.accept(classFieldChecker, null));
       } else if (element instanceof Concrete.OverriddenField field) {
         Referable thisParameter = new HiddenLocalReferable("this");
         classFieldChecker.setThisParameter(thisParameter);
         classFieldChecker.visitParameters(field.getParameters(), null);
-        field.getParameters().add(0, new Concrete.TelescopeParameter(field.getResultType().getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(field.getResultType().getData(), def.getData(), null), false));
+        field.getParameters().add(0, new Concrete.TelescopeParameter(field.getResultType().getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(field.getResultType().getData(), def.getData()), false));
         field.setResultType(field.getResultType().accept(classFieldChecker, null));
         if (field.getResultTypeLevel() != null) {
           field.setResultTypeLevel(field.getResultTypeLevel().accept(classFieldChecker, null));

@@ -163,10 +163,12 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   @Test
   public void defCallExtraArgs() {
     var resolved = resolveNamesDef(
-      "\\func test => f 11 45 14 \\where {\n" +
-        "  \\open Nat\n" +
-        "  \\func f (a b : Nat) => \\lam c => a + b + c\n" +
-        "}");
+      """
+        \\func test => f 11 45 14 \\where {
+          \\open Nat
+          \\func f (a b : Nat) => \\lam c => a + b + c
+        }
+        """);
     var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
@@ -192,10 +194,12 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   @Test
   public void defCallLessArgs() {
     var resolved = resolveNamesDef(
-      "\\func test => f 114514 \\where {\n" +
-        "  \\open Nat\n" +
-        "  \\func f (a b : Nat) => a + b\n" +
-        "}");
+      """
+        \\func test => f 114514 \\where {
+          \\open Nat
+          \\func f (a b : Nat) => a + b
+        }
+        """);
     var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
@@ -211,9 +215,11 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   @Test
   public void defCallImplicitArgs() {
     var resolved = resolveNamesDef(
-      "\\func test => const 114 514 \\where {\n" +
-        "  \\func const {A : \\Type} (a b : A) => a\n" +
-        "}");
+      """
+        \\func test => const 114 514 \\where {
+          \\func const {A : \\Type} (a b : A) => a
+        }
+        """);
     var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
@@ -237,9 +243,11 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   @Test
   public void appExprImplicitArgs() {
     var resolved = resolveNamesDef(
-      "\\func test => const 114 514 \\where {\n" +
-        "  \\func const => \\lam {A : \\Type} (a b : A) => a\n" +
-        "}");
+      """
+        \\func test => const 114 514 \\where {
+          \\func const => \\lam {A : \\Type} (a b : A) => a
+        }
+        """);
     var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
@@ -276,10 +284,12 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   @Test
   public void conCallImplicits() {
     var resolved = resolveNamesDef(
-      "\\func test : Fin 114 => con 514 \\where {\n" +
-        "  \\data Fin (limit : Nat)\n" +
-        "    | con Nat\n" +
-        "}");
+      """
+        \\func test : Fin 114 => con 514 \\where {
+          \\data Fin (limit : Nat)
+            | con Nat
+        }
+        """);
     var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
@@ -295,9 +305,11 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   @Test
   public void simpleClassCall() {
     var resolved = resolveNamesDef(
-      "\\func test => X { | A => Nat } \\where {\n" +
-        "  \\class X (A : \\Type0) { }\n" +
-        "}");
+      """
+        \\func test => X { | A => Nat } \\where {
+          \\class X (A : \\Type0) { }
+        }
+        """);
     var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     var concrete = (Concrete.ClassExtExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
@@ -311,18 +323,20 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
 
   @Test
   public void nestedClassCall() {
-    var resolved = resolveNamesDef(
-      "\\func test => Y { | A => Nat | C { | B => 114514 } } \\where {\n" +
-        "  \\class X (A : \\Type0) {\n" +
-        "    | B : Nat\n" +
-        "  }\n" +
-        "  \\class Y (A : \\Type0) {\n" +
-        "    | C : X A\n" +
-        "  }\n" +
-        "}");
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    typeCheckModule(
+      """
+        \\func test => Y { | A => Nat | C { | B => 114514 } } \\where {
+          \\class X (A : \\Type0) {
+            | B : Nat
+          }
+          \\class Y (A : \\Type0) {
+            | C : X A
+          }
+        }
+        """);
+    var concreteDef = (Concrete.FunctionDefinition) getConcreteDesugarized("test");
     var concrete = (Concrete.ClassExtExpression) concreteDef.getBody().getTerm();
-    Definition coreDef = typeCheckDef(resolved);
+    Definition coreDef = getDefinition("test");
     assertNotNull(concrete);
     var c = (Concrete.NewExpression) concrete.getStatements().get(1).implementation;
     var classExt = (Concrete.ClassExtExpression) c.getExpression();
@@ -336,31 +350,35 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
 
   @Test
   public void baseClassInplace0() {
-    testBaseClassCall("\\func test => Y Nat {\n" +
-        "  | X { | B => 114514 }\n" +
-        "  | C => 1919810\n" +
-        "} \\where {\n" +
-        "  \\class X (A : \\Type0) { | B : A }\n" +
-        "  \\class Y \\extends X { | C : A }\n" +
-        "}");
+    testBaseClassCall("""
+      \\func test => Y Nat {
+        | X { | B => 114514 }
+        | C => 1919810
+      } \\where {
+        \\class X (A : \\Type0) { | B : A }
+        \\class Y \\extends X { | C : A }
+      }
+      """);
   }
 
   @Test
   public void baseClassInplace1() {
-    testBaseClassCall("\\func test => Y Nat {\n" +
-        "  | B => 114514\n" +
-        "  | C => 1919810\n" +
-        "} \\where {\n" +
-        "  \\class X (A : \\Type0) { | B : A }\n" +
-        "  \\class Y \\extends X { | C : A }\n" +
-        "}");
+    testBaseClassCall("""
+      \\func test => Y Nat {
+        | B => 114514
+        | C => 1919810
+      } \\where {
+        \\class X (A : \\Type0) { | B : A }
+        \\class Y \\extends X { | C : A }
+      }
+      """);
   }
 
   private void testBaseClassCall(@Arend String code) {
-    var resolved = resolveNamesDef(code);
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    typeCheckModule(code);
+    var concreteDef = (Concrete.FunctionDefinition) getConcreteDesugarized("test");
     var concrete = (Concrete.ClassExtExpression) concreteDef.getBody().getTerm();
-    Definition coreDef = typeCheckDef(resolved);
+    Definition coreDef = getDefinition("test");
     assertNotNull(concrete);
     {
       Concrete.Expression c = concrete.getStatements().get(0).implementation;
@@ -380,14 +398,16 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
 
   @Test
   public void baseClassCall() {
-    var resolved = resolveNamesDef("\\func test => Y Nat {\n" +
-      "  | X => x\n" +
-      "  | C => 1919810\n" +
-      "} \\where {\n" +
-      "  \\class X (A : \\Type0) { | B : A }\n" +
-      "  \\class Y \\extends X { | C : A }\n" +
-      "  \\instance x : X Nat | B => 114514\n" +
-      "}");
+    var resolved = resolveNamesDef("""
+      \\func test => Y Nat {
+        | X => x
+        | C => 1919810
+      } \\where {
+        \\class X (A : \\Type0) { | B : A }
+        \\class Y \\extends X { | C : A }
+        \\instance x : X Nat | B => 114514
+      }
+      """);
     var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     var concrete = (Concrete.ClassExtExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);

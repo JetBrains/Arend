@@ -641,7 +641,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         }
       }
 
-      LocalReferable local = referable instanceof DataContainer ? new DataLocalReferable(((DataContainer) referable).getData(), referable.getRefName()) : new LocalReferable(referable.getRefName());
+      LocalReferable local = referable.getRefName().equals("_") ? null : referable instanceof DataContainer ? new DataLocalReferable(((DataContainer) referable).getData(), referable.getRefName()) : new LocalReferable(referable.getRefName());
       addReferable(local, namePattern.type, usedNames);
       return new Concrete.NamePattern(pattern.getData(), namePattern.isExplicit(), local, ((Concrete.NamePattern) pattern).type);
     } else if (pattern instanceof Concrete.ConstructorPattern) {

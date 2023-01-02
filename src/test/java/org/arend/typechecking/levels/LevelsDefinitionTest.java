@@ -1,14 +1,16 @@
 package org.arend.typechecking.levels;
 
 import org.arend.Matchers;
-import org.arend.term.concrete.Concrete;
+import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.ClassCallExpression;
+import org.arend.core.sort.Level;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import java.util.Objects;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class LevelsDefinitionTest extends TypeCheckingTestCase {
   @Test
@@ -29,9 +31,11 @@ public class LevelsDefinitionTest extends TypeCheckingTestCase {
   @Test
   public void differentVarsError() {
     typeCheckModule(
-      "\\plevels p1\n" +
-      "\\plevels p2\n" +
-      "\\func test (A : \\Type p1) (B : \\Type p2) => A", 1);
+      """
+        \\plevels p1
+        \\plevels p2
+        \\func test (A : \\Type p1) (B : \\Type p2) => A
+        """, 1);
   }
 
   @Test
@@ -51,51 +55,67 @@ public class LevelsDefinitionTest extends TypeCheckingTestCase {
   @Test
   public void openTest() {
     typeCheckModule(
-      "\\module M \\where {\n" +
-      "  \\plevels p1 <= p2\n" +
-      "}\n" +
-      "\\open M\n" +
-      "\\func test (A : \\Type p1) : \\Type p2 => A");
+      """
+        \\module M \\where {
+          \\plevels p1 <= p2
+        }
+        \\open M
+        \\func test (A : \\Type p1) : \\Type p2 => A
+        """);
   }
 
   @Test
   public void openTest2() {
     typeCheckModule(
-      "\\module M \\where {\n" +
-      "  \\plevels p1 <= p2\n" +
-      "}\n" +
-      "\\open M(p1,p2)\n" +
-      "\\func test (A : \\Type p1) : \\Type p2 => A");
+      """
+        \\module M \\where {
+          \\plevels p1 <= p2
+        }
+        \\open M(p1,p2)
+        \\func test (A : \\Type p1) : \\Type p2 => A
+        """);
   }
 
   @Test
   public void derivedTest() {
     typeCheckModule(
-      "\\plevels p1 <= p2\n" +
-      "\\record R (A : \\Type p2)\n" +
-      "\\func test (r : R) => 0");
-    assertEquals(3, getDefinition("test").getLevelParameters().size());
-    assertNotNull(((Concrete.ReferenceExpression) Objects.requireNonNull(getConcrete("test").getParameters().get(0).getType())).getPLevels());
+      """
+        \\plevels p1 <= p2
+        \\record R (A : \\Type p2)
+        \\func test (r : R) => 0
+        """);
+    FunctionDefinition def = (FunctionDefinition) getDefinition("test");
+    List<? extends LevelVariable> levels = def.getLevelParameters();
+    assertEquals(3, levels.size());
+    assertEquals(List.of(new Level(levels.get(0)), new Level(levels.get(1)), new Level(levels.get(2))), ((ClassCallExpression) def.getParameters().getTypeExpr()).getLevels().toList());
   }
 
   @Test
   public void derivedTest2() {
     typeCheckModule(
-      "\\plevels p1 <= p2\n" +
-      "\\record R (A : \\Type p2)\n" +
-      "\\func test (r : R) (B : \\Type p2) => 0");
-    assertEquals(3, getDefinition("test").getLevelParameters().size());
-    assertNotNull(((Concrete.ReferenceExpression) Objects.requireNonNull(getConcrete("test").getParameters().get(0).getType())).getPLevels());
+      """
+        \\plevels p1 <= p2
+        \\record R (A : \\Type p2)
+        \\func test (r : R) (B : \\Type p2) => 0
+        """);
+    FunctionDefinition def = (FunctionDefinition) getDefinition("test");
+    List<? extends LevelVariable> levels = def.getLevelParameters();
+    assertEquals(3, levels.size());
+    assertEquals(List.of(new Level(levels.get(0)), new Level(levels.get(1)), new Level(levels.get(2))), ((ClassCallExpression) def.getParameters().getTypeExpr()).getLevels().toList());
   }
 
   @Test
   public void derivedTest3() {
     typeCheckModule(
-      "\\plevels p1 <= p2\n" +
-      "\\record R (A : \\Type p1)\n" +
-      "\\record S (A : \\Type p2)\n" +
-      "\\func test (r : R) (s : S) => 0");
-    assertEquals(3, getDefinition("test").getLevelParameters().size());
-    assertNotNull(((Concrete.ReferenceExpression) Objects.requireNonNull(getConcrete("test").getParameters().get(0).getType())).getPLevels());
+      """
+        \\plevels p1 <= p2
+        \\record R (A : \\Type p1)
+        \\record S (A : \\Type p2)
+        \\func test (r : R) (s : S) => 0
+        """);
+    FunctionDefinition def = (FunctionDefinition) getDefinition("test");
+    List<? extends LevelVariable> levels = def.getLevelParameters();
+    assertEquals(3, levels.size());
+    assertEquals(List.of(new Level(levels.get(0)), new Level(levels.get(1)), new Level(levels.get(2))), ((ClassCallExpression) def.getParameters().getTypeExpr()).getLevels().toList());
   }
 }

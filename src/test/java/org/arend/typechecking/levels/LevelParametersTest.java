@@ -8,7 +8,6 @@ import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ListLevels;
-import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -152,18 +151,22 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void useDerived() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2\n" +
-      "\\data D (r : R) | con Nat\n" +
-      "  \\where \\use \\coerce test (n : Nat) => con n");
+      """
+        \\record R \\plevels p1 <= p2
+        \\data D (r : R) | con Nat
+          \\where \\use \\coerce test (n : Nat) => con n
+        """);
     assertEquals(2, getDefinition("D.test").getLevelParameters().size());
   }
 
   @Test
   public void useDerived2() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2\n" +
-      "\\data D (r : R) | con Nat\n" +
-      "  \\where \\use \\coerce test (r : R) (n : Nat) => con n");
+      """
+        \\record R \\plevels p1 <= p2
+        \\data D (r : R) | con Nat
+          \\where \\use \\coerce test (r : R) (n : Nat) => con n
+        """);
     Definition def = getDefinition("D.test");
     List<? extends LevelVariable> params = def.getLevelParameters();
     assertEquals(2, params.size());
@@ -173,27 +176,33 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void useDerivedError() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2\n" +
-      "\\data D (r : R) | con Nat\n" +
-      "  \\where \\use \\coerce test \\plevels p1 >= p2 (n : Nat) => con n", 1);
+      """
+        \\record R \\plevels p1 <= p2
+        \\data D (r : R) | con Nat
+          \\where \\use \\coerce test \\plevels p1 >= p2 (n : Nat) => con n
+        """, 1);
   }
 
   @Test
   public void useDerivedError2() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2\n" +
-      "\\data D (r : R) | con Nat\n" +
-      "  \\where \\use \\coerce test \\plevels p1 >= p2 (r : R) (n : Nat) => con n", 1);
+      """
+        \\record R \\plevels p1 <= p2
+        \\data D (r : R) | con Nat
+          \\where \\use \\coerce test \\plevels p1 >= p2 (r : R) (n : Nat) => con n
+        """, 1);
   }
 
   @Test
   public void defaultTest() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2 <= p3\n" +
-      "  | f : Nat\n" +
-      "\\record S \\extends R {\n" +
-      "  \\default f : Nat => 0\n" +
-      "}");
+      """
+        \\record R \\plevels p1 <= p2 <= p3
+          | f : Nat
+        \\record S \\extends R {
+          \\default f : Nat => 0
+        }
+        """);
     assertEquals(3, getDefinition("R").getLevelParameters().size());
     assertEquals(3, getDefinition("S").getLevelParameters().size());
     assertEquals(3, getDefinition("S.f").getLevelParameters().size());
@@ -208,11 +217,13 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void defaultTest2() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2\n" +
-      "  | f : \\hType (\\suc p2)\n" +
-      "\\record S \\extends R {\n" +
-      "  \\default f \\plevels p1 <= p2 : \\hType (\\suc p2) => \\hType p1\n" +
-      "}");
+      """
+        \\record R \\plevels p1 <= p2
+          | f : \\hType (\\suc p2)
+        \\record S \\extends R {
+          \\default f \\plevels p1 <= p2 : \\hType (\\suc p2) => \\hType p1
+        }
+        """);
     assertEquals(3, getDefinition("S.f").getLevelParameters().size());
     ClassDefinition classDef = (ClassDefinition) getDefinition("S");
     Expression impl = classDef.getDefault((ClassField) getDefinition("R.f")).getExpression();
@@ -224,9 +235,11 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void coclauseTest() {
     typeCheckModule(
-      "\\record R (A : \\Type)\n" +
-      "\\func g \\plevels p1 <= p2 : R \\cowith\n" +
-      "  | A : \\Type => \\Sigma");
+      """
+        \\record R (A : \\Type)
+        \\func g \\plevels p1 <= p2 : R \\cowith
+          | A : \\Type => \\Sigma
+        """);
     assertEquals(3, getDefinition("g.A").getLevelParameters().size());
     Expression impl = ((ClassCallExpression) ((FunctionDefinition) getDefinition("g")).getResultType()).getAbsImplementationHere((ClassField) getDefinition("R.A"));
     assertNotNull(impl);
@@ -238,9 +251,11 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void coclauseTest2() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2 (x : \\hType (\\suc p2))\n" +
-      "\\func g \\plevels p1 <= p2 : R \\levels (p1,p2) _ \\cowith\n" +
-      "  | x : \\hType (\\suc p2) => \\hType p1");
+      """
+        \\record R \\plevels p1 <= p2 (x : \\hType (\\suc p2))
+        \\func g \\plevels p1 <= p2 : R \\levels (p1,p2) _ \\cowith
+          | x : \\hType (\\suc p2) => \\hType p1
+        """);
   }
 
   @Test
@@ -256,26 +271,30 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void dynamicTest() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2 <= p3 {\n" +
-      "  \\func f => 0\n" +
-      "}");
-    assertEquals(3, getDefinition("R.f").getLevelParameters().size());
-    Concrete.ReferenceExpression type = (Concrete.ReferenceExpression) ((Concrete.ClassExtExpression) Objects.requireNonNull(((Concrete.FunctionDefinition) getConcrete("R.f")).getParameters().get(0).getType())).getBaseClassExpression();
-    assertNotNull(type.getPLevels());
-    assertNull(type.getHLevels());
+      """
+        \\record R \\plevels p1 <= p2 <= p3 {
+          \\func f => 0
+        }
+        """);
+    FunctionDefinition def = (FunctionDefinition) getDefinition("R.f");
+    List<? extends LevelVariable> levels = def.getLevelParameters();
+    assertEquals(3, levels.size());
+    assertEquals(List.of(new Level(levels.get(0)), new Level(levels.get(1)), new Level(levels.get(2))), ((ClassCallExpression) def.getParameters().getTypeExpr()).getLevels().toList());
   }
 
   @Test
   public void dynamicTest2() {
     typeCheckModule(
-      "\\record S \\plevels p1 <= p2 <= p3\n" +
-      "\\record R \\extends S {\n" +
-      "  \\func f => 0\n" +
-      "}");
-    assertEquals(3, getDefinition("R.f").getLevelParameters().size());
-    Concrete.ReferenceExpression type = (Concrete.ReferenceExpression) ((Concrete.ClassExtExpression) Objects.requireNonNull(((Concrete.FunctionDefinition) getConcrete("R.f")).getParameters().get(0).getType())).getBaseClassExpression();
-    assertNotNull(type.getPLevels());
-    assertNull(type.getHLevels());
+      """
+        \\record S \\plevels p1 <= p2 <= p3
+        \\record R \\extends S {
+          \\func f => 0
+        }
+        """);
+    FunctionDefinition def = (FunctionDefinition) getDefinition("R.f");
+    List<? extends LevelVariable> levels = def.getLevelParameters();
+    assertEquals(3, levels.size());
+    assertEquals(List.of(new Level(levels.get(0)), new Level(levels.get(1)), new Level(levels.get(2))), ((ClassCallExpression) def.getParameters().getTypeExpr()).getLevels().toList());
   }
 
   @Test

@@ -1952,8 +1952,6 @@ public final class Concrete {
     private LevelParameters myHLevelParameters;
     public TCDefReferable enclosingClass;
     private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
-    public TCDefReferable pOriginalDef; // definition from which p-levels were copied, or null if they are not inherited
-    public TCDefReferable hOriginalDef;
     private Map<TCDefReferable, ExternalParameters> myExternalParameters = Collections.emptyMap();
     private List<TCDefReferable> myUsedDefinitions = Collections.emptyList();
     private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
@@ -1973,10 +1971,10 @@ public final class Concrete {
     public void copyData(Concrete.Definition newDef) {
       newDef.stage = stage;
       newDef.setStatus(getStatus());
+      newDef.myPLevelParameters = myPLevelParameters;
+      newDef.myHLevelParameters = myHLevelParameters;
       newDef.enclosingClass = enclosingClass;
       newDef.myRecursiveDefinitions = myRecursiveDefinitions;
-      newDef.pOriginalDef = pOriginalDef;
-      newDef.hOriginalDef = hOriginalDef;
       newDef.myExternalParameters = myExternalParameters;
       newDef.myUsedDefinitions = myUsedDefinitions;
       newDef.myParametersOriginalDefinitions = myParametersOriginalDefinitions;

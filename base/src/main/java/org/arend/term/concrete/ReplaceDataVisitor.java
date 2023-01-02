@@ -85,6 +85,9 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
       throw new IllegalStateException();
     }
 
+    if (!pattern.isExplicit()) {
+      result.setExplicit(false);
+    }
     if (pattern.getAsReferable() != null) {
       result.setAsReferable(new Concrete.TypedReferable(getData(pattern.getAsReferable()), pattern.getAsReferable().referable, pattern.getAsReferable().type == null ? null : pattern.getAsReferable().type.accept(this, null)));
     }
@@ -348,11 +351,17 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
   public Concrete.ClassDefinition visitClass(Concrete.ClassDefinition def, Void params) {
     List<Concrete.ClassElement> elements = new ArrayList<>(def.getElements().size());
     Concrete.ClassDefinition result = new Concrete.ClassDefinition(def.getData(), def.getPLevelParameters(), def.getHLevelParameters(), def.isRecord(), def.withoutClassifying(), visitReferenceExpressions(def.getSuperClasses()), elements);
+    Concrete.Expression previousType = null;
+    Concrete.Expression previousTypeCopied = null;
     for (Concrete.ClassElement element : def.getElements()) {
       if (element instanceof Concrete.CoClauseElement coClauseElem) {
         elements.add(visitCoClauseElement(coClauseElem));
       } else if (element instanceof Concrete.ClassField field) {
-        elements.add(new Concrete.ClassField(field.getData(), result, field.isExplicit(), field.getKind(), (List<Concrete.TypeParameter>) (List<?>) visitParameters(field.getParameters()), field.getResultType().accept(this, null), field.getResultTypeLevel() == null ? null : field.getResultTypeLevel().accept(this, null), field.isCoerce()));
+        if (field.getResultType() != previousType) {
+          previousType = field.getResultType();
+          previousTypeCopied = previousType.accept(this, null);
+        }
+        elements.add(new Concrete.ClassField(field.getData(), result, field.isExplicit(), field.getKind(), (List<Concrete.TypeParameter>) (List<?>) visitParameters(field.getParameters()), previousTypeCopied, field.getResultTypeLevel() == null ? null : field.getResultTypeLevel().accept(this, null), field.isCoerce()));
       } else if (element instanceof Concrete.OverriddenField field) {
         elements.add(new Concrete.OverriddenField(getData(field), field.getOverriddenField(), (List<Concrete.TypeParameter>) (List<?>) visitParameters(field.getParameters()), field.getResultType().accept(this, null), field.getResultTypeLevel() == null ? null : field.getResultTypeLevel().accept(this, null)));
       } else {

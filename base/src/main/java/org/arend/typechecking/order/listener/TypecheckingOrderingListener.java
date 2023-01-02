@@ -226,6 +226,9 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(new LocalErrorReporter(definition.getData(), myErrorReporter), null, extension);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
     definition = (Concrete.Definition) definition.accept(new ReplaceDataVisitor(), null);
+    if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind().isUse()) {
+      myDesugaredDefinitions.put(definition.getData(), definition);
+    }
     WhereVarsFixVisitor.fixDefinition(Collections.singletonList(definition), myErrorReporter);
     DesugarVisitor.desugar(definition, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
@@ -465,11 +468,14 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   @Override
   public void useFound(List<Concrete.UseDefinition> definitions) {
     myCurrentDefinitions = new ArrayList<>();
+    List<Concrete.UseDefinition> newDefs = new ArrayList<>(definitions.size());
     for (Concrete.UseDefinition definition : definitions) {
       myCurrentDefinitions.add(definition.getData());
       myCurrentDefinitions.add(definition.getUseParent());
+      Concrete.Definition newDef = myDesugaredDefinitions.get(definition.getData());
+      newDefs.add(newDef instanceof Concrete.UseDefinition ? (Concrete.UseDefinition) newDef : definition);
     }
-    UseTypechecking.typecheck(definitions, myErrorReporter);
+    UseTypechecking.typecheck(newDefs, myErrorReporter);
     myCurrentDefinitions = Collections.emptyList();
   }
 
