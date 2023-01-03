@@ -231,14 +231,22 @@ public class ModuleDeserialization {
   private static GlobalReferable.Kind getDefinitionKind(DefinitionProtos.Definition defProto) {
     DefinitionProtos.Definition.DefinitionDataCase kind = defProto.getDefinitionDataCase();
     switch (kind) {
-      case CLASS: return GlobalReferable.Kind.CLASS;
-      case DATA: return GlobalReferable.Kind.DATA;
-      case FUNCTION: {
+      case CLASS -> {
+        return GlobalReferable.Kind.CLASS;
+      }
+      case DATA -> {
+        return GlobalReferable.Kind.DATA;
+      }
+      case FUNCTION -> {
         var fKind = defProto.getFunction().getKind();
         return fKind == DefinitionProtos.Definition.FunctionKind.INSTANCE ? GlobalReferable.Kind.INSTANCE : fKind == DefinitionProtos.Definition.FunctionKind.COCLAUSE || fKind == DefinitionProtos.Definition.FunctionKind.COCLAUSE_LEMMA ? GlobalReferable.Kind.COCLAUSE_FUNCTION : GlobalReferable.Kind.FUNCTION;
       }
-      case CONSTRUCTOR: return GlobalReferable.Kind.DEFINED_CONSTRUCTOR;
-      default: return GlobalReferable.Kind.OTHER;
+      case CONSTRUCTOR -> {
+        return GlobalReferable.Kind.DEFINED_CONSTRUCTOR;
+      }
+      default -> {
+        return GlobalReferable.Kind.OTHER;
+      }
     }
   }
 
@@ -253,7 +261,7 @@ public class ModuleDeserialization {
       dynamicReferables = new ArrayList<>();
       fieldReferables = new ArrayList<>();
       DefinitionProtos.Definition.ClassData classProto = groupProto.getDefinition().getClass_();
-      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), classProto.getIsRecord(), null, null, fieldReferables, dynamicReferables, parent.getReferable());
+      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), classProto.getIsRecord(), new ArrayList<>(), new ArrayList<>(), fieldReferables, dynamicReferables, parent.getReferable());
     } else {
       dynamicReferables = null;
       fieldReferables = new ArrayList<>(0);
