@@ -116,9 +116,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return resolve(scope, resolvedRefs, true, RefKind.EXPR);
   }
 
-  @Nullable
-  @Override
-  public Concrete.Expression resolveArgument(Scope scope, List<Referable> resolvedRefs) {
+  private Concrete.Expression resolveArgument(Scope scope, boolean onlyTry, List<Referable> resolvedRefs) {
     if (resolved != null) {
       return null;
     }
@@ -127,7 +125,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     for (int i = 0; i < myPath.size() - 1; i++) {
       Scope nextScope = scope.resolveNamespace(myPath.get(i), i < myPath.size() - 2);
       if (nextScope == null) {
-        return resolveField(prevScope, i - 1, resolvedRefs);
+        return resolveField(prevScope, i - 1, onlyTry, resolvedRefs);
       }
 
       if (resolvedRefs != null) {
@@ -142,9 +140,10 @@ public class LongUnresolvedReference implements UnresolvedReference {
     resolved = scope.resolveName(name);
     if (resolved == null) {
       if (myPath.size() == 1) {
+        if (onlyTry) return null;
         resolved = new ErrorReference(getData(), name);
       } else {
-        return resolveField(prevScope, myPath.size() - 2, resolvedRefs);
+        return resolveField(prevScope, myPath.size() - 2, onlyTry, resolvedRefs);
       }
     }
     if (resolvedRefs != null) {
@@ -154,12 +153,28 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return null;
   }
 
+  @Nullable
+  @Override
+  public Concrete.Expression resolveArgument(Scope scope, List<Referable> resolvedRefs) {
+    return resolveArgument(scope, false, resolvedRefs);
+  }
+
+  @Override
+  public @Nullable Concrete.Expression tryResolveArgument(Scope scope, List<Referable> resolvedRefs) {
+    return resolveArgument(scope, true, resolvedRefs);
+  }
+
   @Override
   public void reset() {
     resolved = null;
   }
 
-  private Concrete.Expression resolveField(Scope scope, int i, List<Referable> resolvedRefs) {
+  @Override
+  public boolean isResolved() {
+    return resolved != null;
+  }
+
+  private Concrete.Expression resolveField(Scope scope, int i, boolean onlyTry, List<Referable> resolvedRefs) {
     if (i == -1) {
       resolved = scope.resolveName(myPath.get(0));
       if (resolvedRefs != null) {
@@ -172,6 +187,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
     ClassReferable classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
     if (classRef == null) {
+      if (onlyTry) return null;
       Object data = getData();
       boolean wasResolved = resolved != null;
       if (wasResolved) {
@@ -194,6 +210,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     for (i++; i < myPath.size(); i++) {
       resolved = new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC).resolveName(myPath.get(i));
       if (resolved == null) {
+        if (onlyTry) return null;
         resolved = new ErrorReference(data, classRef, i, myPath.get(i));
         if (resolvedRefs != null) {
           resolvedRefs.add(resolved);
@@ -210,6 +227,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
       classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
       if (classRef == null) {
+        if (onlyTry) return null;
         resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), i + 1, myPath.get(i + 1));
         if (resolvedRefs != null) {
           resolvedRefs.add(resolved);

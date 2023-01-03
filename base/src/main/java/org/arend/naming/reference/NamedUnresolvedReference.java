@@ -83,7 +83,18 @@ public class NamedUnresolvedReference implements UnresolvedReference {
   }
 
   @Override
+  public @Nullable Concrete.Expression tryResolveArgument(Scope scope, List<Referable> resolvedRefs) {
+    tryResolve(scope, resolvedRefs);
+    return null;
+  }
+
+  @Override
   public void reset() {
     resolved = null;
+  }
+
+  @Override
+  public boolean isResolved() {
+    return resolved != null;
   }
 }

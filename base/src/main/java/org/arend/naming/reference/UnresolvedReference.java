@@ -12,7 +12,9 @@ public interface UnresolvedReference extends Referable, DataContainer {
   @NotNull Referable resolve(Scope scope, @Nullable List<Referable> resolvedRefs, @Nullable RefKind kind);
   @Nullable Referable tryResolve(Scope scope, List<Referable> resolvedRefs);
   @Nullable Concrete.Expression resolveArgument(Scope scope, List<Referable> resolvedRefs);
+  @Nullable Concrete.Expression tryResolveArgument(Scope scope, List<Referable> resolvedRefs);
   void reset();
+  boolean isResolved();
 
   @NotNull
   default Referable resolve(Scope scope, List<Referable> resolvedRefs) {
