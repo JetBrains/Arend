@@ -1,5 +1,6 @@
 package org.arend.typechecking.order.listener;
 
+import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
@@ -254,7 +255,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       if (recursive && typechecked instanceof DataDefinition) {
         ((DataDefinition) typechecked).setRecursiveDefinitions(Collections.singleton((DataDefinition) typechecked));
       }
-      findAxioms(Collections.singletonList(definition), Collections.singleton(typechecked));
+      findAxiomsAndGoals(Collections.singletonList(definition), Collections.singleton(typechecked));
     }
     if (definition.isRecursive() && typechecked instanceof FunctionDefinition) {
       checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, definition), clauses == null ? Collections.emptyMap() : Collections.singletonMap((FunctionDefinition) typechecked, clauses));
@@ -454,7 +455,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       setParametersOriginalDefinitionsDependency(definition);
     }
 
-    findAxioms(orderedDefinitions, newDefs);
+    findAxiomsAndGoals(orderedDefinitions, newDefs);
 
     for (Definition definition : allDefinitions) {
       typecheckingBodyFinished(definition.getReferable(), definition);
@@ -484,13 +485,31 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     DefinitionTypechecker.setDefaultDependencies(definition);
   }
 
-  private void findAxioms(List<? extends Concrete.ResolvableDefinition> definitions, Set<Definition> newDefs) {
+  private void findAxiomsAndGoals(List<? extends Concrete.ResolvableDefinition> definitions, Set<Definition> newDefs) {
     Set<FunctionDefinition> axioms = new HashSet<>();
+    Set<Definition> goals = new HashSet<>();
     VoidExpressionVisitor<Void> visitor = new VoidExpressionVisitor<>() {
+      @Override
+      public Void visitReference(ReferenceExpression expr, Void params) {
+        if (expr.getBinding() instanceof PersistentEvaluatingBinding) {
+          ((PersistentEvaluatingBinding) expr.getBinding()).getExpression().accept(this, params);
+        }
+        return null;
+      }
+
       @Override
       public Void visitDefCall(DefCallExpression expr, Void params) {
         axioms.addAll(expr.getDefinition().getAxioms());
+        goals.addAll(expr.getDefinition().getGoals());
         return super.visitDefCall(expr, params);
+      }
+
+      @Override
+      public Void visitError(ErrorExpression expr, Void params) {
+        if (expr.isGoal()) {
+          goals.addAll(newDefs);
+        }
+        return null;
       }
     };
 
@@ -499,11 +518,13 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       if (ref instanceof TCDefReferable) {
         Definition def = ((TCDefReferable) ref).getTypechecked();
         def.accept(visitor, null);
-        if (def instanceof TopLevelDefinition && newDefs.contains(def)) {
+        if (def instanceof TopLevelDefinition topDef && newDefs.contains(def)) {
           if (definition instanceof Concrete.BaseFunctionDefinition && ((Concrete.BaseFunctionDefinition) definition).getKind() == FunctionKind.AXIOM) {
             axioms.add((FunctionDefinition) def);
           }
-          ((TopLevelDefinition) def).setAxioms(axioms);
+          topDef.setAxioms(axioms);
+          goals.addAll(topDef.getGoals());
+          topDef.setGoals(goals);
         }
       }
     }

@@ -18,6 +18,7 @@ public abstract class TopLevelDefinition extends Definition {
   private boolean myHLevelsDerived;
   private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
   private Set<? extends FunctionDefinition> myAxioms = Collections.emptySet();
+  private Set<? extends Definition> myGoals = Collections.emptySet();
 
   public TopLevelDefinition(TCDefReferable referable, TypeCheckingStatus status) {
     super(referable, status);
@@ -102,5 +103,14 @@ public abstract class TopLevelDefinition extends Definition {
 
   public void setAxioms(Set<? extends FunctionDefinition> axioms) {
     myAxioms = axioms;
+  }
+
+  @Override
+  public Set<? extends Definition> getGoals() {
+    return myGoals;
+  }
+
+  public void setGoals(Set<? extends Definition> goals) {
+    myGoals = goals;
   }
 }

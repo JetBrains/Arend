@@ -41,7 +41,7 @@ public class ModuleSerialization {
     // Now write the call target tree
     Map<ModulePath, Map<String, CallTargetTree>> moduleCallTargets = new HashMap<>();
     for (Map.Entry<TCReferable, Integer> entry : myCallTargetIndexProvider.getCallTargets()) {
-      if (myCurrentDefinitions.contains(entry.getValue())) {
+      if (myCurrentDefinitions.contains(entry.getValue()) || entry.getKey() instanceof TCDefReferable ref && !doSave(ref.getTypechecked())) {
         continue;
       }
 
@@ -75,6 +75,10 @@ public class ModuleSerialization {
     return out.build();
   }
 
+  private boolean doSave(Definition def) {
+    return def == null || def.status().withoutErrors() && def.getGoals().isEmpty();
+  }
+
   private ModuleProtos.Group writeGroup(Group group, ReferableConverter referableConverter) {
     ModuleProtos.Group.Builder builder = ModuleProtos.Group.newBuilder();
 
@@ -86,13 +90,14 @@ public class ModuleSerialization {
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
     Definition typechecked = tcReferable instanceof TCDefReferable ? ((TCDefReferable) tcReferable).getTypechecked() : null;
-    if (typechecked != null && typechecked.status().withoutErrors() && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
+    boolean save = typechecked != null && doSave(typechecked);
+    if (save && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
       refBuilder.setIndex(index);
       myCurrentDefinitions.add(index);
     }
-    if (tcReferable != null && (typechecked == null || !typechecked.status().withoutErrors()) && tcReferable.getKind() != GlobalReferable.Kind.OTHER) {
+    if (tcReferable != null && !save && tcReferable.getKind() != GlobalReferable.Kind.OTHER) {
       myComplete = false;
     }
     builder.setReferable(refBuilder.build());
