@@ -345,4 +345,29 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
             "q.f {1} = idp",
             (result) -> result.cast(FunCallExpression.class).getDefCallArguments().get(1).cast(AppExpression.class).getFunction());
   }
+
+  private void testLamPatterns(String body) {
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) resolveNamesDef("\\func foo => " + body).getDefinition();
+    assertEquals(body, Objects.requireNonNull(def.getBody().getTerm()).toString());
+  }
+
+  @Test
+  public void lamPatternsTest1() {
+    testLamPatterns("\\lam n (path f) m => f");
+  }
+
+  @Test
+  public void lamPatternsTest2() {
+    testLamPatterns("\\lam (path f) m (path g) => f");
+  }
+
+  @Test
+  public void lamPatternsTest3() {
+    testLamPatterns("\\lam (path f) (path g) => f");
+  }
+
+  @Test
+  public void lamPatternsTest4() {
+    testLamPatterns("\\lam n m => n");
+  }
 }

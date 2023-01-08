@@ -372,8 +372,27 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        if (expr instanceof Concrete.PatternLamExpression) {
-          pp.prettyPrintPatterns(((Concrete.PatternLamExpression) expr).getPatterns(), false);
+        if (expr instanceof Concrete.PatternLamExpression lamExpr) {
+          List<Concrete.SourceNode> list = new ArrayList<>(lamExpr.getPatterns().size());
+          int i = 0;
+          for (Concrete.Pattern pattern : lamExpr.getPatterns()) {
+            list.add(pattern != null ? pattern : lamExpr.getParameters().get(i++));
+          }
+          new ListLayout<Concrete.SourceNode>(){
+            @Override
+            void printListElement(PrettyPrintVisitor ppv, Concrete.SourceNode s) {
+              if (s instanceof Concrete.Pattern) {
+                ppv.prettyPrintPattern((Concrete.Pattern) s, (byte) (Concrete.Pattern.PREC + 1), false);
+              } else {
+                ppv.prettyPrintParameter((Concrete.Parameter) s);
+              }
+            }
+
+            @Override
+            String getSeparator() {
+              return " ";
+            }
+          }.doPrettyPrint(pp, list, noIndent);
         } else {
           pp.prettyPrintParameters(expr.getParameters());
         }
