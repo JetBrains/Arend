@@ -522,10 +522,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
     Expression arg = atExpr.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
-    if (!(arg instanceof ArrayExpression)) {
+    if (!(arg instanceof ArrayExpression arrayExpr)) {
       return correctOrder ? visitDefCall(atExpr, otherExpr) : otherExpr instanceof FunCallExpression && ((FunCallExpression) otherExpr).getDefinition() == Prelude.ARRAY_INDEX ? visitDefCall((FunCallExpression) otherExpr, atExpr) : otherExpr.accept(this, atExpr, type);
     }
-    for (Expression element : ((ArrayExpression) arg).getElements()) {
+    if (arrayExpr.getTail() != null) {
+      return false;
+    }
+    for (Expression element : arrayExpr.getElements()) {
       if (!compare(element, otherExpr, type, false)) {
         return false;
       }

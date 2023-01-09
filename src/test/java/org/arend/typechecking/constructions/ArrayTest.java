@@ -454,4 +454,13 @@ public class ArrayTest extends TypeCheckingTestCase {
           | n :: _ => n
         """);
   }
+
+  @Test
+  public void constTest() {
+    typeCheckModule(
+      """
+      \\func test {A : \\Type} (l : Array A) (a : A) (j : Fin (suc l.len)) : (a :: l) j = a => idp
+      """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
+  }
 }
