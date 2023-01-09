@@ -457,10 +457,12 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void constTest() {
-    typeCheckModule(
-      """
-      \\func test {A : \\Type} (l : Array A) (a : A) (j : Fin (suc l.len)) : (a :: l) j = a => idp
-      """, 1);
+    typeCheckDef("\\func test {A : \\Type} (l : Array A) (a : A) (j : Fin (suc l.len)) : (a :: l) j = a => idp", 1);
     assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
+  }
+
+  @Test
+  public void normTest() {
+    typeCheckDef("\\func test {A : \\Type} (a a' : A) (l : Array A) (j : Fin (suc l.len)) : (a :: a' :: l) (suc j) = (a' :: l) j => idp");
   }
 }

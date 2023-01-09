@@ -363,7 +363,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
               return FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getLevels(), Arrays.asList(array.getTail(), new BigIntegerExpression(num.subtract(s)))).accept(this, mode);
             }
             if (n < array.getElements().size()) {
-              return array.drop(n);
+              return FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getLevels(), Arrays.asList(array.drop(n), numExpr));
             }
             for (int i = array.getElements().size(); i < n; i++) {
               numExpr = Suc(numExpr);
