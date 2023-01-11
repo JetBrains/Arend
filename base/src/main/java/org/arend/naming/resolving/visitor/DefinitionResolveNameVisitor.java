@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitionVisitor<Scope, Void> {
   private boolean myResolveTypeClassReferences;
+  private boolean myReportDefinitionBeforeResolve;
   private final ConcreteProvider myConcreteProvider;
   private final ReferableConverter myReferableConverter;
   private final ErrorReporter myErrorReporter;
@@ -46,6 +47,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter) {
     myResolveTypeClassReferences = false;
+    myReportDefinitionBeforeResolve = true;
     myConcreteProvider = concreteProvider;
     myReferableConverter = referableConverter == null ? IdReferableConverter.INSTANCE : referableConverter;
     myErrorReporter = errorReporter;
@@ -54,6 +56,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, ResolverListener resolverListener) {
     myResolveTypeClassReferences = false;
+    myReportDefinitionBeforeResolve = true;
     myConcreteProvider = concreteProvider;
     myReferableConverter = referableConverter == null ? IdReferableConverter.INSTANCE : referableConverter;
     myErrorReporter = errorReporter;
@@ -62,6 +65,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, boolean resolveTypeClassReferences, ErrorReporter errorReporter, ResolverListener resolverListener) {
     myResolveTypeClassReferences = resolveTypeClassReferences;
+    myReportDefinitionBeforeResolve = resolveTypeClassReferences;
     myConcreteProvider = concreteProvider;
     myReferableConverter = referableConverter == null ? IdReferableConverter.INSTANCE : referableConverter;
     myErrorReporter = errorReporter;
@@ -157,7 +161,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
-    if (myResolverListener != null) {
+    if (myResolverListener != null && myReportDefinitionBeforeResolve) {
       myResolverListener.beforeDefinitionResolved(def);
     }
 
@@ -226,12 +230,13 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
+    if (myResolverListener != null && myReportDefinitionBeforeResolve) {
+      myResolverListener.beforeDefinitionResolved(def);
+    }
+
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
       if (def.getStage() == Concrete.Stage.NOT_RESOLVED) {
-        if (myResolverListener != null) {
-          myResolverListener.beforeDefinitionResolved(def);
-        }
         if (def.getBody() instanceof Concrete.TermFunctionBody) {
           resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false);
         }
@@ -478,7 +483,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
-    if (myResolverListener != null) {
+    if (myResolverListener != null && myReportDefinitionBeforeResolve) {
       myResolverListener.beforeDefinitionResolved(def);
     }
 
@@ -599,7 +604,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
-    if (myResolverListener != null) {
+    if (myResolverListener != null && myReportDefinitionBeforeResolve) {
       myResolverListener.beforeDefinitionResolved(def);
     }
 
@@ -736,7 +741,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
   public void resolveGroupWithTypes(Group group, Scope scope) {
     myResolveTypeClassReferences = true;
+    myReportDefinitionBeforeResolve = true;
     resolveGroup(group, scope);
+    myReportDefinitionBeforeResolve = false;
     myResolveTypeClassReferences = false;
     resolveGroup(group, scope);
   }
