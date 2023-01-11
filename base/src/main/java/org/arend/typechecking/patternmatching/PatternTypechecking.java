@@ -33,6 +33,7 @@ import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.extImpl.definitionRenamer.PatternContextDataImpl;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.prelude.Prelude;
@@ -63,6 +64,7 @@ public class PatternTypechecking {
   private final List<DependentLink> myElimParams;
   private final LinkList myLinkList = new LinkList();
   private final List<Pair<ConstructorExpressionPattern,Integer>> myPathPatterns = new ArrayList<>();
+  private boolean myTypecheckOtherClauses = true;
 
   private DependentLink clausesParameters = null;
 
@@ -127,6 +129,9 @@ public class PatternTypechecking {
     List<ExtElimClause> result = new ArrayList<>(clauses.size());
     boolean ok = true;
     for (Concrete.FunctionClause clause : clauses) {
+      if (!myTypecheckOtherClauses) {
+        return null;
+      }
       if (!typecheckClause(clause, abstractParameters, parameters, expectedType, result, definition)) {
         ok = false;
       }
@@ -913,6 +918,51 @@ public class PatternTypechecking {
       } else {
         newParameters = ((DConstructor) constructor).getArrayParameters(classCall);
       }
+
+      Expression length = classCall == null ? null : classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+      if (length != null) length = length.normalize(NormalizationMode.WHNF);
+      if (length != null && !(length instanceof IntegerExpression || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC)) {
+        myErrorReporter.report(new ImpossibleEliminationError(classCall, pattern));
+        myTypecheckOtherClauses = false;
+        return null;
+      }
+      Expression length1 = length == null || constructor == Prelude.EMPTY_ARRAY ? null : length.normalize(NormalizationMode.WHNF).pred();
+
+      if (length == null && Prelude.ARRAY_CONS != null && conPattern.getConstructor() == Prelude.ARRAY_CONS.getReferable() && conPattern.getPatterns().size() >= 2 && conPattern.getPatterns().get(0).isExplicit() && conPattern.getPatterns().get(1).isExplicit()) {
+        Concrete.Pattern subPattern = pattern.getPatterns().get(1);
+        int n = 0;
+        boolean isNil = false;
+        while (subPattern instanceof Concrete.ConstructorPattern subConPattern) {
+          if (subConPattern.getConstructor() == Prelude.EMPTY_ARRAY.getReferable()) {
+            isNil = true;
+            break;
+          } else if (subConPattern.getConstructor() == Prelude.ARRAY_CONS.getReferable()) {
+            n++;
+            if (subConPattern.getPatterns().size() >= 2 && subConPattern.getPatterns().get(0).isExplicit() && subConPattern.getPatterns().get(1).isExplicit()) {
+              subPattern = subConPattern.getPatterns().get(1);
+            } else {
+              break;
+            }
+          } else {
+            break;
+          }
+        }
+        if (n > 0 || isNil) {
+          Object data = patterns.get(0).getData();
+          Concrete.Pattern newPattern;
+          if (isNil) {
+            newPattern = new Concrete.NumberPattern(data, n, null);
+          } else {
+            newPattern = new Concrete.NamePattern(data, true, new LocalReferable("n"), null);
+            for (int i = 0; i < n; i++) {
+              newPattern = new Concrete.ConstructorPattern(data, data, Prelude.SUC.getReferable(), Collections.singletonList(newPattern), null);
+            }
+          }
+          newPattern.setExplicit(false);
+          conPattern.getPatterns().add(0, newPattern);
+        }
+      }
+
       Body body = conCall != null ? conCall.getDefinition().getBody() : null;
       Result conResult = doTypechecking(conPattern.getPatterns(), newParameters, paramsSubst, totalSubst, conPattern, false, body instanceof IntervalElim ? ((IntervalElim) body).getCases().size() : 0);
       if (conResult == null) {
@@ -931,9 +981,6 @@ public class PatternTypechecking {
           return null;
         }
       }
-
-      Expression length = classCall == null ? null : classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
-      Expression length1 = length == null || constructor == Prelude.EMPTY_ARRAY ? null : length.normalize(NormalizationMode.WHNF).pred();
 
       ConstructorExpressionPattern resultPattern;
       if (dataCall != null) {

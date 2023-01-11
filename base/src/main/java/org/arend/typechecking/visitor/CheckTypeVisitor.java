@@ -3728,7 +3728,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     ExprSubstitution elimSubst = new ExprSubstitution();
     Set<Binding> allowedBindings = new HashSet<>();
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      for (Concrete.CaseArgument caseArg : caseArgs) {
+      for (int i = 0; i < caseArgs.size(); i++) {
+        Concrete.CaseArgument caseArg = caseArgs.get(i);
         Type argType = null;
         if (caseArg.type != null) {
           argType = checkType(caseArg.type, Type.OMEGA);
@@ -3740,6 +3741,43 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         if (caseArg.isElim && !(exprResult.expression instanceof ReferenceExpression)) {
           errorReporter.report(new TypecheckingError("Expected a variable", caseArg.expression));
           return null;
+        }
+        if (argType == null && Prelude.ARRAY_CONS != null) {
+          boolean hasConstructors = false;
+          for (Concrete.FunctionClause clause : expr.getClauses()) {
+            if (clause.getPatterns().size() > i && clause.getPatterns().get(i) instanceof Concrete.ConstructorPattern conPattern && (conPattern.getConstructor() == Prelude.EMPTY_ARRAY.getReferable() || conPattern.getConstructor() == Prelude.ARRAY_CONS.getReferable())) {
+              hasConstructors = true;
+              break;
+            }
+          }
+          if (hasConstructors) {
+            Expression normType = exprResult.type.normalize(NormalizationMode.WHNF);
+            if (normType instanceof ClassCallExpression classCall && classCall.getDefinition() == Prelude.DEP_ARRAY && classCall.isImplementedHere(Prelude.ARRAY_LENGTH)) {
+              boolean ok = true;
+              Sort lamSort = null;
+              Expression type = null;
+              Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+              if (elementsType != null) {
+                elementsType = elementsType.normalize(NormalizationMode.WHNF);
+                if (elementsType instanceof LamExpression) {
+                  type = elementsType.removeConstLam();
+                  if (type == null) {
+                    ok = false;
+                  } else {
+                    lamSort = ((LamExpression) elementsType).getResultSort();
+                  }
+                }
+              }
+              if (ok) {
+                Map<ClassField, Expression> newImpls = new LinkedHashMap<>(classCall.getImplementedHere());
+                newImpls.remove(Prelude.ARRAY_LENGTH);
+                ClassCallExpression newClassCall = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), newImpls, classCall.getSort(), classCall.getUniverseKind());
+                if (type != null) newImpls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(lamSort, new TypedSingleDependentLink(true, null, ExpressionFactory.Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(newClassCall.getThisBinding())))), type));
+                newClassCall.setSort(Prelude.DEP_ARRAY.computeSort(newImpls, newClassCall.getThisBinding()));
+                exprResult.type = newClassCall;
+              }
+            }
+          }
         }
         if (argType == null || caseArg.isElim) {
           exprResult.type = checkedSubst(exprResult.type, elimSubst, allowedBindings, caseArg.expression);

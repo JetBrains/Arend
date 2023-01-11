@@ -1,8 +1,7 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.expr.DataCallExpression;
-import org.arend.core.expr.Expression;
+import org.arend.core.expr.*;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -16,17 +15,17 @@ import java.util.List;
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ImpossibleEliminationError extends TypecheckingError {
-  public final DataCallExpression dataCall;
+  public final LeveledDefCallExpression defCall;
   public final ExprSubstitution substitution;
   public final DependentLink clauseParameters;
   public final DependentLink myParameters;
   public final List<DependentLink> myElimParams;
   public final List<Expression> myCaseExpressions;
 
-  public ImpossibleEliminationError(DataCallExpression dataCall, @NotNull Concrete.SourceNode cause, @Nullable ExprSubstitution substitution,
+  public ImpossibleEliminationError(LeveledDefCallExpression defCall, @NotNull Concrete.SourceNode cause, @Nullable ExprSubstitution substitution,
                                     @Nullable DependentLink clauseParameters, @Nullable DependentLink parameters, @Nullable List<DependentLink> elimParams, @Nullable List<Expression> caseExpressions) {
     super("Elimination is not possible here, cannot determine the set of eligible constructors", cause);
-    this.dataCall = dataCall;
+    this.defCall = defCall;
     this.substitution = substitution;
     this.clauseParameters = clauseParameters;
     this.myParameters = parameters;
@@ -34,9 +33,13 @@ public class ImpossibleEliminationError extends TypecheckingError {
     this.myCaseExpressions = caseExpressions;
   }
 
+  public ImpossibleEliminationError(LeveledDefCallExpression defCall, @NotNull Concrete.SourceNode cause) {
+    this(defCall, cause, null, null, null, null, null);
+  }
+
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
-    return hList(text("for data type "), termLine(dataCall, ppConfig));
+    return hList(text(defCall instanceof ClassCallExpression ? "for record " : "for data type "), termLine(defCall, ppConfig));
   }
 
   @Override

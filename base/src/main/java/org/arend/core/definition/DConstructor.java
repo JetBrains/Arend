@@ -67,9 +67,10 @@ public class DConstructor extends FunctionDefinition {
 
     TypedDependentLink nat = new TypedDependentLink(false, "n", DataCallExpression.make(Prelude.NAT, Levels.EMPTY, Collections.emptyList()), EmptyDependentLink.getInstance());
     ReferenceExpression natRef = new ReferenceExpression(nat);
-    Expression newElementsType = elementsType.subst(thisBinding, new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, levels, Collections.singletonMap(Prelude.ARRAY_LENGTH, natRef), Sort.STD.succ(), UniverseKind.ONLY_COVARIANT)));
     Map<ClassField, Expression> impls = new LinkedHashMap<>();
     impls.put(Prelude.ARRAY_LENGTH, natRef);
+    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
+    Expression newElementsType = elementsType.subst(thisBinding, new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, levels, impls, Sort.STD.succ(), UniverseKind.ONLY_COVARIANT)));
     TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", DataCallExpression.make(Prelude.FIN, Levels.EMPTY, new SingletonList<>(natRef)));
     Sort sort = levels.toSort();
     impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort.max(Sort.SET0), lamParam, AppExpression.make(newElementsType, Suc(new ReferenceExpression(lamParam)), true)));

@@ -12,6 +12,8 @@ import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.CertainTypecheckingError;
+import org.arend.typechecking.error.local.ImpossibleEliminationError;
 import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.arend.util.SingletonList;
 import org.junit.Test;
@@ -241,6 +243,175 @@ public class ArrayTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void patternMatchingTest5() {
+    typeCheckModule(
+      """
+        \\func test {n : Nat} (l : Array Nat n) : l = l \\elim l
+          | nil => idp
+          | a :: l => idp
+        """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(ImpossibleEliminationError.class));
+  }
+
+  @Test
+  public void patternMatchingTest6() {
+    typeCheckModule(
+      """
+        \\func test {n : Nat} (l : Array Nat n) : l = l \\elim n, l
+          | 0, nil => idp
+          | suc n, a :: l => idp
+        """);
+  }
+
+  @Test
+  public void patternMatchingTest7() {
+    typeCheckModule(
+      """
+        \\func test (l : Array Nat 0) : l = l
+          | nil => idp
+        """);
+  }
+
+  @Test
+  public void patternMatchingTest8() {
+    typeCheckModule(
+      """
+        \\func test (l : Array Nat) : l = l
+          | nil => idp
+          | a :: l => idp
+        """);
+  }
+
+  @Test
+  public void patternMatchingTest9() {
+    typeCheckModule(
+      """
+        \\func test (l : Array) : Nat
+          | nil => 0
+          | a :: {n} l => n
+        """);
+  }
+
+  @Test
+  public void patternMatchingTest10() {
+    typeCheckModule(
+      """
+        \\func test (l : Array) : Nat
+          | nil => 0
+          | a :: {n} nil => n
+          | a :: a' :: l => 1
+        """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(ImpossibleEliminationError.class));
+  }
+
+  @Test
+  public void patternMatchingTest11() {
+    typeCheckModule(
+      """
+        \\func test (l : Array) : Nat
+          | nil => 0
+          | a :: {0} nil => 1
+          | a :: a' :: l => 2
+        """);
+  }
+
+  @Test
+  public void patternMatchingTest12() {
+    typeCheckModule(
+      """
+        \\func test (l : Array) : Nat
+          | nil => 0
+          | a :: nil => 1
+          | a :: {suc n} a' :: l => n
+        """);
+  }
+
+  @Test
+  public void patternMatchingTest13() {
+    typeCheckModule(
+      """
+        \\func test (l : Array) : Nat
+          | nil => 0
+          | a :: nil => 1
+          | a :: {n} a' :: l => n
+        """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(ImpossibleEliminationError.class));
+  }
+
+  @Test
+  public void patternMatchingTest14() {
+    typeCheckModule(
+      """
+        \\func test (l : Array) : Nat
+          | nil => 0
+          | a :: nil => 1
+          | a :: a' :: {n} l => n
+        """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(CertainTypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN));
+  }
+
+  @Test
+  public void casePatternMatchingTest() {
+    typeCheckModule(
+      """
+        \\func test {n : Nat} (l : Array Nat n) : Nat
+          => \\case l \\with {
+               | nil => 0
+               | a :: _ => a
+             }
+        """);
+  }
+
+  @Test
+  public void casePatternMatchingTest2() {
+    typeCheckModule(
+      """
+        \\func test {n : Nat} (l : Array Nat n) : l = {Array Nat} l
+          => \\case l \\with {
+               | nil => idp
+               | a :: _ => idp
+             }
+        """);
+  }
+
+  @Test
+  public void casePatternMatchingTest3() {
+    typeCheckModule(
+      """
+        \\func test {n : Nat} (l : Array Nat n) : l = {Array Nat} l
+          => \\case \\elim l \\with {
+               | nil => idp
+               | a :: _ => idp
+             }
+        """);
+  }
+
+  @Test
+  public void casePatternMatchingTest4() {
+    typeCheckModule(
+      """
+        \\func test {n : Nat} (l : Array Nat n) : l = {Array Nat n} l
+          => \\case l \\with {
+               | nil => idp {Array Nat n}
+               | a :: _ => idp {Array Nat n}
+             }
+        """);
+  }
+
+  @Test
+  public void casePatternMatchingTest5() {
+    typeCheckModule(
+      """
+        \\func test {n : Nat} (l : Array Nat n) : l = {Array Nat n} l
+          => \\case \\elim l \\with {
+               | nil => idp {Array Nat 0} {nil}
+               | a :: {n} l => idp {Array Nat (suc n)} {a :: l}
+             }
+        """, 2);
+    assertThatErrorsAre(Matchers.typeMismatchError(), Matchers.typeMismatchError());
+  }
+
+  @Test
   public void tuplePatternTest() {
     typeCheckModule(
       """
@@ -443,16 +614,6 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void constEtaTest3() {
     typeCheckDef("\\func test (x : Nat) (j : Fin 2) (k : Fin 3) : (x :: x :: nil) j = (x :: x :: x :: nil) k => idp");
-  }
-
-  @Test
-  public void lengthTest() {
-    typeCheckDef(
-      """
-        \\func test {k : Nat} (l : Array Nat k) : Nat
-          | nil => 0
-          | n :: _ => n
-        """);
   }
 
   @Test
