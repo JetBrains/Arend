@@ -216,24 +216,39 @@ class ExpressionDeserialization {
       }
       case EXPRESSION_CONSTRUCTOR -> {
         ExpressionProtos.Pattern.ExpressionConstructor conProto = proto.getExpressionConstructor();
-        Expression expression = readExpr(conProto.getExpression());
-        List<ExpressionPattern> patterns = readExpressionPatterns(conProto.getPatternList(), list);
-        if (expression instanceof SmallIntegerExpression && ((SmallIntegerExpression) expression).getInteger() == 0) {
-          return new ConstructorExpressionPattern(new ConCallExpression(Prelude.ZERO, Levels.EMPTY, Collections.emptyList(), Collections.emptyList()), patterns);
+        if (conProto.hasExpression()) {
+          Expression expression = readExpr(conProto.getExpression());
+          List<ExpressionPattern> patterns = readExpressionPatterns(conProto.getPatternList(), list);
+          if (expression instanceof SmallIntegerExpression && ((SmallIntegerExpression) expression).getInteger() == 0) {
+            return new ConstructorExpressionPattern(new ConCallExpression(Prelude.ZERO, Levels.EMPTY, Collections.emptyList(), Collections.emptyList()), patterns);
+          }
+          if (expression instanceof ConCallExpression) {
+            return new ConstructorExpressionPattern((ConCallExpression) expression, patterns);
+          }
+          if (expression instanceof ClassCallExpression) {
+            return new ConstructorExpressionPattern((ClassCallExpression) expression, patterns);
+          }
+          if (expression instanceof SigmaExpression) {
+            return new ConstructorExpressionPattern((SigmaExpression) expression, patterns);
+          }
+          if (expression instanceof FunCallExpression funCall && ((FunCallExpression) expression).getDefinition() instanceof DConstructor) {
+            return new ConstructorExpressionPattern(funCall, patterns);
+          }
+          throw new DeserializationException("Wrong pattern expression");
+        } else if (conProto.hasArrayData()) {
+          ExpressionProtos.Pattern.ExpressionConstructor.ArrayData arrayDataProto = conProto.getArrayData();
+          Boolean isEmpty = switch (arrayDataProto.getKind()) {
+            case EMPTY -> true;
+            case NON_EMPTY -> false;
+            case UNKNOWN, UNRECOGNIZED -> null;
+          };
+          Binding binding = arrayDataProto.hasClassCall() ? readClassCall(arrayDataProto.getClassCall()).getThisBinding() : readBindingRef(arrayDataProto.getThisBinding());
+          FunCallExpression funCall = new FunCallExpression(myCallTargetProvider.getCallTarget(arrayDataProto.getConstructor(), DConstructor.class), readLevels(arrayDataProto.getLevels()), arrayDataProto.hasLength() ? readExpr(arrayDataProto.getLength()) : null, arrayDataProto.hasElementsType() ? readExpr(arrayDataProto.getElementsType()) : null);
+          List<ExpressionPattern> patterns = readExpressionPatterns(conProto.getPatternList(), list);
+          return new ConstructorExpressionPattern(funCall, binding, isEmpty, patterns);
+        } else {
+          throw new DeserializationException("Unknown pattern format");
         }
-        if (expression instanceof ConCallExpression) {
-          return new ConstructorExpressionPattern((ConCallExpression) expression, patterns);
-        }
-        if (expression instanceof ClassCallExpression) {
-          return new ConstructorExpressionPattern((ClassCallExpression) expression, patterns);
-        }
-        if (expression instanceof SigmaExpression) {
-          return new ConstructorExpressionPattern((SigmaExpression) expression, patterns);
-        }
-        if (expression instanceof FunCallExpression && ((FunCallExpression) expression).getDefinition() instanceof DConstructor) {
-          return new ConstructorExpressionPattern((FunCallExpression) expression, patterns);
-        }
-        throw new DeserializationException("Wrong pattern expression");
       }
       default -> throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
     }

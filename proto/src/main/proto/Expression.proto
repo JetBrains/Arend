@@ -246,6 +246,22 @@ message Pattern {
     message ExpressionConstructor {
         Expression expression = 1;
         repeated Pattern pattern = 2;
+        ArrayData array_data = 3;
+
+        message ArrayData {
+          int32 constructor = 1;
+          Levels levels = 2;
+          Expression length = 3;
+          Expression elements_type = 4;
+          Expression.ClassCall class_call = 5;
+          int32 this_binding = 6;
+          enum Kind {
+            EMPTY = 0;
+            NON_EMPTY = 1;
+            UNKNOWN = 2;
+          }
+          Kind kind = 7;
+        }
     }
     message Constructor {
         int32 definition = 1;
