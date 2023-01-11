@@ -37,7 +37,7 @@ public class TelescopeScope extends DelegateScope {
     Set<String> names = new HashSet<>();
     for (Abstract.Parameter parameter : myParameters) {
       List<? extends Referable> refs = parameter.getReferableList();
-      for (Referable ref : refs) {
+      for (Referable ref : refs) if (ref != null) {
         result.add(ref);
         names.add(ref.getRefName());
       }
