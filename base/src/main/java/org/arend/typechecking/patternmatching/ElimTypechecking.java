@@ -1016,6 +1016,9 @@ public class ElimTypechecking {
               substExpr = ConCallExpression.make(constructor, someConPattern.getLevels(), dataTypesArgs, arguments);
               conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), someConPattern.getDataTypeArguments()));
             } else if (branchKey instanceof ArrayConstructor) {
+              if (arrayLength != null) {
+                arguments.add(arrayLength);
+              }
               if (arrayElementsType != null) {
                 arguments.add(arrayElementsType);
               }
