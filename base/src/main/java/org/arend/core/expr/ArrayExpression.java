@@ -100,13 +100,25 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
     return result;
   }
 
+  private Expression getLengthMinus1() {
+    if (myTail == null) {
+      return new SmallIntegerExpression(myElements.size() - 1);
+    }
+
+    Expression result = FieldCallExpression.make(Prelude.ARRAY_LENGTH, myTail);
+    for (int i = 1; i < myElements.size(); i++) {
+      result = Suc(result);
+    }
+    return result;
+  }
+
   public List<Expression> getConstructorArguments(boolean withElementsType, boolean withLength) {
     if (myElements.isEmpty()) {
       return withElementsType ? Collections.singletonList(myElementsType) : Collections.emptyList();
     }
 
     List<Expression> result = new ArrayList<>(4);
-    if (withLength) result.add(getLength());
+    if (withLength) result.add(getLengthMinus1());
     if (withElementsType) result.add(myElementsType);
     result.add(myElements.get(0));
     result.add(drop(1));

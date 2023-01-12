@@ -351,6 +351,17 @@ public class ArrayTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void patternMatchingTest15() {
+    typeCheckModule(
+      """
+        \\func test (l : Array) : Nat
+          | nil => 0
+          | a :: {suc n} l => 1
+        """, 1);
+    assertThatErrorsAre(Matchers.missingClauses(1));
+  }
+
+  @Test
   public void casePatternMatchingTest() {
     typeCheckModule(
       """
