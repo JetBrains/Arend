@@ -14,6 +14,7 @@ import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.ImpossibleEliminationError;
+import org.arend.typechecking.error.local.NotEnoughPatternsError;
 import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.arend.util.SingletonList;
 import org.junit.Test;
@@ -359,6 +360,36 @@ public class ArrayTest extends TypeCheckingTestCase {
           | a :: {suc n} l => 1
         """, 1);
     assertThatErrorsAre(Matchers.missingClauses(1));
+  }
+
+  @Test
+  public void patternMatchingTest16() {
+    typeCheckModule(
+      """
+        \\func test (l : Array) : Nat
+          | nil => 0
+          | :: a => 1
+        """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(NotEnoughPatternsError.class));
+  }
+
+  @Test
+  public void patternMatchingTest17() {
+    typeCheckModule(
+      """
+        \\func test (l : Array) : Nat
+          | nil => 0
+          | a :: => 1
+        """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(NotEnoughPatternsError.class));
+  }
+
+  @Test
+  public void test() {
+    typeCheckModule(
+      """
+        \\func test => :: 0
+        """);
   }
 
   @Test

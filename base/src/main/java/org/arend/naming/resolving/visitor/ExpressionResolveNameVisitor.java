@@ -726,6 +726,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   private List<Concrete.BinOpSequenceElem<Concrete.Pattern>> resolveBinOpComponents(Concrete.UnparsedConstructorPattern pattern) {
     List<Concrete.BinOpSequenceElem<Concrete.Pattern>> correctedPatterns = new ArrayList<>();
+    boolean first = true;
     for (var component : pattern.getUnparsedPatterns()) {
       Concrete.Pattern subPattern = component.getComponent();
       Concrete.BinOpSequenceElem<Concrete.Pattern> corrected;
@@ -747,16 +748,17 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         } else {
           Concrete.Pattern newInnerPattern = new Concrete.NamePattern(subPattern.getData(), subPattern.isExplicit(), resolved, ((Concrete.NamePattern) subPattern).type);
           if (resolved instanceof GlobalReferable) {
-            Fixity fixity = ((GlobalReferable) resolved).getPrecedence().isInfix ? Fixity.INFIX : ((Concrete.NamePattern) subPattern).fixity;
+            Fixity fixity = first ? Fixity.NONFIX : ((GlobalReferable) resolved).getPrecedence().isInfix ? Fixity.INFIX : ((Concrete.NamePattern) subPattern).fixity;
             corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, fixity, true);
           } else {
-            corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, ((Concrete.NamePattern) subPattern).fixity, newInnerPattern.isExplicit());
+            corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, first ? Fixity.NONFIX : ((Concrete.NamePattern) subPattern).fixity, newInnerPattern.isExplicit());
           }
         }
       } else {
         corrected = component;
       }
       correctedPatterns.add(corrected);
+      first = false;
     }
     return correctedPatterns;
   }
