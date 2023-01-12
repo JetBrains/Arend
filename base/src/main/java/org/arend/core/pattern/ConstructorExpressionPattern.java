@@ -204,6 +204,9 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
     if (dataExpr instanceof FunCallExpression funCall) {
       List<Expression> newArgs;
+      if (funCall.getDefinition() == Prelude.EMPTY_ARRAY) {
+        return ArrayExpression.make(funCall.getLevels().toLevelPair(), funCall.getDefCallArguments().isEmpty() ? arguments.get(0) : funCall.getDefCallArguments().get(0), Collections.emptyList(), null);
+      }
       if (!funCall.getDefCallArguments().isEmpty()) {
         newArgs = new ArrayList<>(funCall.getDefCallArguments().size() + arguments.size());
         if (funCall.getDefinition() == Prelude.ARRAY_CONS) {
@@ -279,8 +282,42 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     if (dataExpr instanceof FunCallExpression) {
       FunctionDefinition function = ((FunCallExpression) dataExpr).getDefinition();
       expression = expression.getUnderlyingExpression();
-      if (function == Prelude.EMPTY_ARRAY || function == Prelude.ARRAY_CONS) {
-        return expression instanceof ArrayExpression array && array.getElements().isEmpty() == (function == Prelude.EMPTY_ARRAY) ? array.getConstructorArguments(getArrayElementsType() == null, getArrayLength() == null) : null;
+      if (function == Prelude.EMPTY_ARRAY) {
+        if (expression instanceof ArrayExpression array && array.getElements().isEmpty() && array.getTail() == null) {
+          return array.getConstructorArguments(getArrayElementsType() == null, getArrayLength() == null);
+        }
+        ClassCallExpression classCall = expression.getType().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+        if (classCall != null && classCall.getDefinition() == Prelude.DEP_ARRAY) {
+          Expression length = classCall.getImplementationHere(Prelude.ARRAY_LENGTH, expression);
+          if (length != null) {
+            length = length.normalize(NormalizationMode.WHNF);
+            if (length instanceof IntegerExpression && ((IntegerExpression) length).isZero()) {
+              return getArrayElementsType() == null ? Collections.singletonList(FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expression)) : Collections.emptyList();
+            }
+          }
+        }
+        return null;
+      }
+      if (function == Prelude.ARRAY_CONS) {
+        if (expression instanceof ArrayExpression array && !array.getElements().isEmpty()) {
+          return array.getConstructorArguments(getArrayElementsType() == null, getArrayLength() == null);
+        }
+        ClassCallExpression classCall = expression.getType().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+        if (classCall != null && classCall.getDefinition() == Prelude.DEP_ARRAY) {
+          Expression length = classCall.getImplementationHere(Prelude.ARRAY_LENGTH, expression);
+          if (length != null) {
+            if (length instanceof IntegerExpression && !((IntegerExpression) length).isZero() || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
+              List<Expression> result = new ArrayList<>(4);
+              if (getArrayLength() == null) result.add(FieldCallExpression.make(Prelude.ARRAY_LENGTH, expression));
+              Expression elementsType = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expression);
+              if (getArrayElementsType() == null) result.add(elementsType);
+              result.add(AppExpression.make(FieldCallExpression.make(Prelude.ARRAY_AT, expression), new SmallIntegerExpression(0), true));
+              result.add(ArrayExpression.makeTail(length, elementsType, classCall, expression));
+              return result;
+            }
+          }
+        }
+        return null;
       }
       if (function != Prelude.IDP) {
         return null;

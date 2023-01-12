@@ -2,6 +2,8 @@ package org.arend.core.expr;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.TypedSingleDependentLink;
+import org.arend.core.definition.ClassField;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.sort.Level;
@@ -16,10 +18,7 @@ import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.arend.core.expr.ExpressionFactory.Fin;
 import static org.arend.core.expr.ExpressionFactory.Suc;
@@ -50,6 +49,19 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
 
   public static ArrayExpression makeArray(LevelPair levels, Expression elementsType, List<Expression> elements, Expression tail) {
     return (ArrayExpression) make(levels, elementsType, elements, tail);
+  }
+
+  public static Expression makeTail(Expression length, Expression elementsType, ClassCallExpression classCall, Expression expr) {
+    Expression length_1 = length.pred();
+    TypedSingleDependentLink param = new TypedSingleDependentLink(true, "j", Fin(length_1));
+    LevelPair levelPair = classCall.getLevels().toLevelPair();
+    Sort sort = levelPair.toSort().max(Sort.SET0);
+    Expression at = classCall.getImplementationHere(Prelude.ARRAY_AT, expr);
+    Map<ClassField, Expression> impls = new LinkedHashMap<>();
+    impls.put(Prelude.ARRAY_LENGTH, length_1);
+    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort, param, AppExpression.make(elementsType, Suc(new ReferenceExpression(param)), true)));
+    impls.put(Prelude.ARRAY_AT, new LamExpression(sort, param, at != null ? AppExpression.make(at, Suc(new ReferenceExpression(param)), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(expr, Suc(new ReferenceExpression(param))))));
+    return new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES));
   }
 
   public void substLevels(LevelSubstitution substitution) {
