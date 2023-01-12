@@ -574,7 +574,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   private void visitConstructorClause(Concrete.ConstructorClause clause, ExpressionResolveNameVisitor exprVisitor) {
     List<Concrete.Pattern> patterns = clause.getPatterns();
     if (patterns != null) {
-      exprVisitor.visitPatterns(patterns, new HashMap<>(), true);
+      exprVisitor.visitPatterns(patterns, new HashMap<>());
     }
   }
 

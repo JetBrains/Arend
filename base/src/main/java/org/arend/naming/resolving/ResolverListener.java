@@ -12,8 +12,8 @@ import java.util.List;
 public interface ResolverListener {
   default void bindingResolved(Referable binding) {}
   default void referenceResolved(Concrete.Expression argument, Referable originalRef, Concrete.ReferenceExpression refExpr, List<Referable> resolvedRefs, Scope scope) {}
-  default void patternResolved(Referable originalRef, Concrete.ConstructorPattern pattern, List<Referable> resolvedRefs) {}
-  default void patternResolved(Concrete.NamePattern pattern) {}
+  default void patternParsed(Concrete.ConstructorPattern pattern) {}
+  default void patternResolved(Referable originalRef, Referable newRef, Concrete.Pattern pattern, List<Referable> resolvedRefs) {}
   default void coPatternResolved(Concrete.CoClauseElement classFieldImpl, Referable originalRef, Referable referable, List<Referable> resolvedRefs) {}
   default void overriddenFieldResolved(Concrete.OverriddenField overriddenField, Referable originalRef, Referable referable, List<Referable> resolvedRefs) {}
   default void namespaceResolved(NamespaceCommand namespaceCommand, List<Referable> resolvedRefs) {}

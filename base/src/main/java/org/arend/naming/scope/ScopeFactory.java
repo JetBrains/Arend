@@ -124,7 +124,7 @@ public class ScopeFactory {
     List<? extends Abstract.Pattern> patterns = pattern.getSequence();
     Referable headReference = pattern.getSingleReferable();
     if (headReference != null) {
-      Referable resolved = ExpressionResolveNameVisitor.tryResolve(headReference, parentScope);
+      Referable resolved = ExpressionResolveNameVisitor.tryResolve(headReference, parentScope, null);
       if (!(resolved instanceof GlobalReferable && ((GlobalReferable) resolved).getKind().isConstructor())) {
         referables.add(resolved);
       }
