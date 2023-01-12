@@ -120,28 +120,6 @@ public class ScopeFactory {
     return true;
   }
 
-  private static void addPatternReferables(Abstract.Pattern pattern, List<Referable> referables, Scope parentScope) {
-    List<? extends Abstract.Pattern> patterns = pattern.getSequence();
-    Referable headReference = pattern.getSingleReferable();
-    if (headReference != null) {
-      Referable resolved = ExpressionResolveNameVisitor.tryResolve(headReference, parentScope, null);
-      if (!(resolved instanceof GlobalReferable && ((GlobalReferable) resolved).getKind().isConstructor())) {
-        referables.add(resolved);
-      }
-    } else {
-      for (Abstract.Pattern subPattern : patterns) {
-        addPatternReferables(subPattern, referables, parentScope);
-      }
-    }
-
-    for (Abstract.TypedReferable asPattern : pattern.getAsPatterns()) {
-      Referable ref = asPattern.getReferable();
-      if (ref != null) {
-        referables.add(ref);
-      }
-    }
-  }
-
   public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode, Scope importElements, Function<ClassReferable, Scope> classFieldImplScope) {
     if (sourceNode == null) {
       return parentScope;
@@ -158,30 +136,8 @@ public class ScopeFactory {
       parentSourceNode = sourceNode.getParentSourceNode();
     }
 
-    // Add all references defined in previous patterns
     if (sourceNode instanceof Abstract.Pattern) {
-      List<? extends Abstract.Pattern> patterns;
-      if (parentSourceNode instanceof Abstract.Pattern) {
-        patterns = ((Abstract.Pattern) parentSourceNode).getSequence();
-      } else if (parentSourceNode instanceof Abstract.Clause) {
-        patterns = ((Abstract.Clause) parentSourceNode).getPatterns();
-      } else {
-        patterns = Collections.emptyList();
-      }
-
-      if (patterns.isEmpty()) {
-        return parentScope;
-      }
-
-      List<Referable> referables = new ArrayList<>();
-      Scope resultScope = new ListScope(parentScope, referables);
-      for (Abstract.Pattern pattern : patterns) {
-        if (pattern.equals(sourceNode)) {
-          break;
-        }
-        addPatternReferables(pattern, referables, resultScope);
-      }
-      return resultScope;
+      return parentScope.getGlobalSubscope();
     }
 
     // After namespace command
