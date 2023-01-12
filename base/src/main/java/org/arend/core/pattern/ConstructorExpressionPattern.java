@@ -454,6 +454,11 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     }
   }
 
+  private FunCallExpression substArrayFunCall(FunCallExpression funCall, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+    Expression elementsType = funCall.getDefinition() == Prelude.ARRAY_CONS && funCall.getDefCallArguments().size() > 1 ? funCall.getDefCallArguments().get(1) : !funCall.getDefCallArguments().isEmpty() ? funCall.getDefCallArguments().get(0) : null;
+    return new FunCallExpression((DConstructor) funCall.getDefinition(), funCall.getLevels().subst(levelSubst), funCall.getDefinition() == Prelude.ARRAY_CONS && !funCall.getDefCallArguments().isEmpty() && funCall.getDefCallArguments().get(0) != null ? funCall.getDefCallArguments().get(0).subst(exprSubst, levelSubst) : null, elementsType == null ? null : elementsType.subst(exprSubst, levelSubst));
+  }
+
   @Override
   public ExpressionPattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, ExpressionPattern> patternSubst) {
     List<ExpressionPattern> patterns = new ArrayList<>();
@@ -462,15 +467,18 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     }
 
     if (data instanceof ArrayData arrayData) {
-      return new ConstructorExpressionPattern(new ArrayData((FunCallExpression) arrayData.funCall.subst(exprSubst, levelSubst), arrayData.isEmpty, arrayData.thisBinding), patterns);
+      return new ConstructorExpressionPattern(new ArrayData(substArrayFunCall(arrayData.funCall, exprSubst, levelSubst), arrayData.isEmpty, arrayData.thisBinding), patterns);
     } else if (data instanceof ConCallExpression conCall && (conCall.getDefinition() == Prelude.FIN_ZERO || conCall.getDefinition() == Prelude.FIN_SUC)) {
       List<Expression> dataArgs = new ArrayList<>(conCall.getDataTypeArguments().size());
       for (Expression arg : conCall.getDataTypeArguments()) {
         dataArgs.add(arg.subst(exprSubst));
       }
       return new ConstructorExpressionPattern(new ConCallExpression(conCall.getDefinition(), conCall.getLevels().subst(levelSubst), dataArgs, Collections.emptyList()), patterns);
+    } else if (data instanceof FunCallExpression funCall && (funCall.getDefinition() == Prelude.EMPTY_ARRAY || funCall.getDefinition() == Prelude.ARRAY_CONS)) {
+      return new ConstructorExpressionPattern(substArrayFunCall(funCall, exprSubst, levelSubst), patterns);
+    } else {
+      return new ConstructorExpressionPattern(getDataExpression().subst(exprSubst, levelSubst), patterns);
     }
-    return new ConstructorExpressionPattern(getDataExpression().subst(exprSubst, levelSubst), patterns);
   }
 
   @Override
