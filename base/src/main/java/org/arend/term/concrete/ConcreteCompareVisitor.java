@@ -75,6 +75,9 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
         return false;
       }
       if (list1.get(i) != null) {
+        if (!list1.get(i).getRefName().equals(list2.get(i).getRefName())) {
+          return false;
+        }
         mySubstitution.put(list1.get(i), list2.get(i));
       }
     }
