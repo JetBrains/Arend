@@ -680,8 +680,6 @@ public class ElimTypechecking {
       }
 
       Util.removeArguments(patterns, parameters, elimParams);
-      //noinspection unchecked
-      Util.removeImplicitPatterns((List<Object>) (List<?>) patterns, elimParams.isEmpty() ? DependentLink.Helper.toList(parameters) : null);
       missingClauses.add(patterns);
     }
 
@@ -939,12 +937,13 @@ public class ElimTypechecking {
       if (myMode.checkCoverage() && !hasVars) {
         for (BranchKey key : branchKeys) {
           if (!branchKeyMap.containsKey(key)) {
-            List<Util.ClauseElem> context = new ArrayList<>(myContext);
-            context.add(Util.makeDataClauseElem(key, someConPattern));
-            for (DependentLink link = key.getParameters(someConPattern); link.hasNext(); link = link.getNext()) {
-              context.add(new Util.PatternClauseElem(new BindingPattern(link)));
+            try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
+              myContext.push(Util.makeDataClauseElem(key, someConPattern));
+              for (DependentLink link = key.getParameters(someConPattern); link.hasNext(); link = link.getNext()) {
+                myContext.push(new Util.PatternClauseElem(new BindingPattern(link)));
+              }
+              addMissingClause(new ArrayList<>(myContext), false);
             }
-            addMissingClause(context, false);
           }
         }
       }

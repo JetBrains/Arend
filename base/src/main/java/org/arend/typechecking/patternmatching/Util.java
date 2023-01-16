@@ -6,15 +6,15 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DConstructor;
-import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.BranchKey;
-import org.arend.core.expr.*;
+import org.arend.core.expr.ConCallExpression;
+import org.arend.core.expr.Expression;
+import org.arend.core.expr.FunCallExpression;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
-import org.arend.prelude.Prelude;
 
 import java.util.*;
 
@@ -115,56 +115,10 @@ public class Util {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  public static void removeImplicitPatterns(List<Object> result, List<DependentLink> parameters) {
-    if (parameters != null) {
-      for (int i = 0, j = 0; i < result.size() && j < parameters.size(); i++, j++) {
-        if (result.get(i) instanceof BindingPattern && !parameters.get(j).isExplicit()) {
-          result.remove(i--);
-        }
-      }
-    }
-
-    for (int i = 0; i < result.size(); i++) {
-      if (result.get(i) instanceof ConstructorExpressionPattern pattern) {
-        Definition def = pattern.getDefinition();
-        if (def == Prelude.EMPTY_ARRAY || def == Prelude.ARRAY_CONS) {
-          if (pattern.getDataExpression() instanceof FunCallExpression funCall) {
-            List<Expression> args = funCall.getDefCallArguments();
-            Binding thisBinding = pattern.getArrayThisBinding();
-            if (args.size() <= 4 && (thisBinding != null || args.size() >= 2 && args.get(0) != null && args.get(1) != null)) {
-              List<? extends ExpressionPattern> subPatterns = pattern.getSubPatterns();
-              boolean keepLength = def == Prelude.ARRAY_CONS && (args.isEmpty() || args.get(0) == null) && subPatterns.size() >= 3 && !(subPatterns.get(0) instanceof BindingPattern);
-              Expression newLength = def == Prelude.ARRAY_CONS ? keepLength ? null : args.size() > 0 && args.get(0) != null ? args.get(0) : FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(thisBinding)) : null;
-              Expression newElementsType = args.size() > 1 && args.get(1) != null ? args.get(1) : FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, new ReferenceExpression(thisBinding));
-              List<ExpressionPattern> newSubPatterns = new ArrayList<>(3);
-              if (def == Prelude.ARRAY_CONS) {
-                if (subPatterns.size() <= 2) {
-                  newSubPatterns.addAll(subPatterns);
-                } else {
-                  if (keepLength) {
-                    newSubPatterns.add(subPatterns.get(0));
-                  }
-                  newSubPatterns.addAll(subPatterns.subList(subPatterns.size() - 2, subPatterns.size()));
-                }
-              }
-              removeImplicitPatterns((List<Object>) (List<?>) newSubPatterns, null);
-              FunCallExpression newFunCall = new FunCallExpression((DConstructor) def, funCall.getLevels(), newLength, newElementsType);
-              result.set(i, thisBinding == null ? new ConstructorExpressionPattern(newFunCall, newSubPatterns) : new ConstructorExpressionPattern(newFunCall, thisBinding, newLength, newSubPatterns));
-            }
-          }
-        } else {
-          List<ExpressionPattern> subPatterns = new ArrayList<>(pattern.getSubPatterns());
-          removeImplicitPatterns((List<Object>) (List<?>) subPatterns, def == null ? Collections.emptyList() : DependentLink.Helper.toList(pattern.getParameters()));
-          result.set(i, new ConstructorExpressionPattern(pattern, subPatterns));
-        }
-      }
-    }
-  }
-
   public static void unflattenClauses(List<ClauseElem> clauseElems, List<? super ExpressionPattern> result) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
-      if (clauseElems.get(i) instanceof DataClauseElem dataClauseElem) {
+      if (clauseElems.get(i) instanceof DataClauseElem) {
+        DataClauseElem dataClauseElem = (DataClauseElem) clauseElems.get(i);
         DependentLink parameters = dataClauseElem.getParameters();
         int size = DependentLink.Helper.size(parameters);
         List<ExpressionPattern> patterns = new ArrayList<>(size);

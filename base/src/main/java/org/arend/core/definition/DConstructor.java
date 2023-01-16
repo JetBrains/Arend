@@ -74,7 +74,7 @@ public class DConstructor extends FunctionDefinition {
     TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", DataCallExpression.make(Prelude.FIN, Levels.EMPTY, new SingletonList<>(natRef)));
     Sort sort = levels.toSort();
     impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort.max(Sort.SET0), lamParam, AppExpression.make(newElementsType, Suc(new ReferenceExpression(lamParam)), true)));
-    nat.setNext(new TypedDependentLink(true, "a", new TypeExpression(AppExpression.make(newElementsType, Zero(), true), sort), new TypedDependentLink(true, "l", new ClassCallExpression(Prelude.DEP_ARRAY, levels, impls, Sort.STD, UniverseKind.NO_UNIVERSES), EmptyDependentLink.getInstance())));
+    nat.setNext(new TypedDependentLink(true, "a", new TypeExpression(AppExpression.make(newElementsType, Zero(), true), sort), new TypedDependentLink(true, "arr", new ClassCallExpression(Prelude.DEP_ARRAY, levels, impls, Sort.STD, UniverseKind.NO_UNIVERSES), EmptyDependentLink.getInstance())));
     return nat;
   }
 
