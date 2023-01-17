@@ -97,6 +97,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private TypecheckerState mySavedState;
   private LevelContext myLevelContext;
   private Definition myDefinition;
+  private boolean myAllowDeferredMetas = true;
 
   private record DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceVariable inferenceVar, MyErrorReporter errorReporter) {}
 
@@ -2963,6 +2964,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Nullable
   @Override
   public TypecheckingResult defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, boolean afterLevels) {
+    if (!myAllowDeferredMetas) {
+      return TypecheckingResult.fromChecked(meta.invokeMeta(this, contextData));
+    }
     if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
@@ -2975,6 +2979,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     InferenceVariable inferenceVar = new MetaInferenceVariable(marker instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) marker).getReferent().getRefName() : "deferred", expectedType, (Concrete.Expression) marker, getAllBindings());
     (afterLevels ? myDeferredMetasAfterLevels : myDeferredMetasBeforeSolver).add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceVar, errorReporter));
     return new TypecheckingResult(new InferenceReferenceExpression(inferenceVar), expectedType);
+  }
+
+  @Override
+  public void allowDeferredMetas(boolean allow) {
+    myAllowDeferredMetas = allow;
+  }
+
+  @Override
+  public boolean deferredMetasAllowed() {
+    return myAllowDeferredMetas;
   }
 
   private void fixCheckedExpression(TypecheckingResult result, Referable referable, Concrete.SourceNode sourceNode) {
@@ -3431,7 +3445,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private void saveState() {
     ListErrorReporter listErrorReporter = new ListErrorReporter();
-    TypecheckerState state = new TypecheckerState(errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState, listErrorReporter);
+    TypecheckerState state = new TypecheckerState(errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState, listErrorReporter, myAllowDeferredMetas);
     errorReporter = new MyErrorReporter(listErrorReporter);
     myEquations.saveState(state);
     mySavedState = state;
@@ -3467,7 +3481,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (mySavedState.previousState != null) {
       mySavedState.previousState.solvedVariables.addAll(mySavedState.solvedVariables);
     }
-    TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState.previousState, mySavedState.listErrorReporter);
+    TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState.previousState, mySavedState.listErrorReporter, mySavedState.allowDeferredMetas);
     myEquations.saveState(state);
     mySavedState = state;
   }
@@ -3481,6 +3495,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       myDeferredMetasAfterLevels.subList(state.numberOfDeferredMetasAfterLevels, myDeferredMetasAfterLevels.size()).clear();
     }
     setUserData(state.userDataHolder);
+    myAllowDeferredMetas = state.allowDeferredMetas;
 
     for (InferenceVariable var : state.solvedVariables) {
       var.unsolve();

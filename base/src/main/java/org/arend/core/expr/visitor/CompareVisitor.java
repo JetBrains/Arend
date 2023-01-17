@@ -1416,7 +1416,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
             isGE = type2 instanceof DataCallExpression && ((DataCallExpression) type2).getDefinition() == Prelude.FIN || type1 instanceof DataCallExpression && ((DataCallExpression) type1).getDefinition() == Prelude.NAT;
           }
           myCMP = isGE ? CMP.GE : CMP.LE;
-          TypecheckerState state = new TypecheckerState(null, 0, 0, null, null, null);
+          TypecheckerState state = new TypecheckerState(null, 0, 0, null, null, null, true);
           myEquations.saveState(state);
           ok = normalizedCompare(type1, type2, Type.OMEGA, false);
           myCMP = origCMP;
