@@ -77,6 +77,10 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     return getTopLevelDefinition().getAxioms();
   }
 
+  public Set<? extends Definition> getGoals() {
+    return getTopLevelDefinition().getGoals();
+  }
+
   public List<? extends Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
     return Collections.emptyList();
   }

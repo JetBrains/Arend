@@ -8,7 +8,7 @@ import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.FullModuleReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.expr.ConcreteCompareVisitor;
+import org.arend.term.concrete.ConcreteCompareVisitor;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.FileGroup;
 import org.arend.term.group.Statement;

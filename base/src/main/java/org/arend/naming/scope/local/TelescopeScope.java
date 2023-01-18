@@ -15,16 +15,18 @@ public class TelescopeScope extends DelegateScope {
   private final List<? extends Abstract.Parameter> myParameters;
   private final Collection<? extends Referable> myExcluded;
 
-  public TelescopeScope(Scope parent, List<? extends Abstract.Parameter> parameters) {
-    super(parent);
-    myParameters = parameters;
-    myExcluded = Collections.emptyList();
-  }
-
-  public TelescopeScope(Scope parent, List<? extends Abstract.Parameter> parameters, Collection<? extends Referable> excluded) {
+  private TelescopeScope(Scope parent, List<? extends Abstract.Parameter> parameters, Collection<? extends Referable> excluded) {
     super(parent);
     myParameters = parameters;
     myExcluded = excluded;
+  }
+
+  public static Scope make(Scope parent, List<? extends Abstract.Parameter> parameters) {
+    return make(parent, parameters, Collections.emptyList());
+  }
+
+  public static Scope make(Scope parent, List<? extends Abstract.Parameter> parameters, Collection<? extends Referable> excluded) {
+    return parameters.isEmpty() ? parent : new TelescopeScope(parent, parameters, excluded);
   }
 
   @Override

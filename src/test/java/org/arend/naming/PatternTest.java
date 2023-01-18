@@ -166,4 +166,27 @@ public class PatternTest extends NameResolverTestCase {
       "\\func test (n : Nat) : Nat\n" +
       "  | 0 x => 0", 1);
   }
+
+  @Test
+  public void longNameTest() {
+    resolveNamesDef(
+      """
+        \\func test (a : Nat) : Nat \\with
+         | 0 => 0
+         | M.foo => 1
+        """, 1);
+    assertThatErrorsAre(Matchers.notInScope("M"));
+  }
+
+  @Test
+  public void longNameTest2() {
+    resolveNamesModule(
+      """
+        \\module M \\where {}
+        \\func test (a : Nat) : Nat \\with
+         | 0 => 0
+         | M.foo => 1
+        """, 1);
+    assertThatErrorsAre(Matchers.notInScope("foo"));
+  }
 }

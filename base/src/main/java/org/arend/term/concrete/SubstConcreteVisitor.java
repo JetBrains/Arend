@@ -209,17 +209,13 @@ public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> im
   protected Concrete.Pattern visitPattern(Concrete.Pattern pattern) {
     if (pattern == null) return null;
     var data = myData != null ? myData : pattern.getData();
-    if (Concrete.NamePattern.class.equals(pattern.getClass())) {
-      var namePattern = (Concrete.NamePattern) pattern;
+    if (pattern instanceof Concrete.NamePattern namePattern) {
       return new Concrete.NamePattern(data, namePattern.isExplicit(), namePattern.getReferable(), namePattern.type);
-    } else if (Concrete.ConstructorPattern.class.equals(pattern.getClass())) {
-      var conPattern = (Concrete.ConstructorPattern) pattern;
-      return new Concrete.ConstructorPattern(data, conPattern.isExplicit(), conPattern.getConstructor(), visitPatterns(conPattern.getPatterns()), visitTypedReferable(conPattern.getAsReferable()));
-    } else if (Concrete.TuplePattern.class.equals(pattern.getClass())) {
-      var tuplePattern = (Concrete.TuplePattern) pattern;
+    } else if (pattern instanceof Concrete.ConstructorPattern conPattern) {
+      return new Concrete.ConstructorPattern(data, conPattern.isExplicit(), conPattern.getConstructorData(), conPattern.getConstructor(), visitPatterns(conPattern.getPatterns()), visitTypedReferable(conPattern.getAsReferable()));
+    } else if (pattern instanceof Concrete.TuplePattern tuplePattern) {
       return new Concrete.TuplePattern(data, tuplePattern.isExplicit(), visitPatterns(tuplePattern.getPatterns()), visitTypedReferable(tuplePattern.getAsReferable()));
-    } else if (Concrete.NumberPattern.class.equals(pattern.getClass())) {
-      var numberPattern = (Concrete.NumberPattern) pattern;
+    } else if (pattern instanceof Concrete.NumberPattern numberPattern) {
       return new Concrete.NumberPattern(data, numberPattern.getNumber(), visitTypedReferable(numberPattern.getAsReferable()));
     } else {
       throw new IllegalArgumentException("Unhandled pattern: " + pattern.getClass());

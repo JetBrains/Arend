@@ -183,6 +183,20 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, boolean afterLevels);
 
   /**
+   * Allows or disallows metas to be deferred.
+   *
+   * @param allow         if true, metas will be deferred as usual, otherwise {@link #defer} will invoke metas immediately.
+   */
+  void allowDeferredMetas(boolean allow);
+
+  /**
+   * Checks if it is allowed to defer metas.
+   *
+   * @return true if it allowed to defer metas; false otherwise.
+   */
+  boolean deferredMetasAllowed();
+
+  /**
    * Compares two expressions.
    * It might produce some equations on inference variables that stored in the type-checker.
    *

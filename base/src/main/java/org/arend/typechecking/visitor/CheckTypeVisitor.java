@@ -97,6 +97,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private TypecheckerState mySavedState;
   private LevelContext myLevelContext;
   private Definition myDefinition;
+  private boolean myAllowDeferredMetas = true;
 
   private record DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceVariable inferenceVar, MyErrorReporter errorReporter) {}
 
@@ -2963,6 +2964,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Nullable
   @Override
   public TypecheckingResult defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, boolean afterLevels) {
+    if (!myAllowDeferredMetas) {
+      return TypecheckingResult.fromChecked(meta.invokeMeta(this, contextData));
+    }
     if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
@@ -2975,6 +2979,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     InferenceVariable inferenceVar = new MetaInferenceVariable(marker instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) marker).getReferent().getRefName() : "deferred", expectedType, (Concrete.Expression) marker, getAllBindings());
     (afterLevels ? myDeferredMetasAfterLevels : myDeferredMetasBeforeSolver).add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceVar, errorReporter));
     return new TypecheckingResult(new InferenceReferenceExpression(inferenceVar), expectedType);
+  }
+
+  @Override
+  public void allowDeferredMetas(boolean allow) {
+    myAllowDeferredMetas = allow;
+  }
+
+  @Override
+  public boolean deferredMetasAllowed() {
+    return myAllowDeferredMetas;
   }
 
   private void fixCheckedExpression(TypecheckingResult result, Referable referable, Concrete.SourceNode sourceNode) {
@@ -3431,7 +3445,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private void saveState() {
     ListErrorReporter listErrorReporter = new ListErrorReporter();
-    TypecheckerState state = new TypecheckerState(errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState, listErrorReporter);
+    TypecheckerState state = new TypecheckerState(errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState, listErrorReporter, myAllowDeferredMetas);
     errorReporter = new MyErrorReporter(listErrorReporter);
     myEquations.saveState(state);
     mySavedState = state;
@@ -3467,7 +3481,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (mySavedState.previousState != null) {
       mySavedState.previousState.solvedVariables.addAll(mySavedState.solvedVariables);
     }
-    TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState.previousState, mySavedState.listErrorReporter);
+    TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState.previousState, mySavedState.listErrorReporter, mySavedState.allowDeferredMetas);
     myEquations.saveState(state);
     mySavedState = state;
   }
@@ -3481,6 +3495,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       myDeferredMetasAfterLevels.subList(state.numberOfDeferredMetasAfterLevels, myDeferredMetasAfterLevels.size()).clear();
     }
     setUserData(state.userDataHolder);
+    myAllowDeferredMetas = state.allowDeferredMetas;
 
     for (InferenceVariable var : state.solvedVariables) {
       var.unsolve();
@@ -3728,7 +3743,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     ExprSubstitution elimSubst = new ExprSubstitution();
     Set<Binding> allowedBindings = new HashSet<>();
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      for (Concrete.CaseArgument caseArg : caseArgs) {
+      for (int i = 0; i < caseArgs.size(); i++) {
+        Concrete.CaseArgument caseArg = caseArgs.get(i);
         Type argType = null;
         if (caseArg.type != null) {
           argType = checkType(caseArg.type, Type.OMEGA);
@@ -3740,6 +3756,43 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         if (caseArg.isElim && !(exprResult.expression instanceof ReferenceExpression)) {
           errorReporter.report(new TypecheckingError("Expected a variable", caseArg.expression));
           return null;
+        }
+        if (argType == null && Prelude.ARRAY_CONS != null) {
+          boolean hasConstructors = false;
+          for (Concrete.FunctionClause clause : expr.getClauses()) {
+            if (clause.getPatterns().size() > i && clause.getPatterns().get(i) instanceof Concrete.ConstructorPattern conPattern && (conPattern.getConstructor() == Prelude.EMPTY_ARRAY.getReferable() || conPattern.getConstructor() == Prelude.ARRAY_CONS.getReferable())) {
+              hasConstructors = true;
+              break;
+            }
+          }
+          if (hasConstructors) {
+            Expression normType = exprResult.type.normalize(NormalizationMode.WHNF);
+            if (normType instanceof ClassCallExpression classCall && classCall.getDefinition() == Prelude.DEP_ARRAY && classCall.isImplementedHere(Prelude.ARRAY_LENGTH)) {
+              boolean ok = true;
+              Sort lamSort = null;
+              Expression type = null;
+              Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+              if (elementsType != null) {
+                elementsType = elementsType.normalize(NormalizationMode.WHNF);
+                if (elementsType instanceof LamExpression) {
+                  type = elementsType.removeConstLam();
+                  if (type == null) {
+                    ok = false;
+                  } else {
+                    lamSort = ((LamExpression) elementsType).getResultSort();
+                  }
+                }
+              }
+              if (ok) {
+                Map<ClassField, Expression> newImpls = new LinkedHashMap<>(classCall.getImplementedHere());
+                newImpls.remove(Prelude.ARRAY_LENGTH);
+                ClassCallExpression newClassCall = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), newImpls, classCall.getSort(), classCall.getUniverseKind());
+                if (type != null) newImpls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(lamSort, new TypedSingleDependentLink(true, null, ExpressionFactory.Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(newClassCall.getThisBinding())))), type));
+                newClassCall.setSort(Prelude.DEP_ARRAY.computeSort(newImpls, newClassCall.getThisBinding()));
+                exprResult.type = newClassCall;
+              }
+            }
+          }
         }
         if (argType == null || caseArg.isElim) {
           exprResult.type = checkedSubst(exprResult.type, elimSubst, allowedBindings, caseArg.expression);

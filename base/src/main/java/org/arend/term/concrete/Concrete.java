@@ -1952,9 +1952,33 @@ public final class Concrete {
     private LevelParameters myHLevelParameters;
     public TCDefReferable enclosingClass;
     private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
-    public TCDefReferable pOriginalDef; // definition from which p-levels were copied, or null if they are not inherited
-    public TCDefReferable hOriginalDef;
     private Map<TCDefReferable, ExternalParameters> myExternalParameters = Collections.emptyMap();
+    private List<TCDefReferable> myUsedDefinitions = Collections.emptyList();
+    private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
+
+    public Definition(TCDefReferable referable, LevelParameters pParams, LevelParameters hParams) {
+      myReferable = referable;
+      myPLevelParameters = pParams;
+      myHLevelParameters = hParams;
+    }
+
+    public Definition(TCDefReferable referable) {
+      myReferable = referable;
+      myPLevelParameters = null;
+      myHLevelParameters = null;
+    }
+
+    public void copyData(Concrete.Definition newDef) {
+      newDef.stage = stage;
+      newDef.setStatus(getStatus());
+      newDef.myPLevelParameters = myPLevelParameters;
+      newDef.myHLevelParameters = myHLevelParameters;
+      newDef.enclosingClass = enclosingClass;
+      newDef.myRecursiveDefinitions = myRecursiveDefinitions;
+      newDef.myExternalParameters = myExternalParameters;
+      newDef.myUsedDefinitions = myUsedDefinitions;
+      newDef.myParametersOriginalDefinitions = myParametersOriginalDefinitions;
+    }
 
     @Override
     public @NotNull TCDefReferable getData() {
@@ -2002,18 +2026,6 @@ public final class Concrete {
       return hashCodeImpl();
     }
 
-    public Definition(TCDefReferable referable, LevelParameters pParams, LevelParameters hParams) {
-      myReferable = referable;
-      myPLevelParameters = pParams;
-      myHLevelParameters = hParams;
-    }
-
-    public Definition(TCDefReferable referable) {
-      myReferable = referable;
-      myPLevelParameters = null;
-      myHLevelParameters = null;
-    }
-
     @NotNull
     @Override
     public Definition getRelatedDefinition() {
@@ -2055,6 +2067,23 @@ public final class Concrete {
       ((ConcreteResolvedClassReferable) parent).addDynamicReferable(myReferable);
     }
 
+    @Override
+    public List<TCDefReferable> getUsedDefinitions() {
+      return myUsedDefinitions;
+    }
+
+    public void setUsedDefinitions(List<TCDefReferable> usedDefinitions) {
+      myUsedDefinitions = usedDefinitions;
+    }
+
+    public List<Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
+      return myParametersOriginalDefinitions;
+    }
+
+    public void setParametersOriginalDefinitions(List<Pair<TCDefReferable,Integer>> p) {
+      myParametersOriginalDefinitions = p;
+    }
+
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params);
 
     @Override
@@ -2080,8 +2109,6 @@ public final class Concrete {
     private final List<ClassElement> myElements;
     private TCFieldReferable myClassifyingField;
     private boolean myForcedClassifyingField;
-    private List<TCDefReferable> myUsedDefinitions = Collections.emptyList();
-    private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
 
     public ClassDefinition(TCDefReferable referable, LevelParameters pParams, LevelParameters hParams, boolean isRecord, boolean withoutClassifying, List<ReferenceExpression> superClasses, List<ClassElement> elements) {
       super(referable, pParams, hParams);
@@ -2125,15 +2152,6 @@ public final class Concrete {
     }
 
     @Override
-    public List<TCDefReferable> getUsedDefinitions() {
-      return myUsedDefinitions;
-    }
-
-    public void setUsedDefinitions(List<TCDefReferable> usedDefinitions) {
-      myUsedDefinitions = usedDefinitions;
-    }
-
-    @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitClass(this, params);
     }
@@ -2141,10 +2159,6 @@ public final class Concrete {
     @Override
     public List<? extends Parameter> getParameters() {
       return Collections.emptyList();
-    }
-
-    public List<Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
-      return myParametersOriginalDefinitions;
     }
 
     @Override
@@ -2163,7 +2177,7 @@ public final class Concrete {
         }
       }
       myElements.addAll(0, elements);
-      myParametersOriginalDefinitions = parametersOriginalDefinitions;
+      setParametersOriginalDefinitions(parametersOriginalDefinitions);
     }
   }
 
@@ -2190,6 +2204,13 @@ public final class Concrete {
 
     public void setNumberOfExternalParameters(int n) {
       myNumberOfExternalParameters = n;
+    }
+
+    @Override
+    public CoClauseFunctionDefinition copy(List<Parameter> parameters, FunctionBody body) {
+      Concrete.CoClauseFunctionDefinition result = new CoClauseFunctionDefinition(getKind(), getData(), getUseParent(), getImplementedField(), parameters, getResultType(), getResultTypeLevel(), body);
+      result.setNumberOfExternalParameters(myNumberOfExternalParameters);
+      return result;
     }
   }
 
@@ -2466,7 +2487,6 @@ public final class Concrete {
 
   public static abstract class BaseFunctionDefinition extends Definition {
     private final List<Parameter> myParameters;
-    private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
     private Expression myResultType;
     private Expression myResultTypeLevel;
     private final FunctionBody myBody;
@@ -2493,14 +2513,10 @@ public final class Concrete {
       return myParameters;
     }
 
-    public List<Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
-      return myParametersOriginalDefinitions;
-    }
-
     @Override
     public void addParameters(List<? extends Parameter> parameters, List<Pair<TCDefReferable,Integer>> parametersOriginalDefinitions) {
       myParameters.addAll(0, parameters);
-      myParametersOriginalDefinitions = parametersOriginalDefinitions;
+      setParametersOriginalDefinitions(parametersOriginalDefinitions);
     }
 
     @Nullable
@@ -2530,11 +2546,12 @@ public final class Concrete {
     public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitFunction(this, params);
     }
+
+    public abstract Concrete.BaseFunctionDefinition copy(List<Parameter> parameters, FunctionBody body);
   }
 
   public static class FunctionDefinition extends BaseFunctionDefinition {
     private final FunctionKind myKind;
-    private List<TCDefReferable> myUsedDefinitions = Collections.emptyList();
 
     public FunctionDefinition(FunctionKind kind, TCDefReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(referable, null, null, parameters, resultType, resultTypeLevel, body);
@@ -2555,12 +2572,8 @@ public final class Concrete {
     }
 
     @Override
-    public List<TCDefReferable> getUsedDefinitions() {
-      return myUsedDefinitions;
-    }
-
-    public void setUsedDefinitions(List<TCDefReferable> usedDefinitions) {
-      myUsedDefinitions = usedDefinitions;
+    public FunctionDefinition copy(List<Parameter> parameters, FunctionBody body) {
+      return new FunctionDefinition(myKind, getData(), getPLevelParameters(), getHLevelParameters(), parameters, getResultType(), getResultTypeLevel(), body);
     }
   }
 
@@ -2579,16 +2592,19 @@ public final class Concrete {
     public TCDefReferable getUseParent() {
       return myUseParent;
     }
+
+    @Override
+    public UseDefinition copy(List<Parameter> parameters, FunctionBody body) {
+      return new UseDefinition(getKind(), getData(), getPLevelParameters(), getHLevelParameters(), parameters, getResultType(), getResultTypeLevel(), body, myUseParent);
+    }
   }
 
   public static class DataDefinition extends Definition {
     private final List<TypeParameter> myParameters;
-    private List<Pair<TCDefReferable,Integer>> myParametersOriginalDefinitions = Collections.emptyList();
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<ConstructorClause> myConstructorClauses;
     private final boolean myIsTruncated;
     private final UniverseExpression myUniverse;
-    private List<TCDefReferable> myUsedDefinitions = Collections.emptyList();
 
     public DataDefinition(TCDefReferable referable, LevelParameters pParams, LevelParameters hParams, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
       super(referable, pParams, hParams);
@@ -2605,15 +2621,11 @@ public final class Concrete {
       return myParameters;
     }
 
-    public List<Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
-      return myParametersOriginalDefinitions;
-    }
-
     @Override
     public void addParameters(List<? extends Parameter> parameters, List<Pair<TCDefReferable, Integer>> parametersOriginalDefinitions) {
       //noinspection unchecked
       myParameters.addAll(0, (List<? extends TypeParameter>) parameters);
-      myParametersOriginalDefinitions = parametersOriginalDefinitions;
+      setParametersOriginalDefinitions(parametersOriginalDefinitions);
     }
 
     @Nullable
@@ -2633,15 +2645,6 @@ public final class Concrete {
     @Nullable
     public UniverseExpression getUniverse() {
       return myUniverse;
-    }
-
-    @Override
-    public List<TCDefReferable> getUsedDefinitions() {
-      return myUsedDefinitions;
-    }
-
-    public void setUsedDefinitions(List<TCDefReferable> usedDefinitions) {
-      myUsedDefinitions = usedDefinitions;
     }
 
     @Override
@@ -2908,7 +2911,7 @@ public final class Concrete {
 
     @Override
     public Pattern toConstructor() {
-      return myReferable == null || type != null ? this : new ConstructorPattern(getData(), isExplicit(), new NamedUnresolvedReference(getData(), myReferable.getRefName()), Collections.emptyList(), getAsReferable());
+      return myReferable == null || type != null ? this : new ConstructorPattern(getData(), isExplicit(), getData(), new NamedUnresolvedReference(getData(), myReferable.getRefName()), Collections.emptyList(), getAsReferable());
     }
 
     @Override
@@ -2981,20 +2984,27 @@ public final class Concrete {
   }
 
   public static class ConstructorPattern extends Pattern implements PatternHolder, ConcreteConstructorPattern {
+    private final Object myConstructorData;
     private Referable myConstructor;
     private final List<Pattern> myArguments;
 
-    public ConstructorPattern(Object data, boolean isExplicit, Referable constructor, List<Pattern> arguments, TypedReferable asReferable) {
+    public ConstructorPattern(Object data, boolean isExplicit, Object constructorData, Referable constructor, List<Pattern> arguments, TypedReferable asReferable) {
       super(data, asReferable);
       setExplicit(isExplicit);
+      myConstructorData = constructorData;
       myConstructor = constructor;
       myArguments = arguments;
     }
 
-    public ConstructorPattern(Object data, Referable constructor, List<Pattern> arguments, TypedReferable asReferable) {
+    public ConstructorPattern(Object data, Object constructorData, Referable constructor, List<Pattern> arguments, TypedReferable asReferable) {
       super(data, asReferable);
+      myConstructorData = constructorData;
       myConstructor = constructor;
       myArguments = arguments;
+    }
+
+    public Object getConstructorData() {
+      return myConstructorData;
     }
 
     @Override
@@ -3019,7 +3029,7 @@ public final class Concrete {
 
     @Override
     public Pattern copy() {
-      return new ConstructorPattern(getData(), isExplicit(), myConstructor, myArguments, getAsReferable());
+      return new ConstructorPattern(getData(), isExplicit(), myConstructorData, myConstructor, myArguments, getAsReferable());
     }
   }
 

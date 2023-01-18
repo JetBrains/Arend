@@ -26,7 +26,7 @@ public interface ExpressionPattern extends Pattern, CoreExpressionPattern {
   ExpressionPattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, ExpressionPattern> patternSubst);
   Pattern removeExpressions();
   @Override @NotNull List<? extends ExpressionPattern> getSubPatterns();
-  Concrete.Pattern toConcrete(Object data, boolean isExplicit, Map<DependentLink, Concrete.Pattern> subPatterns);
+  Concrete.Pattern toConcrete(Object data, boolean isExplicit, Object constructorData, Map<DependentLink, Concrete.Pattern> subPatterns);
 
   default Expression toPatternExpression() {
     return toExpression();

@@ -19,7 +19,7 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.expr.ConcreteCompareVisitor;
+import org.arend.term.concrete.ConcreteCompareVisitor;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;
@@ -143,29 +143,35 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintData1() {
     testDefinition(
-      "\\data S1 \n" +
-      "| base\n" +
-      "| loop Nat \\with {\n" +
-      "  | left => base\n" +
-      "  | right => base\n" +
-      "}");
+      """
+        \\data S1\s
+        | base
+        | loop Nat \\with {
+          | left => base
+          | right => base
+        }
+        """);
   }
 
   @Test
   public void prettyPrintClass1() {
     testDefinition(
-      "\\class C0 {\n" +
-      "  | f0 : \\Pi {X Y : \\Type0} -> X -> Y -> \\Type0\n" +
-      "  | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> x = y\n" +
-      "}");
+      """
+        \\class C0 {
+          | f0 : \\Pi {X Y : \\Type0} -> X -> Y -> \\Type0
+          | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> x = y
+        }
+      """);
   }
 
   @Test
   public void prettyPrintData2() {
     testDefinition(
-      "\\data D2 {A : \\Type0} (y : Nat) (x : Nat) \\elim x\n" +
-      "    | suc x' => c0 (y = x')\n" +
-      "    | suc x' => c1 (p : D2 y x')");
+      """
+        \\data D2 {A : \\Type0} (y : Nat) (x : Nat) \\elim x
+            | suc x' => c0 (y = x')
+            | suc x' => c1 (p : D2 y x')
+        """);
   }
 
   @Test
@@ -298,7 +304,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void letTest2() {
-    String expr = "\n  \\let (x,y) => (0, 1)\n  \\in (x, y)";
+    String expr = "\n  \\let (x, y) => (0, 1)\n  \\in (x, y)";
     typeCheckModule("\\func test =>" + expr);
     assertEquals(expr, printTestExpr());
   }
@@ -338,5 +344,30 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
             (group) -> ((FunctionDefinition) getDefinition(group, "e")).getResultType(),
             "q.f {1} = idp",
             (result) -> result.cast(FunCallExpression.class).getDefCallArguments().get(1).cast(AppExpression.class).getFunction());
+  }
+
+  private void testLamPatterns(String body) {
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) resolveNamesDef("\\func foo => " + body).getDefinition();
+    assertEquals(body, Objects.requireNonNull(def.getBody().getTerm()).toString());
+  }
+
+  @Test
+  public void lamPatternsTest1() {
+    testLamPatterns("\\lam n (path f) m => f");
+  }
+
+  @Test
+  public void lamPatternsTest2() {
+    testLamPatterns("\\lam (path f) m (path g) => f");
+  }
+
+  @Test
+  public void lamPatternsTest3() {
+    testLamPatterns("\\lam (path f) (path g) => f");
+  }
+
+  @Test
+  public void lamPatternsTest4() {
+    testLamPatterns("\\lam n m => n");
   }
 }

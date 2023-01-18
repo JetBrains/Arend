@@ -24,13 +24,15 @@ public class TypecheckerState {
   public final ListErrorReporter listErrorReporter;
   public Set<InferenceVariable> notSolvableFromEquationsVars;
   public UserDataHolderImpl userDataHolder;
+  public final boolean allowDeferredMetas;
 
-  public TypecheckerState(CheckTypeVisitor.MyErrorReporter errorReporter, int numberOfDeferredMetasBeforeSolver, int numberOfDeferredMetasAfterLevels, UserDataHolderImpl userDataHolder, TypecheckerState previousState, ListErrorReporter listErrorReporter) {
+  public TypecheckerState(CheckTypeVisitor.MyErrorReporter errorReporter, int numberOfDeferredMetasBeforeSolver, int numberOfDeferredMetasAfterLevels, UserDataHolderImpl userDataHolder, TypecheckerState previousState, ListErrorReporter listErrorReporter, boolean allowDeferredMetas) {
     this.errorReporter = errorReporter;
     this.numberOfDeferredMetasBeforeSolver = numberOfDeferredMetasBeforeSolver;
     this.numberOfDeferredMetasAfterLevels = numberOfDeferredMetasAfterLevels;
     this.userDataHolder = userDataHolder;
     this.previousState = previousState;
     this.listErrorReporter = listErrorReporter;
+    this.allowDeferredMetas = allowDeferredMetas;
   }
 }

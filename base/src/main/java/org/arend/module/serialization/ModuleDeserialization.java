@@ -129,11 +129,10 @@ public class ModuleDeserialization {
       if (tcReferable == null) {
         throw new DeserializationException("Cannot locate '" + referable + "'");
       }
-      if (!(tcReferable instanceof TCDefReferable)) {
+      if (!(tcReferable instanceof TCDefReferable tcDefReferable)) {
         throw new DeserializationException("'" + referable + "' is not a definition");
       }
 
-      TCDefReferable tcDefReferable = (TCDefReferable) tcReferable;
       TopLevelDefinition def = readDefinition(groupProto.getDefinition(), tcDefReferable, false);
       tcDefReferable.setTypechecked(def);
       myCallTargetProvider.putCallTarget(groupProto.getReferable().getIndex(), def);
@@ -232,14 +231,22 @@ public class ModuleDeserialization {
   private static GlobalReferable.Kind getDefinitionKind(DefinitionProtos.Definition defProto) {
     DefinitionProtos.Definition.DefinitionDataCase kind = defProto.getDefinitionDataCase();
     switch (kind) {
-      case CLASS: return GlobalReferable.Kind.CLASS;
-      case DATA: return GlobalReferable.Kind.DATA;
-      case FUNCTION: {
+      case CLASS -> {
+        return GlobalReferable.Kind.CLASS;
+      }
+      case DATA -> {
+        return GlobalReferable.Kind.DATA;
+      }
+      case FUNCTION -> {
         var fKind = defProto.getFunction().getKind();
         return fKind == DefinitionProtos.Definition.FunctionKind.INSTANCE ? GlobalReferable.Kind.INSTANCE : fKind == DefinitionProtos.Definition.FunctionKind.COCLAUSE || fKind == DefinitionProtos.Definition.FunctionKind.COCLAUSE_LEMMA ? GlobalReferable.Kind.COCLAUSE_FUNCTION : GlobalReferable.Kind.FUNCTION;
       }
-      case CONSTRUCTOR: return GlobalReferable.Kind.DEFINED_CONSTRUCTOR;
-      default: return GlobalReferable.Kind.OTHER;
+      case CONSTRUCTOR -> {
+        return GlobalReferable.Kind.DEFINED_CONSTRUCTOR;
+      }
+      default -> {
+        return GlobalReferable.Kind.OTHER;
+      }
     }
   }
 
@@ -254,7 +261,7 @@ public class ModuleDeserialization {
       dynamicReferables = new ArrayList<>();
       fieldReferables = new ArrayList<>();
       DefinitionProtos.Definition.ClassData classProto = groupProto.getDefinition().getClass_();
-      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), classProto.getIsRecord(), null, null, new ArrayList<>(), new ArrayList<>(), fieldReferables, dynamicReferables, parent.getReferable());
+      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), classProto.getIsRecord(), new ArrayList<>(), new ArrayList<>(), fieldReferables, dynamicReferables, parent.getReferable());
     } else {
       dynamicReferables = null;
       fieldReferables = new ArrayList<>(0);
@@ -347,7 +354,7 @@ public class ModuleDeserialization {
   private TopLevelDefinition readDefinition(DefinitionProtos.Definition defProto, TCDefReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
     final TopLevelDefinition def;
     switch (defProto.getDefinitionDataCase()) {
-      case CLASS: {
+      case CLASS -> {
         ClassDefinition classDef = new ClassDefinition(referable);
         for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
           DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
@@ -360,9 +367,8 @@ public class ModuleDeserialization {
           }
         }
         def = classDef;
-        break;
       }
-      case DATA: {
+      case DATA -> {
         DataDefinition dataDef = new DataDefinition(referable);
         if (fillInternalDefinitions) {
           for (DefinitionProtos.Definition.DataData.Constructor constructor : defProto.getData().getConstructorList()) {
@@ -375,36 +381,22 @@ public class ModuleDeserialization {
           }
         }
         def = dataDef;
-        break;
       }
-      case FUNCTION:
-        def = new FunctionDefinition(referable);
-        break;
-      case CONSTRUCTOR:
-        def = new DConstructor(referable);
-        break;
-      default:
-        throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
+      case FUNCTION -> def = new FunctionDefinition(referable);
+      case CONSTRUCTOR -> def = new DConstructor(referable);
+      default -> throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
     def.setLevelParameters(readLevelParameters(defProto.getLevelParamList(), defProto.getIsStdLevels()));
     return def;
   }
 
   private static Precedence readPrecedence(DefinitionProtos.Precedence precedenceProto) throws DeserializationException {
-    Precedence.Associativity assoc;
-    switch (precedenceProto.getAssoc()) {
-      case LEFT:
-        assoc = Precedence.Associativity.LEFT_ASSOC;
-        break;
-      case RIGHT:
-        assoc = Precedence.Associativity.RIGHT_ASSOC;
-        break;
-      case NON_ASSOC:
-        assoc = Precedence.Associativity.NON_ASSOC;
-        break;
-      default:
-        throw new DeserializationException("Unknown associativity: " + precedenceProto.getAssoc());
-    }
+    Precedence.Associativity assoc = switch (precedenceProto.getAssoc()) {
+      case LEFT -> Precedence.Associativity.LEFT_ASSOC;
+      case RIGHT -> Precedence.Associativity.RIGHT_ASSOC;
+      case NON_ASSOC -> Precedence.Associativity.NON_ASSOC;
+      default -> throw new DeserializationException("Unknown associativity: " + precedenceProto.getAssoc());
+    };
     return new Precedence(assoc, (byte) precedenceProto.getPriority(), precedenceProto.getInfix());
   }
 }

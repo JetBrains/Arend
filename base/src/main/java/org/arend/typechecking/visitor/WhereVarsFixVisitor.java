@@ -4,6 +4,7 @@ import org.arend.core.definition.Definition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.util.Pair;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.*;
@@ -222,6 +223,24 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
 
   private Referable getReferable(ParameterReferable parameterRef) {
     return myReferableMap.computeIfAbsent(parameterRef, k -> getReferable(myDefinition, k));
+  }
+
+  @Override
+  public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
+    if (expr.getFunction() instanceof Concrete.ReferenceExpression refExpr && refExpr.getReferent() instanceof MetaReferable metaRef) {
+      MetaDefinition metaDef = metaRef.getDefinition();
+      if (metaDef != null) {
+        List<Concrete.Argument> args = expr.getArguments();
+        int[] indices = metaDef.desugarArguments(args);
+        if (indices != null) {
+          for (int index : indices) {
+            args.get(index).expression = args.get(index).expression.accept(this, null);
+          }
+          return expr;
+        }
+      }
+    }
+    return super.visitApp(expr, params);
   }
 
   @Override

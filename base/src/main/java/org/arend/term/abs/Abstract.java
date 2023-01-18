@@ -95,6 +95,7 @@ public final class Abstract {
     boolean isTuplePattern();
     @Nullable Integer getInteger();
     @Nullable Referable getSingleReferable();
+    @Nullable Referable getConstructorReference();
     @Nullable Fixity getFixity();
     @NotNull List<? extends Pattern> getSequence();
     @Nullable Expression getType();

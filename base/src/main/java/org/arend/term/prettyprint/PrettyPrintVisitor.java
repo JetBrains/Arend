@@ -372,7 +372,30 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        pp.prettyPrintParameters(expr.getParameters());
+        if (expr instanceof Concrete.PatternLamExpression lamExpr) {
+          List<Concrete.SourceNode> list = new ArrayList<>(lamExpr.getPatterns().size());
+          int i = 0;
+          for (Concrete.Pattern pattern : lamExpr.getPatterns()) {
+            list.add(pattern != null ? pattern : lamExpr.getParameters().get(i++));
+          }
+          new ListLayout<Concrete.SourceNode>(){
+            @Override
+            void printListElement(PrettyPrintVisitor ppv, Concrete.SourceNode s) {
+              if (s instanceof Concrete.Pattern) {
+                ppv.prettyPrintPattern((Concrete.Pattern) s, (byte) (Concrete.Pattern.PREC + 1), false);
+              } else {
+                ppv.prettyPrintParameter((Concrete.Parameter) s);
+              }
+            }
+
+            @Override
+            String getSeparator() {
+              return " ";
+            }
+          }.doPrettyPrint(pp, list, noIndent);
+        } else {
+          pp.prettyPrintParameters(expr.getParameters());
+        }
       }
 
       @Override
@@ -775,12 +798,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         }
       }.doPrettyPrint(this, noIndent);
     } else {
-      for (int i = 0; i < clause.getPatterns().size(); i++) {
-        prettyPrintPattern(clause.getPatterns().get(i), Concrete.Pattern.PREC, false);
-        if (i != clause.getPatterns().size() - 1) {
-          myBuilder.append(", ");
-        }
-      }
+      prettyPrintPatterns(clause.getPatterns(), true);
     }
   }
 
@@ -1280,14 +1298,18 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (clause.getPatterns() == null) {
       return;
     }
+    prettyPrintPatterns(clause.getPatterns(), true);
+  }
+
+  private void prettyPrintPatterns(List<? extends Concrete.Pattern> patterns, boolean withComma) {
     boolean first = true;
-    for (Concrete.Pattern pattern : clause.getPatterns()) {
+    for (Concrete.Pattern pattern : patterns) {
       if (first) {
         first = false;
       } else {
-        myBuilder.append(", ");
+        myBuilder.append(withComma ? ", " : " ");
       }
-      prettyPrintPattern(pattern, Concrete.Pattern.PREC, false);
+      prettyPrintPattern(pattern, withComma ? Concrete.Pattern.PREC : Concrete.Pattern.PREC + 1, false);
     }
   }
 
@@ -1311,23 +1333,15 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       myBuilder.append(((Concrete.NumberPattern) pattern).getNumber());
     } else if (pattern instanceof Concrete.TuplePattern) {
       myBuilder.append('(');
-      boolean first = true;
-      for (Concrete.Pattern arg : ((Concrete.TuplePattern) pattern).getPatterns()) {
-        if (first) {
-          first = false;
-        } else {
-          myBuilder.append(',');
-        }
-        prettyPrintPattern(arg, Concrete.Pattern.PREC, false);
-      }
+      prettyPrintPatterns(pattern.getPatterns(), true);
       myBuilder.append(')');
     } else if (pattern instanceof Concrete.ConstructorPattern conPattern) {
       if ((withParens || !conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC) && pattern.isExplicit()) myBuilder.append('(');
 
       myBuilder.append(conPattern.getConstructor() == null ? "_" : conPattern.getConstructor().textRepresentation());
-      for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
+      if (!conPattern.getPatterns().isEmpty()) {
         myBuilder.append(' ');
-        prettyPrintPattern(patternArg, (byte) (Concrete.Pattern.PREC + 1), false);
+        prettyPrintPatterns(conPattern.getPatterns(), false);
       }
 
       if ((withParens || !conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC) && pattern.isExplicit()) myBuilder.append(')');

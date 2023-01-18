@@ -522,10 +522,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
     Expression arg = atExpr.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
-    if (!(arg instanceof ArrayExpression)) {
+    if (!(arg instanceof ArrayExpression arrayExpr)) {
       return correctOrder ? visitDefCall(atExpr, otherExpr) : otherExpr instanceof FunCallExpression && ((FunCallExpression) otherExpr).getDefinition() == Prelude.ARRAY_INDEX ? visitDefCall((FunCallExpression) otherExpr, atExpr) : otherExpr.accept(this, atExpr, type);
     }
-    for (Expression element : ((ArrayExpression) arg).getElements()) {
+    if (arrayExpr.getTail() != null) {
+      return false;
+    }
+    for (Expression element : arrayExpr.getElements()) {
       if (!compare(element, otherExpr, type, false)) {
         return false;
       }
@@ -1413,7 +1416,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
             isGE = type2 instanceof DataCallExpression && ((DataCallExpression) type2).getDefinition() == Prelude.FIN || type1 instanceof DataCallExpression && ((DataCallExpression) type1).getDefinition() == Prelude.NAT;
           }
           myCMP = isGE ? CMP.GE : CMP.LE;
-          TypecheckerState state = new TypecheckerState(null, 0, 0, null, null, null);
+          TypecheckerState state = new TypecheckerState(null, 0, 0, null, null, null, true);
           myEquations.saveState(state);
           ok = normalizedCompare(type1, type2, Type.OMEGA, false);
           myCMP = origCMP;

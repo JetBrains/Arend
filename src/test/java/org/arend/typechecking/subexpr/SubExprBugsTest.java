@@ -1,6 +1,5 @@
 package org.arend.typechecking.subexpr;
 
-import org.arend.core.definition.Definition;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.jetbrains.annotations.NotNull;
@@ -11,14 +10,16 @@ import static org.junit.Assert.*;
 /**
  * For GitHub issues
  */
-public class SubExprBugs extends TypeCheckingTestCase {
+public class SubExprBugsTest extends TypeCheckingTestCase {
   @Test
   public void issue168() {
     var resolved = resolveNamesDef(
-        "\\func test => f 114 \\where {\n" +
-            "  \\func F => \\Pi Nat -> Nat\n" +
-            "  \\func f : F => \\lam i => i Nat.+ 514\n" +
-            "}");
+      """
+        \\func test => f 114 \\where {
+          \\func F => \\Pi Nat -> Nat
+          \\func f : F => \\lam i => i Nat.+ 514
+        }
+        """);
     var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
@@ -45,10 +46,12 @@ public class SubExprBugs extends TypeCheckingTestCase {
   @Test
   public void issue195() {
     var resolved = resolveNamesDef(
-        "\\record Kibou \\extends No\n" +
-            "  | hana => 114514 \\where {\n" +
-            "    \\record No | hana : Nat\n" +
-            "  }");
+      """
+        \\record Kibou \\extends No
+          | hana => 114514 \\where {
+            \\record No | hana : Nat
+          }
+        """);
     var concreteDef = (Concrete.ClassDefinition) resolved.getDefinition();
     var classField = (Concrete.ClassFieldImpl) concreteDef.getElements().get(0);
     assertNotNull(classField);
@@ -63,13 +66,15 @@ public class SubExprBugs extends TypeCheckingTestCase {
   @Test
   public void issue196() {
     var resolved = resolveNamesDef(
-      "\\func Dorothy : Alice \\cowith\n" +
-        " | rbq {\n" +
-        "   | level => 114514\n" +
-        " } \\where {\n" +
-        "    \\record Rbq | level : Nat\n" +
-        "    \\record Alice (rbq : Rbq)\n" +
-        "  }");
+      """
+        \\func Dorothy : Alice \\cowith
+         | rbq {
+           | level => 114514
+         } \\where {
+            \\record Rbq | level : Nat
+            \\record Alice (rbq : Rbq)
+          }
+        """);
     var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     var classField = (Concrete.ClassFieldImpl) concreteDef.getBody().getCoClauseElements().get(0);
     assertNotNull(classField);
@@ -82,11 +87,11 @@ public class SubExprBugs extends TypeCheckingTestCase {
 
   @Test
   public void issue252() {
-    var record = resolveNamesDef(
+    typeCheckModule(
       "\\record Tony\n" +
         "  | beta (lam : \\Set0) (b : \\Prop) (d : lam) (a : b) : b");
-    var concreteDef = (Concrete.ClassDefinition) record.getDefinition();
-    var def = typeCheckDef(record);
+    var concreteDef = (Concrete.ClassDefinition) getConcreteDesugarized("Tony");
+    var def = getDefinition("Tony");
     assertTrue(concreteDef.isRecord());
     var field = (Concrete.ClassField) concreteDef.getElements().get(0);
     var parameters = field.getParameters();

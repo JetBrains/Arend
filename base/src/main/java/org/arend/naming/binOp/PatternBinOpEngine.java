@@ -28,20 +28,22 @@ public class PatternBinOpEngine implements BinOpEngine<Concrete.Pattern> {
 
   @Override
   public @NotNull Concrete.Pattern wrapSequence(Object data, Concrete.@NotNull Pattern base, List<@NotNull Pair<? extends Concrete.Pattern, Boolean>> explicitComponents) {
-    if (base instanceof Concrete.ConstructorPattern) {
+    if (base instanceof Concrete.ConstructorPattern conBase) {
       ArrayList<Concrete.Pattern> newPatterns = new ArrayList<>(base.getPatterns());
       for (Pair<? extends Concrete.Pattern, Boolean> comp : explicitComponents) {
         newPatterns.add(comp.proj1);
       }
-      return new Concrete.ConstructorPattern(data, ((Concrete.ConstructorPattern) base).getConstructor(), newPatterns, base.getAsReferable());
+      return new Concrete.ConstructorPattern(data, conBase.getConstructorData(), conBase.getConstructor(), newPatterns, base.getAsReferable());
     } else if (base instanceof Concrete.UnparsedConstructorPattern || base instanceof Concrete.NumberPattern || base instanceof Concrete.TuplePattern) {
       ArrayList<Concrete.BinOpSequenceElem<Concrete.Pattern>> newPatterns = new ArrayList<>(List.of(new Concrete.BinOpSequenceElem<>(base, Fixity.NONFIX, base.isExplicit())));
       for (Pair<? extends Concrete.Pattern, Boolean> comp : explicitComponents) {
         newPatterns.add(new Concrete.BinOpSequenceElem<>(comp.proj1, Fixity.NONFIX, comp.proj2));
       }
       return new Concrete.UnparsedConstructorPattern(data, base.isExplicit(), newPatterns, base.getAsReferable());
+    } else if (base instanceof Concrete.NamePattern) {
+      return new Concrete.ConstructorPattern(data, base.getData(), getReferable(base), explicitComponents.stream().map((pair) -> pair.proj1).collect(Collectors.toList()), base.getAsReferable());
     } else {
-      return new Concrete.ConstructorPattern(data, getReferable(base), explicitComponents.stream().map((pair) -> pair.proj1).collect(Collectors.toList()), base.getAsReferable());
+      throw new IllegalStateException();
     }
   }
 
@@ -53,12 +55,12 @@ public class PatternBinOpEngine implements BinOpEngine<Concrete.Pattern> {
       List<Pair<? extends Concrete.Pattern, Boolean>> patterns;
       if (right instanceof Concrete.ConstructorPattern && !(((Concrete.ConstructorPattern) right).getConstructor() instanceof GlobalReferable)) {
         patterns = new ArrayList<>(Collections.singleton(Pair.create(new Concrete.NamePattern(right.getData(), right.isExplicit(), ((Concrete.ConstructorPattern) right).getConstructor(), null), right.isExplicit())));
-        patterns.addAll(right.getPatterns().stream().map(pt -> Pair.create(pt, pt.isExplicit())).collect(Collectors.toList()));
+        patterns.addAll(right.getPatterns().stream().map(pt -> Pair.create(pt, pt.isExplicit())).toList());
       } else if (right instanceof Concrete.UnparsedConstructorPattern) {
         patterns = ((Concrete.UnparsedConstructorPattern) right).getUnparsedPatterns().stream().map(pt -> Pair.create(pt.getComponent(), pt.isExplicit)).collect(Collectors.toList());
-      } else if (right instanceof Concrete.ConstructorPattern && !((GlobalReferable) ((Concrete.ConstructorPattern) right).getConstructor()).getPrecedence().isInfix) {
-        patterns = new ArrayList<>(List.of(Pair.create(new Concrete.ConstructorPattern(right.getData(), right.isExplicit(), ((Concrete.ConstructorPattern) right).getConstructor(), List.of(), right.getAsReferable()), right.isExplicit())));
-        patterns.addAll(right.getPatterns().stream().map(it -> Pair.create(it, it.isExplicit())).collect(Collectors.toList()));
+      } else if (right instanceof Concrete.ConstructorPattern conPattern && !((GlobalReferable) conPattern.getConstructor()).getPrecedence().isInfix) {
+        patterns = new ArrayList<>(List.of(Pair.create(new Concrete.ConstructorPattern(right.getData(), right.isExplicit(), conPattern.getData(), conPattern.getConstructor(), List.of(), right.getAsReferable()), right.isExplicit())));
+        patterns.addAll(right.getPatterns().stream().map(it -> Pair.create(it, it.isExplicit())).toList());
       } else {
         patterns = new ArrayList<>(List.of(Pair.create(new Concrete.NamePattern(null, true, leftRef, null), true), Pair.create(right, right.isExplicit())));
       }

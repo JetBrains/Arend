@@ -59,17 +59,19 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void coelimFun() {
     var referable = resolveNamesDef(
-      "\\instance t : T\n" +
-        "  | A => 114\n" +
-        "  | B => 514\n" +
-        "  | p => idp\n" +
-        "  \\where {\n" +
-        "    \\class T {\n" +
-        "      | A : Nat\n" +
-        "      | B : Nat\n" +
-        "      | p : A = A\n" +
-        "    }\n" +
-        "  }");
+      """
+        \\instance t : T
+          | A => 114
+          | B => 514
+          | p => idp
+          \\where {
+            \\class T {
+              | A : Nat
+              | B : Nat
+              | p : A = A
+            }
+          }
+        """);
     var def = (Concrete.FunctionDefinition) referable.getDefinition();
     Definition coreDef = typeCheckDef(referable);
     Concrete.ClassFieldImpl clause = (Concrete.ClassFieldImpl) def.getBody().getCoClauseElements().get(1);
@@ -82,10 +84,12 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void classes() {
     var referable = resolveNamesDef(
-      "\\class T {\n" +
-        "  | A : Nat\n" +
-        "  | B : Int\n" +
-        "}");
+      """
+        \\class T {
+          | A : Nat
+          | B : Int
+        }
+        """);
     var def = (Concrete.ClassDefinition) referable.getDefinition();
     {
       var clause = (Concrete.ClassField) def.getElements().get(0);
@@ -117,10 +121,12 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void fieldParam() {
     var referable = resolveNamesDef(
-      "\\record T {\n" +
-        "  | A : Nat -> Int\n" +
-        "  | B (a : \\Sigma) : Nat\n" +
-        "}");
+      """
+        \\record T {
+          | A : Nat -> Int
+          | B (a : \\Sigma) : Nat
+        }
+        """);
     var def = (Concrete.ClassDefinition) referable.getDefinition();
     {
       var clauseTy = (Concrete.PiExpression) ((Concrete.ClassField) def.getElements().get(0)).getResultType();
@@ -130,7 +136,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
       assertEquals("Int", accept.proj2.toString());
     }
     {
-      Concrete.TypeParameter typeParam = ((Concrete.ClassField) def.getElements().get(1)).getParameters().get(1);
+      Concrete.TypeParameter typeParam = ((Concrete.ClassField) def.getElements().get(1)).getParameters().get(0);
       var accept = def.accept(new CorrespondedSubDefVisitor(typeParam.getType()), typeCheckDef(referable));
       assertNotNull(accept);
       assertEquals("\\Sigma", accept.proj1.toString());
@@ -141,15 +147,17 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void cowithFun() {
     var referable = resolveNamesDef(
-      "\\func t : R \\cowith\n" +
-        "  | pre  => 114\n" +
-        "  | post => 514\n" +
-        "  \\where {\n" +
-        "    \\record R {\n" +
-        "      | pre  : Nat\n" +
-        "      | post : Nat\n" +
-        "    }\n" +
-        "  }");
+      """
+        \\func t : R \\cowith
+          | pre  => 114
+          | post => 514
+          \\where {
+            \\record R {
+              | pre  : Nat
+              | post : Nat
+            }
+          }
+        """);
     var def = (Concrete.FunctionDefinition) referable.getDefinition();
     Definition coreDef = typeCheckDef(referable);
     var clause = (Concrete.ClassFieldImpl) def.getBody().getCoClauseElements().get(1);
@@ -162,9 +170,11 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void elimFun() {
     var referable = resolveNamesDef(
-      "\\func f (a b c : Nat): Nat \\elim b\n" +
-        "  | zero => a\n" +
-        "  | suc b => c");
+      """
+        \\func f (a b c : Nat): Nat \\elim b
+          | zero => a
+          | suc b => c
+        """);
     var def = (Concrete.FunctionDefinition) referable.getDefinition();
     Definition coreDef = typeCheckDef(referable);
     var clauses = def.getBody().getClauses();

@@ -1,5 +1,6 @@
 package org.arend.typechecking.order.listener;
 
+import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
@@ -22,6 +23,7 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.ReplaceDataVisitor;
 import org.arend.term.group.Group;
 import org.arend.typechecking.*;
 import org.arend.typechecking.computation.BooleanComputationRunner;
@@ -55,6 +57,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   private final ReferableConverter myReferableConverter;
   private final PartialComparator<TCDefReferable> myComparator;
   private final ArendExtensionProvider myExtensionProvider;
+  private final Map<TCDefReferable, Concrete.Definition> myDesugaredDefinitions = new HashMap<>();
   private List<TCDefReferable> myCurrentDefinitions = Collections.emptyList();
   private boolean myHeadersAreOK = true;
 
@@ -203,11 +206,10 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   public void unitFound(Concrete.ResolvableDefinition resolvableDefinition, boolean recursive) {
     myHeadersAreOK = true;
 
-    if (!(resolvableDefinition instanceof Concrete.Definition)) {
+    if (!(resolvableDefinition instanceof Concrete.Definition definition)) {
       return;
     }
 
-    Concrete.Definition definition = (Concrete.Definition) resolvableDefinition;
     if (recursive) {
       Set<TCReferable> dependencies = new HashSet<>();
       definition.accept(new CollectDefCallsVisitor(dependencies, false), null);
@@ -224,6 +226,10 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     ArendExtension extension = myExtensionProvider.getArendExtension(definition.getData());
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(new LocalErrorReporter(definition.getData(), myErrorReporter), null, extension);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
+    definition = (Concrete.Definition) definition.accept(new ReplaceDataVisitor(), null);
+    if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind().isUse()) {
+      myDesugaredDefinitions.put(definition.getData(), definition);
+    }
     WhereVarsFixVisitor.fixDefinition(Collections.singletonList(definition), myErrorReporter);
     DesugarVisitor.desugar(definition, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
@@ -249,7 +255,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       if (recursive && typechecked instanceof DataDefinition) {
         ((DataDefinition) typechecked).setRecursiveDefinitions(Collections.singleton((DataDefinition) typechecked));
       }
-      findAxioms(Collections.singletonList(definition), Collections.singleton(typechecked));
+      findAxiomsAndGoals(Collections.singletonList(definition), Collections.singleton(typechecked));
     }
     if (definition.isRecursive() && typechecked instanceof FunctionDefinition) {
       checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, definition), clauses == null ? Collections.emptyMap() : Collections.singletonMap((FunctionDefinition) typechecked, clauses));
@@ -281,8 +287,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
         cycle.add(definition.getData());
       }
 
-      if (definition instanceof Concrete.Definition) {
-        Concrete.Definition def = (Concrete.Definition) definition;
+      if (definition instanceof Concrete.Definition def) {
         Definition typechecked = def.getData().getTypechecked();
         if (typechecked == null) {
           typechecked = newDefinition(def);
@@ -298,11 +303,19 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
 
   @Override
   public void preBodiesFound(List<Concrete.Definition> definitions) {
-    WhereVarsFixVisitor.fixDefinition(definitions, myErrorReporter);
+    List<Concrete.Definition> newDefs = new ArrayList<>(definitions.size());
+    for (Concrete.Definition definition : definitions) {
+      Concrete.Definition def = (Concrete.Definition) definition.accept(new ReplaceDataVisitor(), null);
+      myDesugaredDefinitions.put(definition.getData(), def);
+      newDefs.add(def);
+    }
+    WhereVarsFixVisitor.fixDefinition(newDefs, myErrorReporter);
   }
 
   @Override
   public void headerFound(Concrete.Definition definition) {
+    Concrete.Definition newDef = myDesugaredDefinitions.get(definition.getData());
+    if (newDef != null) definition = newDef;
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingHeaderStarted(definition.getData());
 
@@ -333,12 +346,14 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     List<Concrete.Definition> orderedDefinitions = new ArrayList<>(definitions.size());
     List<Concrete.Definition> otherDefs = new ArrayList<>();
     for (Concrete.Definition definition : definitions) {
-      Definition typechecked = definition.getData().getTypechecked();
+      Concrete.Definition newDef = myDesugaredDefinitions.get(definition.getData());
+      if (newDef == null) newDef = definition;
+      Definition typechecked = newDef.getData().getTypechecked();
       if (typechecked instanceof DataDefinition) {
         dataDefinitions.add((DataDefinition) typechecked);
-        orderedDefinitions.add(definition);
+        orderedDefinitions.add(newDef);
       } else {
-        otherDefs.add(definition);
+        otherDefs.add(newDef);
       }
     }
     orderedDefinitions.addAll(otherDefs);
@@ -440,7 +455,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       setParametersOriginalDefinitionsDependency(definition);
     }
 
-    findAxioms(definitions, newDefs);
+    findAxiomsAndGoals(orderedDefinitions, newDefs);
 
     for (Definition definition : allDefinitions) {
       typecheckingBodyFinished(definition.getReferable(), definition);
@@ -454,11 +469,14 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   @Override
   public void useFound(List<Concrete.UseDefinition> definitions) {
     myCurrentDefinitions = new ArrayList<>();
+    List<Concrete.UseDefinition> newDefs = new ArrayList<>(definitions.size());
     for (Concrete.UseDefinition definition : definitions) {
       myCurrentDefinitions.add(definition.getData());
       myCurrentDefinitions.add(definition.getUseParent());
+      Concrete.Definition newDef = myDesugaredDefinitions.get(definition.getData());
+      newDefs.add(newDef instanceof Concrete.UseDefinition ? (Concrete.UseDefinition) newDef : definition);
     }
-    UseTypechecking.typecheck(definitions, myErrorReporter);
+    UseTypechecking.typecheck(newDefs, myErrorReporter);
     myCurrentDefinitions = Collections.emptyList();
   }
 
@@ -467,13 +485,31 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     DefinitionTypechecker.setDefaultDependencies(definition);
   }
 
-  private void findAxioms(List<? extends Concrete.ResolvableDefinition> definitions, Set<Definition> newDefs) {
+  private void findAxiomsAndGoals(List<? extends Concrete.ResolvableDefinition> definitions, Set<Definition> newDefs) {
     Set<FunctionDefinition> axioms = new HashSet<>();
+    Set<Definition> goals = new HashSet<>();
     VoidExpressionVisitor<Void> visitor = new VoidExpressionVisitor<>() {
+      @Override
+      public Void visitReference(ReferenceExpression expr, Void params) {
+        if (expr.getBinding() instanceof PersistentEvaluatingBinding) {
+          ((PersistentEvaluatingBinding) expr.getBinding()).getExpression().accept(this, params);
+        }
+        return null;
+      }
+
       @Override
       public Void visitDefCall(DefCallExpression expr, Void params) {
         axioms.addAll(expr.getDefinition().getAxioms());
+        goals.addAll(expr.getDefinition().getGoals());
         return super.visitDefCall(expr, params);
+      }
+
+      @Override
+      public Void visitError(ErrorExpression expr, Void params) {
+        if (expr.isGoal()) {
+          goals.addAll(newDefs);
+        }
+        return null;
       }
     };
 
@@ -482,11 +518,13 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       if (ref instanceof TCDefReferable) {
         Definition def = ((TCDefReferable) ref).getTypechecked();
         def.accept(visitor, null);
-        if (def instanceof TopLevelDefinition && newDefs.contains(def)) {
+        if (def instanceof TopLevelDefinition topDef && newDefs.contains(def)) {
           if (definition instanceof Concrete.BaseFunctionDefinition && ((Concrete.BaseFunctionDefinition) definition).getKind() == FunctionKind.AXIOM) {
             axioms.add((FunctionDefinition) def);
           }
-          ((TopLevelDefinition) def).setAxioms(axioms);
+          topDef.setAxioms(axioms);
+          goals.addAll(topDef.getGoals());
+          topDef.setGoals(goals);
         }
       }
     }

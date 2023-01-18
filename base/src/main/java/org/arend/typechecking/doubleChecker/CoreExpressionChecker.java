@@ -678,7 +678,12 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (!(type instanceof ClassCallExpression classCall && ((ClassCallExpression) type).getDefinition() == Prelude.DEP_ARRAY)) {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.STD), type, mySourceNode), errorExpr));
       }
-      Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(classCall);
+      Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+      if (length != null) length = length.normalize(NormalizationMode.WHNF);
+      if (length != null && !(length instanceof IntegerExpression || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC)) {
+        throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(classCall, mySourceNode), errorExpr));
+      }
+      Boolean isEmpty = length == null ? null : length instanceof IntegerExpression && ((IntegerExpression) length).isZero();
       if (isEmpty != null && isEmpty != (constructor == Prelude.EMPTY_ARRAY)) {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text(Prelude.DEP_ARRAY.getName() + " " + (isEmpty ? "0" : "(" + Prelude.SUC + " _)")), type, mySourceNode), errorExpr));
       }

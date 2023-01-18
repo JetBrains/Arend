@@ -2,7 +2,7 @@ package org.arend.naming;
 
 import org.arend.Matchers;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.expr.ConcreteCompareVisitor;
+import org.arend.term.concrete.ConcreteCompareVisitor;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 

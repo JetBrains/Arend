@@ -1,6 +1,7 @@
 package org.arend.naming;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.error.DummyErrorReporter;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
@@ -16,8 +17,10 @@ import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.*;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.ReplaceDataVisitor;
 import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TestLocalErrorReporter;
+import org.arend.typechecking.visitor.DesugarVisitor;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +55,16 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   public Concrete.ReferableDefinition getConcrete(String path) {
     TCReferable ref = get(path);
     return ref instanceof ConcreteLocatedReferable ? ((ConcreteLocatedReferable) ref).getDefinition() : null;
+  }
+
+  public Concrete.ResolvableDefinition getConcreteDesugarized(String path) {
+    Concrete.ReferableDefinition def = getConcrete(path);
+    if (!(def instanceof Concrete.ResolvableDefinition)) {
+      throw new IllegalArgumentException();
+    }
+    Concrete.ResolvableDefinition result = ((Concrete.ResolvableDefinition) def).accept(new ReplaceDataVisitor(), null);
+    DesugarVisitor.desugar(result, DummyErrorReporter.INSTANCE);
+    return result;
   }
 
   protected void addMeta(String name, Precedence prec, MetaDefinition meta) {

@@ -200,10 +200,38 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     } else if (pattern instanceof EmptyPattern) {
       builder.setEmpty(ExpressionProtos.Pattern.Empty.newBuilder()
         .setVar(writeParameter(pattern.getFirstBinding())));
-    } else if (pattern instanceof ConstructorExpressionPattern) {
+    } else if (pattern instanceof ConstructorExpressionPattern conPattern) {
       ExpressionProtos.Pattern.ExpressionConstructor.Builder pBuilder = ExpressionProtos.Pattern.ExpressionConstructor.newBuilder();
-      pBuilder.setExpression(writeExpr(((ConstructorExpressionPattern) pattern).getDataExpression()));
-      for (ExpressionPattern subPattern : ((ConstructorExpressionPattern) pattern).getSubPatterns()) {
+      Binding thisBinding = conPattern.getArrayThisBinding();
+      Expression dataExpr = conPattern.getDataExpression();
+      if (thisBinding != null && dataExpr instanceof FunCallExpression funCall && funCall.getDefCallArguments().size() <= 2) {
+        ExpressionProtos.Pattern.ExpressionConstructor.ArrayData.Builder arrayDataBuilder = ExpressionProtos.Pattern.ExpressionConstructor.ArrayData.newBuilder();
+        Boolean isEmpty = conPattern.isArrayEmpty();
+        if (thisBinding instanceof ClassCallExpression.ClassCallBinding) {
+          arrayDataBuilder.setClassCall(writeClassCall(((ClassCallExpression.ClassCallBinding) thisBinding).getTypeExpr()));
+        } else {
+          arrayDataBuilder.setThisBinding(registerBinding(thisBinding));
+        }
+        arrayDataBuilder.setKind(isEmpty == null ? ExpressionProtos.Pattern.ExpressionConstructor.ArrayData.Kind.UNKNOWN : isEmpty ? ExpressionProtos.Pattern.ExpressionConstructor.ArrayData.Kind.EMPTY : ExpressionProtos.Pattern.ExpressionConstructor.ArrayData.Kind.NON_EMPTY);
+        arrayDataBuilder.setConstructor(myCallTargetIndexProvider.getDefIndex(funCall.getDefinition()));
+        arrayDataBuilder.setLevels(writeLevels(funCall.getLevels(), funCall.getDefinition()));
+        if (funCall.getDefinition() == Prelude.ARRAY_CONS) {
+          if (funCall.getDefCallArguments().size() >= 1 && funCall.getDefCallArguments().get(0) != null) {
+            arrayDataBuilder.setLength(funCall.getDefCallArguments().get(0).accept(this, null));
+          }
+          if (funCall.getDefCallArguments().size() >= 2 && funCall.getDefCallArguments().get(1) != null) {
+            arrayDataBuilder.setElementsType(funCall.getDefCallArguments().get(1).accept(this, null));
+          }
+        } else {
+          if (funCall.getDefCallArguments().size() >= 1 && funCall.getDefCallArguments().get(0) != null) {
+            arrayDataBuilder.setElementsType(funCall.getDefCallArguments().get(0).accept(this, null));
+          }
+        }
+        pBuilder.setArrayData(arrayDataBuilder.build());
+      } else {
+        pBuilder.setExpression(writeExpr(dataExpr));
+      }
+      for (ExpressionPattern subPattern : conPattern.getSubPatterns()) {
         pBuilder.addPattern(writePattern(subPattern));
       }
       builder.setExpressionConstructor(pBuilder.build());

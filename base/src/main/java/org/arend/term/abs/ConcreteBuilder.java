@@ -254,8 +254,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     buildClassParameters(def.getParameters(), classDef, elements);
 
     for (Abstract.ClassElement element : def.getClassElements()) {
-      if (element instanceof Abstract.ClassField) {
-        Abstract.ClassField field = (Abstract.ClassField) element;
+      if (element instanceof Abstract.ClassField field) {
         Abstract.Expression resultType = field.getResultType();
         LocatedReferable fieldRefOrig = field.getReferable();
         TCReferable fieldRef = myReferableConverter.toDataLocatedReferable(fieldRefOrig);
@@ -276,8 +275,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         }
       } else if (element instanceof Abstract.ClassFieldImpl) {
         buildImplementation(def, (Abstract.ClassFieldImpl) element, elements);
-      } else if (element instanceof Abstract.OverriddenField) {
-        Abstract.OverriddenField field = (Abstract.OverriddenField) element;
+      } else if (element instanceof Abstract.OverriddenField field) {
         Abstract.Reference ref = field.getOverriddenField();
         Abstract.Expression type = field.getResultType();
         if (ref == null || type == null) {
@@ -490,7 +488,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       return cPattern;
     }
 
-    Referable longRef = pattern.getSingleReferable();
+    Referable longRef = pattern.getConstructorReference();
 
     Abstract.Expression type = pattern.getType();
 

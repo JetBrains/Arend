@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitionVisitor<Scope, Void> {
   private boolean myResolveTypeClassReferences;
+  private boolean myReportDefinitionBeforeResolve;
   private final ConcreteProvider myConcreteProvider;
   private final ReferableConverter myReferableConverter;
   private final ErrorReporter myErrorReporter;
@@ -46,6 +47,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter) {
     myResolveTypeClassReferences = false;
+    myReportDefinitionBeforeResolve = true;
     myConcreteProvider = concreteProvider;
     myReferableConverter = referableConverter == null ? IdReferableConverter.INSTANCE : referableConverter;
     myErrorReporter = errorReporter;
@@ -54,6 +56,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, ResolverListener resolverListener) {
     myResolveTypeClassReferences = false;
+    myReportDefinitionBeforeResolve = true;
     myConcreteProvider = concreteProvider;
     myReferableConverter = referableConverter == null ? IdReferableConverter.INSTANCE : referableConverter;
     myErrorReporter = errorReporter;
@@ -62,6 +65,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, boolean resolveTypeClassReferences, ErrorReporter errorReporter, ResolverListener resolverListener) {
     myResolveTypeClassReferences = resolveTypeClassReferences;
+    myReportDefinitionBeforeResolve = resolveTypeClassReferences;
     myConcreteProvider = concreteProvider;
     myReferableConverter = referableConverter == null ? IdReferableConverter.INSTANCE : referableConverter;
     myErrorReporter = errorReporter;
@@ -111,8 +115,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    if (expr instanceof Concrete.BinOpSequenceExpression) {
-      Concrete.BinOpSequenceExpression binOpExpr = (Concrete.BinOpSequenceExpression) expr;
+    if (expr instanceof Concrete.BinOpSequenceExpression binOpExpr) {
       for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : binOpExpr.getSequence()) {
         if (elem.getComponent() instanceof Concrete.ReferenceExpression) {
           if (!tryResolve((Concrete.ReferenceExpression) elem.getComponent(), exprVisitor)) {
@@ -158,7 +161,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
-    if (myResolverListener != null) {
+    if (myResolverListener != null && myReportDefinitionBeforeResolve) {
       myResolverListener.beforeDefinitionResolved(def);
     }
 
@@ -227,12 +230,13 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
+    if (myResolverListener != null && myReportDefinitionBeforeResolve) {
+      myResolverListener.beforeDefinitionResolved(def);
+    }
+
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
       if (def.getStage() == Concrete.Stage.NOT_RESOLVED) {
-        if (myResolverListener != null) {
-          myResolverListener.beforeDefinitionResolved(def);
-        }
         if (def.getBody() instanceof Concrete.TermFunctionBody) {
           resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false);
         }
@@ -255,8 +259,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         }
       }
 
-      if (def instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
-        Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
+      if (def instanceof Concrete.CoClauseFunctionDefinition function && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
         if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
           List<Concrete.Parameter> parameters = new SubstConcreteVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
           for (Concrete.Parameter parameter : parameters) {
@@ -268,8 +271,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         if (function.getImplementedField() instanceof UnresolvedReference || function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet()) {
           Referable classRef = null;
           List<? extends Concrete.ClassElement> elements = Collections.emptyList();
-          if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
-            Concrete.BaseFunctionDefinition enclosingFunction = (Concrete.BaseFunctionDefinition) enclosingDef;
+          if (enclosingDef instanceof Concrete.BaseFunctionDefinition enclosingFunction) {
             if (enclosingFunction.getResultType() != null) {
               if (enclosingFunction.getStage().ordinal() < Concrete.Stage.RESOLVED.ordinal()) {
                 resolveTypeClassReference(enclosingFunction.getParameters(), enclosingFunction.getResultType(), scope, true);
@@ -407,8 +409,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     SyntacticDesugarVisitor.desugar(def, myLocalErrorReporter);
 
-    if (def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.FUNC_COCLAUSE && ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() > 0) {
-      Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
+    if (def instanceof Concrete.CoClauseFunctionDefinition function && def.getKind() == FunctionKind.FUNC_COCLAUSE && ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() > 0) {
       BaseConcreteExpressionVisitor<Void> visitor = new BaseConcreteExpressionVisitor<>() {
         @Override
         public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
@@ -482,7 +483,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
-    if (myResolverListener != null) {
+    if (myResolverListener != null && myReportDefinitionBeforeResolve) {
       myResolverListener.beforeDefinitionResolved(def);
     }
 
@@ -573,7 +574,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   private void visitConstructorClause(Concrete.ConstructorClause clause, ExpressionResolveNameVisitor exprVisitor) {
     List<Concrete.Pattern> patterns = clause.getPatterns();
     if (patterns != null) {
-      exprVisitor.visitPatterns(patterns, new HashMap<>(), true);
+      exprVisitor.visitPatterns(patterns, new HashMap<>());
     }
   }
 
@@ -603,7 +604,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
-    if (myResolverListener != null) {
+    if (myResolverListener != null && myReportDefinitionBeforeResolve) {
       myResolverListener.beforeDefinitionResolved(def);
     }
 
@@ -676,8 +677,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         if (ref instanceof ClassReferable) {
           exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, (ClassReferable) ref);
         }
-      } else if (element instanceof Concrete.OverriddenField) {
-        Concrete.OverriddenField field = (Concrete.OverriddenField) element;
+      } else if (element instanceof Concrete.OverriddenField field) {
         Referable ref = def.getData().getUnderlyingReferable();
         if (!(ref instanceof ClassReferable)) {
           ref = ref.getUnderlyingReferable();
@@ -721,7 +721,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       for (int i = groups.size() - 2; i >= 0; i--) {
         LocatedReferable groupRef = groups.get(i).getReferable();
         var def = myConcreteProvider.getConcrete(groupRef);
-        scope = CachingScope.make(makeScope(groups.get(i), scope, def instanceof Concrete.ClassDefinition ? LexicalScope.Extent.EXTERNAL_AND_FIELDS : LexicalScope.Extent.EVERYTHING));
+        scope = CachingScope.make(makeScope(groups.get(i), scope, LexicalScope.Extent.EVERYTHING));
         if (def instanceof Concrete.FunctionDefinition) {
           resolveFunctionHeader((Concrete.BaseFunctionDefinition) def, scope);
         } else if (def instanceof Concrete.DataDefinition) {
@@ -741,7 +741,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
   public void resolveGroupWithTypes(Group group, Scope scope) {
     myResolveTypeClassReferences = true;
+    myReportDefinitionBeforeResolve = true;
     resolveGroup(group, scope);
+    myReportDefinitionBeforeResolve = false;
     myResolveTypeClassReferences = false;
     resolveGroup(group, scope);
   }

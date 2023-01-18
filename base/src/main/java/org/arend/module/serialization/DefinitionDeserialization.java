@@ -18,7 +18,6 @@ import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
-import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -42,20 +41,11 @@ public class DefinitionDeserialization implements ArendDeserializer {
     final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def);
 
     switch (defProto.getDefinitionDataCase()) {
-      case CLASS:
-        fillInClassDefinition(defDeserializer, defProto.getClass_(), (ClassDefinition) def);
-        break;
-      case DATA:
-        fillInDataDefinition(defDeserializer, defProto.getData(), (DataDefinition) def);
-        break;
-      case CONSTRUCTOR:
-        fillInDConstructor(defDeserializer, defProto.getConstructor(), (DConstructor) def);
-        break;
-      case FUNCTION:
-        fillInFunctionDefinition(defDeserializer, defProto.getFunction(), (FunctionDefinition) def);
-        break;
-      default:
-        throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
+      case CLASS -> fillInClassDefinition(defDeserializer, defProto.getClass_(), (ClassDefinition) def);
+      case DATA -> fillInDataDefinition(defDeserializer, defProto.getData(), (DataDefinition) def);
+      case CONSTRUCTOR -> fillInDConstructor(defDeserializer, defProto.getConstructor(), (DConstructor) def);
+      case FUNCTION -> fillInFunctionDefinition(defDeserializer, defProto.getFunction(), (FunctionDefinition) def);
+      default -> throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
 
     def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -185,8 +175,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
       }
     }
 
-    if (classDef.getReferable() instanceof ClassReferableImpl) {
-      ClassReferableImpl classRef = (ClassReferableImpl) classDef.getReferable();
+    if (classDef.getReferable() instanceof ClassReferableImpl classRef) {
       for (ClassDefinition superClass : classDef.getSuperClasses()) {
         Referable superRef = superClass.getReferable().getUnderlyingReferable();
         if (superRef instanceof ClassReferable) {
@@ -195,11 +184,6 @@ public class DefinitionDeserialization implements ArendDeserializer {
         if (!classDef.getSuperLevels().isEmpty()) {
           classRef.addSuperLevels(classDef.getSuperLevels().get(superClass) != null);
         }
-      }
-      if (classDef.getLevelParameters() != null) {
-        int n = classDef.getNumberOfPLevelParameters();
-        classRef.setPLevelParameters(Concrete.LevelParameters.makeLevelParameters(classDef.getLevelParameters().subList(0, n), true));
-        classRef.setHLevelParameters(Concrete.LevelParameters.makeLevelParameters(classDef.getLevelParameters().subList(n, classDef.getLevelParameters().size()), false));
       }
     }
 
@@ -274,15 +258,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
     List<Definition.TypeClassParameterKind> result = new ArrayList<>(kinds.size());
     for (DefinitionProtos.Definition.TypeClassParameterKind kind : kinds) {
       switch (kind) {
-        case YES:
-          result.add(Definition.TypeClassParameterKind.YES);
-          break;
-        case ONLY_LOCAL:
-          result.add(Definition.TypeClassParameterKind.ONLY_LOCAL);
-          break;
-        default:
-          result.add(Definition.TypeClassParameterKind.NO);
-          break;
+        case YES -> result.add(Definition.TypeClassParameterKind.YES);
+        case ONLY_LOCAL -> result.add(Definition.TypeClassParameterKind.ONLY_LOCAL);
+        default -> result.add(Definition.TypeClassParameterKind.NO);
       }
     }
     return result;
@@ -377,23 +355,17 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private CoerceData.Key readCoerceDataKey(DefinitionProtos.Definition.CoerceData.Element element) throws DeserializationException {
-    switch (element.getKeyCase()) {
-      case DEFINITION_KEY:
-        return new CoerceData.DefinitionKey(myCallTargetProvider.getCallTarget(element.getDefinitionKey().getClassifyingDef()));
-      case CONSTANT_KEY:
-        switch (element.getConstantKey()) {
-          case PI:
-            return new CoerceData.PiKey();
-          case SIGMA:
-            return new CoerceData.SigmaKey();
-          case UNIVERSE:
-            return new CoerceData.UniverseKey();
-          default:
-            return new CoerceData.AnyKey();
-        }
-      default:
-        return new CoerceData.AnyKey();
-    }
+    return switch (element.getKeyCase()) {
+      case DEFINITION_KEY ->
+        new CoerceData.DefinitionKey(myCallTargetProvider.getCallTarget(element.getDefinitionKey().getClassifyingDef()));
+      case CONSTANT_KEY -> switch (element.getConstantKey()) {
+        case PI -> new CoerceData.PiKey();
+        case SIGMA -> new CoerceData.SigmaKey();
+        case UNIVERSE -> new CoerceData.UniverseKey();
+        default -> new CoerceData.AnyKey();
+      };
+      default -> new CoerceData.AnyKey();
+    };
   }
 
   private void readCoerceData(DefinitionProtos.Definition.CoerceData coerceDataProto, CoerceData coerceData) throws DeserializationException {
@@ -476,26 +448,16 @@ public class DefinitionDeserialization implements ArendDeserializer {
       functionDef.setResultTypeLevel(defDeserializer.readExpr(functionProto.getTypeLevel()));
     }
     switch (functionProto.getBodyHiddenStatus()) {
-      case HIDDEN: functionDef.hideBody(); break;
-      case REALLY_HIDDEN: functionDef.reallyHideBody();
+      case HIDDEN -> functionDef.hideBody();
+      case REALLY_HIDDEN -> functionDef.reallyHideBody();
     }
-    FunctionDefinition.Kind kind;
-    switch (functionProto.getKind()) {
-      case LEMMA: case COCLAUSE_LEMMA:
-        kind = CoreFunctionDefinition.Kind.LEMMA;
-        break;
-      case SFUNC:
-        kind = CoreFunctionDefinition.Kind.SFUNC;
-        break;
-      case TYPE:
-        kind = CoreFunctionDefinition.Kind.TYPE;
-        break;
-      case INSTANCE:
-        kind = CoreFunctionDefinition.Kind.INSTANCE;
-        break;
-      default:
-        kind = CoreFunctionDefinition.Kind.FUNC;
-    }
+    FunctionDefinition.Kind kind = switch (functionProto.getKind()) {
+      case LEMMA, COCLAUSE_LEMMA -> CoreFunctionDefinition.Kind.LEMMA;
+      case SFUNC -> CoreFunctionDefinition.Kind.SFUNC;
+      case TYPE -> CoreFunctionDefinition.Kind.TYPE;
+      case INSTANCE -> CoreFunctionDefinition.Kind.INSTANCE;
+      default -> CoreFunctionDefinition.Kind.FUNC;
+    };
     functionDef.setKind(kind);
     functionDef.setVisibleParameter(functionProto.getVisibleParameter());
     if (functionProto.hasBody()) {
@@ -514,13 +476,14 @@ public class DefinitionDeserialization implements ArendDeserializer {
 
   private ExpressionPattern readDPattern(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DPattern proto) throws DeserializationException {
     switch (proto.getKindCase()) {
-      case BINDING:
+      case BINDING -> {
         Binding param = defDeserializer.readBindingRef(proto.getBinding());
         if (!(param instanceof DependentLink)) {
           throw new IllegalStateException();
         }
         return new BindingPattern((DependentLink) param);
-      case CONSTRUCTOR:
+      }
+      case CONSTRUCTOR -> {
         Expression expression = defDeserializer.readExpr(proto.getConstructor().getExpression());
         List<ExpressionPattern> patterns = new ArrayList<>();
         for (DefinitionProtos.Definition.DPattern pattern : proto.getConstructor().getPatternList()) {
@@ -542,8 +505,8 @@ public class DefinitionDeserialization implements ArendDeserializer {
           return new ConstructorExpressionPattern((FunCallExpression) expression, patterns);
         }
         throw new DeserializationException("Wrong pattern expression");
-      default:
-        throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
+      }
+      default -> throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
     }
   }
 

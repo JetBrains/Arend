@@ -168,23 +168,38 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return resolve(referable, scope, false, null, Referable.RefKind.EXPR);
   }
 
-  public static Concrete.Expression resolve(Concrete.ReferenceExpression refExpr, Scope scope, boolean removeRedirection, List<Referable> resolvedRefs) {
-    Referable referable = refExpr.getReferent();
-    while (referable instanceof RedirectingReferable) {
-      referable = ((RedirectingReferable) referable).getOriginalReferable();
+  public static Referable tryResolve(Referable referable, Scope scope, List<Referable> resolvedRefs) {
+    referable = RedirectingReferable.getOriginalReferable(referable);
+    if (referable instanceof UnresolvedReference) {
+      referable = RedirectingReferable.getOriginalReferable(((UnresolvedReference) referable).tryResolve(scope, resolvedRefs));
     }
+    return referable;
+  }
 
+  public static Concrete.Expression tryResolve(Concrete.ReferenceExpression refExpr, Scope scope, List<Referable> resolvedRefs) {
+    Referable referable = RedirectingReferable.getOriginalReferable(refExpr.getReferent());
+    Concrete.Expression arg = null;
+    Referable resolved = null;
+    if (referable instanceof UnresolvedReference unresolved) {
+      arg = unresolved.tryResolveArgument(scope, resolvedRefs);
+      if (unresolved.isResolved()) {
+        resolved = unresolved.resolve(scope, null);
+      }
+    }
+    refExpr.setReferent(resolved == null ? referable : resolved);
+    return arg;
+  }
+
+  public static Concrete.Expression resolve(Concrete.ReferenceExpression refExpr, Scope scope, boolean removeRedirection, List<Referable> resolvedRefs) {
+    Referable referable = RedirectingReferable.getOriginalReferable(refExpr.getReferent());
     Concrete.Expression arg = null;
     if (referable instanceof UnresolvedReference) {
       arg = ((UnresolvedReference) referable).resolveArgument(scope, resolvedRefs);
       referable = ((UnresolvedReference) referable).resolve(scope, null);
       if (removeRedirection) {
-        while (referable instanceof RedirectingReferable) {
-          referable = ((RedirectingReferable) referable).getOriginalReferable();
-        }
+        referable = RedirectingReferable.getOriginalReferable(referable);
       }
     }
-
     refExpr.setReferent(referable);
     return arg;
   }
@@ -402,7 +417,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         }
         if (ref instanceof UnresolvedReference) {
           List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
-          Concrete.Expression argument = resolve(refExpr, myScope, false, resolvedList);
+          Concrete.Expression argument = tryResolve(refExpr, myScope, resolvedList);
           convertExpr(refExpr);
           convertArgument(argument);
           elem.setComponent(argument == null ? refExpr : Concrete.AppExpression.make(refExpr.getData(), refExpr, argument, false));
@@ -443,8 +458,11 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return;
     }
 
-    if (resolvedReference.refExpr.getReferent() instanceof ErrorReference) {
-      myErrorReporter.report(((ErrorReference) resolvedReference.refExpr.getReferent()).getError());
+    if (resolvedReference.refExpr.getReferent() instanceof UnresolvedReference) {
+      resolve(resolvedReference.refExpr, myScope, false, null);
+      if (resolvedReference.refExpr.getReferent() instanceof ErrorReference) {
+        myErrorReporter.report(((ErrorReference) resolvedReference.refExpr.getReferent()).getError());
+      }
     }
     if (resolvedReference.resolvedList != null && myResolverListener != null) {
       Concrete.Expression argument = elem.getComponent() instanceof Concrete.AppExpression ? ((Concrete.AppExpression) elem.getComponent()).getArguments().get(0).expression : null;
@@ -582,7 +600,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   public void visitClause(Concrete.Clause clause, Void params) {
     if (clause instanceof Concrete.FunctionClause functionClause) {
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-        visitPatterns(clause.getPatterns(), new HashMap<>(), true);
+        visitPatterns(clause.getPatterns(), new HashMap<>());
         if (functionClause.expression != null) {
           functionClause.expression = functionClause.expression.accept(this, null);
         }
@@ -623,29 +641,54 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         return null;
       }
 
-      if (namePattern.type == null) {
-        Referable resolved = referable instanceof UnresolvedReference ? ((UnresolvedReference) referable).resolve(myParentScope, null) : myParentScope.resolveName(referable.getRefName());
-        Referable ref = resolved == null ? null : myReferableConverter.convert(RedirectingReferable.getOriginalReferable(resolved));
+      if (namePattern.type == null || referable instanceof LongUnresolvedReference) {
+        List<Referable> resolvedRefs = new ArrayList<>();
+        Referable resolved = referable instanceof LongUnresolvedReference ? ((LongUnresolvedReference) referable).resolve(myParentScope, resolvedRefs) : referable instanceof UnresolvedReference ? ((UnresolvedReference) referable).tryResolve(myParentScope, resolvedRefs) : myParentScope.resolveName(referable.getRefName());
+        Referable ref = resolved == null || resolved instanceof ErrorReference ? resolved : myReferableConverter.convert(RedirectingReferable.getOriginalReferable(resolved));
         if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind().isConstructor()) {
           if (pattern.getAsReferable() != null) {
             addReferable(pattern.getAsReferable().referable, pattern.getAsReferable().type, usedNames);
           }
-          return new Concrete.ConstructorPattern(namePattern.getData(), namePattern.isExplicit(), ref, List.of(), namePattern.getAsReferable());
+          Concrete.ConstructorPattern result = new Concrete.ConstructorPattern(namePattern.getData(), namePattern.isExplicit(), namePattern.getData(), ref, List.of(), namePattern.getAsReferable());
+          if (myResolverListener != null) {
+            myResolverListener.patternResolved(referable, ref, result, resolvedRefs);
+          }
+          return result;
+        }
+        if (ref instanceof ErrorReference) {
+          myErrorReporter.report(((ErrorReference) ref).getError());
+          Concrete.NamePattern result = new Concrete.NamePattern(namePattern.getData(), namePattern.isExplicit(), ref, namePattern.type, namePattern.fixity);
+          if (myResolverListener != null) {
+            myResolverListener.patternResolved(referable, ref, result, resolvedRefs);
+          }
+          return result;
         }
       }
 
-      LocalReferable local = referable instanceof DataContainer ? new DataLocalReferable(((DataContainer) referable).getData(), referable.getRefName()) : new LocalReferable(referable.getRefName());
+      LocalReferable local = referable.getRefName().equals("_") ? null : new DataLocalReferable(referable instanceof DataContainer ? ((DataContainer) referable).getData() : referable, referable.getRefName());
       addReferable(local, namePattern.type, usedNames);
-      return new Concrete.NamePattern(pattern.getData(), namePattern.isExplicit(), local, ((Concrete.NamePattern) pattern).type);
+      Concrete.NamePattern result = new Concrete.NamePattern(pattern.getData(), namePattern.isExplicit(), local, ((Concrete.NamePattern) pattern).type);
+      if (myResolverListener != null && local != null) {
+        myResolverListener.patternResolved(referable, local, result, Collections.singletonList(local));
+      }
+      return result;
     } else if (pattern instanceof Concrete.ConstructorPattern) {
-      visitPatterns(((Concrete.ConstructorPattern) pattern).getPatterns(), usedNames, false);
+      visitPatterns(((Concrete.ConstructorPattern) pattern).getPatterns(), null, usedNames, false);
     } else if (pattern instanceof Concrete.TuplePattern) {
-      visitPatterns(((Concrete.TuplePattern) pattern).getPatterns(), usedNames, false);
+      visitPatterns(((Concrete.TuplePattern) pattern).getPatterns(), null, usedNames, false);
     } else if (pattern instanceof Concrete.UnparsedConstructorPattern) {
       List<Concrete.BinOpSequenceElem<Concrete.Pattern>> correctedPatterns = resolveBinOpComponents((Concrete.UnparsedConstructorPattern) pattern);
       Concrete.Pattern parsedPattern = PatternBinOpEngine.parse(new Concrete.UnparsedConstructorPattern(pattern.getData(), pattern.isExplicit(), correctedPatterns, pattern.getAsReferable()), myErrorReporter);
       if (parsedPattern instanceof Concrete.ConstructorPattern) {
-        return fixParsedConstructorPattern(pattern.getData(), pattern, usedNames, parsedPattern);
+        Concrete.ConstructorPattern result = fixParsedConstructorPattern(pattern.getData(), pattern, usedNames, (Concrete.ConstructorPattern) parsedPattern);
+        visitPatterns(result.getPatterns(), null, usedNames, false);
+        if (pattern.getAsReferable() != null) {
+          addReferable(pattern.getAsReferable().referable, pattern.getAsReferable().type, usedNames);
+        }
+        if (myResolverListener != null) {
+          myResolverListener.patternParsed(result);
+        }
+        return result;
       }
       if (parsedPattern instanceof Concrete.UnparsedConstructorPattern) {
         myErrorReporter.report(new NameResolverError("Cannot parse pattern", pattern));
@@ -662,8 +705,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return pattern;
   }
 
-  private Concrete.@NotNull ConstructorPattern fixParsedConstructorPattern(@Nullable Object data, Concrete.Pattern pattern, Map<String, Referable> usedNames, Concrete.Pattern parsedPattern) {
-    Referable constructor = ((Concrete.ConstructorPattern) parsedPattern).getConstructor();
+  private Concrete.@NotNull ConstructorPattern fixParsedConstructorPattern(@Nullable Object data, Concrete.Pattern pattern, Map<String, Referable> usedNames, Concrete.ConstructorPattern parsedPattern) {
+    Referable constructor = parsedPattern.getConstructor();
     if (!(constructor instanceof GlobalReferable) || !((GlobalReferable) constructor).getKind().isConstructor()) {
       GeneralError error = constructor instanceof GlobalReferable ?
               new ExpectedConstructorError((GlobalReferable) constructor, null, null, parsedPattern, null, EmptyDependentLink.getInstance(), null) :
@@ -673,29 +716,32 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     List<Concrete.Pattern> newPatterns = new ArrayList<>(parsedPattern.getPatterns());
     for (int i = 0; i < newPatterns.size(); i++) {
       Concrete.Pattern subPattern = newPatterns.get(i);
-      if (subPattern instanceof Concrete.NamePattern && ((Concrete.NamePattern) subPattern).getReferable() instanceof GlobalReferable) {
-        newPatterns.set(i, new Concrete.ConstructorPattern(subPattern.getData(), subPattern.isExplicit(), myReferableConverter.convert(((Concrete.NamePattern) subPattern).getReferable()), List.of(), subPattern.getAsReferable()));
+      if (subPattern instanceof Concrete.NamePattern namePattern && namePattern.getReferable() instanceof GlobalReferable) {
+        newPatterns.set(i, new Concrete.ConstructorPattern(subPattern.getData(), subPattern.isExplicit(), subPattern.getData(), myReferableConverter.convert(namePattern.getReferable()), List.of(), subPattern.getAsReferable()));
       } else if (subPattern instanceof Concrete.ConstructorPattern) {
-        Map<String, Referable> copy = new HashMap<>(usedNames);
-        newPatterns.set(i, fixParsedConstructorPattern(subPattern.getData(), pattern, copy, subPattern));
+        newPatterns.set(i, fixParsedConstructorPattern(subPattern.getData(), pattern, new HashMap<>(usedNames), (Concrete.ConstructorPattern) subPattern));
       }
     }
-    visitPatterns(newPatterns, usedNames, false);
-    if (pattern.getAsReferable() != null) {
-      addReferable(pattern.getAsReferable().referable, pattern.getAsReferable().type, usedNames);
-    }
-    return new Concrete.ConstructorPattern(data, pattern.isExplicit(), constructor == null ? null : myReferableConverter.convert(constructor), newPatterns, pattern.getAsReferable());
+    return new Concrete.ConstructorPattern(data, pattern.isExplicit(), parsedPattern.getConstructorData(), constructor == null ? null : myReferableConverter.convert(constructor), newPatterns, pattern.getAsReferable());
   }
 
   private List<Concrete.BinOpSequenceElem<Concrete.Pattern>> resolveBinOpComponents(Concrete.UnparsedConstructorPattern pattern) {
     List<Concrete.BinOpSequenceElem<Concrete.Pattern>> correctedPatterns = new ArrayList<>();
+    boolean first = true;
     for (var component : pattern.getUnparsedPatterns()) {
       Concrete.Pattern subPattern = component.getComponent();
       Concrete.BinOpSequenceElem<Concrete.Pattern> corrected;
       if (subPattern instanceof Concrete.NamePattern) {
         Referable originalUnresolvedReferable = ((Concrete.NamePattern) subPattern).getReferable();
-        Referable resolved = resolve(originalUnresolvedReferable, myParentScope);
-        if (resolved instanceof ErrorReference || (resolved instanceof GlobalReferable && (!((GlobalReferable) resolved).getKind().isConstructor()))) {
+        if (!(originalUnresolvedReferable instanceof UnresolvedReference) && originalUnresolvedReferable != null && !(originalUnresolvedReferable instanceof GlobalReferable)) {
+          originalUnresolvedReferable = new NamedUnresolvedReference(originalUnresolvedReferable instanceof DataContainer ? ((DataContainer) originalUnresolvedReferable).getData() : originalUnresolvedReferable, originalUnresolvedReferable.getRefName());
+        }
+        List<Referable> resolvedRefs = new ArrayList<>();
+        Referable resolved = tryResolve(originalUnresolvedReferable, myParentScope, resolvedRefs);
+        if (resolved != null && myResolverListener != null) {
+          myResolverListener.patternResolved(originalUnresolvedReferable, resolved, subPattern, resolvedRefs);
+        }
+        if (resolved == null || (resolved instanceof GlobalReferable && (!((GlobalReferable) resolved).getKind().isConstructor()))) {
           String name = originalUnresolvedReferable == null ? null : originalUnresolvedReferable.getRefName();
           Object data = originalUnresolvedReferable instanceof UnresolvedReference ? ((UnresolvedReference) originalUnresolvedReferable).getData() : null;
           Referable local = new DataLocalReferable(data, name);
@@ -703,16 +749,17 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         } else {
           Concrete.Pattern newInnerPattern = new Concrete.NamePattern(subPattern.getData(), subPattern.isExplicit(), resolved, ((Concrete.NamePattern) subPattern).type);
           if (resolved instanceof GlobalReferable) {
-            Fixity fixity = ((GlobalReferable) resolved).getPrecedence().isInfix ? Fixity.INFIX : ((Concrete.NamePattern) subPattern).fixity;
+            Fixity fixity = first ? Fixity.NONFIX : ((GlobalReferable) resolved).getPrecedence().isInfix ? Fixity.INFIX : ((Concrete.NamePattern) subPattern).fixity;
             corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, fixity, true);
           } else {
-            corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, ((Concrete.NamePattern) subPattern).fixity, newInnerPattern.isExplicit());
+            corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, first ? Fixity.NONFIX : ((Concrete.NamePattern) subPattern).fixity, newInnerPattern.isExplicit());
           }
         }
       } else {
         corrected = component;
       }
       correctedPatterns.add(corrected);
+      first = false;
     }
     return correctedPatterns;
   }
@@ -725,18 +772,11 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         visitParameter(parameters.get(j++), null);
         continue;
       }
-      Referable ref = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).getReferable() : null;
       Concrete.Pattern parsedPattern = visitPattern(pattern, usedNames);
       if (parsedPattern != null) {
         patterns.set(i, parsedPattern);
-      }
-      if (parsedPattern instanceof Concrete.ConstructorPattern) {
-        Referable constructorReference = ((Concrete.ConstructorPattern) parsedPattern).getConstructor();
-        if (myResolverListener != null && constructorReference instanceof GlobalReferable) {
-          myResolverListener.patternResolved(ref, (Concrete.ConstructorPattern) parsedPattern, Collections.singletonList(constructorReference));
-        }
-      } else if (pattern instanceof Concrete.NamePattern && myResolverListener != null) {
-        myResolverListener.patternResolved((Concrete.NamePattern) pattern);
+      } else if (pattern instanceof Concrete.UnparsedConstructorPattern) {
+        patterns.set(i, new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), null, null));
       }
       if (resolvePatterns) {
         resolvePattern(patterns.get(i));
@@ -744,8 +784,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
   }
 
-  public void visitPatterns(List<Concrete.Pattern> patterns, Map<String, Referable> usedNames, boolean resolvePatterns) {
-    visitPatterns(patterns, null, usedNames, resolvePatterns);
+  public void visitPatterns(List<Concrete.Pattern> patterns, Map<String, Referable> usedNames) {
+    visitPatterns(patterns, null, usedNames, true);
   }
 
   public void resolvePattern(Concrete.Pattern pattern) {
@@ -771,12 +811,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
       ((Concrete.ConstructorPattern) pattern).setConstructor(referable);
       if (myResolverListener != null) {
-        myResolverListener.patternResolved(origReferable, (Concrete.ConstructorPattern) pattern, resolvedList);
+        myResolverListener.patternResolved(origReferable, referable, pattern, resolvedList);
       }
-    }
-
-    for (Concrete.Pattern patternArg : ((Concrete.ConstructorPattern) pattern).getPatterns()) {
-      resolvePattern(patternArg);
     }
   }
 

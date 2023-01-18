@@ -363,7 +363,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
               return FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getLevels(), Arrays.asList(array.getTail(), new BigIntegerExpression(num.subtract(s)))).accept(this, mode);
             }
             if (n < array.getElements().size()) {
-              return array.drop(n);
+              return FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getLevels(), Arrays.asList(array.drop(n), numExpr));
             }
             for (int i = array.getElements().size(); i < n; i++) {
               numExpr = Suc(numExpr);
@@ -723,15 +723,8 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
               array = ArrayExpression.makeArray(levelPair, elementsType, Collections.emptyList(), null);
               key = new ArrayConstructor(true, true, true);
             } else {
-              Expression length_1 = length.pred();
-              TypedSingleDependentLink param = new TypedSingleDependentLink(true, "j", Fin(length_1));
-              Sort sort = levelPair.toSort().max(Sort.SET0);
               Expression at = classCall.getImplementationHere(Prelude.ARRAY_AT, argument);
-              Map<ClassField, Expression> impls = new LinkedHashMap<>();
-              impls.put(Prelude.ARRAY_LENGTH, length_1);
-              impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort, param, AppExpression.make(elementsType, Suc(new ReferenceExpression(param)), true)));
-              impls.put(Prelude.ARRAY_AT, new LamExpression(sort, param, at != null ? AppExpression.make(at, Suc(new ReferenceExpression(param)), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, Suc(new ReferenceExpression(param))))));
-              array = ArrayExpression.makeArray(levelPair, elementsType, new SingletonList<>(at != null ? AppExpression.make(at, new SmallIntegerExpression(0), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, new SmallIntegerExpression(0)))), new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES)));
+              array = ArrayExpression.makeArray(levelPair, elementsType, new SingletonList<>(at != null ? AppExpression.make(at, new SmallIntegerExpression(0), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, new SmallIntegerExpression(0)))), ArrayExpression.makeTail(length, elementsType, classCall, argument));
               key = new ArrayConstructor(false, true, true);
             }
             elimTree = branchElimTree.getChild(key);

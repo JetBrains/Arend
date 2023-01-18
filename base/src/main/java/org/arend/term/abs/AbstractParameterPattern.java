@@ -57,6 +57,11 @@ public class AbstractParameterPattern implements Abstract.Pattern {
   }
 
   @Override
+  public @Nullable Referable getConstructorReference() {
+    return myReferable;
+  }
+
+  @Override
   public @Nullable Fixity getFixity() {
     return null;
   }
