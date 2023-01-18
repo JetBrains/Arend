@@ -86,6 +86,8 @@ public class LongUnresolvedReference implements UnresolvedReference {
           if (resolvedRefs != null) {
             resolvedRefs.set(i, resolved);
           }
+        } else {
+          resolved = null;
         }
         return resolved;
       }
@@ -187,7 +189,10 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
     ClassReferable classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
     if (classRef == null) {
-      if (onlyTry) return null;
+      if (onlyTry) {
+        resolved = null;
+        return null;
+      }
       Object data = getData();
       boolean wasResolved = resolved != null;
       if (wasResolved) {
@@ -227,7 +232,10 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
       classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
       if (classRef == null) {
-        if (onlyTry) return null;
+        if (onlyTry) {
+          resolved = null;
+          return null;
+        }
         resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), i + 1, myPath.get(i + 1));
         if (resolvedRefs != null) {
           resolvedRefs.add(resolved);
