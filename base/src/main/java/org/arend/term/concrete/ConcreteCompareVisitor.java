@@ -47,12 +47,21 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitReference(Concrete.ReferenceExpression expr1, Concrete.Expression expr2) {
-    if (!(expr2 instanceof Concrete.ReferenceExpression defCallExpr2)) return false;
+    if (!(expr2 instanceof Concrete.ReferenceExpression refExpr2)) return false;
     Referable ref1 = mySubstitution.get(expr1.getReferent());
     if (ref1 == null) {
       ref1 = expr1.getReferent();
     }
-    return ref1.equals(defCallExpr2.getReferent());
+    return ref1.equals(refExpr2.getReferent()) && compareLevels(expr1.getPLevels(), refExpr2.getPLevels()) && compareLevels(expr1.getHLevels(), refExpr2.getHLevels());
+  }
+
+  private boolean compareLevels(List<Concrete.LevelExpression> levels1, List<Concrete.LevelExpression> levels2) {
+    if (levels1 == null) return levels2 == null;
+    if (levels1.size() != levels2.size()) return false;
+    for (int i = 0; i < levels1.size(); i++) {
+      if (!compareLevel(levels1.get(i), levels2.get(i))) return false;
+    }
+    return true;
   }
 
   @Override
