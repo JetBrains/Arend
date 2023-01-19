@@ -731,29 +731,29 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     for (var component : pattern.getUnparsedPatterns()) {
       Concrete.Pattern subPattern = component.getComponent();
       Concrete.BinOpSequenceElem<Concrete.Pattern> corrected;
-      if (subPattern instanceof Concrete.NamePattern) {
-        Referable originalUnresolvedReferable = ((Concrete.NamePattern) subPattern).getReferable();
+      if (subPattern instanceof Concrete.NamePattern namePattern) {
+        Referable originalUnresolvedReferable = namePattern.getReferable();
         if (!(originalUnresolvedReferable instanceof UnresolvedReference) && originalUnresolvedReferable != null && !(originalUnresolvedReferable instanceof GlobalReferable)) {
           originalUnresolvedReferable = new NamedUnresolvedReference(originalUnresolvedReferable instanceof DataContainer ? ((DataContainer) originalUnresolvedReferable).getData() : originalUnresolvedReferable, originalUnresolvedReferable.getRefName());
         }
         List<Referable> resolvedRefs = new ArrayList<>();
         Referable resolved = tryResolve(originalUnresolvedReferable, myParentScope, resolvedRefs);
-        if (resolved != null && myResolverListener != null) {
-          myResolverListener.patternResolved(originalUnresolvedReferable, resolved, subPattern, resolvedRefs);
-        }
         if (resolved == null || (resolved instanceof GlobalReferable && (!((GlobalReferable) resolved).getKind().isConstructor()))) {
           String name = originalUnresolvedReferable == null ? null : originalUnresolvedReferable.getRefName();
           Object data = originalUnresolvedReferable instanceof UnresolvedReference ? ((UnresolvedReference) originalUnresolvedReferable).getData() : null;
           Referable local = new DataLocalReferable(data, name);
-          corrected = new Concrete.BinOpSequenceElem<>(new Concrete.NamePattern(subPattern.getData(), subPattern.isExplicit(), local, ((Concrete.NamePattern) subPattern).type));
+          corrected = new Concrete.BinOpSequenceElem<>(new Concrete.NamePattern(subPattern.getData(), subPattern.isExplicit(), local, namePattern.type));
         } else {
-          Concrete.Pattern newInnerPattern = new Concrete.NamePattern(subPattern.getData(), subPattern.isExplicit(), resolved, ((Concrete.NamePattern) subPattern).type);
           if (resolved instanceof GlobalReferable) {
-            Fixity fixity = first ? Fixity.NONFIX : ((GlobalReferable) resolved).getPrecedence().isInfix ? Fixity.INFIX : ((Concrete.NamePattern) subPattern).fixity;
-            corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, fixity, true);
+            Fixity fixity = first ? Fixity.NONFIX : ((GlobalReferable) resolved).getPrecedence().isInfix ? Fixity.INFIX : namePattern.fixity;
+            corrected = new Concrete.BinOpSequenceElem<>(new Concrete.NamePattern(subPattern.getData(), subPattern.isExplicit(), resolved, namePattern.type), fixity, true);
           } else {
-            corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, first ? Fixity.NONFIX : ((Concrete.NamePattern) subPattern).fixity, newInnerPattern.isExplicit());
+            resolved = originalUnresolvedReferable == null || originalUnresolvedReferable.getRefName().equals("_") ? null : new DataLocalReferable(originalUnresolvedReferable instanceof DataContainer ? ((DataContainer) originalUnresolvedReferable).getData() : originalUnresolvedReferable, originalUnresolvedReferable.getRefName());
+            corrected = new Concrete.BinOpSequenceElem<>(new Concrete.NamePattern(subPattern.getData(), subPattern.isExplicit(), resolved, namePattern.type), first ? Fixity.NONFIX : namePattern.fixity, subPattern.isExplicit());
           }
+        }
+        if (resolved != null && myResolverListener != null) {
+          myResolverListener.patternResolved(originalUnresolvedReferable, resolved, subPattern, resolvedRefs.size() == 1 ? Collections.singletonList(resolved) : resolvedRefs);
         }
       } else {
         corrected = component;
