@@ -224,6 +224,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.UniverseExpression(null, pLevel, hLevel);
   }
 
+  public static Concrete.UniverseExpression cUniverse(int level) {
+    return new Concrete.UniverseExpression(null, new Concrete.NumberLevelExpression(null, level), null);
+  }
+
   public static Concrete.ConstructorPattern cConPattern(boolean isExplicit, Referable referable, List<Concrete.Pattern> patternArgs) {
     return new Concrete.ConstructorPattern(null, isExplicit, null, referable, patternArgs, null);
   }

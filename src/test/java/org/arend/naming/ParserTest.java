@@ -24,7 +24,7 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.Expression expr1 = resolveNamesExpr("\\let | x => \\Type0 \\in \\lam x => x x");
     LocalReferable x = ref("x");
     LocalReferable x1 = ref("x");
-    Concrete.LetClause xClause = clet(x1, cargs(), cUniverseStd(0));
+    Concrete.LetClause xClause = clet(x1, cargs(), cUniverse(0));
     assertTrue(compareAbstract(cLam(cName(x), cLet(clets(xClause), cApps(cVar(x1), cVar(x1)))), expr));
     assertTrue(compareAbstract(cLet(clets(xClause), cLam(cName(x), cApps(cVar(x), cVar(x)))), expr1));
   }
@@ -34,7 +34,7 @@ public class ParserTest extends NameResolverTestCase {
     Concrete.Expression expr = resolveNamesExpr("\\let | x => \\Type0 | y => x \\in y");
     LocalReferable x = ref("x");
     LocalReferable y = ref("y");
-    Concrete.LetClause xClause = clet(x, cUniverseStd(0));
+    Concrete.LetClause xClause = clet(x, cUniverse(0));
     Concrete.LetClause yClause = clet(y, cVar(x));
     assertTrue(compareAbstract(cLet(clets(xClause, yClause), cVar(y)), expr));
   }
@@ -43,7 +43,7 @@ public class ParserTest extends NameResolverTestCase {
   public void parseLetTyped() {
     Concrete.Expression expr = resolveNamesExpr("\\let | x : \\Type1 => \\Type0 \\in x");
     LocalReferable x = ref("x");
-    Concrete.LetClause xClause = clet(x, cargs(), cUniverseStd(1), cUniverseStd(0));
+    Concrete.LetClause xClause = clet(x, cargs(), cUniverse(1), cUniverse(0));
     assertTrue(compareAbstract(cLet(clets(xClause), cVar(x)), expr));
   }
 
@@ -77,7 +77,7 @@ public class ParserTest extends NameResolverTestCase {
     LocalReferable a = ref("a");
     LocalReferable z = ref("z");
     LocalReferable w = ref("w");
-    assertTrue(compareAbstract(cLam(cargs(cName(p), cTele(false, cvars(x, t), cUniverseStd(0)), cName(false, y), cTele(cvars(a), cPi(cUniverseStd(0), cUniverseStd(0)))), cApps(cLam(cargs(cTele(cvars(z, w), cUniverseStd(0))), cApps(cVar(y), cVar(z))), cVar(y))), expr));
+    assertTrue(compareAbstract(cLam(cargs(cName(p), cTele(false, cvars(x, t), cUniverse(0)), cName(false, y), cTele(cvars(a), cPi(cUniverse(0), cUniverse(0)))), cApps(cLam(cargs(cTele(cvars(z, w), cUniverse(0))), cApps(cVar(y), cVar(z))), cVar(y))), expr));
   }
 
   @Test
@@ -91,7 +91,7 @@ public class ParserTest extends NameResolverTestCase {
     LocalReferable a = ref("a");
     LocalReferable b = ref("b");
     LocalReferable c = ref("c");
-    assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars(x, y, z), cUniverseStd(0)), cTele(cvars(w, t), cPi(cUniverseStd(0), cUniverseStd(0)))), cPi(ctypeArgs(cTele(cvars(a, b), cPi(c, cUniverseStd(0), cApps(cVar(x), cVar(c))))), cApps(cVar(x), cVar(b), cVar(y), cVar(w)))), expr));
+    assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars(x, y, z), cUniverse(0)), cTele(cvars(w, t), cPi(cUniverse(0), cUniverse(0)))), cPi(ctypeArgs(cTele(cvars(a, b), cPi(c, cUniverse(0), cApps(cVar(x), cVar(c))))), cApps(cVar(x), cVar(b), cVar(y), cVar(w)))), expr));
   }
 
   @Test
@@ -100,7 +100,7 @@ public class ParserTest extends NameResolverTestCase {
     LocalReferable x = ref("x");
     LocalReferable y = ref("y");
     LocalReferable z = ref("z");
-    assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars(x, y), cUniverseStd(0)), cTele(cvars(z), cPi(cApps(cVar(x), cVar(x)), cApps(cVar(y), cVar(y))))), cApps(cVar(z), cVar(z), cVar(y), cVar(x))), expr));
+    assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars(x, y), cUniverse(0)), cTele(cvars(z), cPi(cApps(cVar(x), cVar(x)), cApps(cVar(y), cVar(y))))), cApps(cVar(z), cVar(z), cVar(y), cVar(x))), expr));
   }
 
   @Test
@@ -131,11 +131,11 @@ public class ParserTest extends NameResolverTestCase {
     LocalReferable t = ref("t");
     LocalReferable r = ref("r");
     List<Concrete.TypeParameter> params = new ArrayList<>();
-    params.add(cTele(cvars(x, y), cUniverseStd(1)));
-    params.add(cTele(false, cvars(z, w), cUniverseStd(1)));
-    params.add(cTele(cvars(t), cUniverseStd(1)));
-    params.add(cTele(false, cvars(r), cUniverseStd(1)));
-    params.add(cTele(cvars(A), cPi(cUniverseStd(1), cPi(cUniverseStd(1), cPi(cUniverseStd(1), cPi(cUniverseStd(1), cPi(cUniverseStd(1), cPi(cUniverseStd(1), cUniverseStd(0)))))))));
+    params.add(cTele(cvars(x, y), cUniverse(1)));
+    params.add(cTele(false, cvars(z, w), cUniverse(1)));
+    params.add(cTele(cvars(t), cUniverse(1)));
+    params.add(cTele(false, cvars(r), cUniverse(1)));
+    params.add(cTele(cvars(A), cPi(cUniverse(1), cPi(cUniverse(1), cPi(cUniverse(1), cPi(cUniverse(1), cPi(cUniverse(1), cPi(cUniverse(1), cUniverse(0)))))))));
     assertTrue(compareAbstract(cPi(params, cApps(cVar(A), cVar(x), cVar(y), cVar(z), cVar(w), cVar(t), cVar(r))), pi));
   }
 
@@ -154,12 +154,12 @@ public class ParserTest extends NameResolverTestCase {
     LocalReferable y = ref("y");
     LocalReferable z = ref("z");
     List<Concrete.TypeParameter> params = new ArrayList<>();
-    params.add(cTele(false, cvars(x), cUniverseStd(1)));
-    params.add(cTele(cvars(ref(null)), cUniverseStd(1)));
-    params.add(cTele(false, cvars(y, z), cUniverseStd(1)));
-    params.add(cTele(cvars(A), cPi(cUniverseStd(1), cPi(cUniverseStd(1), cPi(cUniverseStd(1), cUniverseStd(0))))));
+    params.add(cTele(false, cvars(x), cUniverse(1)));
+    params.add(cTele(cvars(ref(null)), cUniverse(1)));
+    params.add(cTele(false, cvars(y, z), cUniverse(1)));
+    params.add(cTele(cvars(A), cPi(cUniverse(1), cPi(cUniverse(1), cPi(cUniverse(1), cUniverse(0))))));
     params.add(cTele(cvars(ref(null)), cApps(cVar(A), cVar(x), cVar(y), cVar(z))));
-    assertTrue(compareAbstract(cPi(params, cUniverseStd(1)), pi));
+    assertTrue(compareAbstract(cPi(params, cUniverse(1)), pi));
   }
 
   @Test
@@ -189,13 +189,15 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void implementInFunctionError() {
     parseModule(
-        "\\class X {\n" +
-        "  | x : Nat\n" +
-        "} \\where {\n" +
-        "  \\func f => 0\n" +
-        "    \\where\n" +
-        "      | x => 1\n" +
-        "}", 1);
+      """
+        \\class X {
+          | x : Nat
+        } \\where {
+          \\func f => 0
+            \\where
+              | x => 1
+        }
+        """, 1);
   }
 
   @Test
@@ -361,11 +363,13 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void postfixTest6() {
     Group module = resolveNamesModule(
-      "\\func \\infixr 1 >== (A B : \\Prop) => A\n" +
-      "\\func \\infix 2 ==< (A B : \\Prop) => A\n" +
-      "\\func \\fix 2 qed (A : \\Prop) => A\n" +
-      "\\func g (A : \\Prop) => A\n" +
-      "\\func f (A B C : \\Prop) => g A ==< g B >== g C `qed");
+      """
+        \\func \\infixr 1 >== (A B : \\Prop) => A
+        \\func \\infix 2 ==< (A B : \\Prop) => A
+        \\func \\fix 2 qed (A : \\Prop) => A
+        \\func g (A : \\Prop) => A
+        \\func f (A B C : \\Prop) => g A ==< g B >== g C `qed
+        """);
     Iterator<? extends Statement> it = module.getStatements().iterator();
     GlobalReferable rightP = it.next().getGroup().getReferable();
     GlobalReferable leftP = it.next().getGroup().getReferable();
@@ -382,56 +386,64 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void infixTest() {
     resolveNamesModule(
-      "\\func \\infixr 1 >== (A B : \\Prop) => A\n" +
-      "\\func \\infix 2 ==< (A B : \\Prop) => A\n" +
-      "\\func \\infix 2 qed (A : \\Prop) => A\n" +
-      "\\func g (A : \\Prop) => A\n" +
-      "\\func f (A B C : \\Prop) => g A ==< g B >== g C qed", 1);
+      """
+        \\func \\infixr 1 >== (A B : \\Prop) => A
+        \\func \\infix 2 ==< (A B : \\Prop) => A
+        \\func \\infix 2 qed (A : \\Prop) => A
+        \\func g (A : \\Prop) => A
+        \\func f (A B C : \\Prop) => g A ==< g B >== g C qed
+        """, 1);
   }
 
   @Test
   public void commentTest() {
     ChildGroup group = resolveNamesModule(
-      "\\func f => 0\n" +
-      "------------\n" +
-      "\\func g => 0\n" +
-      "------------ foo\n" +
-      "\\func g1 => 0\n" +
-      "-- foobar\n" +
-      "\\func g2 => 0\n" +
-      "------------ foo\n" +
-      "\\func g3 => 0\n" +
-      "-- |\n" +
-      "\\func g4 => 0\n" +
-      "--\\x\n" +
-      "\\func g5 => 0\n" +
-      "--`\n" +
-      "\\func g6 => 0\n" +
-      "-- %--x\n" +
-      "{------\n" +
-      "bar\n" +
-      "------}\n" +
-      "\\func h => f g g1 g2 g3 g4 g5 g6\n" +
-      "--");
+      """
+        \\func f => 0
+        ------------
+        \\func g => 0
+        ------------ foo
+        \\func g1 => 0
+        -- foobar
+        \\func g2 => 0
+        ------------ foo
+        \\func g3 => 0
+        -- |
+        \\func g4 => 0
+        --\\x
+        \\func g5 => 0
+        --`
+        \\func g6 => 0
+        -- %--x
+        {------
+        bar
+        ------}
+        \\func h => f g g1 g2 g3 g4 g5 g6
+        --
+        """);
     assertNotNull(get(group.getGroupScope(), "h"));
   }
 
   @Test
   public void commentDefTest() {
     resolveNamesModule(
-      "\\func x-- => |------\n" +
-      "\\func %-----y => x--\n" +
-      "\\func |------ => %-----y");
+      """
+        \\func x-- => |------
+        \\func %-----y => x--
+        \\func |------ => %-----y
+        """);
   }
 
   @Test
   public void idTest() {
     resolveNamesModule(
-      "\\func :: => -33+7\n" +
-      "\\func ->x => ::\n" +
-      "\\func x:Nat => ->x\n" +
-      "\\func -5b => x:Nat\n" +
-      "\\func -33+7 => -5b");
+      """
+        \\func :: => -33+7
+        \\func ->x => ::
+        \\func x:Nat => ->x
+        \\func -5b => x:Nat
+        \\func -33+7 => -5b
+        """);
   }
 
   @Test
@@ -447,10 +459,12 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void nestedCommentsTest() {
     parseModule(
-      "\\func f => 0 {- \\x\n" +
-      "{- \\y -}\n" +
-      "\\z -}\n" +
-      "\\func g => 1");
+      """
+        \\func f => 0 {- \\x
+        {- \\y -}
+        \\z -}
+        \\func g => 1
+        """);
   }
 
   @Test
@@ -463,17 +477,21 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void notLineComment2() {
     parseModule(
-      "\\func ----| => 0 --\n" +
-      "\\func ----x => ----| ---- \\x\n" +
-      "\\func --x => ----| -- ");
+      """
+        \\func ----| => 0 --
+        \\func ----x => ----| ---- \\x
+        \\func --x => ----| --\s
+        """);
   }
 
   @Test
   public void notLineComment3() {
     parseModule(
-      "\\func ----| => 0 --`\n" +
-      "\\func ----x => ----| --\\func\n" +
-      "\\func --x => ----| -----\\");
+      """
+        \\func ----| => 0 --`
+        \\func ----x => ----| --\\func
+        \\func --x => ----| -----\\
+        """);
   }
 
   @Test
