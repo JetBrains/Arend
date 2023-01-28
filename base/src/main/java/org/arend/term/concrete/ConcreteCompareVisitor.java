@@ -249,6 +249,9 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       if ((pattern1.getAsReferable().referable == null) != (pattern2.getAsReferable().referable == null)) {
         return false;
       }
+      if (pattern1.getAsReferable().referable != null && !pattern1.getAsReferable().referable.getRefName().equals(pattern2.getAsReferable().referable.getRefName())) {
+        return false;
+      }
       if (pattern1.getAsReferable().referable != null) {
         mySubstitution.put(pattern1.getAsReferable().referable, pattern2.getAsReferable().referable);
       }
@@ -259,6 +262,9 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
         return false;
       }
       if (namePattern1.getReferable() != null) {
+        if (namePattern2.getReferable() != null && !namePattern1.getReferable().getRefName().equals(namePattern2.getReferable().getRefName())) {
+          return false;
+        }
         mySubstitution.put(namePattern1.getReferable(), namePattern2.getReferable());
       }
       return true;
