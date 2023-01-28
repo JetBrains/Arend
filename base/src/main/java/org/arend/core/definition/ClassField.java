@@ -83,6 +83,11 @@ public class ClassField extends Definition implements CoreClassField {
     return myType.getCodomain();
   }
 
+  public Expression getResultTypeFor(ClassDefinition classDef) {
+    Levels levels = classDef.getSuperLevels().get(getParentClass());
+    return levels == null ? getResultType() : getResultType().subst(levels.makeSubstitution(getParentClass()));
+  }
+
   @Override
   public Expression getTypeLevel() {
     return myTypeLevel;

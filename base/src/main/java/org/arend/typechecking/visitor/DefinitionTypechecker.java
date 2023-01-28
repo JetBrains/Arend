@@ -458,8 +458,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   private void calculateTypeClassParameters(Concrete.ReferableDefinition refDef, Definition def) {
     List<Definition.TypeClassParameterKind> typeClassParameters = new ArrayList<>();
 
-    if (def instanceof Constructor) {
-      Constructor constructor = (Constructor) def;
+    if (def instanceof Constructor constructor) {
       List<Definition.TypeClassParameterKind> dataTypeParameters = constructor.getDataType().getTypeClassParameters();
       if (dataTypeParameters.isEmpty()) {
         for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
@@ -626,7 +625,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       if (resultType != null && skip == 0) {
         for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
-          if (!(resultType instanceof PiExpression)) {
+          if (!(resultType instanceof PiExpression piExpr)) {
             if (!resultType.reportIfError(errorReporter, parameter)) {
               errorReporter.report(new FieldTypeParameterError(fieldType, parameter));
               resultType = new ErrorExpression();
@@ -634,7 +633,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             break;
           }
 
-          PiExpression piExpr = (PiExpression) resultType;
           substitution.add(piExpr.getParameters(), new ReferenceExpression(param));
           if (piExpr.getParameters().getNext().hasNext()) {
             resultType = new PiExpression(piExpr.getResultSort(), piExpr.getParameters().getNext(), piExpr.getCodomain());
@@ -719,11 +717,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     PiExpression overriddenType = classDef.getOverriddenType(field);
     if (onlyOverridden && overriddenType == null) return;
     Expression fieldType = overriddenType != null ? overriddenType.getCodomain() : field.getResultType();
-    if (fieldType instanceof ClassCallExpression) {
-      ClassCallExpression classCall = (ClassCallExpression) fieldType;
-      if (!classCall.getDefinition().isRecord()) {
-        instances.add(new LocalInstance(classCall, field));
-      }
+    if (fieldType instanceof ClassCallExpression classCall && !classCall.getDefinition().isRecord()) {
+      instances.add(new LocalInstance(classCall, field));
     }
   }
 
@@ -809,8 +804,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     } else if (expr instanceof Concrete.ReferenceExpression || expr instanceof Concrete.AppExpression || expr instanceof Concrete.ClassExtExpression) {
       Concrete.Expression fun = expr instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr).getBaseClassExpression() : expr;
       fun = fun instanceof Concrete.AppExpression ? ((Concrete.AppExpression) fun).getFunction() : fun;
-      if (fun instanceof Concrete.ReferenceExpression) {
-        Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) fun;
+      if (fun instanceof Concrete.ReferenceExpression refExpr) {
         Definition def = refExpr.getReferent() instanceof TCDefReferable ? ((TCDefReferable) refExpr.getReferent()).getTypechecked() : null;
         if (def instanceof ClassDefinition) {
           result.add(refExpr);
@@ -828,8 +822,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           List<Concrete.Argument> args = getArguments(def, expr instanceof Concrete.AppExpression ? ((Concrete.AppExpression) expr).getArguments() : Collections.emptyList());
           if (DependentLink.Helper.size(def.getParameters()) == args.size()) {
             result.add(refExpr);
-            if (def instanceof DataDefinition) {
-              DataDefinition dataDef = (DataDefinition) def;
+            if (def instanceof DataDefinition dataDef) {
               for (int i = 0; i < args.size(); i++) {
                 if (args.get(i) != null && dataDef.isCovariant(i)) {
                   getCovariantDefinitions(args.get(i).expression, result);
@@ -1093,8 +1086,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               if (type instanceof Concrete.ClassExtExpression) {
                 type = ((Concrete.ClassExtExpression) type).getBaseClassExpression();
               }
-              if (type instanceof Concrete.ReferenceExpression) {
-                Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) type;
+              if (type instanceof Concrete.ReferenceExpression refExpr) {
                 if (pLevelParams != null) {
                   refExpr.setPLevels(levelParametersToExpressions(refExpr.getData(), pLevelParams));
                 }
@@ -1218,20 +1210,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     Concrete.Expression resultType = def.getResultType();
     if (typedDef.isSFunc() || kind == FunctionKind.CONS) {
       TypecheckingResult typeResult = typechecker.finalCheckExpr(resultType, Type.OMEGA);
-      if (typeResult == null || !(typeResult.expression instanceof ClassCallExpression)) {
+      if (typeResult == null || !(typeResult.expression instanceof ClassCallExpression type)) {
         return null;
       }
-      ClassCallExpression type = (ClassCallExpression) typeResult.expression;
       Set<ClassField> pseudoImplemented = new HashSet<>();
       TypecheckingResult result = typechecker.finalize(typechecker.typecheckClassExt(classFieldImpls, Type.OMEGA, type, pseudoImplemented, resultType, true), def, false);
       if (result == null) return null;
 
       Expression resultExpr = result.expression.normalize(NormalizationMode.WHNF);
-      if (!(resultExpr instanceof ClassCallExpression)) {
+      if (!(resultExpr instanceof ClassCallExpression classCall)) {
         errorReporter.report(new TypeMismatchError(DocFactory.text("a classCall"), resultExpr, def.getResultType()));
         return null;
       }
-      ClassCallExpression classCall = (ClassCallExpression) resultExpr;
       typechecker.checkAllImplemented(classCall, pseudoImplemented, def, resultType);
       if (classCall.getDefinition() == Prelude.DEP_ARRAY) {
         classCall.getImplementedHere().remove(Prelude.ARRAY_AT);
@@ -1261,8 +1251,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private ExpressionPattern checkDConstructor(Expression expr, Set<DependentLink> usedVars, Concrete.SourceNode sourceNode) {
-    if (expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getBinding() instanceof DependentLink) {
-      DependentLink var = (DependentLink) ((ReferenceExpression) expr).getBinding();
+    if (expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getBinding() instanceof DependentLink var) {
       if (!usedVars.add(var)) {
         errorReporter.report(new TypecheckingError("Variable '" + var.getName() + "' occurs multiple times in the body of \\cons", sourceNode));
         return null;
@@ -1301,8 +1290,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       patterns.add(pattern);
     }
 
-    if (expr instanceof ConCallExpression) {
-      ConCallExpression conCall = (ConCallExpression) expr;
+    if (expr instanceof ConCallExpression conCall) {
       return new ConstructorExpressionPattern(new ConCallExpression(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), Collections.emptyList()), patterns);
     }
 
@@ -1579,8 +1567,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
       }
-    } else if (body instanceof Concrete.ElimFunctionBody) {
-      Concrete.ElimFunctionBody elimBody = (Concrete.ElimFunctionBody) body;
+    } else if (body instanceof Concrete.ElimFunctionBody elimBody) {
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter(PathEndpointMismatchError.class, errorReporter);
       if (elimParams != null) {
@@ -1884,8 +1871,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         for (DependentLink link = typedDef.getParameters(); link.hasNext(); link = link.getNext()) {
           if (link instanceof TypedDependentLink && typedDef.getTypeClassParameterKind(index) == Definition.TypeClassParameterKind.YES) {
             Expression type = link.getTypeExpr();
-            if (type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
-              ClassCallExpression classCall = (ClassCallExpression) type;
+            if (type instanceof ClassCallExpression classCall && !((ClassCallExpression) type).getDefinition().isRecord()) {
               ClassField paramClassifyingField = classCall.getDefinition().getClassifyingField();
               ReferenceExpression refExpr = new ReferenceExpression(link);
               Expression classifyingImpl = null;
@@ -1924,9 +1910,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       Referable fieldRef = ((Concrete.CoClauseFunctionDefinition) def).getImplementedField();
       Definition fieldDef = fieldRef instanceof TCDefReferable ? ((TCDefReferable) fieldRef).getTypechecked() : null;
       Definition useParent = def.getUseParent().getTypechecked();
-      if (fieldDef instanceof ClassField && useParent instanceof ClassDefinition) {
+      if (fieldDef instanceof ClassField && useParent instanceof ClassDefinition classDef) {
         Map<ClassField, Expression> defaultImpl = new LinkedHashMap<>();
-        ClassDefinition classDef = (ClassDefinition) useParent;
         ClassCallExpression thisType = new ClassCallExpression(classDef, classDef.makeIdLevels(), defaultImpl, classDef.getSort(), classDef.getUniverseKind());
         for (ClassField field : classDef.getFields()) {
           Pair<AbsExpression, Boolean> defaultPair = classDef.getDefaultPair(field);
@@ -2345,8 +2330,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (!checkConstructorsOnlyOnTop(field, dataDefinition)) return false;
       }
       return true;
-    } else if (expr instanceof NewExpression) {
-      NewExpression newExpr = (NewExpression) expr;
+    } else if (expr instanceof NewExpression newExpr) {
       if (newExpr.getRenewExpression() != null && !checkConstructorsOnlyOnTop(newExpr.getRenewExpression(), dataDefinition)) return false;
       for (Expression impl : newExpr.getClassCall().getImplementedHere().values()) {
         if (!checkConstructorsOnlyOnTop(impl, dataDefinition)) return false;
@@ -2486,10 +2470,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         Body body = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.CONSTRUCTOR, def.getClauses(), def).typecheckElim(clauses, oldConstructor.getParameters(), elimParams);
         if (constructor != null) {
           if (body != null) {
-            if (constructor.getBody() instanceof IntervalElim) {
-              IntervalElim intervalElim = (IntervalElim) constructor.getBody();
-              if (body instanceof IntervalElim) {
-                IntervalElim oldIntervalElim = (IntervalElim) body;
+            if (constructor.getBody() instanceof IntervalElim intervalElim) {
+              if (body instanceof IntervalElim oldIntervalElim) {
                 List<IntervalElim.CasePair> cases = new ArrayList<>();
                 cases.addAll(oldIntervalElim.getCases().subList(0, oldIntervalElim.getCases().size() - intervalElim.getCases().size()));
                 cases.addAll(intervalElim.getCases());
@@ -2806,8 +2788,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (element instanceof Concrete.CoClauseFunctionReference) {
         continue;
       }
-      if (element instanceof Concrete.ClassField) {
-        Concrete.ClassField field = (Concrete.ClassField) element;
+      if (element instanceof Concrete.ClassField field) {
         if (previousType == field.getResultType()) {
           if (myNewDef && previousField != null) {
             ClassField newField = addField(field.getData(), typedDef, previousField.getType(), previousField.getTypeLevel());
@@ -2831,8 +2812,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           classField.setHideable(true);
           typedDef.getCoerceData().addCoercingField(classField, errorReporter, field);
         }
-      } else if (element instanceof Concrete.ClassFieldImpl) {
-        Concrete.ClassFieldImpl classFieldImpl = (Concrete.ClassFieldImpl) element;
+      } else if (element instanceof Concrete.ClassFieldImpl classFieldImpl) {
         ClassField field = typechecker.referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
         if (field == null) {
           classOk = false;
@@ -3053,7 +3033,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             continue;
           }
           TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, idLevels), true);
-          Expression type = field.getType().applyExpression(new ReferenceExpression(thisParam));
+          Expression type = field.getResultTypeFor(typedDef).subst(field.getThisParameter(), new ReferenceExpression(thisParam));
           Type newType = type.accept(new MinimizeLevelVisitor(), null);
           if (newType != null && newType != type) {
             typedDef.overrideField(field, new PiExpression(thisParam.getType().getSortOfType().max(newType.getSortOfType()), thisParam, newType.getExpr()));
@@ -3075,8 +3055,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (baseUniverseKind != UniverseKind.WITH_UNIVERSES) {
         UniverseInParametersChecker checker1 = new UniverseInParametersChecker();
         for (ClassField field : typedDef.getFields()) {
-          Levels levels = typedDef.getSuperLevels().get(field.getParentClass());
-          baseUniverseKind = baseUniverseKind.max(checker1.getUniverseKind(levels == null ? field.getResultType() : field.getResultType().subst(levels.makeSubstitution(field.getParentClass()))));
+          baseUniverseKind = baseUniverseKind.max(checker1.getUniverseKind(field.getResultTypeFor(typedDef)));
           if (baseUniverseKind == UniverseKind.WITH_UNIVERSES) {
             break;
           }

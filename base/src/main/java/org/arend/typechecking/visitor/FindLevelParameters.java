@@ -56,6 +56,83 @@ public class FindLevelParameters extends SearchVisitor<Void> {
     return checkSort(expr.getSort());
   }
 
+  /*
+  @Override
+  public Boolean visitLam(LamExpression expression, Void param) {
+    if (super.visitLam(expression, param)) {
+      return true;
+    }
+    boolean oldHasPLevels = hasPLevels;
+    boolean oldHasHLevels = hasHLevels;
+    if (!checkSort(expression.getResultSort())) {
+      return false;
+    }
+    Sort sort = expression.getBody().getType().getSortOfType();
+    if (sort == null) return true;
+    hasPLevels = oldHasPLevels;
+    hasHLevels = oldHasHLevels;
+    expression.setResultSort(expression.getParameters().getType().getSortOfType().max(sort));
+    return checkSort(expression.getResultSort());
+  }
+
+  @Override
+  public Boolean visitPi(PiExpression expression, Void param) {
+    if (super.visitPi(expression, param)) {
+      return true;
+    }
+    boolean oldHasPLevels = hasPLevels;
+    boolean oldHasHLevels = hasHLevels;
+    if (!checkSort(expression.getResultSort())) {
+      return false;
+    }
+    Sort sort = expression.getCodomain().getSortOfType();
+    if (sort == null) return true;
+    hasPLevels = oldHasPLevels;
+    hasHLevels = oldHasHLevels;
+    expression.setResultSort(expression.getParameters().getType().getSortOfType().max(sort));
+    return checkSort(expression.getResultSort());
+  }
+
+  @Override
+  public Boolean visitSigma(SigmaExpression expression, Void ignored) {
+    if (super.visitSigma(expression, null)) {
+      return true;
+    }
+    boolean oldHasPLevels = hasPLevels;
+    boolean oldHasHLevels = hasHLevels;
+    if (!checkSort(expression.getSort())) {
+      return false;
+    }
+    hasPLevels = oldHasPLevels;
+    hasHLevels = oldHasHLevels;
+    Sort sort = Sort.PROP;
+    for (DependentLink param = expression.getParameters(); param.hasNext(); param = param.getNext()) {
+      param = param.getNextTyped(null);
+      sort = sort.max(param.getType().getSortOfType());
+    }
+    expression.setSort(sort);
+    return checkSort(expression.getSort());
+  }
+
+  @Override
+  public Boolean visitArray(ArrayExpression expr, Void params) {
+    if (super.visitArray(expr, params)) {
+      return true;
+    }
+    boolean oldHasPLevels = hasPLevels;
+    boolean oldHasHLevels = hasHLevels;
+    if (!checkLevels(expr.getLevels())) {
+      return false;
+    }
+    Sort sort = AppExpression.make(expr.getElementsType(), new ReferenceExpression(new TypedDependentLink(true, "j", Fin(expr.getLength()), EmptyDependentLink.getInstance())), true).getSortOfType();
+    if (sort == null) return true;
+    hasPLevels = oldHasPLevels;
+    hasHLevels = oldHasHLevels;
+    expr.setLevels(new LevelPair(sort.getPLevel(), sort.getHLevel()));
+    return checkLevels(expr.getLevels());
+  }
+  */
+
   @Override
   public Boolean visitData(DataDefinition def, Void params) {
     return checkSort(def.getSort()) || super.visitData(def, params);
