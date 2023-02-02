@@ -450,7 +450,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   @Override
   public Boolean visitLet(Concrete.LetExpression expr1, Concrete.Expression expr2) {
     if (!(expr2 instanceof Concrete.LetExpression letExpr2)) return false;
-    if (expr1.getClauses().size() != letExpr2.getClauses().size()) {
+    if (expr1.isHave() != letExpr2.isHave() || expr1.getClauses().size() != letExpr2.getClauses().size()) {
       return false;
     }
     for (int i = 0; i < expr1.getClauses().size(); i++) {
