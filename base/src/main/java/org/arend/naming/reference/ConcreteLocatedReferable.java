@@ -68,8 +68,7 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements Da
 
   @Override
   public @Nullable Referable getBodyReference(TypeClassReferenceExtractVisitor visitor) {
-    if (myDefinition instanceof Concrete.FunctionDefinition) {
-      Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) myDefinition;
+    if (myDefinition instanceof Concrete.FunctionDefinition function) {
       if (function.getBody() instanceof Concrete.TermFunctionBody) {
         return visitor.getTypeReference(function.getBody().getTerm(), false);
       }

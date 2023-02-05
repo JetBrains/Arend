@@ -326,9 +326,8 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
         private Expression makeNewExpression(Expression arg, Expression type) {
           arg = arg.getUnderlyingExpression();
           boolean ok = arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings;
-          if (!ok && arg instanceof NewExpression) {
-            NewExpression newExpr = (NewExpression) arg;
-            if (newExpr.getRenewExpression() != null && newExpr.getClassCall().getImplementedHere().isEmpty()) {
+          if (!ok && arg instanceof NewExpression newExpr) {
+              if (newExpr.getRenewExpression() != null && newExpr.getClassCall().getImplementedHere().isEmpty()) {
               ReferenceExpression refExpr = newExpr.getRenewExpression().cast(ReferenceExpression.class);
               if (refExpr != null && refExpr.getBinding() == thisBindings) {
                 ok = true;
@@ -337,9 +336,8 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
           }
           if (ok) {
             type = type.normalize(NormalizationMode.WHNF);
-            if (type instanceof ClassCallExpression && getDefinition().isSubClassOf(((ClassCallExpression) type).getDefinition())) {
-              ClassCallExpression classCall = (ClassCallExpression) type;
-              Map<ClassField, Expression> subImplementations = new LinkedHashMap<>(classCall.getImplementedHere());
+            if (type instanceof ClassCallExpression classCall && getDefinition().isSubClassOf(((ClassCallExpression) type).getDefinition())) {
+                Map<ClassField, Expression> subImplementations = new LinkedHashMap<>(classCall.getImplementedHere());
               for (ClassField field : classCall.getDefinition().getFields()) {
                 Expression impl = myImplementations.get(field);
                 if (impl != null) {

@@ -139,11 +139,10 @@ public class LevelEquationsSolver {
   }
 
   public boolean addPropEquationIfPossible(Level level) {
-    if (!(level.getVar() instanceof InferenceLevelVariable && !level.withMaxConstant() && level.getConstant() <= 0)) {
+    if (!(level.getVar() instanceof InferenceLevelVariable var && !level.withMaxConstant() && level.getConstant() <= 0)) {
       return false;
     }
-    InferenceLevelVariable var = (InferenceLevelVariable) level.getVar();
-    Level oldLevel = myConstantUpperBounds.get(var);
+      Level oldLevel = myConstantUpperBounds.get(var);
     if (oldLevel != null && (oldLevel.isProp() || level.getConstant() < 0 && oldLevel.isClosed() && oldLevel.getConstant() == 0)) {
       return true;
     }

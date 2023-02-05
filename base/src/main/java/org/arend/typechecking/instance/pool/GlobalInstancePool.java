@@ -130,29 +130,23 @@ public class GlobalInstancePool implements InstancePool {
         if (!compareClassifying(instanceParams.getTypeExpr(), inferredParams.getTypeExpr(), false)) return false;
       }
       return true;
-    } else if (instanceExpr instanceof PiExpression) {
-      if (!(inferredExpr instanceof PiExpression)) return false;
-      PiExpression instancePi = (PiExpression) instanceExpr;
-      PiExpression inferredPi = (PiExpression) inferredExpr;
-      if (DependentLink.Helper.size(instancePi.getParameters()) != DependentLink.Helper.size(inferredPi.getParameters())) return false;
+    } else if (instanceExpr instanceof PiExpression instancePi) {
+      if (!(inferredExpr instanceof PiExpression inferredPi)) return false;
+        if (DependentLink.Helper.size(instancePi.getParameters()) != DependentLink.Helper.size(inferredPi.getParameters())) return false;
       for (DependentLink instanceParams = instancePi.getParameters(), inferredParams = inferredPi.getParameters(); instanceParams.hasNext(); instanceParams = instanceParams.getNext(), inferredParams = inferredParams.getNext()) {
         if (!compareClassifying(instanceParams.getTypeExpr(), inferredParams.getTypeExpr(), false)) return false;
       }
       return compareClassifying(instancePi.getCodomain(), inferredPi.getCodomain(), false);
-    } else if (instanceExpr instanceof IntegerExpression) {
-      IntegerExpression instanceIntExpr = (IntegerExpression) instanceExpr;
-      return inferredExpr instanceof IntegerExpression && instanceIntExpr.isEqual((IntegerExpression) inferredExpr) || inferredExpr instanceof ConCallExpression && instanceIntExpr.match(((ConCallExpression) inferredExpr).getDefinition());
-    } else if (instanceExpr instanceof DefCallExpression && !(instanceExpr instanceof FieldCallExpression)) {
-      if (!(inferredExpr instanceof DefCallExpression)) return false;
-      DefCallExpression instanceDefCall = (DefCallExpression) instanceExpr;
-      DefCallExpression inferredDefCall = (DefCallExpression) inferredExpr;
-      if (instanceDefCall.getDefinition() != inferredDefCall.getDefinition()) return false;
+    } else if (instanceExpr instanceof IntegerExpression instanceIntExpr) {
+        return inferredExpr instanceof IntegerExpression && instanceIntExpr.isEqual((IntegerExpression) inferredExpr) || inferredExpr instanceof ConCallExpression && instanceIntExpr.match(((ConCallExpression) inferredExpr).getDefinition());
+    } else if (instanceExpr instanceof DefCallExpression instanceDefCall && !(instanceExpr instanceof FieldCallExpression)) {
+      if (!(inferredExpr instanceof DefCallExpression inferredDefCall)) return false;
+        if (instanceDefCall.getDefinition() != inferredDefCall.getDefinition()) return false;
       for (int i = 0; i < instanceDefCall.getDefCallArguments().size(); i++) {
         if (!compareClassifying(instanceDefCall.getDefCallArguments().get(i), inferredDefCall.getDefCallArguments().get(i), false)) return false;
       }
-      if (instanceDefCall instanceof ConCallExpression) {
-        ConCallExpression instanceConCall = (ConCallExpression) instanceDefCall;
-        for (int i = 0; i < instanceConCall.getDataTypeArguments().size(); i++) {
+      if (instanceDefCall instanceof ConCallExpression instanceConCall) {
+          for (int i = 0; i < instanceConCall.getDataTypeArguments().size(); i++) {
           if (!compareClassifying(instanceConCall.getDataTypeArguments().get(i), ((ConCallExpression) inferredDefCall).getDataTypeArguments().get(i), false)) return false;
         }
       } else if (instanceDefCall instanceof ClassCallExpression) {
@@ -190,12 +184,11 @@ public class GlobalInstancePool implements InstancePool {
       @Override
       public boolean test(TCDefReferable instance) {
         instanceDef = (FunctionDefinition) instance.getTypechecked();
-        if (!(instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression && parameters.testClass(((ClassCallExpression) instanceDef.getResultType()).getDefinition()) && parameters.testGlobalInstance(instanceDef))) {
+        if (!(instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression classCall && parameters.testClass(((ClassCallExpression) instanceDef.getResultType()).getDefinition()) && parameters.testGlobalInstance(instanceDef))) {
           return false;
         }
 
-        ClassCallExpression classCall = (ClassCallExpression) instanceDef.getResultType();
-        if (finalClassifyingExpression == null || classCall.getDefinition().getClassifyingField() == null) {
+          if (finalClassifyingExpression == null || classCall.getDefinition().getClassifyingField() == null) {
           return true;
         }
 

@@ -300,9 +300,8 @@ public class CorrespondedSubExprVisitor implements
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     Expression body = coreExpr;
     for (Concrete.Parameter parameter : expr.getParameters()) {
-      if (body instanceof LamExpression) {
-        var coreLamExpr = (LamExpression) body;
-        Concrete.Expression type = parameter.getType();
+      if (body instanceof LamExpression coreLamExpr) {
+          Concrete.Expression type = parameter.getType();
         if (type != null) {
           var ty = type.accept(this, coreLamExpr.getParameters().getTypeExpr());
           if (ty != null) return ty;

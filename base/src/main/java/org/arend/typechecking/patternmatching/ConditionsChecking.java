@@ -192,9 +192,8 @@ public class ConditionsChecking {
 
   private static void collectPaths(List<ExpressionPattern> patterns, ExprSubstitution substitution) {
     for (ExpressionPattern pattern : patterns) {
-      if (pattern instanceof ConstructorExpressionPattern) {
-        ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern;
-        if (conPattern.getDefinition() == Prelude.PATH_CON) {
+      if (pattern instanceof ConstructorExpressionPattern conPattern) {
+          if (conPattern.getDefinition() == Prelude.PATH_CON) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
           Expression lamRef = new ReferenceExpression(lamParam);
           List<ElimClause<Pattern>> clauses = new ArrayList<>(3);
@@ -275,9 +274,8 @@ public class ConditionsChecking {
         evaluatedExpr1 = definition.getDefCall(definition.makeIdLevels(), pair.proj1);
       }
 
-      if (expr instanceof GoalErrorExpression) {
-        GoalErrorExpression goalExpr = (GoalErrorExpression) expr;
-        if (evaluatedExpr1 != null && goalExpr.goalError.hasConditions()) {
+      if (expr instanceof GoalErrorExpression goalExpr) {
+          if (evaluatedExpr1 != null && goalExpr.goalError.hasConditions()) {
           goalExpr.goalError.addCondition(new Condition(null, pair.proj2, evaluatedExpr1));
         }
         if (goalExpr.useExpression() && !checkCondition(goalExpr.getExpression(), pair, evaluatedExpr1, clause, definition, sourceNode, new ListErrorReporter(goalExpr.goalError.errors))) {
@@ -332,15 +330,13 @@ public class ConditionsChecking {
       result.add(new Pair<>(conPattern.toExpression(pair.proj1), pair.proj2));
     }
 
-    if (!(conPattern.getDefinition() instanceof Constructor)) {
+    if (!(conPattern.getDefinition() instanceof Constructor constructor)) {
       return result;
     }
-    Constructor constructor = (Constructor) conPattern.getDefinition();
 
-    ElimBody elimBody;
-    if (constructor.getBody() instanceof IntervalElim) {
-      IntervalElim elim = (IntervalElim) constructor.getBody();
-      elimBody = elim.getOtherwise();
+      ElimBody elimBody;
+    if (constructor.getBody() instanceof IntervalElim elim) {
+        elimBody = elim.getOtherwise();
       int prefixLength = conPattern.getSubPatterns().size() - elim.getCases().size();
       for (int i = 0; i < elim.getCases().size(); i++) {
         if (elim.getCases().get(i).proj1 == null && elim.getCases().get(i).proj2 == null) {

@@ -119,9 +119,8 @@ public class TypeConstructorExpression extends Expression implements CoreTypeCon
     Expression expr = result.expression;
     Expression type = result.type;
     Expression typeNorm = type.normalize(NormalizationMode.WHNF);
-    while (typeNorm instanceof FunCallExpression && ((FunCallExpression) typeNorm).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
-      FunCallExpression funCall = (FunCallExpression) typeNorm;
-      Expression next = match(funCall, null);
+    while (typeNorm instanceof FunCallExpression funCall && ((FunCallExpression) typeNorm).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+        Expression next = match(funCall, null);
       if (next == null) break;
       type = ((TypeConstructorExpression) next).getArgumentType();
       expr = TypeDestructorExpression.match(funCall, expr);

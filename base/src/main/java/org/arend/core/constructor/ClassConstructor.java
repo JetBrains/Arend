@@ -63,12 +63,11 @@ public final class ClassConstructor extends SingleConstructor {
     if (this == other) {
       return true;
     }
-    if (!(other instanceof ClassConstructor)) {
+    if (!(other instanceof ClassConstructor con)) {
       return false;
     }
 
-    ClassConstructor con = (ClassConstructor) other;
-    if (myClassDef != con.myClassDef || !myImplementedFields.equals(con.myImplementedFields)) {
+      if (myClassDef != con.myClassDef || !myImplementedFields.equals(con.myImplementedFields)) {
       return false;
     }
 

@@ -96,9 +96,8 @@ public class BranchElimTree extends ElimTree {
       }
     } else {
       argument = argument.getUnderlyingExpression();
-      if (argument instanceof ConCallExpression) {
-        ConCallExpression conCall = (ConCallExpression) argument;
-        ElimTree elimTree = myChildren.get(conCall.getDefinition());
+      if (argument instanceof ConCallExpression conCall) {
+          ElimTree elimTree = myChildren.get(conCall.getDefinition());
         if (elimTree != null) {
           newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
           newArguments.addAll(conCall.getDefCallArguments());
@@ -106,9 +105,8 @@ public class BranchElimTree extends ElimTree {
         } else {
           return new ArrayList<>(arguments.subList(index, arguments.size()));
         }
-      } else if (argument instanceof IntegerExpression) {
-        IntegerExpression intExpr = (IntegerExpression) argument;
-        boolean isZero = intExpr.isZero();
+      } else if (argument instanceof IntegerExpression intExpr) {
+          boolean isZero = intExpr.isZero();
         ElimTree elimTree = myChildren.get(isZero ? Prelude.ZERO : Prelude.SUC);
         if (elimTree != null) {
           newArguments = new ArrayList<>();
@@ -119,9 +117,8 @@ public class BranchElimTree extends ElimTree {
         } else {
           return new ArrayList<>(arguments.subList(index, arguments.size()));
         }
-      } else if (argument instanceof ArrayExpression) {
-        ArrayExpression array = (ArrayExpression) argument;
-        ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true, true));
+      } else if (argument instanceof ArrayExpression array) {
+          ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true, true));
         if (elimTree != null) {
           newArguments = new ArrayList<>();
           newArguments.add(array.getElementsType());
@@ -232,9 +229,8 @@ public class BranchElimTree extends ElimTree {
         return result;
       }
     } else if (singleConstructor instanceof TupleConstructor) {
-      if (argument instanceof TupleExpression) {
-        TupleExpression tuple = (TupleExpression) argument;
-        List<Expression> args = new ArrayList<>();
+      if (argument instanceof TupleExpression tuple) {
+          List<Expression> args = new ArrayList<>();
         args.addAll(tuple.getFields());
         args.addAll(arguments.subList(index + 1, arguments.size()));
         List<Expression> newArgs = getSingleConstructorChild().normalizeArguments(args);
@@ -273,9 +269,8 @@ public class BranchElimTree extends ElimTree {
         result.addAll(newArgs.subList(i, newArgs.size()));
         return result;
       }
-    } else if (argument instanceof ConCallExpression) {
-      ConCallExpression conCall = (ConCallExpression) argument;
-      ElimTree elimTree = myChildren.get(conCall.getDefinition());
+    } else if (argument instanceof ConCallExpression conCall) {
+        ElimTree elimTree = myChildren.get(conCall.getDefinition());
       if (elimTree != null) {
         List<Expression> args = new ArrayList<>();
         args.addAll(conCall.getDefCallArguments());
@@ -285,9 +280,8 @@ public class BranchElimTree extends ElimTree {
         result.addAll(newArgs.subList(conCall.getDefCallArguments().size(), newArgs.size()));
         return result;
       }
-    } else if (argument instanceof IntegerExpression) {
-      IntegerExpression intExpr = (IntegerExpression) argument;
-      boolean isZero = intExpr.isZero();
+    } else if (argument instanceof IntegerExpression intExpr) {
+        boolean isZero = intExpr.isZero();
       ElimTree elimTree = myChildren.get(isZero ? Prelude.ZERO : Prelude.SUC);
       if (elimTree != null) {
         List<Expression> args = new ArrayList<>();
@@ -298,9 +292,8 @@ public class BranchElimTree extends ElimTree {
         result.addAll(isZero ? newArgs : newArgs.subList(1, newArgs.size()));
         return result;
       }
-    } else if (argument instanceof ArrayExpression) {
-      ArrayExpression array = (ArrayExpression) argument;
-      ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true, true));
+    } else if (argument instanceof ArrayExpression array) {
+        ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true, true));
       if (elimTree != null) {
         List<Expression> args = new ArrayList<>();
         boolean withElementsType = withArrayElementsType();

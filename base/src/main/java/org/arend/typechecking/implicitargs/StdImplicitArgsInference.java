@@ -91,9 +91,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       InferenceVariable infVar = null;
 
       // If result is defCall, then try to infer class instances.
-      if (result instanceof DefCallResult) {
-        DefCallResult defCallResult = (DefCallResult) result;
-        ClassDefinition classDef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
+      if (result instanceof DefCallResult defCallResult) {
+          ClassDefinition classDef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
         if (classDef != null && !classDef.isRecord()) {
           Definition.TypeClassParameterKind kind = defCallResult.getDefinition().getTypeClassParameterKind(i);
           if (kind != Definition.TypeClassParameterKind.NO) {
@@ -169,9 +168,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     }
 
     if (isExplicit) {
-      if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
-        DefCallResult defCallResult = (DefCallResult) result;
-        SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
+      if (result instanceof DefCallResult defCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
+          SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
         Sort sort0 = Sort.STD.subst(defCallResult.getLevels().toLevelPair());
         Sort sort = sort0.succ();
         TypecheckingResult argResult;
@@ -489,9 +487,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
   public TResult infer(Concrete.AppExpression expr, Expression expectedType) {
     TResult result;
     Concrete.Expression fun = expr.getFunction();
-    if (fun instanceof Concrete.ReferenceExpression) {
-      Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) fun;
-      if (!expr.getArguments().get(0).isExplicit() && (refExpr.getReferent() == Prelude.ZERO.getRef() || refExpr.getReferent() == Prelude.SUC.getRef())) {
+    if (fun instanceof Concrete.ReferenceExpression refExpr) {
+        if (!expr.getArguments().get(0).isExplicit() && (refExpr.getReferent() == Prelude.ZERO.getRef() || refExpr.getReferent() == Prelude.SUC.getRef())) {
         TypecheckingResult argResult = myVisitor.checkExpr(expr.getArguments().get(0).getExpression(), Nat());
         if (argResult == null) {
           return null;
@@ -777,12 +774,11 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     loop:
     while (true) {
       type = type.normalize(NormalizationMode.WHNF);
-      if (!(type instanceof PiExpression)) {
+      if (!(type instanceof PiExpression pi)) {
         break;
       }
 
-      PiExpression pi = (PiExpression) type;
-      piTypes.add(pi);
+        piTypes.add(pi);
       type = pi.getCodomain();
       SingleDependentLink link = pi.getParameters();
       for (; i < arguments.size() && link.hasNext(); link = link.getNext()) {
@@ -869,11 +865,10 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
   private Expression dropPiParameters(Expression type, List<? extends ConcreteArgument> arguments, int i) {
     while (i < arguments.size()) {
-      if (!(type instanceof PiExpression)) {
+      if (!(type instanceof PiExpression pi)) {
         return null;
       }
-      PiExpression pi = (PiExpression) type;
-      type = pi.getCodomain();
+        type = pi.getCodomain();
       SingleDependentLink param = pi.getParameters();
       loop:
       for (; param.hasNext() && i < arguments.size(); param = param.getNext(), i++) {

@@ -137,9 +137,8 @@ public class ReplaceVarConcreteVisitor extends BaseConcreteExpressionVisitor<Voi
 
   @Override
   protected void visitPattern(Concrete.Pattern pattern, Void params) {
-    if (pattern instanceof Concrete.NamePattern) {
-      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
-      if (namePattern.type != null) {
+    if (pattern instanceof Concrete.NamePattern namePattern) {
+        if (namePattern.type != null) {
         namePattern.type = namePattern.type.accept(this, params);
       }
       namePattern.setReferable(addVar(namePattern.getReferable()));

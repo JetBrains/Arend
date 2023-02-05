@@ -36,12 +36,11 @@ public abstract class ConstructorPattern<T> implements Pattern {
       return ((ExpressionPattern) pattern).toPatternExpression();
     }
 
-    if (!(pattern instanceof ConstructorPattern)) {
+    if (!(pattern instanceof ConstructorPattern<?> conPattern)) {
       throw new IllegalStateException();
     }
 
-    ConstructorPattern<?> conPattern = (ConstructorPattern<?>) pattern;
-    List<Expression> args = new ArrayList<>();
+      List<Expression> args = new ArrayList<>();
     for (Pattern subPattern : conPattern.getSubPatterns()) {
       args.add(toExpression(subPattern));
     }
@@ -84,11 +83,9 @@ public abstract class ConstructorPattern<T> implements Pattern {
 
   @Override
   public ConstructorExpressionPattern toExpressionPattern(Expression type) {
-    if (type instanceof DataCallExpression && getDefinition() instanceof Constructor) {
-      Constructor constructor = (Constructor) getDefinition();
-      DataCallExpression dataCall = (DataCallExpression) type;
+    if (type instanceof DataCallExpression dataCall && getDefinition() instanceof Constructor constructor) {
 
-      List<Expression> args = constructor.matchDataTypeArguments(dataCall.getDefCallArguments());
+        List<Expression> args = constructor.matchDataTypeArguments(dataCall.getDefCallArguments());
       if (args == null) {
         return null;
       }
@@ -105,9 +102,8 @@ public abstract class ConstructorPattern<T> implements Pattern {
         return null;
       }
       return new ConstructorExpressionPattern(FunCallExpression.makeFunCall(Prelude.IDP, equality.getLevels(), Arrays.asList(equality.getDefCallArguments().get(0), equality.getDefCallArguments().get(1))), Collections.emptyList());
-    } else if (type instanceof ClassCallExpression) {
-      ClassCallExpression classCall = (ClassCallExpression) type;
-      if (classCall.getDefinition() == Prelude.DEP_ARRAY) {
+    } else if (type instanceof ClassCallExpression classCall) {
+        if (classCall.getDefinition() == Prelude.DEP_ARRAY) {
         Definition def = getDefinition();
         if (def == Prelude.EMPTY_ARRAY || def == Prelude.ARRAY_CONS) {
           Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
@@ -120,9 +116,8 @@ public abstract class ConstructorPattern<T> implements Pattern {
         return null;
       }
       return new ConstructorExpressionPattern(classCall, subPatterns);
-    } else if (type instanceof SigmaExpression) {
-      SigmaExpression sigma = (SigmaExpression) type;
-      List<ExpressionPattern> subPatterns = Pattern.toExpressionPatterns(mySubPatterns, sigma.getParameters());
+    } else if (type instanceof SigmaExpression sigma) {
+        List<ExpressionPattern> subPatterns = Pattern.toExpressionPatterns(mySubPatterns, sigma.getParameters());
       if (subPatterns == null) {
         return null;
       }

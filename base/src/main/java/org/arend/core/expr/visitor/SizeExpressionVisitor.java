@@ -58,9 +58,8 @@ public class SizeExpressionVisitor extends VoidExpressionVisitor<Void> {
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
     mySize++;
-    if (expr.getBinding() instanceof PersistentEvaluatingBinding) {
-      PersistentEvaluatingBinding binding = (PersistentEvaluatingBinding) expr.getBinding();
-      if (myVisited.add(binding)) {
+    if (expr.getBinding() instanceof PersistentEvaluatingBinding binding) {
+        if (myVisited.add(binding)) {
         binding.getExpression().accept(this, null);
       }
     }

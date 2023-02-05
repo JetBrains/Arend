@@ -109,9 +109,8 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   protected void visitPattern(Concrete.Pattern pattern, P params) {
-    if (pattern instanceof Concrete.NamePattern) {
-      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
-      if (namePattern.type != null) {
+    if (pattern instanceof Concrete.NamePattern namePattern) {
+        if (namePattern.type != null) {
         namePattern.type = namePattern.type.accept(this, params);
       }
     } else if (pattern instanceof Concrete.ConstructorPattern) {
@@ -200,9 +199,8 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   protected void visitClassElement(Concrete.ClassElement element, P params) {
     if (element instanceof Concrete.ClassFieldImpl) {
       visitClassFieldImpl((Concrete.ClassFieldImpl) element, params);
-    } else if (element instanceof Concrete.OverriddenField) {
-      Concrete.OverriddenField field = (Concrete.OverriddenField) element;
-      visitParameters(field.getParameters(), params);
+    } else if (element instanceof Concrete.OverriddenField field) {
+        visitParameters(field.getParameters(), params);
       field.setResultType(field.getResultType().accept(this, params));
       if (field.getResultTypeLevel() != null) {
         field.setResultTypeLevel(field.getResultTypeLevel().accept(this, params));

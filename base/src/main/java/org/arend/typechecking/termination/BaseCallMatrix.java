@@ -127,18 +127,16 @@ public abstract class BaseCallMatrix<T> {
 
   @Override
   public final boolean equals(Object object) {
-    if (object instanceof BaseCallMatrix) {
-      BaseCallMatrix<?> cm = (BaseCallMatrix<?>) object;
-      if (getCodomain() != cm.getCodomain() || getDomain() != cm.getDomain()) return false;
+    if (object instanceof BaseCallMatrix<?> cm) {
+        if (getCodomain() != cm.getCodomain() || getDomain() != cm.getDomain()) return false;
       return cm.matrixMap.equals(this.matrixMap);
     }
     return false;
   }
 
   public BaseCallMatrix.R compare(Object object) {
-    if (object instanceof BaseCallMatrix) {
-      BaseCallMatrix<?> cm = (BaseCallMatrix<?>) object;
-      if (this.equals(cm)) return R.Equal;
+    if (object instanceof BaseCallMatrix<?> cm) {
+        if (this.equals(cm)) return R.Equal;
       if (this.getDomain() != cm.getDomain() || this.getCodomain() != cm.getCodomain()) throw new IllegalArgumentException();
       for (Integer i : matrixMap.keySet()) {
         HashMap<Integer, R> map = matrixMap.get(i);

@@ -27,9 +27,8 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
     myCollectedCalls = new HashSet<>();
 
     Body body = def.getReallyActualBody();
-    if (body instanceof IntervalElim) {
-      IntervalElim elim = (IntervalElim) body;
-      List<ExpressionPattern> patternList = new ArrayList<>();
+    if (body instanceof IntervalElim elim) {
+        List<ExpressionPattern> patternList = new ArrayList<>();
       for (DependentLink link = myDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
         patternList.add(new BindingPattern(link));
       }
@@ -73,10 +72,9 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
   }
 
   private static BaseCallMatrix.R isLess(Expression expr1, ExpressionPattern pattern2) {
-    if (pattern2 instanceof ConstructorExpressionPattern) {
-      ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern2;
+    if (pattern2 instanceof ConstructorExpressionPattern conPattern) {
 
-      List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, false);
+        List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, false);
       for (ExpressionPattern arg : conPattern.getSubPatterns()) {
         if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
       }

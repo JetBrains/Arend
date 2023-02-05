@@ -461,9 +461,8 @@ public class DefinitionSerialization implements ArendSerializer {
 
   private DefinitionProtos.Body writeBody(ExpressionSerialization defSerializer, @NotNull Body body) {
     DefinitionProtos.Body.Builder bodyBuilder = DefinitionProtos.Body.newBuilder();
-    if (body instanceof IntervalElim) {
-      IntervalElim intervalElim = (IntervalElim) body;
-      DefinitionProtos.Body.IntervalElim.Builder intervalBuilder = DefinitionProtos.Body.IntervalElim.newBuilder();
+    if (body instanceof IntervalElim intervalElim) {
+        DefinitionProtos.Body.IntervalElim.Builder intervalBuilder = DefinitionProtos.Body.IntervalElim.newBuilder();
       for (Pair<Expression, Expression> pair : intervalElim.getCases()) {
         DefinitionProtos.Body.ExpressionPair.Builder pairBuilder = DefinitionProtos.Body.ExpressionPair.newBuilder();
         if (pair.proj1 != null) {

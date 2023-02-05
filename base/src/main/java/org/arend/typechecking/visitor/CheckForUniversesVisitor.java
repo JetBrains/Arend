@@ -30,9 +30,8 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
     if (arg instanceof FunCallExpression && ((FunCallExpression) arg).getDefinition().getResultType() instanceof ClassCallExpression && ((FunCallExpression) arg).getDefinition().status().isOK()) {
       Expression result = NormalizeVisitor.INSTANCE.evalFieldCall(expr.getDefinition(), arg);
       if (result != null) {
-        while (apps > 0 && result instanceof LamExpression) {
-          LamExpression lam = (LamExpression) result;
-          SingleDependentLink param = lam.getParameters();
+        while (apps > 0 && result instanceof LamExpression lam) {
+            SingleDependentLink param = lam.getParameters();
           for (; param.hasNext() && apps > 0; param = param.getNext()) {
             apps--;
           }

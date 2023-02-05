@@ -50,9 +50,8 @@ public abstract class CovarianceChecker {
       return false;
     }
 
-    if (expr instanceof NewExpression) {
-      NewExpression newExpr = (NewExpression) expr;
-      if (newExpr.getRenewExpression() != null) {
+    if (expr instanceof NewExpression newExpr) {
+        if (newExpr.getRenewExpression() != null) {
         return checkNonCovariant(newExpr.getRenewExpression());
       }
 
@@ -99,9 +98,8 @@ public abstract class CovarianceChecker {
       return false;
     }
 
-    if (expr instanceof DataCallExpression && allowData()) {
-      DataCallExpression dataCall = (DataCallExpression) expr;
-      if (checkLevels(dataCall.getLevels(), dataCall)) {
+    if (expr instanceof DataCallExpression dataCall && allowData()) {
+        if (checkLevels(dataCall.getLevels(), dataCall)) {
         return true;
       }
       int i = 0;
@@ -120,9 +118,8 @@ public abstract class CovarianceChecker {
       return false;
     }
 
-    if (expr instanceof ClassCallExpression) {
-      ClassCallExpression classCall = (ClassCallExpression) expr;
-      if (checkLevels(classCall.getLevels(), classCall)) {
+    if (expr instanceof ClassCallExpression classCall) {
+        if (checkLevels(classCall.getLevels(), classCall)) {
         return true;
       }
       for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
@@ -139,9 +136,8 @@ public abstract class CovarianceChecker {
       return false;
     }
 
-    if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.PATH_INFIX && allowData()) {
-      FunCallExpression funCall = (FunCallExpression) expr;
-      if (checkLevels(funCall.getLevels(), funCall)) {
+    if (expr instanceof FunCallExpression funCall && ((FunCallExpression) expr).getDefinition() == Prelude.PATH_INFIX && allowData()) {
+        if (checkLevels(funCall.getLevels(), funCall)) {
         return true;
       }
       if (check(funCall.getDefCallArguments().get(0))) {

@@ -30,12 +30,11 @@ public class UseTypechecking {
 
     for (Concrete.UseDefinition definition : definitions) {
       Definition typedDefinition = definition.getData().getTypechecked();
-      if (!(typedDefinition instanceof FunctionDefinition)) {
+      if (!(typedDefinition instanceof FunctionDefinition useDefinition)) {
         continue;
       }
 
-      FunctionDefinition useDefinition = (FunctionDefinition) typedDefinition;
-      ErrorReporter localErrorReporter = new LocalErrorReporter(definition.getData(), errorReporter);
+        ErrorReporter localErrorReporter = new LocalErrorReporter(definition.getData(), errorReporter);
       if (definition.getKind() == FunctionKind.LEVEL && !useDefinition.getResultType().isError()) {
         Definition useParent = definition.getUseParent().getTypechecked();
         ParametersLevel parametersLevel = typecheckLevel(definition, useDefinition, useParent, localErrorReporter);
@@ -249,9 +248,8 @@ public class UseTypechecking {
   }
 
   private static void registerParametersLevel(FunctionDefinition useDefinition, Definition useParent, ParametersLevel parametersLevel) {
-    if (useParent instanceof DataDefinition) {
-      DataDefinition dataDef = (DataDefinition) useParent;
-      if (parametersLevel.parameters == null) {
+    if (useParent instanceof DataDefinition dataDef) {
+        if (parametersLevel.parameters == null) {
         Sort newSort = parametersLevel.level == -1 ? Sort.PROP : new Sort(dataDef.getSort().getPLevel(), new Level(parametersLevel.level));
         if (!dataDef.getSort().isLessOrEquals(newSort)) {
           if (!(parametersLevel.level == -1 && dataDef.getSort().isSet())) {

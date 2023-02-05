@@ -117,9 +117,8 @@ public class Util {
 
   public static void unflattenClauses(List<ClauseElem> clauseElems, List<? super ExpressionPattern> result) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
-      if (clauseElems.get(i) instanceof DataClauseElem) {
-        DataClauseElem dataClauseElem = (DataClauseElem) clauseElems.get(i);
-        DependentLink parameters = dataClauseElem.getParameters();
+      if (clauseElems.get(i) instanceof DataClauseElem dataClauseElem) {
+          DependentLink parameters = dataClauseElem.getParameters();
         int size = DependentLink.Helper.size(parameters);
         List<ExpressionPattern> patterns = new ArrayList<>(size);
         for (int j = i + 1; j < clauseElems.size() && patterns.size() < size; j++) {

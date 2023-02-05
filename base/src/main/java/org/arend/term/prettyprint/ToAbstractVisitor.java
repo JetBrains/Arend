@@ -765,7 +765,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         if (list.get(i) instanceof Integer) {
           index = (int) list.get(i);
         } else if (list.get(i) instanceof ClassField field) {
-          if (pattern.getFields() == null) return null;
+            if (pattern.getFields() == null) return null;
           index = pattern.getFields().indexOf(field);
         } else return null;
         List<? extends LetClausePattern> patterns = pattern.getPatterns();
@@ -1020,7 +1020,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (body instanceof ElimBody) {
       return visitElimBody(parameters, (ElimBody) body);
     } else if (body instanceof IntervalElim elim) {
-      // TODO: Add interval clauses
+        // TODO: Add interval clauses
       return elim.getOtherwise() == null ? new ArrayList<>() : visitElimBody(parameters, elim.getOtherwise());
     } else if (body == null) {
       return null;

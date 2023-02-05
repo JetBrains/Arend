@@ -297,9 +297,8 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
       return ((Expression) body).accept(this, param);
     } else if (body instanceof ElimBody) {
       return visitElimBody((ElimBody) body, param);
-    } else if (body instanceof IntervalElim) {
-      IntervalElim elim = (IntervalElim) body;
-      for (IntervalElim.CasePair pair : elim.getCases()) {
+    } else if (body instanceof IntervalElim elim) {
+        for (IntervalElim.CasePair pair : elim.getCases()) {
         if (pair.proj1 != null && pair.proj1.accept(this, param) || pair.proj2 != null && pair.proj2.accept(this, param)) {
           return true;
         }

@@ -24,7 +24,7 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
 
   @Override
   public @Nullable LongName renameDefinition(ArendRef arendRef) {
-    if (!(arendRef instanceof LocatedReferable)) {
+    if (!(arendRef instanceof LocatedReferable ref)) {
       return null;
     }
 
@@ -32,8 +32,7 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
       return new LongName(Collections.emptyList());
     }
 
-    LocatedReferable ref = (LocatedReferable) arendRef;
-    List<String> list = new ArrayList<>();
+      List<String> list = new ArrayList<>();
     list.add(ref.getRepresentableName());
     while (true) {
       LocatedReferable parent = ref.getLocatedReferableParent();

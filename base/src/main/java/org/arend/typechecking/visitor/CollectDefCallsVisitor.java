@@ -79,9 +79,8 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void> {
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
-    if (expr.getReferent() instanceof TCReferable) {
-      TCReferable ref = (TCReferable) expr.getReferent();
-      if (myExcluded == null || !myExcluded.contains(ref)) {
+    if (expr.getReferent() instanceof TCReferable ref) {
+        if (myExcluded == null || !myExcluded.contains(ref)) {
         myDependencies.add(ref);
       }
     }

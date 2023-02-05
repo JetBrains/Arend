@@ -107,12 +107,11 @@ public class DefinitionContributorImpl extends Disableable implements Definition
 
   @Override
   public void declare(@NotNull ConcreteDefinition definition) {
-    if (!(definition instanceof Concrete.Definition)) {
+    if (!(definition instanceof Concrete.Definition def)) {
       throw new IllegalArgumentException();
     }
 
-    Concrete.Definition def = (Concrete.Definition) definition;
-    List<String> longName = new ArrayList<>();
+      List<String> longName = new ArrayList<>();
     ModulePath module = LocatedReferable.Helper.getLocation(def.getData(), longName).getModulePath();
     longName.add(def.getData().getRefName());
     declare(module, new LongName(longName), def.getData().getAliasName(), (locationRef, prevRef, name) -> def.getData());

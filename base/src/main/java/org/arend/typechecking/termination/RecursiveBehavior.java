@@ -35,9 +35,8 @@ public class RecursiveBehavior<T> {
 
   @Override
   public boolean equals(Object o) {
-    if (o instanceof RecursiveBehavior) {
-      RecursiveBehavior<?> rb2 = (RecursiveBehavior<?>) o;
-      return behavior.equals(rb2.behavior) && labels.equals(rb2.labels);
+    if (o instanceof RecursiveBehavior<?> rb2) {
+        return behavior.equals(rb2.behavior) && labels.equals(rb2.labels);
     }
     return false;
   }

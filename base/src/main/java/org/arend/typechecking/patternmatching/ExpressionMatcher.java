@@ -22,9 +22,8 @@ public class ExpressionMatcher {
       return new TupleExpression(newArgs, (SigmaExpression) data);
     }
 
-    if (data instanceof FunCallExpression) {
-      FunCallExpression funCall = (FunCallExpression) data;
-      newArgs.addAll(0, funCall.getDefCallArguments());
+    if (data instanceof FunCallExpression funCall) {
+        newArgs.addAll(0, funCall.getDefCallArguments());
       return funCall.getDefinition() == Prelude.IDP ? expression : FunCallExpression.make(funCall.getDefinition(), funCall.getLevels(), newArgs);
     }
 
@@ -79,7 +78,7 @@ public class ExpressionMatcher {
     }
 
     expr = expr.normalize(NormalizationMode.WHNF);
-    if (!(pattern instanceof ConstructorExpressionPattern)) {
+    if (!(pattern instanceof ConstructorExpressionPattern conPattern)) {
       if (expr instanceof TupleExpression) {
         return matchExpressions(((TupleExpression) expr).getFields(), pattern.getSubPatterns(), false, result) != null ? expr : null;
       }
@@ -90,8 +89,7 @@ public class ExpressionMatcher {
       return expr;
     }
 
-    ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern;
-    List<? extends Expression> args = conPattern.getMatchingExpressionArguments(expr, true);
+      List<? extends Expression> args = conPattern.getMatchingExpressionArguments(expr, true);
     if (args == null) {
       Binding binding = new TypedBinding(Renamer.UNNAMED, expr.computeType());
       result.add(new MatchResult(expr, conPattern, binding));

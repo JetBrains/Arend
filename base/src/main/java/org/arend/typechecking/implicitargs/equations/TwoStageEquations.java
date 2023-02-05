@@ -914,9 +914,7 @@ public class TwoStageEquations implements Equations {
         actualType = dataCall != null && dataCall.getDefinition() == Prelude.FIN ? result.getType() : Nat();
       } else {
         actualType = result.getType().normalize(NormalizationMode.WHNF);
-        if (actualType instanceof ClassCallExpression && expectedType instanceof ClassCallExpression) {
-          ClassCallExpression actualClassCall = (ClassCallExpression) actualType;
-          ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
+        if (actualType instanceof ClassCallExpression actualClassCall && expectedType instanceof ClassCallExpression expectedClassCall) {
           /* I don't know if this is necessary or not
           if (var.compareClassCallsExactly()) {
             if (!expectedClassCall.getLevels().compare(actualClassCall.getLevels(expectedClassCall.getDefinition()), CMP.GE, this, var.getSourceNode())) {

@@ -110,9 +110,8 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
   }
 
   private void processDefCall(DefCallExpression defCall) {
-    if (!(defCall instanceof LeveledDefCallExpression)) return;
-    LeveledDefCallExpression leveled = (LeveledDefCallExpression) defCall;
-    if (myDefinitions == null) {
+    if (!(defCall instanceof LeveledDefCallExpression leveled)) return;
+      if (myDefinitions == null) {
       List<? extends LevelVariable> params = leveled.getDefinition().getLevelParameters();
       if (params != null && (leveled.getLevels() instanceof LevelPair || leveled.getLevels().toList().size() != params.size())) {
         removeLevels(leveled, params.isEmpty() || params.get(0).getType() == LevelVariable.LvlType.HLVL, params.isEmpty() || params.get(0).getType() == LevelVariable.LvlType.PLVL);

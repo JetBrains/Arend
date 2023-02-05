@@ -40,12 +40,11 @@ public class Condition extends SubstitutionData {
     if (obj == this) {
       return true;
     }
-    if (!(obj instanceof Condition)) {
+    if (!(obj instanceof Condition condition)) {
       return false;
     }
 
-    Condition condition = (Condition) obj;
-    CompareVisitor visitor = new CompareVisitor(DummyEquations.getInstance(), CMP.EQ, null);
+      CompareVisitor visitor = new CompareVisitor(DummyEquations.getInstance(), CMP.EQ, null);
     if (!(substitution == null && condition.substitution == null || substitution != null && condition.substitution != null && substitution.size() == condition.substitution.size())) {
       return false;
     }

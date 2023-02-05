@@ -81,10 +81,9 @@ public class SubstExpression extends Expression {
   }
 
   public Expression eval() {
-    if (myExpression instanceof LetExpression) {
+    if (myExpression instanceof LetExpression let) {
       ExprSubstitution substitution = new ExprSubstitution(mySubstitution);
-      LetExpression let = (LetExpression) myExpression;
-      if (let.isStrict()) {
+        if (let.isStrict()) {
         for (HaveClause letClause : let.getClauses()) {
           substitution.add(letClause, LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
         }

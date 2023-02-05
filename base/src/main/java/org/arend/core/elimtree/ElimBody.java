@@ -91,7 +91,7 @@ public class ElimBody implements Body, CoreElimBody {
 
         ConstructorExpressionPattern conPattern;
         if (key instanceof Constructor) {
-          if (!(type instanceof DataCallExpression)) {
+          if (!(type instanceof DataCallExpression dataCall)) {
             throw new IllegalArgumentException();
           }
           boolean isFin = ((DataCallExpression) type).getDefinition() == Prelude.FIN;
@@ -104,19 +104,17 @@ public class ElimBody implements Body, CoreElimBody {
             }
             continue;
           }
-          DataCallExpression dataCall = (DataCallExpression) type;
-          conPattern = new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getLevels(), dataCall.getDefCallArguments(), Collections.emptyList()), Collections.emptyList());
+            conPattern = new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getLevels(), dataCall.getDefCallArguments(), Collections.emptyList()), Collections.emptyList());
           clauseElems.add(new Util.ConstructorClauseElem(constructor, dataCall.getLevels(), dataCall.getDefCallArguments()));
           newParams.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(constructor.getDataTypeParameters(), conCalls.get(0).getDataTypeArguments()), conCalls.get(0).getLevelSubstitution())));
         } else if (key instanceof IdpConstructor) {
           conPattern = ConstructorPattern.make(Prelude.IDP, Collections.emptyList()).toExpressionPattern(type);
           clauseElems.add(new Util.PatternClauseElem(conPattern));
         } else if (key instanceof ArrayConstructor) {
-          if (!(type instanceof ClassCallExpression)) {
+          if (!(type instanceof ClassCallExpression classCall)) {
             throw new IllegalArgumentException();
           }
-          ClassCallExpression classCall = (ClassCallExpression) type;
-          var elem = new Util.ArrayClauseElem(((ArrayConstructor) key).getConstructor(), classCall.getLevels().toLevelPair(), classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), classCall.getThisBinding(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE), ConstructorExpressionPattern.isArrayEmpty(classCall));
+            var elem = new Util.ArrayClauseElem(((ArrayConstructor) key).getConstructor(), classCall.getLevels().toLevelPair(), classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), classCall.getThisBinding(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE), ConstructorExpressionPattern.isArrayEmpty(classCall));
           conPattern = elem.getPattern(Collections.emptyList());
           clauseElems.add(elem);
           newParams.addAll(DependentLink.Helper.toList(elem.getParameters()));

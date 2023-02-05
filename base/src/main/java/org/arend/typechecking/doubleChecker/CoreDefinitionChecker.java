@@ -70,10 +70,9 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
   private boolean check(FunctionDefinition definition) {
     Body body = definition.getReallyActualBody();
     boolean checkType = true;
-    if (body instanceof NewExpression && ((NewExpression) body).getRenewExpression() == null && definition.getResultType() instanceof ClassCallExpression && definition.getResultTypeLevel() == null) {
+    if (body instanceof NewExpression && ((NewExpression) body).getRenewExpression() == null && definition.getResultType() instanceof ClassCallExpression typeClassCall && definition.getResultTypeLevel() == null) {
       Map<ClassField, Expression> newImpls = new LinkedHashMap<>();
-      ClassCallExpression typeClassCall = (ClassCallExpression) definition.getResultType();
-      ClassCallExpression bodyClassCall = ((NewExpression) body).getClassCall();
+        ClassCallExpression bodyClassCall = ((NewExpression) body).getClassCall();
       ClassCallExpression newClassCall = new ClassCallExpression(bodyClassCall.getDefinition(), typeClassCall.getLevels(), newImpls, Sort.PROP, UniverseKind.NO_UNIVERSES);
       Expression newThisBinding = new ReferenceExpression(newClassCall.getThisBinding());
       boolean ok = true;
@@ -133,9 +132,8 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
     }
 
     ElimBody elimBody;
-    if (body instanceof IntervalElim) {
-      IntervalElim intervalElim = (IntervalElim) body;
-      if (intervalElim.getCases().isEmpty()) {
+    if (body instanceof IntervalElim intervalElim) {
+        if (intervalElim.getCases().isEmpty()) {
         errorReporter.report(new TypecheckingError("Empty IntervalElim", null));
         return false;
       }
@@ -325,12 +323,11 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         Expression type = fieldType;
         int sum = field.getNumberOfParameters();
         for (int i = 0; i < sum; ) {
-          if (!(type instanceof PiExpression)) {
+          if (!(type instanceof PiExpression piType)) {
             errorReporter.report(new TypecheckingError("The type of field '" + field.getName() + "' should have at least " + sum + " parameters, but has only " + i, null));
             return false;
           }
-          PiExpression piType = (PiExpression) type;
-          SingleDependentLink link = piType.getParameters();
+            SingleDependentLink link = piType.getParameters();
           for (; link.hasNext() && i < sum; link = link.getNext(), i++) {
             parameters.add(link);
           }
