@@ -738,7 +738,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         }
         List<Referable> resolvedRefs = new ArrayList<>();
         Referable resolved = tryResolve(originalUnresolvedReferable, myParentScope, resolvedRefs);
-        if (resolved == null || (resolved instanceof GlobalReferable && (!((GlobalReferable) resolved).getKind().isConstructor()))) {
+        if (resolved == null || resolved instanceof GlobalReferable && !((GlobalReferable) resolved).getKind().isConstructor()) {
           String name = originalUnresolvedReferable == null ? null : originalUnresolvedReferable.getRefName();
           Object data = originalUnresolvedReferable instanceof UnresolvedReference ? ((UnresolvedReference) originalUnresolvedReferable).getData() : null;
           Referable local = new DataLocalReferable(data, name);
@@ -752,7 +752,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
             corrected = new Concrete.BinOpSequenceElem<>(new Concrete.NamePattern(subPattern.getData(), subPattern.isExplicit(), resolved, namePattern.type), first ? Fixity.NONFIX : namePattern.fixity, subPattern.isExplicit());
           }
         }
-        if (resolved != null && myResolverListener != null) {
+        if (resolved instanceof GlobalReferable && ((GlobalReferable) resolved).getKind().isConstructor() && myResolverListener != null) {
           myResolverListener.patternResolved(originalUnresolvedReferable, resolved, subPattern, resolvedRefs.size() == 1 ? Collections.singletonList(resolved) : resolvedRefs);
         }
       } else {
