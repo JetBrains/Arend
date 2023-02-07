@@ -744,4 +744,15 @@ public class VarsTest extends TypeCheckingTestCase {
     TCDefReferable f = getDefinition("C.f").getRef();
     assertEquals(Collections.singletonList(new Pair<>(f, 0)), getDefinition("C.f.test").getParametersOriginalDefinitions());
   }
+
+  @Test
+  public void coclauseTest() {
+    typeCheckModule("""
+      \\record R (g : Nat -> Nat)
+      \\func f (x : Nat) => 0
+        \\where
+          \\func test (p : x = 0) : R \\cowith
+            | g (n : Nat) : Nat => n
+      """);
+  }
 }

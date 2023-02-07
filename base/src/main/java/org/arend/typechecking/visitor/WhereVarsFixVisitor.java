@@ -200,6 +200,14 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
           definition.accept(visitor, null);
         }
         definition.addParameters(pair.proj1, pair.proj2);
+        if (definition instanceof Concrete.CoClauseFunctionDefinition coClauseDef) {
+          int n = coClauseDef.getNumberOfExternalParameters();
+          for (Concrete.Parameter parameter : pair.proj1) {
+            parameter.setExplicit(false);
+            n += parameter.getNumberOfParameters();
+          }
+          coClauseDef.setNumberOfExternalParameters(n);
+        }
       }
     }
   }
@@ -241,6 +249,15 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
       }
     }
     return super.visitApp(expr, params);
+  }
+
+  @Override
+  protected void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl, Void params) {
+    if (classFieldImpl instanceof Concrete.CoClauseFunctionReference) {
+      visitClassElements(classFieldImpl.getSubCoclauseList(), params);
+    } else {
+      super.visitClassFieldImpl(classFieldImpl, params);
+    }
   }
 
   @Override
