@@ -6,7 +6,6 @@ import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.variable.Variable;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +18,7 @@ import java.util.function.Function;
 /**
  * A core expression is an internal representation of Arend expressions.
  */
-public interface CoreExpression extends CoreBody, UncheckedExpression, AbstractedExpression, PrettyPrintable {
+public interface CoreExpression extends CoreBody, UncheckedExpression, AbstractedExpression {
   <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   /**

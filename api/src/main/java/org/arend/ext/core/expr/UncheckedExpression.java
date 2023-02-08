@@ -6,6 +6,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.variable.Variable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,7 +18,7 @@ import java.util.Set;
  * An unchecked core expression.
  * It can be checked by {@link org.arend.ext.typechecking.ExpressionTypechecker} to get a checked {@link CoreExpression}.
  */
-public interface UncheckedExpression {
+public interface UncheckedExpression extends PrettyPrintable {
   /**
    * Checks if this expression represents an error expression.
    */

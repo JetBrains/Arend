@@ -1,6 +1,6 @@
 package org.arend.ext.prettyprinting.doc;
 
-import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.jetbrains.annotations.Nullable;
 
@@ -8,15 +8,15 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.hList;
 import static org.arend.ext.prettyprinting.doc.DocFactory.text;
 
 public class TermDoc extends CachingDoc {
-  private final CoreExpression term;
+  private final UncheckedExpression term;
   private final PrettyPrinterConfig ppConfig;
 
-  TermDoc(CoreExpression term, PrettyPrinterConfig ppConfig) {
+  TermDoc(UncheckedExpression term, PrettyPrinterConfig ppConfig) {
     this.term = term;
     this.ppConfig = ppConfig;
   }
 
-  public CoreExpression getTerm() {
+  public UncheckedExpression getTerm() {
     return term;
   }
 
