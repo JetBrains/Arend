@@ -82,6 +82,8 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
 
+import static org.arend.core.expr.ExpressionFactory.Int;
+import static org.arend.core.expr.ExpressionFactory.Pos;
 import static org.arend.ext.error.ArgInferenceError.expression;
 
 public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
@@ -475,6 +477,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
     } else if (expectedType instanceof PiExpression && result.type instanceof DataCallExpression && ((DataCallExpression) result.type).getDefinition() == Prelude.PATH) {
       return checkExpr(Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), Prelude.AT.getRef()), new Concrete.ReferenceExpression(expr.getData(), new CoreReferable(null, result)), true), expectedType);
+    }
+
+    if (result.type instanceof DataCallExpression && ((DataCallExpression) result.type).getDefinition() == Prelude.FIN && expectedType instanceof DataCallExpression && ((DataCallExpression) expectedType).getDefinition() == Prelude.INT) {
+      result.expression = Pos(result.expression);
+      result.type = Int();
+      return checkResultExpr(expectedType, result, expr);
     }
 
     TypecheckingResult coercedResult = CoerceData.coerce(result, expectedType, expr, this);

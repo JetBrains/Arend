@@ -419,4 +419,9 @@ public class CoerceTest extends TypeCheckingTestCase {
         \\func test (s : S) : Nat => s
         """);
   }
+
+  @Test
+  public void finIntTest() {
+    typeCheckDef("\\func test (x : Fin 3) : Int => x");
+  }
 }
