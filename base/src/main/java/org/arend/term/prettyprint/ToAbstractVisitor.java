@@ -764,8 +764,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         int index;
         if (list.get(i) instanceof Integer) {
           index = (int) list.get(i);
-        } else if (list.get(i) instanceof ClassField) {
-          ClassField field = (ClassField) list.get(i);
+        } else if (list.get(i) instanceof ClassField field) {
           if (pattern.getFields() == null) return null;
           index = pattern.getFields().indexOf(field);
         } else return null;
@@ -811,7 +810,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitBox(BoxExpression expr, Void params) {
-    return new Concrete.BoxExpression(null, expr.getExpression().accept(this, null));
+    return hasFlag(PrettyPrinterFlag.SHOW_PROOFS) ? new Concrete.BoxExpression(null, expr.getExpression().accept(this, null)) : generateHiddenGoal(null);
   }
 
   private Concrete.Pattern makeLetClausePattern(LetClausePattern pattern) {
@@ -993,14 +992,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private FunctionKind visitFunctionKind(CoreFunctionDefinition.Kind kind) {
-    switch (kind) {
-      case FUNC: return FunctionKind.FUNC;
-      case SFUNC: return FunctionKind.SFUNC;
-      case TYPE: return FunctionKind.TYPE;
-      case LEMMA: return FunctionKind.LEMMA;
-      case INSTANCE: return FunctionKind.INSTANCE;
-      default: throw new IllegalStateException();
-    }
+    return switch (kind) {
+      case FUNC -> FunctionKind.FUNC;
+      case SFUNC -> FunctionKind.SFUNC;
+      case TYPE -> FunctionKind.TYPE;
+      case LEMMA -> FunctionKind.LEMMA;
+      case INSTANCE -> FunctionKind.INSTANCE;
+    };
   }
 
   public static Concrete.LevelParameters visitLevelParameters(List<? extends LevelVariable> parameters, boolean isPLevels) {
@@ -1021,8 +1019,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private List<Concrete.FunctionClause> visitIntervalElim(DependentLink parameters, Body body) {
     if (body instanceof ElimBody) {
       return visitElimBody(parameters, (ElimBody) body);
-    } else if (body instanceof IntervalElim) {
-      IntervalElim elim = (IntervalElim) body;
+    } else if (body instanceof IntervalElim elim) {
       // TODO: Add interval clauses
       return elim.getOtherwise() == null ? new ArrayList<>() : visitElimBody(parameters, elim.getOtherwise());
     } else if (body == null) {
