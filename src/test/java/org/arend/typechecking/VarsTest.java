@@ -755,4 +755,16 @@ public class VarsTest extends TypeCheckingTestCase {
             | g (n : Nat) : Nat => n
       """);
   }
+
+  @Test
+  public void classTest2() {
+    typeCheckModule(
+      """
+        \\class C (x : Nat) {
+          \\func f {y : Nat} (p : x = y) => g
+            \\where
+              \\func g => p
+        }
+        """);
+  }
 }

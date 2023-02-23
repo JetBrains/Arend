@@ -101,6 +101,16 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
     }
   }
 
+  private int getFirstArgumentIndex(Concrete.ReferenceExpression refExpr, List<Concrete.Argument> args) {
+    Referable ref = refExpr.getReferent();
+    if (ref instanceof TCDefReferable) {
+      Definition def = ((TCDefReferable) ref).getTypechecked();
+      int index = def == null ? 0 : def.getParametersOriginalDefinitions().size();
+      return index <= args.size() ? index : 0;
+    }
+    return 0;
+  }
+
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
     if (expr.getFunction() instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr.getFunction()).getReferent() instanceof MetaReferable) {
@@ -116,25 +126,31 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
           return expr;
         }
       }
-    } else if (expr.getFunction() instanceof Concrete.ReferenceExpression && !expr.getArguments().get(0).isExplicit()) {
-      if (expr.getArguments().get(0).expression instanceof Concrete.HoleExpression) {
-        Referable ref = ((Concrete.ReferenceExpression) expr.getFunction()).getReferent();
-        if (ref instanceof TCDefReferable) {
-          Definition def = ((TCDefReferable) ref).getTypechecked();
-          if (def != null && def.getEnclosingClass() != null && def.getEnclosingClass().getReferable() == myClassReferable) {
-            if (expr.getArguments().size() == 1) {
-              return expr.getFunction().accept(this, null);
-            } else {
-              expr.getArguments().remove(0);
-              return super.visitApp(expr, null);
+    } else if (expr.getFunction() instanceof Concrete.ReferenceExpression refExpr) {
+      int index = getFirstArgumentIndex(refExpr, expr.getArguments());
+      if (index >= expr.getArguments().size() || !expr.getArguments().get(index).isExplicit()) {
+        if (index < expr.getArguments().size() && expr.getArguments().get(index).expression instanceof Concrete.HoleExpression) {
+          Referable ref = refExpr.getReferent();
+          if (ref instanceof TCDefReferable) {
+            Definition def = ((TCDefReferable) ref).getTypechecked();
+            if (def != null && def.getEnclosingClass() != null && def.getEnclosingClass().getReferable() == myClassReferable) {
+              if (expr.getArguments().size() == 1) {
+                return expr.getFunction().accept(this, null);
+              } else {
+                expr.getArguments().remove(0);
+                return super.visitApp(expr, null);
+              }
             }
           }
         }
+        for (Concrete.Argument argument : expr.getArguments()) {
+          argument.expression = argument.expression.accept(this, params);
+        }
+        if (index >= expr.getArguments().size()) {
+          return Concrete.AppExpression.make(expr.getData(), visitReference(refExpr, null), expr.getArguments());
+        }
+        return expr;
       }
-      for (Concrete.Argument argument : expr.getArguments()) {
-        argument.expression = argument.expression.accept(this, params);
-      }
-      return expr;
     }
 
     return super.visitApp(expr, params);
