@@ -2681,7 +2681,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      if (!superLevels.isEmpty()) {
+      if (myNewDef && !superLevels.isEmpty()) {
         typedDef.setSuperLevels(superLevels);
       }
     }
