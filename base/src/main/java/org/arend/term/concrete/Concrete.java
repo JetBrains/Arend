@@ -696,7 +696,7 @@ public final class Concrete {
     }
   }
 
-  public static class ThisExpression extends Expression {
+  public static class ThisExpression extends Expression implements ConcreteThisExpression {
     public static final byte PREC = 12;
     private Referable myReferent;
 
@@ -705,6 +705,7 @@ public final class Concrete {
       myReferent = referable;
     }
 
+    @Override
     public Referable getReferent() {
       return myReferent;
     }
