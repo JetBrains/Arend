@@ -71,7 +71,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   private boolean compareParameter(Concrete.Parameter arg1, Concrete.Parameter arg2) {
-    if (arg1.isExplicit() != arg2.isExplicit()) {
+    if (arg1.isExplicit() != arg2.isExplicit() || arg1.isProperty() != arg2.isProperty() || arg1.isStrict() != arg2.isStrict()) {
       return false;
     }
 
