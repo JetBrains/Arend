@@ -668,4 +668,15 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void normTest() {
     typeCheckDef("\\func test {A : \\Type} (a a' : A) (l : Array A) (j : Fin (suc l.len)) : (a :: a' :: l) (suc j) = (a' :: l) j => idp");
   }
+
+  @Test
+  public void dataPatternMatchingTest() {
+    typeCheckModule(
+      """
+        \\data D {A : \\Type} (l : Array A) \\elim l
+          | x :: x' :: l => con (x = x')
+        \\func test {A : \\Type} {l : Array A} (d : D l) : Nat \\elim l, d
+          | x :: x' :: l, con p => 0
+        """);
+  }
 }

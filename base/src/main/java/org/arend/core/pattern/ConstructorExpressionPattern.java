@@ -394,8 +394,23 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
         }
       }
     }
-    if (dataExpr instanceof FunCallExpression && ((FunCallExpression) dataExpr).getDefinition() != Prelude.IDP && expression instanceof ArrayExpression && ((ArrayExpression) expression).getElements().isEmpty() != (((FunCallExpression) dataExpr).getDefinition() == Prelude.EMPTY_ARRAY)) {
-      return Decision.NO;
+    if (dataExpr instanceof FunCallExpression funCall && (funCall.getDefinition() == Prelude.EMPTY_ARRAY || funCall.getDefinition() == Prelude.ARRAY_CONS)) {
+      if (expression instanceof ArrayExpression && ((ArrayExpression) expression).getElements().isEmpty() != (funCall.getDefinition() == Prelude.EMPTY_ARRAY)) {
+        return Decision.NO;
+      }
+      if (expression instanceof FunCallExpression funCall2 && (funCall2.getDefinition() == Prelude.EMPTY_ARRAY || funCall2.getDefinition() == Prelude.ARRAY_CONS) && funCall.getDefinition() != funCall2.getDefinition()) {
+        return Decision.NO;
+      }
+      Expression type = expression.getType().normalize(NormalizationMode.WHNF);
+      if (type instanceof ClassCallExpression classCall && classCall.getDefinition() == Prelude.DEP_ARRAY) {
+        Expression length = classCall.getImplementationHere(Prelude.ARRAY_LENGTH, expression);
+        if (length != null) {
+          length = length.normalize(NormalizationMode.WHNF);
+          if (length instanceof IntegerExpression && ((IntegerExpression) length).isZero() && funCall.getDefinition() == Prelude.ARRAY_CONS || (length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC || length instanceof IntegerExpression && !((IntegerExpression) length).isZero()) && funCall.getDefinition() == Prelude.EMPTY_ARRAY) {
+            return Decision.NO;
+          }
+        }
+      }
     }
     return Decision.MAYBE;
   }

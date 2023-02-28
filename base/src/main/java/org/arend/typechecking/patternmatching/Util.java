@@ -7,14 +7,13 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DConstructor;
 import org.arend.core.elimtree.BranchKey;
-import org.arend.core.expr.ConCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.FunCallExpression;
+import org.arend.core.expr.*;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
+import org.arend.prelude.Prelude;
 
 import java.util.*;
 
@@ -117,8 +116,7 @@ public class Util {
 
   public static void unflattenClauses(List<ClauseElem> clauseElems, List<? super ExpressionPattern> result) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
-      if (clauseElems.get(i) instanceof DataClauseElem) {
-        DataClauseElem dataClauseElem = (DataClauseElem) clauseElems.get(i);
+      if (clauseElems.get(i) instanceof DataClauseElem dataClauseElem) {
         DependentLink parameters = dataClauseElem.getParameters();
         int size = DependentLink.Helper.size(parameters);
         List<ExpressionPattern> patterns = new ArrayList<>(size);
@@ -129,6 +127,9 @@ public class Util {
           for (DependentLink link = DependentLink.Helper.get(parameters, clauseElems.size() - i - 1); link.hasNext(); link = link.getNext()) {
             patterns.add(new BindingPattern(link));
           }
+        }
+        if (dataClauseElem instanceof ArrayClauseElem arrayClauseElem && i + 1 < clauseElems.size() && patterns.get(0) instanceof ConstructorExpressionPattern && patterns.get(0).getDefinition() == Prelude.ZERO && patterns.get(patterns.size() - 1) instanceof BindingPattern) {
+          patterns.set(patterns.size() - 1, new ConstructorExpressionPattern(new FunCallExpression(Prelude.EMPTY_ARRAY, arrayClauseElem.myLevels, null, arrayClauseElem.myElementsType != null ? arrayClauseElem.myElementsType : FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, new ReferenceExpression(arrayClauseElem.myThisBinding))), arrayClauseElem.myThisBinding, (Boolean) null, Collections.emptyList()));
         }
         clauseElems.subList(i, Math.min(i + size + 1, clauseElems.size())).clear();
         clauseElems.add(i, new PatternClauseElem(dataClauseElem.getPattern(patterns)));
