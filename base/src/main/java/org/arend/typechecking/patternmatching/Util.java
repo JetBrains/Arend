@@ -128,7 +128,7 @@ public class Util {
             patterns.add(new BindingPattern(link));
           }
         }
-        if (dataClauseElem instanceof ArrayClauseElem arrayClauseElem && i + 1 < clauseElems.size() && patterns.get(0) instanceof ConstructorExpressionPattern && patterns.get(0).getDefinition() == Prelude.ZERO && patterns.get(patterns.size() - 1) instanceof BindingPattern) {
+        if (dataClauseElem instanceof ArrayClauseElem arrayClauseElem && !patterns.isEmpty() && patterns.get(0) instanceof ConstructorExpressionPattern && patterns.get(0).getDefinition() == Prelude.ZERO && patterns.get(patterns.size() - 1) instanceof BindingPattern) {
           patterns.set(patterns.size() - 1, new ConstructorExpressionPattern(new FunCallExpression(Prelude.EMPTY_ARRAY, arrayClauseElem.myLevels, null, arrayClauseElem.myElementsType != null ? arrayClauseElem.myElementsType : FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, new ReferenceExpression(arrayClauseElem.myThisBinding))), arrayClauseElem.myThisBinding, (Boolean) null, Collections.emptyList()));
         }
         clauseElems.subList(i, Math.min(i + size + 1, clauseElems.size())).clear();
