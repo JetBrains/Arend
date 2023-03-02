@@ -679,4 +679,18 @@ public class ArrayTest extends TypeCheckingTestCase {
           | x :: x' :: l, con p => 0
         """);
   }
+
+  @Test
+  public void impossibleEliminationTest() {
+    typeCheckModule(
+      """
+        \\data D {A : \\Type} (l : Array A) \\elim l
+          | :: x xs => con1 (D xs)
+          | :: x (:: x' l) => con2 (x = x')
+        \\func test {A : \\Type} {l : Array A} (d : D l) : Nat \\elim l, d
+          | x :: xs, con1 d => 0
+          | x :: (x' :: xs), con2 p => 1
+        """
+    );
+  }
 }

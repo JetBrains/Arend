@@ -1038,7 +1038,25 @@ public class ElimTypechecking {
             }
 
             newSubstitution = new ExprSubstitution(conClauseList.get(i).substitution);
-            newSubstitution.addSubst(((BindingPattern) oldPatterns.get(index)).getBinding(), substExpr);
+            Binding patternBinding = ((BindingPattern) oldPatterns.get(index)).getBinding();
+            newSubstitution.addSubst(patternBinding, substExpr);
+            if (branchKey == Prelude.ZERO && index + 2 < oldPatterns.size()) {
+              ExpressionPattern pattern = oldPatterns.get(index + 2);
+              if (pattern instanceof BindingPattern) {
+                Binding binding = pattern.getBinding();
+                Expression type = binding.getTypeExpr().normalize(NormalizationMode.WHNF);
+                if (type instanceof ClassCallExpression classCall && classCall.getDefinition() == Prelude.DEP_ARRAY) {
+                  Expression length = classCall.getImplementationHere(Prelude.ARRAY_LENGTH, new ReferenceExpression(binding));
+                  if (length != null) {
+                    length = length.normalize(NormalizationMode.WHNF);
+                    if (length instanceof ReferenceExpression && ((ReferenceExpression) length).getBinding() == patternBinding) {
+                      Expression elementsType = classCall.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, new ReferenceExpression(binding));
+                      newSubstitution.addSubst(binding, new FunCallExpression(Prelude.EMPTY_ARRAY, classCall.getLevels(), null, elementsType != null ? elementsType : FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, new ReferenceExpression(classCall.getThisBinding()))));
+                    }
+                  }
+                }
+              }
+            }
           }
 
           patterns.addAll(oldPatterns.subList(index + 1, oldPatterns.size()));
