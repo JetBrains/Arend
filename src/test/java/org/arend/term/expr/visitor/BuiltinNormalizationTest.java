@@ -152,6 +152,10 @@ public class BuiltinNormalizationTest extends TypeCheckingTestCase {
     assertEquals(new BigIntegerExpression(new BigInteger("17609044")), funCall(Prelude.DIV, new BigIntegerExpression(new BigInteger("1000000000000")), val(56789)).normalize(NormalizationMode.WHNF));
     // mod 1000000000000 98765 = 29340
     assertEquals(new BigIntegerExpression(new BigInteger("29340")), funCall(Prelude.MOD, new BigIntegerExpression(new BigInteger("1000000000000")), val(98765)).normalize(NormalizationMode.WHNF));
+    // divMod 1 (suc (suc n)) = (0,1)
+    assertEquals(new TupleExpression(Arrays.asList(val(0), val(1)), finDivModType(val(2))), funCall(Prelude.DIV_MOD, val(1), Suc(Suc(new ReferenceExpression(new TypedBinding("n", Nat()))))).normalize(NormalizationMode.WHNF));
+    // divMod 3 (suc (suc (suc (suc (suc n))))) = (0,3)
+    assertEquals(new TupleExpression(Arrays.asList(val(0), val(3)), finDivModType(val(4))), funCall(Prelude.DIV_MOD, val(3), Suc(Suc(Suc(Suc(Suc(new ReferenceExpression(new TypedBinding("n", Nat())))))))).normalize(NormalizationMode.WHNF));
   }
 
   @Test

@@ -324,14 +324,17 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         Expression arg1 = defCallArgs.get(0);
         if (definition == Prelude.DIV_MOD || definition == Prelude.DIV || definition == Prelude.MOD) {
           arg1 = arg1.accept(this, mode);
-          if (arg1 instanceof IntegerExpression && ((IntegerExpression) arg1).isZero()) {
-            if (definition == Prelude.DIV_MOD) {
-              List<Expression> list = new ArrayList<>(2);
-              list.add(arg1);
-              list.add(arg1);
-              return new TupleExpression(list, finDivModType(new SmallIntegerExpression(1)));
-            } else {
-              return arg1;
+          if (arg1 instanceof IntegerExpression intExpr) {
+            if (intExpr.isZero()) {
+              return definition == Prelude.DIV_MOD ? new TupleExpression(Arrays.asList(arg1, arg1), finDivModType(new SmallIntegerExpression(1))) : arg1;
+            }
+            int n = 0;
+            while (arg2 instanceof ConCallExpression conCall && conCall.getDefinition() == Prelude.SUC) {
+              n++;
+              arg2 = conCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+            }
+            if (intExpr.compare(n) < 0) {
+              return definition == Prelude.DIV_MOD ? new TupleExpression(Arrays.asList(Zero(), intExpr), finDivModType(Suc(intExpr))) : definition == Prelude.DIV ? Zero() : intExpr;
             }
           }
         }
