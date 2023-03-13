@@ -329,9 +329,10 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
               return definition == Prelude.DIV_MOD ? new TupleExpression(Arrays.asList(arg1, arg1), finDivModType(new SmallIntegerExpression(1))) : arg1;
             }
             int n = 0;
-            while (arg2 instanceof ConCallExpression conCall && conCall.getDefinition() == Prelude.SUC) {
+            Expression arg2_ = arg2;
+            while (arg2_ instanceof ConCallExpression conCall && conCall.getDefinition() == Prelude.SUC) {
               n++;
-              arg2 = conCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+              arg2_ = conCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
             }
             if (intExpr.compare(n) < 0) {
               return definition == Prelude.DIV_MOD ? new TupleExpression(Arrays.asList(Zero(), intExpr), finDivModType(Suc(intExpr))) : definition == Prelude.DIV ? Zero() : intExpr;

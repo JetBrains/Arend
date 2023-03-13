@@ -16,6 +16,7 @@ import java.util.List;
 
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 public class BuiltinNormalizationTest extends TypeCheckingTestCase {
   private static Expression funCall(FunctionDefinition definition, Expression arg1, Expression arg2) {
@@ -156,6 +157,13 @@ public class BuiltinNormalizationTest extends TypeCheckingTestCase {
     assertEquals(new TupleExpression(Arrays.asList(val(0), val(1)), finDivModType(val(2))), funCall(Prelude.DIV_MOD, val(1), Suc(Suc(new ReferenceExpression(new TypedBinding("n", Nat()))))).normalize(NormalizationMode.WHNF));
     // divMod 3 (suc (suc (suc (suc (suc n))))) = (0,3)
     assertEquals(new TupleExpression(Arrays.asList(val(0), val(3)), finDivModType(val(4))), funCall(Prelude.DIV_MOD, val(3), Suc(Suc(Suc(Suc(Suc(new ReferenceExpression(new TypedBinding("n", Nat())))))))).normalize(NormalizationMode.WHNF));
+    // divMod 1 (suc n) /= divMod 1 n
+    assertNotEquals(funCall(Prelude.DIV_MOD, val(1), Suc(new ReferenceExpression(new TypedBinding("n", Nat())))), funCall(Prelude.DIV_MOD, val(1), new ReferenceExpression(new TypedBinding("n", Nat()))).normalize(NormalizationMode.WHNF));
+  }
+
+  @Test
+  public void divModTest2() {
+    typeCheckDef("\\func test (n : Nat) : 1 Nat.mod suc n = {Nat} 1 Nat.mod n => idp", 1);
   }
 
   @Test
