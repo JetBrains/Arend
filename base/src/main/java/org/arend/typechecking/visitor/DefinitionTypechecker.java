@@ -1925,10 +1925,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         Expression result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, classDef.makeIdLevels()).applyExpression(new ReferenceExpression(thisBinding), false, typechecker, def).toResult(typechecker).expression;
         Expression actualType = result.getType();
         Expression fieldType = ((ClassField) fieldDef).getType().applyExpression(new ReferenceExpression(thisBinding));
-        if (actualType.isLessOrEquals(fieldType, DummyEquations.getInstance(), def)) {
+        CompareVisitor visitor = new CompareVisitor(DummyEquations.getInstance(), CMP.LE, def);
+        if (visitor.compare(actualType, fieldType, Type.OMEGA, true)) {
           classDef.addDefault((ClassField) fieldDef, new AbsExpression(thisBinding, result), true);
         } else {
-          errorReporter.report(new TypeMismatchError(fieldType, actualType, def));
+          CompareVisitor.Result compareResult = visitor.getResult();
+          errorReporter.report(compareResult == null ? new TypeMismatchError(fieldType, actualType, def) : new TypeMismatchError(compareResult, def));
         }
       }
     }

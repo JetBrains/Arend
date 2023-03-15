@@ -333,8 +333,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       FunCallExpression equality = expectedType.toEquality();
       if (equality != null) {
         CompareVisitor visitor = new CompareVisitor(myEquations, CMP.LE, expr);
-        if (!(idp.getLevels().compare(equality.getLevels(), CMP.LE, myEquations, expr) && visitor.compare(idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), Type.OMEGA, false))) {
-          errorReporter.report(new TypeMismatchError(equality, result.type, expr));
+        if (!idp.getLevels().compare(equality.getLevels(), CMP.LE, myEquations, expr)) {
+          Expression resultType = FunCallExpression.make(Prelude.PATH_INFIX, idp.getLevels(), Arrays.asList(idp.getDefCallArguments().get(0), idp.getDefCallArguments().get(1), idp.getDefCallArguments().get(1)));
+          errorReporter.report(new TypeMismatchError(new CompareVisitor.Result(resultType, equality, resultType, equality, idp.getLevels(), equality.getLevels()), expr));
+          return null;
+        }
+        if (!visitor.compare(idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), Type.OMEGA, false)) {
+          Expression resultType = FunCallExpression.make(Prelude.PATH_INFIX, idp.getLevels(), Arrays.asList(idp.getDefCallArguments().get(0), idp.getDefCallArguments().get(1), idp.getDefCallArguments().get(1)));
+          errorReporter.report(new TypeMismatchError(new CompareVisitor.Result(resultType, equality, idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), null, null), expr));
           return null;
         }
         visitor.setCMP(CMP.EQ);
@@ -494,13 +500,15 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private TypecheckingResult checkResultExpr(Expression expectedType, TypecheckingResult result, Concrete.Expression expr) {
-    if (new CompareVisitor(myEquations, CMP.LE, expr).normalizedCompare(result.type, expectedType, Type.OMEGA, false)) {
+    CompareVisitor visitor = new CompareVisitor(myEquations, CMP.LE, expr);
+    if (visitor.normalizedCompare(result.type, expectedType, Type.OMEGA, false)) {
       result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
       return result;
     }
 
     if (!result.type.reportIfError(errorReporter, expr)) {
-      errorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
+      CompareVisitor.Result compareResult = visitor.getResult();
+      errorReporter.report(compareResult == null ? new TypeMismatchError(expectedType, result.type, expr) : new TypeMismatchError(compareResult, expr));
     }
     return null;
   }
@@ -508,6 +516,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   public boolean checkCoerceResult(Expression expectedType, TypecheckingResult result, Concrete.SourceNode marker, boolean strict) {
     boolean isOmega = expectedType instanceof Type && ((Type) expectedType).isOmega();
     boolean ok = isOmega && result.type.isInstance(UniverseExpression.class);
+    CompareVisitor.Result compareResult = null;
     if (!ok && expectedType != null && !isOmega) {
       CompareVisitor visitor = new CompareVisitor(strict ? new LevelEquationsWrapper(myEquations) : myEquations, CMP.LE, marker);
       FieldCallExpression actualType = result.type.cast(FieldCallExpression.class);
@@ -516,6 +525,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       } else {
         ok = visitor.normalizedCompare(result.type.normalize(NormalizationMode.WHNF), expectedType, Type.OMEGA, false);
       }
+      compareResult = visitor.getResult();
     }
     if (ok) {
       if (!strict && !isOmega) {
@@ -525,7 +535,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (!strict && !result.type.reportIfError(errorReporter, marker)) {
-      errorReporter.report(new TypeMismatchError(expectedType, result.type, marker));
+      errorReporter.report(compareResult == null ? new TypeMismatchError(expectedType, result.type, marker) : new TypeMismatchError(compareResult, marker));
     }
 
     return false;

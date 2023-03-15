@@ -10,17 +10,24 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 public class TypeMismatchError extends TypecheckingError {
   public final PrettyPrintable expected;
   public final PrettyPrintable actual;
+  public final CompareResult result;
+
+  public TypeMismatchError(CompareResult result, ConcreteSourceNode sourceNode) {
+    super("Type mismatch", sourceNode);
+    expected = result.getWholeExpr2();
+    actual = result.getWholeExpr1();
+    this.result = result;
+  }
 
   public TypeMismatchError(PrettyPrintable expected, PrettyPrintable actual, ConcreteSourceNode sourceNode) {
-    super("Type mismatch", sourceNode);
-    this.expected = expected;
-    this.actual = actual;
+    this("Type mismatch", expected, actual, sourceNode);
   }
 
   public TypeMismatchError(String msg, PrettyPrintable expected, PrettyPrintable actual, ConcreteSourceNode sourceNode) {
     super(msg, sourceNode);
     this.expected = expected;
     this.actual = actual;
+    result = null;
   }
 
   @Override
