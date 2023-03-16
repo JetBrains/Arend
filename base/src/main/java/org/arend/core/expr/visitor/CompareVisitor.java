@@ -18,13 +18,10 @@ import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.*;
-import org.arend.ext.core.expr.CoreExpression;
-import org.arend.ext.core.level.CoreLevels;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.error.CompareResult;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypecheckerState;
@@ -58,7 +55,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     myCMP = cmp;
   }
 
-  public static class Result implements CompareResult {
+  public static class Result {
     public Expression wholeExpr1;
     public Expression wholeExpr2;
     public Expression subExpr1;
@@ -79,36 +76,6 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
     public Result(Expression wholeExpr1, Expression wholeExpr2, Expression subExpr1, Expression subExpr2) {
       this(wholeExpr1, wholeExpr2, subExpr1, subExpr2, null, null);
-    }
-
-    @Override
-    public CoreExpression getSubExpr1() {
-      return subExpr1;
-    }
-
-    @Override
-    public CoreExpression getSubExpr2() {
-      return subExpr2;
-    }
-
-    @Override
-    public CoreLevels getLevels1() {
-      return levels1;
-    }
-
-    @Override
-    public CoreLevels getLevels2() {
-      return levels2;
-    }
-
-    @Override
-    public CoreExpression getWholeExpr1() {
-      return wholeExpr1;
-    }
-
-    @Override
-    public CoreExpression getWholeExpr2() {
-      return wholeExpr2;
     }
   }
 
@@ -787,14 +754,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
             initResult(expr1, conCall2);
           } else {
             if (myResult.index >= 0 && myResult.index < expr1.getDefCallArguments().size()) {
-              List<Expression> args = new ArrayList<>(expr1.getDataTypeArguments());
+              List<Expression> args = new ArrayList<>(expr1.getDefCallArguments());
               args.set(myResult.index, myResult.wholeExpr1);
               myResult.wholeExpr1 = ConCallExpression.make(expr1.getDefinition(), expr1.getLevels(), args, expr1.getDefCallArguments());
             } else {
               myResult.wholeExpr1 = expr1;
             }
             if (myResult.index >= 0 && myResult.index < conCall2.getDefCallArguments().size()) {
-              List<Expression> args = new ArrayList<>(conCall2.getDataTypeArguments());
+              List<Expression> args = new ArrayList<>(conCall2.getDefCallArguments());
               args.set(myResult.index, myResult.wholeExpr2);
               myResult.wholeExpr2 = ConCallExpression.make(conCall2.getDefinition(), conCall2.getLevels(), args, conCall2.getDefCallArguments());
             } else {
@@ -921,30 +888,33 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (expr1.getDefinition() == Prelude.FIN || expr1.getDefinition() == Prelude.NAT) {
       DataCallExpression dataCall2 = expr2.cast(DataCallExpression.class);
       if (!(dataCall2 != null && (dataCall2.getDefinition() == Prelude.FIN || dataCall2.getDefinition() == Prelude.NAT) && checkFin(myCMP == CMP.GE ? dataCall2 : expr1, myCMP == CMP.GE ? expr1 : dataCall2, myCMP != CMP.GE))) {
-        if (dataCall2 != null && dataCall2.getDefinition() == Prelude.FIN) {
-          int sucs = 0;
-          Expression arg1 = expr1.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
-          Expression arg2 = dataCall2.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
-          while (arg1 instanceof ConCallExpression conCall1 && conCall1.getDefinition() == Prelude.SUC && arg2 instanceof ConCallExpression conCall2 && conCall2.getDefinition() == Prelude.SUC) {
-            sucs++;
-            arg1 = conCall1.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
-            arg2 = conCall2.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+        if (myNormalCompare) {
+          if (dataCall2 != null && dataCall2.getDefinition() == Prelude.FIN && expr1.getDefinition() == Prelude.FIN) {
+            int sucs = 0;
+            Expression arg1 = expr1.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+            Expression arg2 = dataCall2.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+            while (arg1 instanceof ConCallExpression conCall1 && conCall1.getDefinition() == Prelude.SUC && arg2 instanceof ConCallExpression conCall2 && conCall2.getDefinition() == Prelude.SUC) {
+              sucs++;
+              arg1 = conCall1.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+              arg2 = conCall2.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+            }
+            Expression wholeExpr1 = arg1;
+            Expression wholeExpr2 = arg2;
+            for (int i = 0; i < sucs; i++) {
+              wholeExpr1 = Suc(wholeExpr1);
+              wholeExpr2 = Suc(wholeExpr2);
+            }
+            wholeExpr1 = Fin(wholeExpr1);
+            wholeExpr2 = Fin(wholeExpr2);
+            if (initResult(wholeExpr1, wholeExpr2)) {
+              myResult.wholeExpr1 = wholeExpr1;
+              myResult.wholeExpr2 = wholeExpr2;
+              myResult.subExpr1 = arg1;
+              myResult.subExpr2 = arg2;
+            }
+          } else {
+            initResult(expr1, expr2);
           }
-          Expression wholeExpr1 = arg1;
-          Expression wholeExpr2 = arg2;
-          for (int i = 0; i < sucs; i++) {
-            wholeExpr1 = Suc(wholeExpr1);
-            wholeExpr2 = Suc(wholeExpr2);
-          }
-          wholeExpr1 = Fin(wholeExpr1);
-          wholeExpr2 = Fin(wholeExpr2);
-          initResult(wholeExpr1, wholeExpr2);
-          myResult.wholeExpr1 = wholeExpr1;
-          myResult.wholeExpr2 = wholeExpr2;
-          myResult.subExpr1 = arg1;
-          myResult.subExpr2 = arg2;
-        } else {
-          initResult(expr1, expr2);
         }
         return false;
       }
@@ -1519,7 +1489,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       list.append(newParam);
       subst.add(param, new ReferenceExpression(newParam));
     }
-    DependentLink.Helper.take(list.getFirst(), myResult.index).getNextTyped(null).setType(makeType(type));
+    DependentLink.Helper.get(list.getFirst(), myResult.index).getNextTyped(null).setType(makeType(type));
     return list.getFirst();
   }
 
@@ -1673,7 +1643,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         }
         myCMP = origCMP;
         if (param1.isProperty() == param2.isProperty()) {
-          myResult.index = i;
+          if (initResult(param1.getTypeExpr(), param2.getTypeExpr())) {
+            myResult.index = i;
+          }
         }
         return false;
       }

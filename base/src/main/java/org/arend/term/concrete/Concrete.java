@@ -41,7 +41,7 @@ public final class Concrete {
   }
 
   public static abstract class SourceNodeImpl implements SourceNode {
-    private final Object myData;
+    private Object myData;
 
     SourceNodeImpl(Object data) {
       myData = data;
@@ -51,6 +51,10 @@ public final class Concrete {
     @Nullable
     public Object getData() {
       return myData;
+    }
+
+    public void setData(Object data) {
+      myData = data;
     }
 
     @Override

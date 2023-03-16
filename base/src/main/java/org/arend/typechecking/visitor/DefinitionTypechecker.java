@@ -1930,7 +1930,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           classDef.addDefault((ClassField) fieldDef, new AbsExpression(thisBinding, result), true);
         } else {
           CompareVisitor.Result compareResult = visitor.getResult();
-          errorReporter.report(compareResult == null ? new TypeMismatchError(fieldType, actualType, def) : new TypeMismatchError(compareResult, def));
+          errorReporter.report(compareResult == null ? new TypeMismatchError(fieldType, actualType, def) : new TypeMismatchWithSubexprError(compareResult, def));
         }
       }
     }

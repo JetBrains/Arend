@@ -335,12 +335,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         CompareVisitor visitor = new CompareVisitor(myEquations, CMP.LE, expr);
         if (!idp.getLevels().compare(equality.getLevels(), CMP.LE, myEquations, expr)) {
           Expression resultType = FunCallExpression.make(Prelude.PATH_INFIX, idp.getLevels(), Arrays.asList(idp.getDefCallArguments().get(0), idp.getDefCallArguments().get(1), idp.getDefCallArguments().get(1)));
-          errorReporter.report(new TypeMismatchError(new CompareVisitor.Result(resultType, equality, resultType, equality, idp.getLevels(), equality.getLevels()), expr));
+          errorReporter.report(new TypeMismatchWithSubexprError(new CompareVisitor.Result(resultType, equality, resultType, equality, idp.getLevels(), equality.getLevels()), expr));
           return null;
         }
         if (!visitor.compare(idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), Type.OMEGA, false)) {
           Expression resultType = FunCallExpression.make(Prelude.PATH_INFIX, idp.getLevels(), Arrays.asList(idp.getDefCallArguments().get(0), idp.getDefCallArguments().get(1), idp.getDefCallArguments().get(1)));
-          errorReporter.report(new TypeMismatchError(new CompareVisitor.Result(resultType, equality, idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), null, null), expr));
+          errorReporter.report(new TypeMismatchWithSubexprError(new CompareVisitor.Result(resultType, equality, idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), null, null), expr));
           return null;
         }
         visitor.setCMP(CMP.EQ);
@@ -508,7 +508,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     if (!result.type.reportIfError(errorReporter, expr)) {
       CompareVisitor.Result compareResult = visitor.getResult();
-      errorReporter.report(compareResult == null ? new TypeMismatchError(expectedType, result.type, expr) : new TypeMismatchError(compareResult, expr));
+      errorReporter.report(compareResult == null ? new TypeMismatchError(expectedType, result.type, expr) : new TypeMismatchWithSubexprError(compareResult, expr));
     }
     return null;
   }
@@ -535,7 +535,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (!strict && !result.type.reportIfError(errorReporter, marker)) {
-      errorReporter.report(compareResult == null ? new TypeMismatchError(expectedType, result.type, marker) : new TypeMismatchError(compareResult, marker));
+      errorReporter.report(compareResult == null ? new TypeMismatchError(expectedType, result.type, marker) : new TypeMismatchWithSubexprError(compareResult, marker));
     }
 
     return false;

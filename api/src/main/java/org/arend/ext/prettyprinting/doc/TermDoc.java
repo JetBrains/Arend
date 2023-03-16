@@ -11,13 +11,17 @@ public class TermDoc extends CachingDoc {
   private final UncheckedExpression term;
   private final PrettyPrinterConfig ppConfig;
 
-  TermDoc(UncheckedExpression term, PrettyPrinterConfig ppConfig) {
+  protected TermDoc(UncheckedExpression term, PrettyPrinterConfig ppConfig) {
     this.term = term;
     this.ppConfig = ppConfig;
   }
 
   public UncheckedExpression getTerm() {
     return term;
+  }
+
+  public PrettyPrinterConfig getPPConfig() {
+    return ppConfig;
   }
 
   @Override
