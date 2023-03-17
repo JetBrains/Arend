@@ -1609,7 +1609,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
     myCMP = origCMP;
     if (!compare(link1.hasNext() ? new PiExpression(expr1.getResultSort(), link1, expr1.getCodomain()) : expr1.getCodomain(), link2.hasNext() ? new PiExpression(piExpr2.getResultSort(), link2, piExpr2.getCodomain()) : piExpr2.getCodomain(), Type.OMEGA, false)) {
-      if (link1.hasNext() || link2.hasNext()) {
+      if (link1.hasNext() || link2.hasNext() || myResult == null) {
         initResult(expr1, expr2);
       } else {
         myResult.wholeExpr1 = new PiExpression(expr1.getResultSort(), expr1.getParameters(), myResult.wholeExpr1);
