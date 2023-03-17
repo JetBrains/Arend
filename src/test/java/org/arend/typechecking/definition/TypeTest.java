@@ -71,55 +71,67 @@ public class TypeTest extends TypeCheckingTestCase {
   @Test
   public void transitiveToTest() {
     typeCheckModule(
-      "\\type E (A : \\Type) => A -> A\n" +
-      "\\type F (A : \\Type) => E (\\Sigma A A)\n" +
-      "\\func test : F Nat => \\lam (p : \\Sigma Nat Nat) => (p.2,p.1)");
+      """
+        \\type E (A : \\Type) => A -> A
+        \\type F (A : \\Type) => E (\\Sigma A A)
+        \\func test : F Nat => \\lam (p : \\Sigma Nat Nat) => (p.2,p.1)
+        """);
   }
 
   @Test
   public void transitiveFromTest() {
     typeCheckModule(
-      "\\type E (A : \\Type) => A\n" +
-      "\\type F (A : \\Type) => E A\n" +
-      "\\func test (x : F Nat) : Nat => x");
+      """
+        \\type E (A : \\Type) => A
+        \\type F (A : \\Type) => E A
+        \\func test (x : F Nat) : Nat => x
+        """);
   }
 
   @Test
   public void embeddedToTest() {
     typeCheckModule(
-      "\\type E (A : \\Type) => A -> A\n" +
-      "\\type F (A : \\Type) => \\Sigma A (E (\\Sigma A A))\n" +
-      "\\func test : F Nat => (0, \\lam (p : \\Sigma Nat Nat) => (p.2,p.1))");
+      """
+        \\type E (A : \\Type) => A -> A
+        \\type F (A : \\Type) => \\Sigma A (E (\\Sigma A A))
+        \\func test : F Nat => (0, \\lam (p : \\Sigma Nat Nat) => (p.2,p.1))
+        """);
   }
 
   @Test
   public void embeddedFromTest() {
     typeCheckModule(
-      "\\type E (A : \\Type) => A -> A\n" +
-      "\\type F (A : \\Type) => \\Sigma A (E (\\Sigma A A))\n" +
-      "\\func test (x : F Nat) => (x.2 (0,1)).1");
+      """
+        \\type E (A : \\Type) => A -> A
+        \\type F (A : \\Type) => \\Sigma A (E (\\Sigma A A))
+        \\func test (x : F Nat) => (x.2 (0,1)).1
+        """);
   }
 
   @Test
   public void bidirectionalTest() {
     typeCheckModule(
-      "\\type D (A : \\Type) => A\n" +
-      "\\type E1 (A : \\Type) => D A\n" +
-      "\\type E2 (A : \\Type) => E1 A\n" +
-      "\\type E3 (A : \\Type) => E2 A\n" +
-      "\\type F1 (A : \\Type) => D A\n" +
-      "\\type F2 (A : \\Type) => F1 A\n" +
-      "\\func test1 (x : F2 Nat) : E3 Nat => x\n" +
-      "\\func test2 (x : E3 Nat) : F2 Nat => x");
+      """
+        \\type D (A : \\Type) => A
+        \\type E1 (A : \\Type) => D A
+        \\type E2 (A : \\Type) => E1 A
+        \\type E3 (A : \\Type) => E2 A
+        \\type F1 (A : \\Type) => D A
+        \\type F2 (A : \\Type) => F1 A
+        \\func test1 (x : F2 Nat) : E3 Nat => x
+        \\func test2 (x : E3 Nat) : F2 Nat => x
+        """);
   }
 
   @Test
   public void instanceTest() {
     typeCheckModule(
-      "\\type E (A : \\Type) => A\n" +
-      "\\class C (X : \\Type) | field : X\n" +
-      "\\instance c : C (E Nat) 0\n" +
-      "\\func test : E Nat => field");
+      """
+        \\type E (A : \\Type) => A
+        \\class C (X : \\Type) | field : X
+        \\instance c : C (E Nat) 0
+        \\func test : E Nat => field
+        """);
   }
 
   @Test
@@ -139,38 +151,46 @@ public class TypeTest extends TypeCheckingTestCase {
   @Test
   public void constructorTest() {
     typeCheckModule(
-      "\\data D (A : \\Type) | con (A -> A)\n" +
-      "\\type E => D (\\Sigma Nat Nat)\n" +
-      "\\func test : E => con (\\lam p => (p.2,p.1))");
+      """
+        \\data D (A : \\Type) | con (A -> A)
+        \\type E => D (\\Sigma Nat Nat)
+        \\func test : E => con (\\lam p => (p.2,p.1))
+        """);
   }
 
   @Test
   public void patternMatchingTest() {
     typeCheckModule(
-      "\\type E => Nat\n" +
-      "\\func f (x : E) : Nat\n" +
-      "  | 0 => 0\n" +
-      "  | suc _ => 7\n" +
-      "\\func test : f 3 = 7 => idp");
+      """
+        \\type E => Nat
+        \\func f (x : E) : Nat
+          | 0 => 0
+          | suc _ => 7
+        \\func test : f 3 = 7 => idp
+        """);
   }
 
   @Test
   public void patternMatchingTest2() {
     typeCheckModule(
-      "\\data D | con1 | con2\n" +
-      "\\type E => D\n" +
-      "\\func f (x : E) : Nat\n" +
-      "  | con1 => 2\n" +
-      "  | con2 => 5\n" +
-      "\\func test : f con1 = 2 => idp");
+      """
+        \\data D | con1 | con2
+        \\type E => D
+        \\func f (x : E) : Nat
+          | con1 => 2
+          | con2 => 5
+        \\func test : f con1 = 2 => idp
+        """);
   }
 
   @Test
   public void emptyPatternMatchingTest() {
     typeCheckModule(
-      "\\data Empty\n" +
-      "\\type E => Empty\n" +
-      "\\func test (x : E) : Nat");
+      """
+        \\data Empty
+        \\type E => Empty
+        \\func test (x : E) : Nat
+        """);
   }
 
   @Test
@@ -205,35 +225,51 @@ public class TypeTest extends TypeCheckingTestCase {
   @Test
   public void letPatternRecursiveTest() {
     typeCheckModule(
-      "\\type E => \\Sigma Nat Nat\n" +
-      "\\type F => \\Sigma E Nat\n" +
-      "\\func test (x : F) => \\let ((_,a),_) => x \\in a");
+      """
+        \\type E => \\Sigma Nat Nat
+        \\type F => \\Sigma E Nat
+        \\func test (x : F) => \\let ((_,a),_) => x \\in a
+        """);
   }
 
   @Test
   public void recordTest() {
     typeCheckModule(
-      "\\record R (a x y : Nat)\n" +
-      "\\type S => R 0\n" +
-      "\\func test : S => \\new R { | x => 0 | y => 0 }");
+      """
+        \\record R (a x y : Nat)
+        \\type S => R 0
+        \\func test : S => \\new R { | x => 0 | y => 0 }
+        """);
   }
 
   @Test
   public void recordEtaTest() {
     typeCheckModule(
-      "\\record R (a x y : Nat)\n" +
-      "\\type S => R 0\n" +
-      "\\func test1 (s : S) : s = \\new R 0 s.x s.y => idp\n" +
-      "\\func test2 (s : S) : s = \\new R s.a s.x s.y => idp");
+      """
+        \\record R (a x y : Nat)
+        \\type S => R 0
+        \\func test1 (s : S) : s = \\new R 0 s.x s.y => idp
+        \\func test2 (s : S) : s = \\new R s.a s.x s.y => idp
+        """);
   }
 
   @Test
   public void newExtTest() {
     typeCheckModule(
-      "\\record R (x y : Nat)\n" +
-      "\\record S (r : R) (a : Nat)\n" +
-      "\\type R' => R\n" +
-      "\\func wrap (r : R) : R' => r\n" +
-      "\\func test (s : S) : R s.r.x => wrap s.r");
+      """
+        \\record R (x y : Nat)
+        \\record S (r : R) (a : Nat)
+        \\type R' => R
+        \\func wrap (r : R) : R' => r
+        \\func test (s : S) : R s.r.x => wrap s.r
+        """);
+  }
+
+  @Test
+  public void levelsTest() {
+    typeCheckModule(
+      "\\type Type => \\Set\n" +
+      "\\func test (A : Type \\levels 2 _) : Type \\levels 1 _ => A", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
   }
 }
