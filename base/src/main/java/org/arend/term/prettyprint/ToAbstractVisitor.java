@@ -205,7 +205,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   protected boolean convertSubexpr(Expression expr) {
-    return true;
+    return false;
   }
 
   private boolean convertSubexprs(List<? extends Expression> exprs) {
@@ -234,7 +234,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   @Override
   public Concrete.Expression visitApp(AppExpression expr, Void params) {
     Concrete.Expression function = convertExpr(expr.getFunction());
-    Concrete.Expression arg = expr.isExplicit() || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) || checkAppArgExplicitness(expr) && convertSubexpr(expr.getArgument()) ? convertExpr(expr.getArgument()) : null;
+    Concrete.Expression arg = expr.isExplicit() || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) || checkAppArgExplicitness(expr) || convertSubexpr(expr.getArgument()) ? convertExpr(expr.getArgument()) : null;
     return arg != null ? checkApp(Concrete.AppExpression.make(expr, function, arg, expr.isExplicit()), false) : function;
   }
 

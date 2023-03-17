@@ -5,7 +5,6 @@ import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.error.TypeMismatchError;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
@@ -55,7 +54,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \X x. X : (X : Type0) -> X -> X
     SingleDependentLink param = singleParam("X", Universe(0));
     typeCheckExpr("\\lam X x => X", Pi(param, Pi(Ref(param), Ref(param))), 1);
-    assertTrue(errorList.get(0) instanceof TypeMismatchError);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test

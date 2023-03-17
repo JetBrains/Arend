@@ -70,7 +70,7 @@ public class Matchers {
     return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-          if (error instanceof TypeMismatchError) {
+          if (error instanceof TypeMismatchError || error instanceof TypeMismatchWithSubexprError) {
             description.appendText("type mismatch");
             return true;
           } else {
@@ -230,12 +230,11 @@ public class Matchers {
     return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-        if (!(error instanceof InstanceInferenceError)) {
+        if (!(error instanceof InstanceInferenceError instanceInferenceError)) {
           description.appendText("not a 'Instance inference' error");
           return false;
         }
 
-        InstanceInferenceError instanceInferenceError = (InstanceInferenceError) error;
         if (!instanceInferenceError.classRef.equals(classRef)) {
           description.appendText("'Instance inference for class " + instanceInferenceError.classRef.getRefName() + "' error");
           return false;
