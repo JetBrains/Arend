@@ -25,7 +25,7 @@ public interface PrettyPrinterConfig {
 
   @Nullable
   default NormalizationMode getNormalizationMode() {
-    return getExpressionFlags().contains(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) ? NormalizationMode.RNF : NormalizationMode.RNF_EXP;
+    return NormalizationMode.RNF;
   }
 
   default @Nullable DefinitionRenamer getDefinitionRenamer() {

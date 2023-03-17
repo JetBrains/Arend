@@ -65,7 +65,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     DependentLink link = expr.getDefinition().getParameters();
     List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
     for (Expression arg : expr.getDefCallArguments()) {
-      args.add(mode == NormalizationMode.RNF_EXP && !link.isExplicit() ? arg : arg.accept(this, mode));
+      args.add(arg.accept(this, mode));
       if (link.hasNext()) {
         link = link.getNext();
       }
@@ -440,7 +440,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       body = elim.getOtherwise();
     }
 
-    if (body == null || body instanceof Expression && (mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP)) {
+    if (body == null || body instanceof Expression && (mode == NormalizationMode.RNF)) {
       return null;
     }
 
@@ -538,7 +538,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         }
 
         while (true) {
-          if (mode != NormalizationMode.RNF && mode != NormalizationMode.RNF_EXP && resultExpr instanceof LetExpression let) {
+          if (mode != NormalizationMode.RNF && resultExpr instanceof LetExpression let) {
             if (let.isStrict()) {
               for (HaveClause letClause : let.getClauses()) {
                 substitution.add(letClause, LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
@@ -833,14 +833,14 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
 
     Expression thisExpr = expr.getArgument().accept(this, mode);
-    if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable) && (!(mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) || thisExpr instanceof NewExpression)) {
+    if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable) && (!(mode == NormalizationMode.RNF) || thisExpr instanceof NewExpression)) {
       Expression impl = evalFieldCall(expr.getDefinition(), thisExpr);
       if (impl != null) {
         return impl.accept(this, mode);
       }
     }
 
-    if ((mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) && thisExpr instanceof ReferenceExpression && ((ReferenceExpression) thisExpr).getBinding() instanceof ClassCallExpression.ClassCallBinding) {
+    if ((mode == NormalizationMode.RNF) && thisExpr instanceof ReferenceExpression && ((ReferenceExpression) thisExpr).getBinding() instanceof ClassCallExpression.ClassCallBinding) {
       Expression impl = ((ClassCallExpression.ClassCallBinding) ((ReferenceExpression) thisExpr).getBinding()).getTypeExpr().getImplementation(expr.getDefinition(), thisExpr);
       if (impl != null) {
         return impl.accept(this, mode);
@@ -889,7 +889,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitReference(ReferenceExpression expr, NormalizationMode mode) {
-    if (mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) {
+    if (mode == NormalizationMode.RNF) {
       return expr;
     }
     if (expr.getBinding() instanceof EvaluatingBinding) {
@@ -994,7 +994,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitLet(LetExpression let, NormalizationMode mode) {
-    if ((mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) && !let.isStrict()) {
+    if ((mode == NormalizationMode.RNF) && !let.isStrict()) {
       ExprSubstitution substitution = new ExprSubstitution();
       List<HaveClause> newClauses = new ArrayList<>(let.getClauses().size());
       for (HaveClause clause : let.getClauses()) {
