@@ -21,8 +21,8 @@ public class TypeMismatchWithSubexprError extends TypecheckingError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
-    termDoc1 = new TermWithSubtermDoc(result.wholeExpr1, result.subExpr1, ppConfig);
-    termDoc2 = new TermWithSubtermDoc(result.wholeExpr2, result.subExpr2, ppConfig);
+    termDoc1 = new TermWithSubtermDoc(result.wholeExpr1, result.subExpr1, result.levels1, ppConfig);
+    termDoc2 = new TermWithSubtermDoc(result.wholeExpr2, result.subExpr2, result.levels2, ppConfig);
     Doc expectedDoc = hang(text("Expected type:"), termDoc2);
     return vList(
       expectedDoc,

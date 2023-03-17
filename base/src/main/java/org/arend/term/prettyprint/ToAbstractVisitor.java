@@ -21,6 +21,7 @@ import org.arend.core.pattern.EmptyPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.Levels;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
@@ -63,10 +64,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config, @NotNull ReferableRenamer renamer) {
-    return convert(expression, null, config, renamer);
+    return convert(expression, null, null, config, renamer);
   }
 
-  public static Concrete.Expression convert(Expression expression, Expression subexpr, PrettyPrinterConfig config, @NotNull ReferableRenamer renamer) {
+  public static Concrete.Expression convert(Expression expression, Expression subexpr, Levels levels, PrettyPrinterConfig config, @NotNull ReferableRenamer renamer) {
     DefinitionRenamer definitionRenamer = config.getDefinitionRenamer();
     if (definitionRenamer == null) {
       definitionRenamer = new ConflictDefinitionRenamer();
@@ -81,7 +82,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       expression = expression.normalize(mode);
     }
     expression.accept(collector, variables);
-    ToAbstractVisitor visitor = subexpr == null ? new ToAbstractVisitor(config, definitionRenamer, collector, renamer) : new ToAbstractWithSubexprVisitor(config, definitionRenamer, collector, renamer, subexpr);
+    ToAbstractVisitor visitor = subexpr == null ? new ToAbstractVisitor(config, definitionRenamer, collector, renamer) : new ToAbstractWithSubexprVisitor(config, definitionRenamer, collector, renamer, subexpr, levels);
     renamer.generateFreshNames(variables);
     return visitor.convertExpr(expression);
   }
@@ -226,6 +227,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return false;
   }
 
+  protected boolean convertLevels(DefCallExpression defCall) {
+    return false;
+  }
+
   @Override
   public Concrete.Expression visitApp(AppExpression expr, Void params) {
     Concrete.Expression function = convertExpr(expr.getFunction());
@@ -273,7 +278,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
     Definition def = defCall.getDefinition();
     Referable ref = def.getRef();
-    if (!hasFlag(PrettyPrinterFlag.SHOW_LEVELS)) {
+    if (!(hasFlag(PrettyPrinterFlag.SHOW_LEVELS) || convertLevels(defCall))) {
       return cVar(defCall, myDefinitionRenamer.renameDefinition(ref), ref);
     }
 

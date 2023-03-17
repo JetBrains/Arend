@@ -1,6 +1,8 @@
 package org.arend.term.prettyprint;
 
+import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -10,12 +12,14 @@ import org.arend.typechecking.visitor.FindSubexpressionVisitor;
 
 public class ToAbstractWithSubexprVisitor extends ToAbstractVisitor {
   private final Expression mySubexpr;
+  private final Levels myLevels;
 
   public static class Marker {}
 
-  ToAbstractWithSubexprVisitor(PrettyPrinterConfig config, DefinitionRenamer definitionRenamer, CollectFreeVariablesVisitor collector, ReferableRenamer renamer, Expression subexpr) {
+  ToAbstractWithSubexprVisitor(PrettyPrinterConfig config, DefinitionRenamer definitionRenamer, CollectFreeVariablesVisitor collector, ReferableRenamer renamer, Expression subexpr, Levels levels) {
     super(config, definitionRenamer, collector, renamer);
     mySubexpr = subexpr;
+    myLevels = levels;
   }
 
   @Override
@@ -30,5 +34,10 @@ public class ToAbstractWithSubexprVisitor extends ToAbstractVisitor {
   @Override
   protected boolean convertSubexpr(Expression expr) {
     return expr.accept(new FindSubexpressionVisitor(sub -> sub == mySubexpr ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE), null);
+  }
+
+  @Override
+  protected boolean convertLevels(DefCallExpression defCall) {
+    return mySubexpr == defCall && myLevels != null;
   }
 }

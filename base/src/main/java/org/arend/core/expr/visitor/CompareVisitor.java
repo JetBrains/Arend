@@ -216,7 +216,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   private void initResult(Expression expr1, Expression expr2, Levels levels1, Levels levels2) {
     if (myNormalCompare && myResult == null) {
-      myResult = new Result(expr1, expr2, null, null, levels1, levels2);
+      myResult = new Result(expr1, expr2, expr1, expr2, levels1, levels2);
     }
   }
 
