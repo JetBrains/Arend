@@ -171,7 +171,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     LamExpression expr1 = expr.getDefCallArguments().get(0).cast(LamExpression.class);
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return cBinOp(convertExpr(expr.getDefCallArguments().get(1)), Prelude.PATH_INFIX.getReferable(), hasFlag(PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS) ? expr1.getBody().accept(this, null) : null, convertExpr(expr.getDefCallArguments().get(2)));
+        return cBinOp(convertExpr(expr.getDefCallArguments().get(1)), Prelude.PATH_INFIX.getReferable(), hasFlag(PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS) || convertSubexpr(expr1.getBody()) ? convertExpr(expr1.getBody()) : null, convertExpr(expr.getDefCallArguments().get(2)));
       }
     }
     return null;
@@ -203,10 +203,33 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return expression;
   }
 
+  protected boolean convertSubexpr(Expression expr) {
+    return true;
+  }
+
+  private boolean convertSubexprs(List<? extends Expression> exprs) {
+    for (Expression expr : exprs) {
+      if (expr != null && convertSubexpr(expr)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  protected boolean convertParameters(DependentLink param) {
+    for (; param.hasNext(); param = param.getNext()) {
+      param = param.getNextTyped(null);
+      if (convertSubexpr(param.getTypeExpr())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @Override
   public Concrete.Expression visitApp(AppExpression expr, Void params) {
     Concrete.Expression function = convertExpr(expr.getFunction());
-    Concrete.Expression arg = expr.isExplicit() || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) || checkAppArgExplicitness(expr) ? convertExpr(expr.getArgument()) : null;
+    Concrete.Expression arg = expr.isExplicit() || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) || checkAppArgExplicitness(expr) && convertSubexpr(expr.getArgument()) ? convertExpr(expr.getArgument()) : null;
     return arg != null ? checkApp(Concrete.AppExpression.make(expr, function, arg, expr.isExplicit()), false) : function;
   }
 
@@ -221,7 +244,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         }
         arguments.add(new Concrete.Argument(new Concrete.ThisExpression(arg, null), true));
       }
-    } else if (isExplicit || alwaysShow || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
+    } else if (isExplicit || alwaysShow || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) || !genGoal && convertSubexpr(arg)) {
       arguments.add(new Concrete.Argument(genGoal ? generateHiddenGoal(null) : convertExpr(arg), isExplicit));
     }
   }
@@ -299,7 +322,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     int verbosity = getVerboseLevel(expr);
-    int skip = verbosity != 0 || hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS) || !(expr.getDefinition() instanceof DConstructor) ? 0 : ((DConstructor) expr.getDefinition()).getNumberOfParameters();
+    int skip = verbosity != 0 || hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS) || !(expr.getDefinition() instanceof DConstructor dCon) || convertSubexprs(expr.getDefCallArguments().subList(0, dCon.getNumberOfParameters())) ? 0 : dCon.getNumberOfParameters();
     return visitParameters(makeReference(expr), DependentLink.Helper.get(expr.getDefinition().getParameters(), skip), skip == 0 || DependentLink.Helper.size(expr.getDefinition().getParameters()) != expr.getDefCallArguments().size() ? expr.getDefCallArguments() : expr.getDefCallArguments().subList(skip, expr.getDefCallArguments().size()), verbosity);
   }
 
@@ -326,7 +349,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     String name = null;
     Concrete.Expression qualifier = null;
     boolean ok = false;
-    if (argument instanceof ReferenceExpression && (hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE) || getVerboseLevel(argument) > 0)) {
+    if (argument instanceof ReferenceExpression && (hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE) || getVerboseLevel(argument) > 0 || convertSubexpr(argument))) {
       ok = true;
       qualifier = visitReference((ReferenceExpression) argument, null);
       name = ((ReferenceExpression) argument).getBinding().getName();
@@ -348,7 +371,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);
-    return (!isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE) || isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE) || getVerboseLevel(expr) > 0)
+    return (!isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE) || isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE) || getVerboseLevel(expr) > 0 || convertSubexpr(argument))
       ? Concrete.AppExpression.make(null, result, convertExpr(argument), false) : result;
   }
 
@@ -364,7 +387,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       boolean showImplicitArgs = hasFlag(PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS) || !expr.getDefinition().getReferable().getPrecedence().isInfix;
 
       Concrete.Expression cExpr = makeReference(expr);
-      if (showImplicitArgs && expr.getDefinition().status().headerIsOK() && hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS)) {
+      if (showImplicitArgs && expr.getDefinition().status().headerIsOK() && hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS) || convertSubexprs(expr.getDataTypeArguments())) {
         List<Concrete.Argument> arguments = new ArrayList<>(expr.getDataTypeArguments().size());
         for (Expression arg : expr.getDataTypeArguments()) {
           visitArgument(arg, false, arguments, false, false);
@@ -389,7 +412,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       boolean newConcreteExplicit = true;
       for (int i = 0; i < expr.getDefCallArguments().size(); i++) {
         if (i != recursiveParam) {
-          if (showImplicitArgs || parameters.isExplicit()) {
+          if (showImplicitArgs || parameters.isExplicit() || convertSubexpr(expr.getDefCallArguments().get(i))) {
             visitArgument(expr.getDefCallArguments().get(i), parameters.isExplicit(), newArgs, false, false);
           }
         } else {
@@ -605,7 +628,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     List<Concrete.Parameter> parameters = new ArrayList<>();
     Expression expr = lamExpr;
     for (; lamExpr != null; lamExpr = expr.cast(LamExpression.class)) {
-      if (hasFlag(PrettyPrinterFlag.SHOW_TYPES_IN_LAM) || shouldBeVerbose(lamExpr.getParameters())) {
+      if (hasFlag(PrettyPrinterFlag.SHOW_TYPES_IN_LAM) || shouldBeVerbose(lamExpr.getParameters()) || convertParameters(lamExpr.getParameters())) {
         visitDependentLink(lamExpr.getParameters(), parameters, true);
       } else {
         SingleDependentLink params = lamExpr.getParameters();
@@ -737,7 +760,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       fields.add(convertExpr(field));
     }
     Concrete.Expression result = cTuple(expr, fields);
-    if (hasFlag(PrettyPrinterFlag.SHOW_TUPLE_TYPE) || getVerboseLevel(expr) > 0) {
+    if (hasFlag(PrettyPrinterFlag.SHOW_TUPLE_TYPE) || getVerboseLevel(expr) > 0 || convertSubexpr(expr.getSigmaType())) {
       result = new Concrete.TypedExpression(expr, result, visitSigma(expr.getSigmaType(), null));
     }
     return result;
@@ -868,7 +891,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   @Override
   public Concrete.Expression visitCase(CaseExpression expr, Void params) {
     List<Concrete.CaseArgument> arguments = new ArrayList<>(expr.getArguments().size());
-    if (hasFlag(PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE)) {
+    if (hasFlag(PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE) || convertParameters(expr.getParameters())) {
       List<Concrete.TypeParameter> parameters = new ArrayList<>();
       visitDependentLink(expr.getParameters(), parameters, true);
       int i = 0;
@@ -885,7 +908,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     Concrete.Expression resultType = null;
     Concrete.Expression resultTypeLevel = null;
-    if (hasFlag(PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE) && !(expr.getResultType() instanceof ErrorExpression)) {
+    if (hasFlag(PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE) && !(expr.getResultType() instanceof ErrorExpression) || convertSubexprs(Arrays.asList(expr.getResultType(), expr.getResultTypeLevel()))) {
       resultType = convertExpr(expr.getResultType());
       if (expr.getResultTypeLevel() != null) {
         resultTypeLevel = convertExpr(expr.getResultTypeLevel());
@@ -964,7 +987,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitArray(ArrayExpression expr, Void params) {
-    Concrete.Expression elementsType = hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) && hasFlag(PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS) ? convertExpr(expr.getElementsType()) : null;
+    Concrete.Expression elementsType = hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) && hasFlag(PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS) || convertSubexpr(expr.getElementsType()) ? convertExpr(expr.getElementsType()) : null;
 
     Concrete.Expression result;
     if (expr.getTail() == null) {
