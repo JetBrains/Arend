@@ -693,4 +693,9 @@ public class ArrayTest extends TypeCheckingTestCase {
         """
     );
   }
+
+  @Test
+  public void positiveTest() {
+    typeCheckDef("\\data D | con (Array D)");
+  }
 }

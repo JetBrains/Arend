@@ -50,8 +50,7 @@ public abstract class CovarianceChecker {
       return false;
     }
 
-    if (expr instanceof NewExpression) {
-      NewExpression newExpr = (NewExpression) expr;
+    if (expr instanceof NewExpression newExpr) {
       if (newExpr.getRenewExpression() != null) {
         return checkNonCovariant(newExpr.getRenewExpression());
       }
@@ -99,8 +98,7 @@ public abstract class CovarianceChecker {
       return false;
     }
 
-    if (expr instanceof DataCallExpression && allowData()) {
-      DataCallExpression dataCall = (DataCallExpression) expr;
+    if (expr instanceof DataCallExpression dataCall && allowData()) {
       if (checkLevels(dataCall.getLevels(), dataCall)) {
         return true;
       }
@@ -120,8 +118,7 @@ public abstract class CovarianceChecker {
       return false;
     }
 
-    if (expr instanceof ClassCallExpression) {
-      ClassCallExpression classCall = (ClassCallExpression) expr;
+    if (expr instanceof ClassCallExpression classCall) {
       if (checkLevels(classCall.getLevels(), classCall)) {
         return true;
       }
@@ -139,8 +136,7 @@ public abstract class CovarianceChecker {
       return false;
     }
 
-    if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.PATH_INFIX && allowData()) {
-      FunCallExpression funCall = (FunCallExpression) expr;
+    if (expr instanceof FunCallExpression funCall && funCall.getDefinition() == Prelude.PATH_INFIX && allowData()) {
       if (checkLevels(funCall.getLevels(), funCall)) {
         return true;
       }
@@ -148,6 +144,10 @@ public abstract class CovarianceChecker {
         return true;
       }
       return checkNonCovariant(funCall.getDefCallArguments().get(1)) || checkNonCovariant(funCall.getDefCallArguments().get(2));
+    }
+
+    if (expr instanceof FunCallExpression funCall && funCall.getDefinition() == Prelude.ARRAY) {
+      return checkLevels(funCall.getLevels(), funCall) || check(funCall.getDefCallArguments().get(0));
     }
 
     return checkOtherwise(expr);
