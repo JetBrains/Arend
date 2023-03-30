@@ -1392,27 +1392,25 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
 
-    if (myCMP == CMP.LE && !expr1.getDefinition().isSubClassOf(classCall2.getDefinition())) {
-      initResult(expr1, expr2);
-      return false;
-    }
-    if (myCMP == CMP.GE && !classCall2.getDefinition().isSubClassOf(expr1.getDefinition())) {
-      initResult(expr1, expr2);
-      return false;
-    }
-    if (myCMP == CMP.EQ && expr1.getDefinition() != classCall2.getDefinition()) {
+    if (myCMP == CMP.LE && !expr1.getDefinition().isSubClassOf(classCall2.getDefinition()) || myCMP == CMP.GE && !classCall2.getDefinition().isSubClassOf(expr1.getDefinition()) || myCMP == CMP.EQ && expr1.getDefinition() != classCall2.getDefinition()) {
       initResult(expr1, expr2);
       return false;
     }
 
     if (!compareClassCallLevels(expr1, classCall2)) {
-      initResult(expr1, expr2);
+      if (myNormalCompare) {
+        myResult = null;
+        initResult(expr1, expr2, expr1.getLevels(), classCall2.getLevels());
+      }
       return false;
     }
 
     if (myCMP == CMP.LE) {
       if (!checkSubclassImpl(expr1, classCall2, true)) {
-        initResult(expr1, expr2);
+        if (myNormalCompare) {
+          myResult = null;
+          initResult(expr1, expr2);
+        }
         return false;
       }
       return true;
