@@ -78,7 +78,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor(definitionRenamer);
     Set<Variable> variables = new HashSet<>();
     NormalizationMode mode = config.getNormalizationMode();
-    if (mode != null) {
+    if (mode != null && subexpr == null) {
       expression = expression.normalize(mode);
     }
     expression.accept(collector, variables);
@@ -278,7 +278,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
     Definition def = defCall.getDefinition();
     Referable ref = def.getRef();
-    if (!(hasFlag(PrettyPrinterFlag.SHOW_LEVELS) || convertLevels(defCall))) {
+    boolean showStdVar = convertLevels(defCall);
+    if (!(showStdVar || hasFlag(PrettyPrinterFlag.SHOW_LEVELS))) {
       return cVar(defCall, myDefinitionRenamer.renameDefinition(ref), ref);
     }
 
@@ -306,7 +307,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       hLevels = Collections.singletonList(null);
     }
 
-    return cDefCall(defCall, myDefinitionRenamer.renameDefinition(ref), ref, visitLevelsNull(pLevels), visitLevelsNull(hLevels));
+    return cDefCall(defCall, myDefinitionRenamer.renameDefinition(ref), ref, visitLevelsNull(pLevels, showStdVar), visitLevelsNull(hLevels, showStdVar));
   }
 
   @Override
@@ -701,13 +702,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return visitSort(expr.getSort());
   }
 
-  private Concrete.LevelExpression visitLevelNull(Level level) {
-    return level != null && (level.isClosed() || (!level.isVarOnly() || level.getVar() != LevelVariable.PVAR && level.getVar() != LevelVariable.HVAR) && hasFlag(PrettyPrinterFlag.SHOW_LEVELS)) ? visitLevel(level) : null;
+  private Concrete.LevelExpression visitLevelNull(Level level, boolean showStdVar) {
+    return level != null && (showStdVar || level.isClosed() || (!level.isVarOnly() || level.getVar() != LevelVariable.PVAR && level.getVar() != LevelVariable.HVAR) && hasFlag(PrettyPrinterFlag.SHOW_LEVELS)) ? visitLevel(level) : null;
   }
 
-  private List<Concrete.LevelExpression> visitLevelsNull(List<Level> levels) {
+  private List<Concrete.LevelExpression> visitLevelsNull(List<Level> levels, boolean showStdVar) {
     if (levels.size() == 1) {
-      Concrete.LevelExpression result = visitLevelNull(levels.get(0));
+      Concrete.LevelExpression result = visitLevelNull(levels.get(0), showStdVar);
       return result == null ? null : new SingletonList<>(result);
     }
 
@@ -719,7 +720,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private Concrete.UniverseExpression visitSort(Sort sort) {
-    return cUniverse(sort.isOmega() ? new Concrete.PLevelExpression(null) : visitLevelNull(sort.getPLevel()), visitLevelNull(sort.getHLevel()));
+    return cUniverse(sort.isOmega() ? new Concrete.PLevelExpression(null) : visitLevelNull(sort.getPLevel(), false), visitLevelNull(sort.getHLevel(), false));
   }
 
   private Concrete.LevelExpression visitLevel(Level level) {
