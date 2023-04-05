@@ -1592,16 +1592,22 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
         ClassCallExpression expectedClassCall = (ClassCallExpression) unfoldedType;
         if (baseExpr instanceof Concrete.ReferenceExpression baseRefExpr) {
-          boolean ok = ((ClassDefinition) actualDef).isSubClassOf(expectedClassCall.getDefinition());
+          ClassDefinition actualClass = (ClassDefinition) actualDef;
+          boolean ok = actualClass.isSubClassOf(expectedClassCall.getDefinition());
           if (ok && (actualDef != expectedClassCall.getDefinition() || baseRefExpr.getPLevels() != null || baseRefExpr.getHLevels() != null)) {
             boolean fieldsOK = true;
             for (ClassField implField : expectedClassCall.getImplementedHere().keySet()) {
-              if (((ClassDefinition) actualDef).isImplemented(implField)) {
+              if (actualClass.isImplemented(implField)) {
                 fieldsOK = false;
                 break;
               }
             }
-            actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, typecheckLevels(actualDef, baseRefExpr, expectedClassCall.getLevels((ClassDefinition) actualDef), false), new LinkedHashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
+            Levels levels = typecheckLevels(actualDef, baseRefExpr, actualDef.generateInferVars(myEquations, expr), false);
+            actualClassCall = new ClassCallExpression(actualClass, levels, new LinkedHashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
+            if (!actualClass.castLevels(expectedClassCall.getDefinition(), levels).compare(expectedClassCall.getLevels(), CMP.LE, myEquations, expr)) {
+              errorReporter.report(new TypeMismatchWithSubexprError(new CompareVisitor.Result(actualClassCall, expectedClassCall, actualClassCall, expectedClassCall, actualClassCall.getLevels(), expectedClassCall.getLevels()), expr));
+              fieldsOK = false;
+            }
             if (fieldsOK) {
               actualClassCall.copyImplementationsFrom(expectedClassCall);
             }

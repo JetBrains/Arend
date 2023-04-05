@@ -60,9 +60,11 @@ public class NewInstanceExtensionTest extends TypeCheckingTestCase {
   @Test
   public void extDepTest4() {
     typeCheckModule(
-      "\\record R (x : Nat) (p : x = x)\n" +
-      "\\record S \\extends R | x => 2\n" +
-      "\\lemma f (s : S) => \\new s");
+      """
+        \\record R (x : Nat) (p : x = x)
+        \\record S \\extends R | x => 2
+        \\lemma f (s : S) => \\new s
+        """);
   }
 
   @Test
@@ -76,7 +78,7 @@ public class NewInstanceExtensionTest extends TypeCheckingTestCase {
   public void levelTest() {
     typeCheckModule(
       "\\record C (A : \\Type) (a : A)\n" +
-      "\\func f : \\Sigma (C (\\suc \\lp) (\\suc \\lh)) Nat => (\\new C \\levels 1 1 Nat 0, 0)");
+      "\\func f : \\Sigma (C (\\suc \\lp) (\\suc (\\suc \\lh))) Nat => (\\new C \\levels 1 1 Nat 0, 0)");
     assertEquals(new LevelPair(new Level(1), new Level(1)), ((Expression) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).cast(TupleExpression.class).getFields().get(0).cast(NewExpression.class).getClassCall().getLevels());
   }
 
