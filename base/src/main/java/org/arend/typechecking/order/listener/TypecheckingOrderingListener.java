@@ -50,7 +50,7 @@ import java.util.*;
 
 public class TypecheckingOrderingListener extends BooleanComputationRunner implements OrderingListener {
   private final DependencyListener myDependencyListener;
-  private final Map<TCDefReferable, Pair<CheckTypeVisitor,Boolean>> mySuspensions = new HashMap<>();
+  private final Map<TCDefReferable, Suspension> mySuspensions = new HashMap<>();
   private final ErrorReporter myErrorReporter;
   private final InstanceProviderSet myInstanceProviderSet;
   private final ConcreteProvider myConcreteProvider;
@@ -60,6 +60,8 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   private final Map<TCDefReferable, Concrete.Definition> myDesugaredDefinitions = new HashMap<>();
   private List<TCDefReferable> myCurrentDefinitions = Collections.emptyList();
   private boolean myHeadersAreOK = true;
+
+  private record Suspension(CheckTypeVisitor typechecker, boolean isNew, UniverseKind universeKind) {}
 
   public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCDefReferable> comparator, ArendExtensionProvider extensionProvider) {
     myErrorReporter = errorReporter;
@@ -234,7 +236,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     DesugarVisitor.desugar(definition, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingUnitStarted(definition.getData());
-    DefinitionTypechecker typechecker = new DefinitionTypechecker(checkTypeVisitor);
+    DefinitionTypechecker typechecker = new DefinitionTypechecker(checkTypeVisitor, recursive ? Collections.singleton(definition.getData()) : Collections.emptySet());
     clauses = definition.accept(typechecker, null);
     Definition typechecked = definition.getData().getTypechecked();
     if (typechecked == null) {
@@ -324,11 +326,12 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
     DesugarVisitor.desugar(definition, visitor.getErrorReporter());
     Definition oldTypechecked = definition.getData().getTypechecked();
-    DefinitionTypechecker typechecker = new DefinitionTypechecker(visitor);
+    DefinitionTypechecker typechecker = new DefinitionTypechecker(visitor, definition.getRecursiveDefinitions());
     TopLevelDefinition typechecked = typechecker.typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);
+    UniverseKind universeKind = typechecked.getUniverseKind();
     typechecked.setUniverseKind(UniverseKind.WITH_UNIVERSES);
     if (typechecked.status() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
-      mySuspensions.put(definition.getData(), new Pair<>(visitor, typechecker.isNew()));
+      mySuspensions.put(definition.getData(), new Suspension(visitor, typechecker.isNew(), universeKind));
     }
 
     typecheckingHeaderFinished(definition.getData(), typechecked);
@@ -345,6 +348,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     Set<DataDefinition> dataDefinitions = new HashSet<>();
     List<Concrete.Definition> orderedDefinitions = new ArrayList<>(definitions.size());
     List<Concrete.Definition> otherDefs = new ArrayList<>();
+    Set<TCDefReferable> refs = new HashSet<>();
     for (Concrete.Definition definition : definitions) {
       Concrete.Definition newDef = myDesugaredDefinitions.get(definition.getData());
       if (newDef == null) newDef = definition;
@@ -355,10 +359,11 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       } else {
         otherDefs.add(newDef);
       }
+      refs.add(definition.getData());
     }
     orderedDefinitions.addAll(otherDefs);
 
-    DefinitionTypechecker typechecking = new DefinitionTypechecker(null);
+    DefinitionTypechecker typechecking = new DefinitionTypechecker(null, refs);
     myCurrentDefinitions = new ArrayList<>();
     for (Concrete.Definition definition : orderedDefinitions) {
       myCurrentDefinitions.add(definition.getData());
@@ -367,16 +372,26 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     Set<Definition> newDefs = new HashSet<>();
     List<Pair<Definition, DefinitionListener>> listeners = new ArrayList<>();
     for (Concrete.Definition definition : orderedDefinitions) {
+      Definition def = definition.getData().getTypechecked();
+      if (def instanceof TopLevelDefinition) {
+        Suspension suspension = mySuspensions.get(definition.getData());
+        if (suspension != null) {
+          ((TopLevelDefinition) def).setUniverseKind(suspension.universeKind);
+        }
+      }
+    }
+
+    for (Concrete.Definition definition : orderedDefinitions) {
       typecheckingBodyStarted(definition.getData());
 
       Definition def = definition.getData().getTypechecked();
-      Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
-      if (pair != null && pair.proj2) {
+      Suspension suspension = mySuspensions.remove(definition.getData());
+      if (suspension != null && suspension.isNew) {
         newDefs.add(def);
       }
-      if (myHeadersAreOK && pair != null) {
-        typechecking.setTypechecker(pair.proj1);
-        typechecking.updateState(pair.proj2);
+      if (myHeadersAreOK && suspension != null) {
+        typechecking.setTypechecker(suspension.typechecker);
+        typechecking.updateState(suspension.isNew);
         List<? extends ElimClause<ExpressionPattern>> clauses = typechecking.typecheckBody(def, definition, dataDefinitions);
         if (def instanceof FunctionDefinition) {
           functionDefinitions.put((FunctionDefinition) def, definition);
@@ -385,7 +400,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
           }
         }
 
-        ArendExtension extension = pair.proj1.getExtension();
+        ArendExtension extension = suspension.typechecker.getExtension();
         if (extension != null) {
           DefinitionListener listener = extension.getDefinitionListener();
           if (listener != null) {

@@ -67,15 +67,21 @@ import static org.arend.core.expr.ExpressionFactory.*;
 public class DefinitionTypechecker extends BaseDefinitionTypechecker implements ConcreteDefinitionVisitor<Void, List<ExtElimClause>> {
   protected CheckTypeVisitor typechecker;
   private boolean myNewDef = true;
+  private final Set<TCDefReferable> myRecursiveDefinitions;
 
-  public DefinitionTypechecker(CheckTypeVisitor typechecker) {
+  public DefinitionTypechecker(CheckTypeVisitor typechecker, Set<TCDefReferable> recursiveDefinitions) {
     super(typechecker == null ? null : typechecker.getErrorReporter());
     this.typechecker = typechecker;
+    myRecursiveDefinitions = recursiveDefinitions;
+    if (typechecker != null) {
+      typechecker.setRecursiveDefinitions(recursiveDefinitions);
+    }
   }
 
   public void setTypechecker(CheckTypeVisitor typechecker) {
     this.typechecker = typechecker;
     this.errorReporter = typechecker.getErrorReporter();
+    typechecker.setRecursiveDefinitions(myRecursiveDefinitions);
   }
 
   public void updateState(boolean update) {
@@ -353,8 +359,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private UniverseKind checkForUniverses(Definition definition) {
-    UniverseInParametersChecker checker = new UniverseInParametersChecker();
+  private UniverseKind checkForUniverses(Definition definition, Concrete.Definition def) {
+    UniverseInParametersChecker checker = new UniverseInParametersChecker(def.getRecursiveDefinitions());
     UniverseKind universeKind = UniverseKind.NO_UNIVERSES;
     int index = 0;
     List<Boolean> omegaParameters = new ArrayList<>();
@@ -1180,7 +1186,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
 
-      typedDef.setUniverseKind(checkForUniverses(typedDef));
+      typedDef.setUniverseKind(checkForUniverses(typedDef, def));
     }
 
     return pair != null;
@@ -1826,12 +1832,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
 
       if (universeKind != UniverseKind.WITH_UNIVERSES) {
-        if (new UniverseKindChecker().check(typedDef.getResultType())) {
+        if (new UniverseKindChecker(def.getRecursiveDefinitions()).check(typedDef.getResultType())) {
           typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
         } else {
           typedDef.setUniverseKind(universeKind);
           if (typedDef.getKind() != CoreFunctionDefinition.Kind.LEMMA && def.getKind() != FunctionKind.LEVEL) {
-            typedDef.setUniverseKind(universeKind.max(new UniverseKindChecker().getUniverseKind(typedDef.getActualBody())));
+            typedDef.setUniverseKind(universeKind.max(new UniverseKindChecker(def.getRecursiveDefinitions()).getUniverseKind(typedDef.getActualBody())));
           }
         }
       }
@@ -1995,7 +2001,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     dataDefinition.setGoodThisParameters(new GoodThisParametersVisitor(dataDefinition.getParameters()).getGoodParameters());
 
-    dataDefinition.setUniverseKind(checkForUniverses(dataDefinition));
+    dataDefinition.setUniverseKind(checkForUniverses(dataDefinition, def));
   }
 
   private boolean checkNoHITs(ExpressionPattern pattern, Concrete.SourceNode sourceNode) {
@@ -2246,7 +2252,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         for (Constructor constructor : dataDefinition.getConstructors()) {
           for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
             link = link.getNextTyped(null);
-            universeKind = universeKind.max(new UniverseKindChecker().getUniverseKind(link.getTypeExpr()));
+            universeKind = universeKind.max(new UniverseKindChecker(def.getRecursiveDefinitions()).getUniverseKind(link.getTypeExpr()));
             if (universeKind == UniverseKind.WITH_UNIVERSES) {
               break loop;
             }
@@ -2804,7 +2810,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           previousType = field.getResultType();
           previousField = typecheckClassField(field, typedDef, localInstances, hasClassifyingField);
           if (previousField != null) {
-            UniverseKind universeKind = new UniverseKindChecker().getUniverseKind(previousField.getType().getCodomain());
+            UniverseKind universeKind = new UniverseKindChecker(def.getRecursiveDefinitions()).getUniverseKind(previousField.getType().getCodomain());
             previousField.setUniverseKind(universeKind);
             previousField.setNumberOfParameters(Concrete.getNumberOfParameters(field.getParameters()));
           }
@@ -3057,7 +3063,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       if (baseUniverseKind != UniverseKind.WITH_UNIVERSES) {
-        UniverseInParametersChecker checker1 = new UniverseInParametersChecker();
+        UniverseInParametersChecker checker1 = new UniverseInParametersChecker(def.getRecursiveDefinitions());
         for (ClassField field : typedDef.getFields()) {
           baseUniverseKind = baseUniverseKind.max(checker1.getUniverseKind(field.getResultTypeFor(typedDef)));
           if (baseUniverseKind == UniverseKind.WITH_UNIVERSES) {

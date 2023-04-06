@@ -4,12 +4,19 @@ import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.subst.Levels;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 
+import java.util.Set;
+
 public class UniverseInParametersChecker extends CovarianceChecker {
-  private final CheckForUniversesVisitor myVisitor = new CheckForUniversesVisitor();
+  private final CheckForUniversesVisitor myVisitor;
   private UniverseKind myResult = UniverseKind.NO_UNIVERSES;
   private boolean myOmega;
+
+  public UniverseInParametersChecker(Set<? extends TCDefReferable> recursiveDefinitions) {
+    myVisitor = new CheckForUniversesVisitor(recursiveDefinitions);
+  }
 
   public UniverseKind getUniverseKind(Expression expression) {
     myOmega = false;

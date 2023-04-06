@@ -99,6 +99,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private TypecheckerState mySavedState;
   private LevelContext myLevelContext;
   private Definition myDefinition;
+  private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
   private boolean myAllowDeferredMetas = true;
 
   private record DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceVariable inferenceVar, MyErrorReporter errorReporter) {}
@@ -156,6 +157,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   public void setDefinition(Definition definition) {
     myDefinition = definition;
+  }
+
+  public void setRecursiveDefinitions(Set<TCDefReferable> definitions) {
+    myRecursiveDefinitions = definitions;
   }
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
@@ -1856,7 +1861,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     Levels levels;
     boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() && definition.getUniverseKind() == UniverseKind.NO_UNIVERSES;
-    if (definition == myDefinition) {
+    if (definition == myDefinition || myRecursiveDefinitions.contains(definition.getRef()) && expr.getPLevels() == null && expr.getHLevels() == null) {
       levels = definition.makeIdLevels();
       Levels levels1 = typecheckLevels(definition, expr, null, false);
       if (!levels.compare(levels1, CMP.EQ, myEquations, expr)) {

@@ -6,8 +6,17 @@ import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.naming.reference.TCDefReferable;
+
+import java.util.Set;
 
 public class CheckForUniversesVisitor extends SearchVisitor<Void> {
+  private final Set<? extends TCDefReferable> myRecursiveDefinitions;
+
+  public CheckForUniversesVisitor(Set<? extends TCDefReferable> recursiveDefinitions) {
+    myRecursiveDefinitions = recursiveDefinitions;
+  }
+
   @Override
   public CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
     if (expression.getDefinition() instanceof ClassField) {
@@ -27,11 +36,10 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
       return false;
     }
     Expression arg = expr.getArgument();
-    if (arg instanceof FunCallExpression && ((FunCallExpression) arg).getDefinition().getResultType() instanceof ClassCallExpression && ((FunCallExpression) arg).getDefinition().status().isOK()) {
+    if (arg instanceof FunCallExpression funCall && funCall.getDefinition().getResultType() instanceof ClassCallExpression && funCall.getDefinition().status().isOK() && !myRecursiveDefinitions.contains(funCall.getDefinition().getRef())) {
       Expression result = NormalizeVisitor.INSTANCE.evalFieldCall(expr.getDefinition(), arg);
       if (result != null) {
-        while (apps > 0 && result instanceof LamExpression) {
-          LamExpression lam = (LamExpression) result;
+        while (apps > 0 && result instanceof LamExpression lam) {
           SingleDependentLink param = lam.getParameters();
           for (; param.hasNext() && apps > 0; param = param.getNext()) {
             apps--;
