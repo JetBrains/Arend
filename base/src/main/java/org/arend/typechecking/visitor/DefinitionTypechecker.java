@@ -1830,7 +1830,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
         } else {
           typedDef.setUniverseKind(universeKind);
-          typedDef.setUniverseKind(universeKind.max(new UniverseKindChecker().getUniverseKind(typedDef.getActualBody())));
+          if (typedDef.getKind() != CoreFunctionDefinition.Kind.LEMMA && def.getKind() != FunctionKind.LEVEL) {
+            typedDef.setUniverseKind(universeKind.max(new UniverseKindChecker().getUniverseKind(typedDef.getActualBody())));
+          }
         }
       }
     }
