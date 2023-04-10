@@ -55,10 +55,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private boolean getVars(ExprContext expr, List<ParsedLocalReferable> vars) {
-    if (!(expr instanceof AppContext)) {
+    if (!(expr instanceof AppContext appExpr)) {
       return false;
     }
-    AppContext appExpr = (AppContext) expr;
     if (!(appExpr.appExpr() instanceof AppArgumentContext && appExpr.appPrefix() == null && appExpr.implementStatements() == null)) {
       return false;
     }
@@ -173,8 +172,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       return visitDefClass((DefClassContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefInstanceContext) {
       return visitDefInstance((DefInstanceContext) ctx, parent, enclosingClass);
-    } else if (ctx instanceof DefModuleContext) {
-      DefModuleContext moduleCtx = (DefModuleContext) ctx;
+    } else if (ctx instanceof DefModuleContext moduleCtx) {
       return visitDefModule(moduleCtx.ID(), moduleCtx.where(), parent, enclosingClass);
     } else if (ctx instanceof DefMetaContext) {
       return visitDefMeta((DefMetaContext) ctx, parent, enclosingClass);
@@ -529,8 +527,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     Concrete.FunctionBody body;
     InstanceBodyContext bodyCtx = ctx.instanceBody();
     List<CoClauseContext> coClauses = null;
-    if (bodyCtx instanceof InstanceWithElimContext) {
-      InstanceWithElimContext elimCtx = (InstanceWithElimContext) bodyCtx;
+    if (bodyCtx instanceof InstanceWithElimContext elimCtx) {
       body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), visitElim(elimCtx.elim()), visitClauses(elimCtx.clauses()));
     } else if (bodyCtx instanceof InstanceWithoutElimContext) {
       body = new Concrete.TermFunctionBody(tokenPosition(ctx.start), visitExpr(((InstanceWithoutElimContext) bodyCtx).expr()));
@@ -670,8 +667,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr2());
 
     List<CoClauseContext> coClauses = null;
-    if (functionBodyCtx instanceof WithElimContext) {
-      WithElimContext elimCtx = (WithElimContext) functionBodyCtx;
+    if (functionBodyCtx instanceof WithElimContext elimCtx) {
       body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), visitElim(elimCtx.elim()), visitClauses(elimCtx.clauses()));
     } else if (functionBodyCtx instanceof CowithElimContext) {
       coClauses = getCoClauses(((CowithElimContext) functionBodyCtx).coClauses());
@@ -761,8 +757,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private void collectUsedDefinitions(Group group, List<TCDefReferable> usedDefinitions) {
-    if (group.getReferable() instanceof ConcreteLocatedReferable) {
-      ConcreteLocatedReferable ref = (ConcreteLocatedReferable) group.getReferable();
+    if (group.getReferable() instanceof ConcreteLocatedReferable ref) {
       Concrete.ReferableDefinition def = ref.getDefinition();
       if (def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).getKind().isUse()) {
         usedDefinitions.add(ref);
@@ -896,11 +891,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           visitInstanceStatement(((ClassFieldOrImplStatContext) statementCtx).classFieldOrImpl(), elements, parentClass);
         } else if (statementCtx instanceof ClassDefinitionStatContext) {
           statements.add(visitDefinition(((ClassDefinitionStatContext) statementCtx).definition(), parent, parentClass.getData()));
-        } else if (statementCtx instanceof ClassFieldStatContext) {
-          ClassFieldStatContext fieldStatCtx = (ClassFieldStatContext) statementCtx;
+        } else if (statementCtx instanceof ClassFieldStatContext fieldStatCtx) {
           elements.add(visitClassFieldDef(fieldStatCtx.classFieldDef(), (ClassFieldKind) visit(fieldStatCtx.fieldMod()), parentClass));
-        } else if (statementCtx instanceof ClassOverrideStatContext) {
-          ClassOverrideStatContext overrideCtx = (ClassOverrideStatContext) statementCtx;
+        } else if (statementCtx instanceof ClassOverrideStatContext overrideCtx) {
           LongNameContext longName = overrideCtx.longName();
           Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(overrideCtx.returnExpr());
           elements.add(new Concrete.OverriddenField(tokenPosition(overrideCtx.start), LongUnresolvedReference.make(tokenPosition(longName.start), visitLongNamePath(longName)), visitTeles(overrideCtx.tele(), false), pair.proj1, pair.proj2));
@@ -1328,8 +1321,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         Concrete.FunctionBody fBody;
         if (defBody instanceof CoClauseExprContext) {
           fBody = new Concrete.TermFunctionBody(tokenPosition(defBody.start), visitExpr(((CoClauseExprContext) defBody).expr()));
-        } else if (defBody instanceof CoClauseWithContext) {
-          CoClauseWithContext withBody = (CoClauseWithContext) defBody;
+        } else if (defBody instanceof CoClauseWithContext withBody) {
           List<Concrete.FunctionClause> clauses = new ArrayList<>();
           for (ClauseContext clauseCtx : withBody.clause()) {
             clauses.add(visitClause(clauseCtx));
@@ -1561,9 +1553,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
-  public Concrete.IdLevelExpression visitIdLevel(IdLevelContext ctx) {
+  public Concrete.VarLevelExpression visitIdLevel(IdLevelContext ctx) {
     Position pos = tokenPosition(ctx.start);
-    return new Concrete.IdLevelExpression(pos, new NamedUnresolvedReference(pos, ctx.ID().getText()));
+    return new Concrete.VarLevelExpression(pos, new NamedUnresolvedReference(pos, ctx.ID().getText()));
   }
 
   @Override
@@ -1906,12 +1898,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       Expr2Context typeCtx = caseArgCtx.expr2();
       Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
       CaseArgExprAsContext caseArgExprAs = caseArgCtx.caseArgExprAs();
-      if (caseArgExprAs instanceof CaseArgExprContext) {
-        CaseArgExprContext caseArgExpr = (CaseArgExprContext) caseArgExprAs;
+      if (caseArgExprAs instanceof CaseArgExprContext caseArgExpr) {
         TerminalNode id = caseArgExpr.ID();
         caseArgs.add(new Concrete.CaseArgument(visitExpr(caseArgExpr.expr2()), id == null ? null : new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()), type));
-      } else if (caseArgExprAs instanceof CaseArgElimContext) {
-        CaseArgElimContext caseArgElim = (CaseArgElimContext) caseArgExprAs;
+      } else if (caseArgExprAs instanceof CaseArgElimContext caseArgElim) {
         TerminalNode id = caseArgElim.ID();
         TerminalNode applyHole = caseArgElim.APPLY_HOLE();
         Concrete.CaseArgument argument;

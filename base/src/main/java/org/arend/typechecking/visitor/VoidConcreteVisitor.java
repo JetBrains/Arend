@@ -275,8 +275,7 @@ public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>
         visitClassField((Concrete.ClassField) element, params);
       } else if (element instanceof Concrete.ClassFieldImpl) {
         visitClassFieldImpl((Concrete.ClassFieldImpl) element, params);
-      } else if (element instanceof Concrete.OverriddenField) {
-        Concrete.OverriddenField field = (Concrete.OverriddenField) element;
+      } else if (element instanceof Concrete.OverriddenField field) {
         visitParameters(field.getParameters(), params);
         field.getResultType().accept(this, params);
         if (field.getResultTypeLevel() != null) {
@@ -353,7 +352,7 @@ public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>
   }
 
   @Override
-  public Void visitId(Concrete.IdLevelExpression expr, P param) {
+  public Void visitVar(Concrete.VarLevelExpression expr, P param) {
     return null;
   }
 
@@ -366,11 +365,6 @@ public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>
   public Void visitMax(Concrete.MaxLevelExpression expr, P param) {
     expr.getLeft().accept(this, param);
     expr.getRight().accept(this, param);
-    return null;
-  }
-
-  @Override
-  public Void visitVar(Concrete.VarLevelExpression expr, P param) {
     return null;
   }
 }

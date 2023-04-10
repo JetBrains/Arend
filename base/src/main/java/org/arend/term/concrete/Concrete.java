@@ -1538,25 +1538,6 @@ public final class Concrete {
     }
   }
 
-  public static class VarLevelExpression extends LevelExpression {
-    private final LevelVariable myVariable;
-
-    public VarLevelExpression(Object data, LevelVariable variable) {
-      super(data);
-      myVariable = variable;
-    }
-
-    @NotNull
-    public LevelVariable getVariable() {
-      return myVariable;
-    }
-
-    @Override
-    public <P, R> R accept(ConcreteLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitVar(this, params);
-    }
-  }
-
   public static class PLevelExpression extends LevelExpression {
     public PLevelExpression(Object data) {
       super(data);
@@ -1608,12 +1589,24 @@ public final class Concrete {
     }
   }
 
-  public static class IdLevelExpression extends LevelExpression {
+  public static class VarLevelExpression extends LevelExpression {
     private Referable myReferent;
+    private final boolean myInference;
+    private final LevelVariable.LvlType myLevelType;
 
-    public IdLevelExpression(Object data, Referable referable) {
+    public VarLevelExpression(Object data, Referable referable, boolean isInference, LevelVariable.LvlType levelType) {
       super(data);
       myReferent = referable;
+      myInference = isInference;
+      myLevelType = levelType;
+    }
+
+    public VarLevelExpression(Object data, Referable referable, LevelVariable.LvlType levelType) {
+      this(data, referable, false, levelType);
+    }
+
+    public VarLevelExpression(Object data, Referable referable) {
+      this(data, referable, LevelVariable.LvlType.PLVL);
     }
 
     public Referable getReferent() {
@@ -1624,9 +1617,17 @@ public final class Concrete {
       myReferent = referent;
     }
 
+    public boolean isInference() {
+      return myInference;
+    }
+
+    public LevelVariable.LvlType getLevelType() {
+      return myLevelType;
+    }
+
     @Override
     public <P, R> R accept(ConcreteLevelExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitId(this, params);
+      return visitor.visitVar(this, params);
     }
   }
 

@@ -4,6 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.binding.PersistentEvaluatingBinding;
+import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
@@ -740,7 +741,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (!hasFlag(PrettyPrinterFlag.SHOW_LEVELS)) {
         return null;
       }
-      result = new Concrete.VarLevelExpression(null, level.getVar());
+      result = new Concrete.VarLevelExpression(null, new LocalReferable(level.getVar().getName()), level.getVar() instanceof InferenceLevelVariable, level.getVar().getType());
     }
 
     for (int i = 0; i < level.getConstant(); i++) {

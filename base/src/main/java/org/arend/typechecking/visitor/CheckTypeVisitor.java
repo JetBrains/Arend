@@ -2041,7 +2041,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public Level visitId(Concrete.IdLevelExpression expr, LevelVariable base) {
+  public Level visitVar(Concrete.VarLevelExpression expr, LevelVariable base) {
     if (expr.getReferent() instanceof ErrorReference) {
       return new Level(base);
     }
@@ -2063,12 +2063,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Override
   public Level visitMax(Concrete.MaxLevelExpression expr, LevelVariable base) {
     return expr.getLeft().accept(this, base).max(expr.getRight().accept(this, base));
-  }
-
-  @Override
-  public Level visitVar(Concrete.VarLevelExpression expr, LevelVariable base) {
-    errorReporter.report(new TypecheckingError("Cannot typecheck an inference variable", expr));
-    return new Level(base);
   }
 
   // Sorts

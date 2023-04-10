@@ -257,8 +257,8 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
   }
 
   @Override
-  public Concrete.LevelExpression visitId(Concrete.IdLevelExpression expr, Void param) {
-    return new Concrete.IdLevelExpression(getData(expr), expr.getReferent());
+  public Concrete.LevelExpression visitVar(Concrete.VarLevelExpression expr, Void param) {
+    return new Concrete.VarLevelExpression(getData(expr), expr.getReferent(), expr.isInference(), expr.getLevelType());
   }
 
   @Override
@@ -269,11 +269,6 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
   @Override
   public Concrete.LevelExpression visitMax(Concrete.MaxLevelExpression expr, Void param) {
     return new Concrete.MaxLevelExpression(getData(expr), expr.getLeft().accept(this, null), expr.getRight().accept(this, null));
-  }
-
-  @Override
-  public Concrete.LevelExpression visitVar(Concrete.VarLevelExpression expr, Void param) {
-    return new Concrete.VarLevelExpression(getData(expr), expr.getVariable());
   }
 
   private List<Concrete.ReferenceExpression> visitReferenceExpressions(List<? extends Concrete.ReferenceExpression> expressions) {
@@ -312,7 +307,7 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
     } else if (body instanceof Concrete.ElimFunctionBody) {
       newBody = new Concrete.ElimFunctionBody(getData(body), visitReferenceExpressions(body.getEliminatedReferences()), visitFunctionClauses(body.getClauses()));
     } else if (body instanceof Concrete.TermFunctionBody) {
-      newBody = new Concrete.TermFunctionBody(getData(body), body.getTerm() == null ? null : body.getTerm().accept(this, null));
+      newBody = new Concrete.TermFunctionBody(getData(body), body.getTerm().accept(this, null));
     } else {
       throw new IllegalStateException();
     }

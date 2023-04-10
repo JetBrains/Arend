@@ -999,14 +999,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
-  public Concrete.LevelExpression visitId(Concrete.IdLevelExpression expr, LevelVariable type) {
+  public Concrete.LevelExpression visitVar(Concrete.VarLevelExpression expr, LevelVariable type) {
     Referable.RefKind refKind = type == LevelVariable.HVAR ? Referable.RefKind.HLEVEL : Referable.RefKind.PLEVEL;
     Referable ref = resolve(expr.getReferent(), myScope, refKind);
     if (ref instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) ref).getError());
     }
     Referable convertedRef = convertReferable(ref, expr.getData());
-    Concrete.IdLevelExpression result = new Concrete.IdLevelExpression(expr.getData(), convertedRef);
+    Concrete.VarLevelExpression result = new Concrete.VarLevelExpression(expr.getData(), convertedRef, type.getType());
     if (myResolverListener != null) {
       myResolverListener.levelResolved(expr.getReferent(), result, ref, new ArrayList<>(myScope.getElements(refKind)));
     }
@@ -1022,10 +1022,5 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public Concrete.LevelExpression visitMax(Concrete.MaxLevelExpression expr, LevelVariable type) {
     return new Concrete.MaxLevelExpression(expr.getData(), expr.getLeft().accept(this, type), expr.getRight().accept(this, type));
-  }
-
-  @Override
-  public Concrete.LevelExpression visitVar(Concrete.VarLevelExpression expr, LevelVariable param) {
-    return expr;
   }
 }

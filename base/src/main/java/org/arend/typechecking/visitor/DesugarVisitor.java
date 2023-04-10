@@ -494,8 +494,8 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   }
 
   private void visitLevelExpression(Concrete.LevelExpression expr) {
-    if (expr instanceof Concrete.IdLevelExpression) {
-      Referable ref = ((Concrete.IdLevelExpression) expr).getReferent();
+    if (expr instanceof Concrete.VarLevelExpression) {
+      Referable ref = ((Concrete.VarLevelExpression) expr).getReferent();
       if (ref instanceof TCLevelReferable) {
         myLevelRefs.add((TCLevelReferable) ref);
       }

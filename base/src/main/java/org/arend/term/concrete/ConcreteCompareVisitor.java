@@ -1,6 +1,5 @@
 package org.arend.term.concrete;
 
-import org.arend.ext.core.ops.CMP;
 import org.arend.naming.reference.Referable;
 
 import java.util.HashMap;
@@ -180,11 +179,8 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     if (level1 instanceof Concrete.MaxLevelExpression max1) {
       return level2 instanceof Concrete.MaxLevelExpression max2 && compareLevel(max1.getLeft(), max2.getLeft()) && compareLevel(max1.getRight(), max2.getRight());
     }
-    if (level1 instanceof Concrete.VarLevelExpression) {
-      return level2 instanceof Concrete.VarLevelExpression && ((Concrete.VarLevelExpression) level1).getVariable().compare(((Concrete.VarLevelExpression) level2).getVariable(), CMP.EQ);
-    }
-    if (level1 instanceof Concrete.IdLevelExpression) {
-      return level2 instanceof Concrete.IdLevelExpression && ((Concrete.IdLevelExpression) level1).getReferent().equals(((Concrete.IdLevelExpression) level2).getReferent());
+    if (level1 instanceof Concrete.VarLevelExpression var1) {
+      return level2 instanceof Concrete.VarLevelExpression var2 && var1.getReferent().equals(var2.getReferent()) && var1.isInference() == var2.isInference() && var1.getLevelType().equals(var2.getLevelType());
     }
     throw new IllegalStateException();
   }

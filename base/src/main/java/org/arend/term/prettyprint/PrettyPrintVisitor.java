@@ -2,7 +2,6 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -27,8 +26,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public static final float SMALL_RATIO = (float) 0.1;
 
   protected final StringBuilder myBuilder;
-  private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
-  private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
+  private final VariableTracker<Referable> myPVariables = new VariableTracker<>();
+  private final VariableTracker<Referable> myHVariables = new VariableTracker<>();
   protected int myIndent;
   private final boolean noIndent;
 
@@ -460,27 +459,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  private int getVariableNumber(InferenceLevelVariable variable) {
-    Map<InferenceLevelVariable, Integer> variables = variable.getType() == LevelVariable.LvlType.PLVL ? myPVariables : myHVariables;
-    Integer number = variables.get(variable);
-    if (number != null) {
-      return number;
-    }
-
-    if (variables.isEmpty()) {
-      variables = new HashMap<>();
-      if (variable.getType() == LevelVariable.LvlType.PLVL) {
-        myPVariables = variables;
-      } else {
-        myHVariables = variables;
-      }
-    }
-
-    int num = variables.size() + 1;
-    variables.put(variable, num);
-    return num;
-  }
-
   @Override
   public Void visitInf(Concrete.InfLevelExpression expr, Precedence param) {
     myBuilder.append("\\oo");
@@ -506,9 +484,17 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
-  public Void visitId(Concrete.IdLevelExpression expr, Precedence param) {
+  public Void visitVar(Concrete.VarLevelExpression expr, Precedence param) {
     myBuilder.append(expr.getReferent().getRefName());
+    if (expr.isInference()) {
+      myBuilder.append(getLevelVariableText(expr.getReferent(), expr.getLevelType()));
+    }
     return null;
+  }
+
+  public String getLevelVariableText(Referable referable, LevelVariable.LvlType levelType) {
+    VariableTracker<Referable> tracker = levelType == LevelVariable.LvlType.PLVL ? myPVariables : myHVariables;
+    return referable.getRefName() + tracker.getIndex(referable);
   }
 
   @Override
@@ -528,24 +514,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myBuilder.append(" ");
     expr.getRight().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
     if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append(')');
-    return null;
-  }
-
-  public void prettyPrintLevelVar(LevelVariable variable) {
-    myBuilder.append(variable);
-    if (variable instanceof InferenceLevelVariable) {
-      myBuilder.append(getVariableNumber((InferenceLevelVariable) variable));
-    }
-  }
-
-  public String getInferLevelVarText(InferenceLevelVariable variable) {
-    return variable.toString() + getVariableNumber(variable);
-  }
-
-  @Override
-  public Void visitVar(Concrete.VarLevelExpression expr, Precedence param) {
-    LevelVariable variable = expr.getVariable();
-    prettyPrintLevelVar(variable);
     return null;
   }
 

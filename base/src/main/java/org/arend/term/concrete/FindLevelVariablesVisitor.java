@@ -39,7 +39,7 @@ public class FindLevelVariablesVisitor extends VoidConcreteVisitor<Void> {
   }
 
   @Override
-  public Void visitId(Concrete.IdLevelExpression expr, Void param) {
+  public Void visitVar(Concrete.VarLevelExpression expr, Void param) {
     myReferables.add(expr.getReferent());
     return null;
   }

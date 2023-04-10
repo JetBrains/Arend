@@ -350,9 +350,9 @@ public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> im
   }
 
   @Override
-  public Concrete.LevelExpression visitId(Concrete.IdLevelExpression expr, Void param) {
+  public Concrete.LevelExpression visitVar(Concrete.VarLevelExpression expr, Void param) {
     Concrete.LevelExpression result = myLevelSubstitution.get(expr.getReferent());
-    return result != null ? (myData == null ? result : result.accept(new SubstConcreteVisitor(myData), null)) : (myData == null ? expr : new Concrete.IdLevelExpression(myData, expr.getReferent()));
+    return result != null ? (myData == null ? result : result.accept(new SubstConcreteVisitor(myData), null)) : (myData == null ? expr : new Concrete.VarLevelExpression(myData, expr.getReferent(), expr.isInference(), expr.getLevelType()));
   }
 
   @Override
@@ -363,10 +363,5 @@ public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> im
   @Override
   public Concrete.LevelExpression visitMax(Concrete.MaxLevelExpression expr, Void param) {
     return new Concrete.MaxLevelExpression(myData == null ? expr.getData() : myData, expr.getLeft().accept(this, null), expr.getRight().accept(this, null));
-  }
-
-  @Override
-  public Concrete.LevelExpression visitVar(Concrete.VarLevelExpression expr, Void param) {
-    return myData == null ? expr : new Concrete.VarLevelExpression(myData, expr.getVariable());
   }
 }

@@ -19,7 +19,7 @@ public interface ResolverListener {
   default void namespaceResolved(NamespaceCommand namespaceCommand, List<Referable> resolvedRefs) {}
   default void renamingResolved(NameRenaming renaming, Referable originalRef, Referable resolvedRef) {}
   default void metaResolved(Concrete.ReferenceExpression expression, List<Concrete.Argument> arguments, Concrete.Expression result, Concrete.Coclauses coclauses, Concrete.FunctionClauses clauses) {}
-  default void levelResolved(Referable originalRef, Concrete.IdLevelExpression refExpr, Referable resolvedRef, Collection<Referable> availableRefs) {}
+  default void levelResolved(Referable originalRef, Concrete.VarLevelExpression refExpr, Referable resolvedRef, Collection<Referable> availableRefs) {}
 
   default void beforeDefinitionResolved(Concrete.ResolvableDefinition definition) {}
   default void definitionResolved(Concrete.ResolvableDefinition definition) {}

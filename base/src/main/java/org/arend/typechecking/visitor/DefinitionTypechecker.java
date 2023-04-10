@@ -924,7 +924,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         cdef.setPLevelParameters(levelVariablesToParameters(cdef.getData(), enclosingClass.getLevelParameters().subList(0, n), true));
         if (cdef.getPLevelParameters() != null) {
           for (Concrete.ReferenceExpression ref : refs) {
-            ref.setPLevels(levelParametersToExpressions(ref.getData(), cdef.getPLevelParameters()));
+            ref.setPLevels(levelParametersToExpressions(ref.getData(), cdef.getPLevelParameters(), LevelVariable.LvlType.PLVL));
           }
         }
       }
@@ -932,7 +932,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         cdef.setHLevelParameters(levelVariablesToParameters(cdef.getData(), enclosingClass.getLevelParameters().subList(n, enclosingClass.getLevelParameters().size()), false));
         if (cdef.getHLevelParameters() != null) {
           for (Concrete.ReferenceExpression ref : refs) {
-            ref.setHLevels(levelParametersToExpressions(ref.getData(), cdef.getHLevelParameters()));
+            ref.setHLevels(levelParametersToExpressions(ref.getData(), cdef.getHLevelParameters(), LevelVariable.LvlType.HLVL));
           }
         }
       }
@@ -997,7 +997,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (cdef.getPLevelParameters() != null) {
         typedDef.setPLevelsParent(pLevelsParent);
         typedDef.setPLevelsDerived(!hadPLevels && (!pLevelsNotDerived || allPLevelsDerived));
-        pLevelExprs = levelParametersToExpressions(null, cdef.getPLevelParameters());
+        pLevelExprs = levelParametersToExpressions(null, cdef.getPLevelParameters(), LevelVariable.LvlType.PLVL);
       }
     }
     List<Concrete.LevelExpression> hLevelExprs = null;
@@ -1008,7 +1008,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (cdef.getHLevelParameters() != null) {
         typedDef.setHLevelsParent(hLevelsParent);
         typedDef.setHLevelsDerived(!hadHLevels && (!hLevelsNotDerived || allHLevelsDerived));
-        hLevelExprs = levelParametersToExpressions(null, cdef.getHLevelParameters());
+        hLevelExprs = levelParametersToExpressions(null, cdef.getHLevelParameters(), LevelVariable.LvlType.HLVL);
       }
     }
 
@@ -1041,10 +1041,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private List<Concrete.LevelExpression> levelParametersToExpressions(Object data, Concrete.LevelParameters parameters) {
+  private List<Concrete.LevelExpression> levelParametersToExpressions(Object data, Concrete.LevelParameters parameters, LevelVariable.LvlType type) {
     List<Concrete.LevelExpression> result = new ArrayList<>();
     for (LevelReferable referable : parameters.referables) {
-      result.add(new Concrete.IdLevelExpression(data, referable));
+      result.add(new Concrete.VarLevelExpression(data, referable, type));
     }
     return result;
   }
@@ -1094,10 +1094,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               }
               if (type instanceof Concrete.ReferenceExpression refExpr) {
                 if (pLevelParams != null) {
-                  refExpr.setPLevels(levelParametersToExpressions(refExpr.getData(), pLevelParams));
+                  refExpr.setPLevels(levelParametersToExpressions(refExpr.getData(), pLevelParams, LevelVariable.LvlType.PLVL));
                 }
                 if (hLevelParams != null) {
-                  refExpr.setHLevels(levelParametersToExpressions(refExpr.getData(), hLevelParams));
+                  refExpr.setHLevels(levelParametersToExpressions(refExpr.getData(), hLevelParams, LevelVariable.LvlType.HLVL));
                 }
               }
             }
@@ -1452,11 +1452,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         int n2 = typedDef.getNumberOfPLevelParameters();
         List<? extends LevelVariable> pVars = typedDef.getLevelParameters().subList(0, n2);
         if ((cEnclosingDef.getPLevelParameters() != null || pVars.size() == 1 && pVars.get(0) == LevelVariable.PVAR) && LevelVariable.compare(enclosingDef.getLevelParameters().subList(0, n1), pVars, CMP.EQ)) {
-          refExpr.setPLevels(cEnclosingDef.getPLevelParameters() != null ? levelParametersToExpressions(refExpr.getData(), cEnclosingDef.getPLevelParameters()) : Collections.singletonList(new Concrete.PLevelExpression(refExpr.getData())));
+          refExpr.setPLevels(cEnclosingDef.getPLevelParameters() != null ? levelParametersToExpressions(refExpr.getData(), cEnclosingDef.getPLevelParameters(), LevelVariable.LvlType.PLVL) : Collections.singletonList(new Concrete.PLevelExpression(refExpr.getData())));
         }
         List<? extends LevelVariable> hVars = typedDef.getLevelParameters().subList(n2, typedDef.getLevelParameters().size());
         if ((cEnclosingDef.getHLevelParameters() != null || hVars.size() == 1 && hVars.get(0) == LevelVariable.HVAR) && LevelVariable.compare(enclosingDef.getLevelParameters().subList(n1, enclosingDef.getLevelParameters().size()), hVars, CMP.EQ)) {
-          refExpr.setHLevels(cEnclosingDef.getHLevelParameters() != null ? levelParametersToExpressions(refExpr.getData(), cEnclosingDef.getHLevelParameters()) : Collections.singletonList(new Concrete.HLevelExpression(refExpr.getData())));
+          refExpr.setHLevels(cEnclosingDef.getHLevelParameters() != null ? levelParametersToExpressions(refExpr.getData(), cEnclosingDef.getHLevelParameters(), LevelVariable.LvlType.HLVL) : Collections.singletonList(new Concrete.HLevelExpression(refExpr.getData())));
         }
       }
     }
