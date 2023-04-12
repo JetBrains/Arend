@@ -3690,8 +3690,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (!ok || level < -1) {
-      errorReporter.report(new TypecheckingError("\\level has wrong format", sourceNode));
-      return null;
+      type = type == null ? null : type.normalize(NormalizationMode.WHNF);
+      if (!(type instanceof ErrorExpression && ((ErrorExpression) type).isGoal())) {
+        errorReporter.report(new TypecheckingError("\\level has wrong format", sourceNode));
+        return null;
+      }
+      return -1;
     } else {
       return level;
     }
