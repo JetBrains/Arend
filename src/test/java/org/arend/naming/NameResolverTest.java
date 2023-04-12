@@ -631,7 +631,8 @@ public class NameResolverTest extends NameResolverTestCase {
         \\class X \\where { \\func f => 0 }
         \\open X(f \\as f') \\hiding(f)
         \\func g => f'
-        """);
+        """, 1);
+    assertThatErrorsAre(notInScope("f"));
   }
 
   @Test
@@ -642,8 +643,8 @@ public class NameResolverTest extends NameResolverTestCase {
         \\open X(f \\as f') \\hiding(f')
         \\func g => f
         \\func g' => f'
-        """, 3);
-    assertThatErrorsAre(notInScope("f"), notInScope("f'"), notInScope("f'"));
+        """, 2);
+    assertThatErrorsAre(notInScope("f"), notInScope("f'"));
   }
 
   @Test
