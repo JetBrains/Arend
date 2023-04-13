@@ -111,9 +111,9 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void threeVars() {
-    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
+    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) getDefinition(resolveNamesDef(
       "\\func f (n m k : Nat) : Nat\n" +
-      "  | suc n, zero, suc k => k").getDefinition();
+      "  | suc n, zero, suc k => k"));
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(new LocalErrorReporter(fun.getData(), errorReporter), PatternTypechecking.Mode.DATA).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
     assertNotNull(res);
@@ -123,9 +123,9 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void nestedPatterns() {
-    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
+    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) getDefinition(resolveNamesDef(
       "\\func f (n m k : Nat) : Nat\n" +
-      "  | suc (suc (suc n)), zero, suc (suc (suc (suc zero))) => n").getDefinition();
+      "  | suc (suc (suc n)), zero, suc (suc (suc (suc zero))) => n"));
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(new LocalErrorReporter(fun.getData(), errorReporter), PatternTypechecking.Mode.DATA).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
     assertNotNull(res);
@@ -135,9 +135,9 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void incorrectType() {
-    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
+    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) getDefinition(resolveNamesDef(
       "\\func f (n : Nat) (m : Nat -> Nat) (k : Nat) : Nat\n" +
-      "  | suc n, zero, suc k => k").getDefinition();
+      "  | suc n, zero, suc k => k"));
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(new LocalErrorReporter(fun.getData(), errorReporter), PatternTypechecking.Mode.DATA).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Pi(Nat(), Nat())), param(null, Nat())), fun.getBody(), false);
     assertNull(res);
@@ -169,9 +169,9 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void tooManyPatterns() {
-    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
+    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) getDefinition(resolveNamesDef(
       "\\func f (n m k : Nat) : Nat\n" +
-      "  | suc n m, zero, suc k => k").getDefinition();
+      "  | suc n m, zero, suc k => k"));
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(new LocalErrorReporter(fun.getData(), errorReporter), PatternTypechecking.Mode.DATA).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
     assertNull(res);
@@ -180,9 +180,9 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void interval() {
-    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
+    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) getDefinition(resolveNamesDef(
       "\\func f (n : Nat) (i : I) : Nat\n" +
-      "  | zero, i => zero").getDefinition();
+      "  | zero, i => zero"));
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(new LocalErrorReporter(fun.getData(), errorReporter), PatternTypechecking.Mode.DATA).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
     assertNotNull(res);
@@ -192,9 +192,9 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void intervalFail() {
-    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
+    Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) getDefinition(resolveNamesDef(
       "\\func f (n : Nat) (i : I) : Nat\n" +
-      "  | zero, left => zero").getDefinition();
+      "  | zero, left => zero"));
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<ExpressionPattern>, Map<Referable, Binding>> res = new PatternTypechecking(new LocalErrorReporter(fun.getData(), errorReporter), PatternTypechecking.Mode.DATA).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
     assertNull(res);

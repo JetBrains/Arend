@@ -37,7 +37,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
     myDefinitionListener = definitionListener;
   }
 
-  public void fillInDefinition(DefinitionProtos.Definition defProto, TopLevelDefinition def) throws DeserializationException {
+  public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
     final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def);
 
     switch (defProto.getDefinitionDataCase()) {
@@ -45,27 +45,31 @@ public class DefinitionDeserialization implements ArendDeserializer {
       case DATA -> fillInDataDefinition(defDeserializer, defProto.getData(), (DataDefinition) def);
       case CONSTRUCTOR -> fillInDConstructor(defDeserializer, defProto.getConstructor(), (DConstructor) def);
       case FUNCTION -> fillInFunctionDefinition(defDeserializer, defProto.getFunction(), (FunctionDefinition) def);
+      case META -> fillInMetaDefinition(defDeserializer, defProto.getMeta(), (MetaTopDefinition) def);
       default -> throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
 
     def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    def.setUniverseKind(defDeserializer.readUniverseKind(defProto.getUniverseKind()));
-    int pLevelsParent = defProto.getPLevelsParent();
-    if (pLevelsParent != 0) {
-      def.setPLevelsParent(myCallTargetProvider.getRef(pLevelsParent - 1));
-    }
-    int hLevelsParent = defProto.getHLevelsParent();
-    if (hLevelsParent != 0) {
-      def.setHLevelsParent(myCallTargetProvider.getRef(hLevelsParent - 1));
-    }
-    def.setPLevelsDerived(defProto.getPLevelsDerived());
-    def.setHLevelsDerived(defProto.getHLevelsDerived());
-    def.setAxioms(readDefinitions(defProto.getAxiomList(), FunctionDefinition.class));
-
     List<Pair<TCDefReferable, Integer>> parametersOriginalDefinitions = readParametersOriginalDefinitions(defProto.getParameterOriginalDefList());
-    def.setParametersOriginalDefinitions(parametersOriginalDefinitions);
     for (Pair<TCDefReferable, Integer> pair : parametersOriginalDefinitions) {
       myDependencyListener.dependsOn(def.getRef(), pair.proj1);
+    }
+
+    if (def instanceof TopLevelDefinition topDef) {
+      topDef.setUniverseKind(defDeserializer.readUniverseKind(defProto.getUniverseKind()));
+      int pLevelsParent = defProto.getPLevelsParent();
+      if (pLevelsParent != 0) {
+        topDef.setPLevelsParent(myCallTargetProvider.getRef(pLevelsParent - 1));
+      }
+      int hLevelsParent = defProto.getHLevelsParent();
+      if (hLevelsParent != 0) {
+        topDef.setHLevelsParent(myCallTargetProvider.getRef(hLevelsParent - 1));
+      }
+      topDef.setPLevelsDerived(defProto.getPLevelsDerived());
+      topDef.setHLevelsDerived(defProto.getHLevelsDerived());
+      topDef.setAxioms(readDefinitions(defProto.getAxiomList(), FunctionDefinition.class));
+
+      topDef.setParametersOriginalDefinitions(parametersOriginalDefinitions);
     }
 
     for (Integer index : defProto.getMetaRefList()) {
@@ -388,9 +392,10 @@ public class DefinitionDeserialization implements ArendDeserializer {
 
   private Body readBody(ExpressionDeserialization defDeserializer, DefinitionProtos.Body proto, int numberOfParameters) throws DeserializationException {
     switch (proto.getKindCase()) {
-      case ELIM_BODY:
+      case ELIM_BODY -> {
         return defDeserializer.readElimBody(proto.getElimBody());
-      case INTERVAL_ELIM:
+      }
+      case INTERVAL_ELIM -> {
         List<IntervalElim.CasePair> cases = new ArrayList<>(proto.getIntervalElim().getCaseCount());
         for (DefinitionProtos.Body.ExpressionPair pairProto : proto.getIntervalElim().getCaseList()) {
           cases.add(new IntervalElim.CasePair(pairProto.hasLeft() ? defDeserializer.readExpr(pairProto.getLeft()) : null, pairProto.hasRight() ? defDeserializer.readExpr(pairProto.getRight()) : null));
@@ -400,10 +405,11 @@ public class DefinitionDeserialization implements ArendDeserializer {
           elimBody = defDeserializer.readElimBody(proto.getIntervalElim().getOtherwise());
         }
         return new IntervalElim(numberOfParameters, cases, elimBody);
-      case EXPRESSION:
+      }
+      case EXPRESSION -> {
         return defDeserializer.readExpr(proto.getExpression());
-      default:
-        throw new DeserializationException("Unknown body kind: " + proto.getKindCase());
+      }
+      default -> throw new DeserializationException("Unknown body kind: " + proto.getKindCase());
     }
   }
 
@@ -464,6 +470,10 @@ public class DefinitionDeserialization implements ArendDeserializer {
       functionDef.setBody(readBody(defDeserializer, functionProto.getBody(), DependentLink.Helper.size(functionDef.getParameters())));
     }
     // setTypeClassReference(functionDef.getReferable(), functionDef.getParameters(), functionDef.getResultType());
+  }
+
+  private void fillInMetaDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.MetaData metaProto, MetaTopDefinition metaDef) throws DeserializationException {
+    metaDef.setParameters(defDeserializer.readParameters(metaProto.getParamList()), new ArrayList<>(metaProto.getTypedParamList()));
   }
 
   private void fillInDConstructor(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DConstructorData constructorProto, DConstructor constructorDef) throws DeserializationException {

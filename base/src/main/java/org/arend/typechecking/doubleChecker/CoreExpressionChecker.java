@@ -783,7 +783,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return link;
   }
 
-  void checkElimBody(Definition definition, ElimBody elimBody, DependentLink parameters, Expression type, Integer level, Expression errorExpr, boolean isSFunc, PatternTypechecking.Mode mode) {
+  void checkElimBody(FunctionDefinition definition, ElimBody elimBody, DependentLink parameters, Expression type, Integer level, Expression errorExpr, boolean isSFunc, PatternTypechecking.Mode mode) {
     List<ExtElimClause> exprClauses = new ArrayList<>();
     for (ElimClause<Pattern> clause : elimBody.getClauses()) {
       DependentLink firstBinding = Pattern.getFirstBinding(clause.getPatterns());

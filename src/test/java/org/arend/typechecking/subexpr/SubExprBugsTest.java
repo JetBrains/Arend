@@ -20,7 +20,7 @@ public class SubExprBugsTest extends TypeCheckingTestCase {
           \\func f : F => \\lam i => i Nat.+ 514
         }
         """);
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
     Concrete.Expression subExpr = concrete.getArguments().get(0).getExpression();
@@ -33,7 +33,7 @@ public class SubExprBugsTest extends TypeCheckingTestCase {
   @Test
   public void issue180() {
     var resolved = resolveNamesDef("\\func test => \\Pi (A : \\Set) -> A -> A");
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var concrete = (Concrete.PiExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
     Concrete.@NotNull Expression subExpr = ((Concrete.PiExpression) concrete.getCodomain()).getParameters().get(0).getType();
@@ -52,7 +52,7 @@ public class SubExprBugsTest extends TypeCheckingTestCase {
             \\record No | hana : Nat
           }
         """);
-    var concreteDef = (Concrete.ClassDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.ClassDefinition) getDefinition(resolved);
     var classField = (Concrete.ClassFieldImpl) concreteDef.getElements().get(0);
     assertNotNull(classField);
     Concrete.Expression implementation = classField.implementation;
@@ -75,7 +75,7 @@ public class SubExprBugsTest extends TypeCheckingTestCase {
             \\record Alice (rbq : Rbq)
           }
         """);
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var classField = (Concrete.ClassFieldImpl) concreteDef.getBody().getCoClauseElements().get(0);
     assertNotNull(classField);
     Concrete.ClassFieldImpl implementation = classField.getSubCoclauseList().get(0);

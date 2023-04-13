@@ -6,11 +6,8 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.type.Type;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
-import org.arend.naming.reference.ConcreteLocatedReferable;
+import org.arend.naming.reference.*;
 import org.arend.naming.NameResolverTestCase;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCDefReferable;
-import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionFactory;
@@ -96,12 +93,12 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return typeCheckExpr(resolveNamesExpr(text), expectedType, 0);
   }
 
-  protected Definition typeCheckDef(ConcreteLocatedReferable reference) {
+  protected Definition typeCheckDef(TCDefReferable reference) {
     return typeCheckDef(reference, 0);
   }
 
-  protected Definition typeCheckDef(ConcreteLocatedReferable reference, int errors) {
-    new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, ref -> null).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()), null);
+  protected Definition typeCheckDef(TCDefReferable reference, int errors) {
+    new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, ref -> null).typecheckDefinitions(Collections.singletonList((Concrete.ResolvableDefinition) getDefinition(reference)), null);
     Definition definition = reference.getTypechecked();
     boolean ok = errors != 0 || new CoreDefinitionChecker(errorReporter).check(definition);
     assertThat(errorList, containsErrors(errors));

@@ -23,11 +23,11 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitDefCall(DefCallExpression expression, P param) {
-    switch (processDefCall(expression, param)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return expression.getDefCallArguments().stream().anyMatch(arg -> arg.accept(this, param));
-    }
+    return switch (processDefCall(expression, param)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> expression.getDefCallArguments().stream().anyMatch(arg -> arg.accept(this, param));
+    };
   }
 
   protected boolean checkPathArgumentType() {
@@ -297,8 +297,7 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
       return ((Expression) body).accept(this, param);
     } else if (body instanceof ElimBody) {
       return visitElimBody((ElimBody) body, param);
-    } else if (body instanceof IntervalElim) {
-      IntervalElim elim = (IntervalElim) body;
+    } else if (body instanceof IntervalElim elim) {
       for (IntervalElim.CasePair pair : elim.getCases()) {
         if (pair.proj1 != null && pair.proj1.accept(this, param) || pair.proj2 != null && pair.proj2.accept(this, param)) {
           return true;
@@ -379,5 +378,10 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
   @Override
   public Boolean visitField(ClassField field, P params) {
     return visitPi(field.getType(), params) || field.getTypeLevel() != null && field.getTypeLevel().accept(this, params);
+  }
+
+  @Override
+  public Boolean visitMeta(MetaTopDefinition def, P params) {
+    return visitDependentLink(def.getParameters(), params);
   }
 }

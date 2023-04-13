@@ -26,7 +26,7 @@ public class ModuleDeserialization {
   private final ModuleProtos.Module myModuleProto;
   private final SimpleCallTargetProvider myCallTargetProvider = new SimpleCallTargetProvider();
   private final ReferableConverter myReferableConverter;
-  private final List<Pair<DefinitionProtos.Definition, TopLevelDefinition>> myDefinitions = new ArrayList<>();
+  private final List<Pair<DefinitionProtos.Definition, Definition>> myDefinitions = new ArrayList<>();
   private final SerializableKeyRegistryImpl myKeyRegistry;
   private final DefinitionListener myDefinitionListener;
   private final boolean myPrelude;
@@ -61,7 +61,7 @@ public class ModuleDeserialization {
     }
 
     DefinitionDeserialization defDeserialization = new DefinitionDeserialization(myCallTargetProvider, dependencyListener, myKeyRegistry, myDefinitionListener);
-    for (Pair<DefinitionProtos.Definition, TopLevelDefinition> pair : myDefinitions) {
+    for (Pair<DefinitionProtos.Definition, Definition> pair : myDefinitions) {
       defDeserialization.fillInDefinition(pair.proj1, pair.proj2);
     }
     myDefinitions.clear();
@@ -133,7 +133,7 @@ public class ModuleDeserialization {
         throw new DeserializationException("'" + referable + "' is not a definition");
       }
 
-      TopLevelDefinition def = readDefinition(groupProto.getDefinition(), tcDefReferable, false);
+      Definition def = readDefinition(groupProto.getDefinition(), tcDefReferable, false);
       tcDefReferable.setTypechecked(def);
       myCallTargetProvider.putCallTarget(groupProto.getReferable().getIndex(), def);
       myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
@@ -277,7 +277,7 @@ public class ModuleDeserialization {
       }
     }
 
-    TopLevelDefinition def;
+    Definition def;
     if (referable instanceof TCDefReferable && groupProto.hasDefinition()) {
       def = readDefinition(groupProto.getDefinition(), (TCDefReferable) referable, true);
       ((TCDefReferable) referable).setTypechecked(def);
@@ -351,8 +351,8 @@ public class ModuleDeserialization {
     return result;
   }
 
-  private TopLevelDefinition readDefinition(DefinitionProtos.Definition defProto, TCDefReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
-    final TopLevelDefinition def;
+  private Definition readDefinition(DefinitionProtos.Definition defProto, TCDefReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
+    final Definition def;
     switch (defProto.getDefinitionDataCase()) {
       case CLASS -> {
         ClassDefinition classDef = new ClassDefinition(referable);
@@ -384,9 +384,19 @@ public class ModuleDeserialization {
       }
       case FUNCTION -> def = new FunctionDefinition(referable);
       case CONSTRUCTOR -> def = new DConstructor(referable);
+      case META -> {
+        if (!(referable instanceof MetaReferable metaRef)) {
+          throw new DeserializationException("'" + referable + "' is not a meta definition");
+        }
+        def = new MetaTopDefinition(metaRef);
+      }
       default -> throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
-    def.setLevelParameters(readLevelParameters(defProto.getLevelParamList(), defProto.getIsStdLevels()));
+    if (def instanceof TopLevelDefinition) {
+      ((TopLevelDefinition) def).setLevelParameters(readLevelParameters(defProto.getLevelParamList(), defProto.getIsStdLevels()));
+    } else {
+      ((MetaTopDefinition) def).setLevelParameters(readLevelParameters(defProto.getLevelParamList(), defProto.getIsStdLevels()));
+    }
     return def;
   }
 

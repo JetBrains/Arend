@@ -15,28 +15,36 @@ public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>
     }
   }
 
-  protected Void visitFunctionBody(Concrete.BaseFunctionDefinition def, P params) {
+  protected void visitFunctionBody(Concrete.BaseFunctionDefinition def, P params) {
     Concrete.FunctionBody body = def.getBody();
     if (body instanceof Concrete.TermFunctionBody) {
       ((Concrete.TermFunctionBody) body).getTerm().accept(this, params);
     }
     visitElements(body.getCoClauseElements(), params);
     visitClauses(body.getClauses(), params);
-    return null;
   }
 
   @Override
   public Void visitFunction(Concrete.BaseFunctionDefinition def, P params) {
     visitFunctionHeader(def, params);
-    return visitFunctionBody(def, params);
+    visitFunctionBody(def, params);
+    return null;
+  }
+
+  protected void visitMetaHeader(DefinableMetaDefinition def, P params) {
+    visitParameters(def.getParameters(), params);
+  }
+
+  protected void visitMetaBody(DefinableMetaDefinition def, P params) {
+    if (def.body != null) {
+      def.body.accept(this, params);
+    }
   }
 
   @Override
   public Void visitMeta(DefinableMetaDefinition def, P params) {
-    visitParameters(def.getParameters(), params);
-    if (def.body != null) {
-      def.body.accept(this, params);
-    }
+    visitMetaHeader(def, params);
+    visitMetaBody(def, params);
     return null;
   }
 

@@ -85,7 +85,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     StringBuilder builder = new StringBuilder();
     def.accept(new PrettyPrintVisitor(builder, 0), null);
 
-    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) resolveNamesDef(builder.toString()).getDefinition();
+    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) getDefinition(resolveNamesDef(builder.toString()));
     List<Concrete.TypeParameter> expectedParams = new ArrayList<>();
     for (Concrete.Parameter parameter : expected.getParameters()) {
       expectedParams.add((Concrete.TypeParameter) parameter);
@@ -204,15 +204,17 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   @Test
   public void assocTest() {
     typeCheckModule(
-      "\\func \\infix 6 + (x y : Nat) => x\n" +
-      "\\func \\infixl 6 * (x y : Nat) => x\n" +
-      "\\func \\infixr 6 & (x y : Nat) => x\n" +
-      "\\func f1 => (0 + 1) + 2\n" +
-      "\\func f2 => 0 + (1 + 2)\n" +
-      "\\func g1 => (0 * 1) * 2\n" +
-      "\\func g2 => 0 * (1 * 2)\n" +
-      "\\func h1 => (0 & 1) & 2\n" +
-      "\\func h2 => 0 & (1 & 2)");
+      """
+        \\func \\infix 6 + (x y : Nat) => x
+        \\func \\infixl 6 * (x y : Nat) => x
+        \\func \\infixr 6 & (x y : Nat) => x
+        \\func f1 => (0 + 1) + 2
+        \\func f2 => 0 + (1 + 2)
+        \\func g1 => (0 * 1) * 2
+        \\func g2 => 0 * (1 * 2)
+        \\func h1 => (0 & 1) & 2
+        \\func h2 => 0 & (1 & 2)
+        """);
     testExpr("(0 + 1) + 2", (Expression) ((FunctionDefinition) getDefinition("f1")).getBody());
     testExpr("0 + (1 + 2)", (Expression) ((FunctionDefinition) getDefinition("f2")).getBody());
     testExpr("0 * 1 * 2", (Expression) ((FunctionDefinition) getDefinition("g1")).getBody());
@@ -224,19 +226,23 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   @Test
   public void parenthesisTest() {
     typeCheckModule(
-      "\\func \\infix 6 + (x y : Nat) => x\n" +
-      "\\func \\infixl 7 * (x y : Nat) => x\n" +
-      "\\func \\infixr 6 & (x y : Nat) => x\n" +
-      "\\func f (x y z : Nat) => ((x + suc y) * (suc y & (z & x))) * (suc (z + y))");
+      """
+        \\func \\infix 6 + (x y : Nat) => x
+        \\func \\infixl 7 * (x y : Nat) => x
+        \\func \\infixr 6 & (x y : Nat) => x
+        \\func f (x y z : Nat) => ((x + suc y) * (suc y & (z & x))) * (suc (z + y))
+        """);
     testExpr("(x + suc y) * (suc y & z & x) * suc (z + y)", (Expression) ((FunctionDefinition) getDefinition("f")).getBody());
   }
 
   @Test
   public void highOrderTest() {
     typeCheckModule(
-            "\\func R {A : \\Type} (a a' : A) => a = a'\n" +
-                    "\\func F {A : \\Type} (T : A -> A -> \\Type) => \\Pi (a : A) -> T a a\n" +
-                    "\\func fooxy => F {Nat} R");
+      """
+        \\func R {A : \\Type} (a a' : A) => a = a'
+        \\func F {A : \\Type} (T : A -> A -> \\Type) => \\Pi (a : A) -> T a a
+        \\func fooxy => F {Nat} R
+        """);
     testExpr("F R", ((Expression)((FunctionDefinition) getDefinition("fooxy")).getBody()), EnumSet.noneOf(PrettyPrinterFlag.class));
   }
 }

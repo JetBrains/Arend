@@ -1,5 +1,7 @@
 package org.arend.naming.reference;
 
+import org.arend.core.definition.Definition;
+import org.arend.core.definition.MetaTopDefinition;
 import org.arend.ext.reference.MetaRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
@@ -13,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
-public class MetaReferable implements TCReferable, MetaRef {
+public class MetaReferable implements TCDefReferable, MetaRef {
   private final Precedence myPrecedence;
   private final String myName;
   private MetaDefinition myDefinition;
@@ -23,6 +25,7 @@ public class MetaReferable implements TCReferable, MetaRef {
   private final Precedence myAliasPrecedence;
   public Supplier<GlobalReferable> underlyingReferable;
   private final LocatedReferable myParent;
+  private MetaTopDefinition myTypechecked;
 
   public MetaReferable(Precedence precedence, String name, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
     myPrecedence = precedence;
@@ -116,8 +119,20 @@ public class MetaReferable implements TCReferable, MetaRef {
   }
 
   @Override
+  public void setTypechecked(@Nullable Definition definition) {
+    if (definition instanceof MetaTopDefinition) {
+      myTypechecked = (MetaTopDefinition) definition;
+    }
+  }
+
+  @Override
+  public MetaTopDefinition getTypechecked() {
+    return myTypechecked;
+  }
+
+  @Override
   public boolean isTypechecked() {
     // If it's a definable meta, we always need to typecheck its dependencies
-    return myDefinition != null && !(myDefinition instanceof DefinableMetaDefinition);
+    return myDefinition != null && (!(myDefinition instanceof DefinableMetaDefinition) || myTypechecked != null);
   }
 }

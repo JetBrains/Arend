@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class Constructor extends Definition implements Function, BranchKey, CoreConstructor {
+public class Constructor extends CallableDefinition implements Function, BranchKey, CoreConstructor {
   private final DataDefinition myDataType;
   private DependentLink myParameters;
   private List<ExpressionPattern> myPatterns;

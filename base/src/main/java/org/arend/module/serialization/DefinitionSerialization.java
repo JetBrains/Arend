@@ -80,6 +80,8 @@ public class DefinitionSerialization implements ArendSerializer {
       out.setConstructor(writeDConstructor(defSerializer, (DConstructor) definition));
     } else if (definition instanceof FunctionDefinition) {
       out.setFunction(writeFunctionDefinition(defSerializer, (FunctionDefinition) definition));
+    } else if (definition instanceof MetaTopDefinition) {
+      out.setMeta(writeMetaDefinition(defSerializer, (MetaTopDefinition) definition));
     } else {
       throw new IllegalStateException();
     }
@@ -236,15 +238,11 @@ public class DefinitionSerialization implements ArendSerializer {
   }
 
   private DefinitionProtos.Definition.TypeClassParameterKind writeTypeClassParameterKind(Definition.TypeClassParameterKind kind) {
-    switch (kind) {
-      case YES:
-        return DefinitionProtos.Definition.TypeClassParameterKind.YES;
-      case NO:
-        return DefinitionProtos.Definition.TypeClassParameterKind.NO;
-      case ONLY_LOCAL:
-        return DefinitionProtos.Definition.TypeClassParameterKind.ONLY_LOCAL;
-    }
-    throw new IllegalStateException();
+    return switch (kind) {
+      case YES -> DefinitionProtos.Definition.TypeClassParameterKind.YES;
+      case NO -> DefinitionProtos.Definition.TypeClassParameterKind.NO;
+      case ONLY_LOCAL -> DefinitionProtos.Definition.TypeClassParameterKind.ONLY_LOCAL;
+    };
   }
 
   private DefinitionProtos.Definition.DataData writeDataDefinition(ExpressionSerialization defSerializer, DataDefinition definition) {
@@ -394,39 +392,32 @@ public class DefinitionSerialization implements ArendSerializer {
       builder.setTypeLevel(defSerializer.writeExpr(definition.getResultTypeLevel()));
     }
     switch (definition.getBodyHiddenStatus()) {
-      case NOT_HIDDEN:
-        builder.setBodyHiddenStatus(DefinitionProtos.Definition.FunctionData.HiddenStatus.NOT_HIDDEN);
-        break;
-      case HIDDEN:
-        builder.setBodyHiddenStatus(DefinitionProtos.Definition.FunctionData.HiddenStatus.HIDDEN);
-        break;
-      case REALLY_HIDDEN:
-        builder.setBodyHiddenStatus(DefinitionProtos.Definition.FunctionData.HiddenStatus.REALLY_HIDDEN);
-        break;
+      case NOT_HIDDEN -> builder.setBodyHiddenStatus(DefinitionProtos.Definition.FunctionData.HiddenStatus.NOT_HIDDEN);
+      case HIDDEN -> builder.setBodyHiddenStatus(DefinitionProtos.Definition.FunctionData.HiddenStatus.HIDDEN);
+      case REALLY_HIDDEN -> builder.setBodyHiddenStatus(DefinitionProtos.Definition.FunctionData.HiddenStatus.REALLY_HIDDEN);
     }
-    DefinitionProtos.Definition.FunctionKind kind;
-    switch (definition.getKind()) {
-      case LEMMA:
-        kind = definition.getReferable().getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION ? DefinitionProtos.Definition.FunctionKind.COCLAUSE_LEMMA : DefinitionProtos.Definition.FunctionKind.LEMMA;
-        break;
-      case SFUNC:
-        kind = DefinitionProtos.Definition.FunctionKind.SFUNC;
-        break;
-      case TYPE:
-        kind = DefinitionProtos.Definition.FunctionKind.TYPE;
-        break;
-      case INSTANCE:
-        kind = DefinitionProtos.Definition.FunctionKind.INSTANCE;
-        break;
-      default:
-        kind = definition.getReferable().getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION ? DefinitionProtos.Definition.FunctionKind.COCLAUSE : DefinitionProtos.Definition.FunctionKind.FUNC;
-    }
+    DefinitionProtos.Definition.FunctionKind kind = switch (definition.getKind()) {
+      case LEMMA -> definition.getReferable().getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION ? DefinitionProtos.Definition.FunctionKind.COCLAUSE_LEMMA : DefinitionProtos.Definition.FunctionKind.LEMMA;
+      case SFUNC -> DefinitionProtos.Definition.FunctionKind.SFUNC;
+      case TYPE -> DefinitionProtos.Definition.FunctionKind.TYPE;
+      case INSTANCE -> DefinitionProtos.Definition.FunctionKind.INSTANCE;
+      default -> definition.getReferable().getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION ? DefinitionProtos.Definition.FunctionKind.COCLAUSE : DefinitionProtos.Definition.FunctionKind.FUNC;
+    };
     builder.setKind(kind);
     builder.setVisibleParameter(definition.getVisibleParameter());
     if (definition.getReallyActualBody() != null) {
       builder.setBody(writeBody(defSerializer, definition.getReallyActualBody()));
     }
 
+    return builder.build();
+  }
+
+  private DefinitionProtos.Definition.MetaData writeMetaDefinition(ExpressionSerialization defSerializer, MetaTopDefinition definition) {
+    DefinitionProtos.Definition.MetaData.Builder builder = DefinitionProtos.Definition.MetaData.newBuilder();
+    builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+    for (Boolean isTyped : definition.getTypedParameters()) {
+      builder.addTypedParam(isTyped);
+    }
     return builder.build();
   }
 
@@ -461,8 +452,7 @@ public class DefinitionSerialization implements ArendSerializer {
 
   private DefinitionProtos.Body writeBody(ExpressionSerialization defSerializer, @NotNull Body body) {
     DefinitionProtos.Body.Builder bodyBuilder = DefinitionProtos.Body.newBuilder();
-    if (body instanceof IntervalElim) {
-      IntervalElim intervalElim = (IntervalElim) body;
+    if (body instanceof IntervalElim intervalElim) {
       DefinitionProtos.Body.IntervalElim.Builder intervalBuilder = DefinitionProtos.Body.IntervalElim.newBuilder();
       for (Pair<Expression, Expression> pair : intervalElim.getCases()) {
         DefinitionProtos.Body.ExpressionPair.Builder pairBuilder = DefinitionProtos.Body.ExpressionPair.newBuilder();
@@ -500,15 +490,9 @@ public class DefinitionSerialization implements ArendSerializer {
   static DefinitionProtos.Precedence writePrecedence(Precedence precedence) {
     DefinitionProtos.Precedence.Builder builder = DefinitionProtos.Precedence.newBuilder();
     switch (precedence.associativity) {
-      case LEFT_ASSOC:
-        builder.setAssoc(DefinitionProtos.Precedence.Assoc.LEFT);
-        break;
-      case RIGHT_ASSOC:
-        builder.setAssoc(DefinitionProtos.Precedence.Assoc.RIGHT);
-        break;
-      case NON_ASSOC:
-        builder.setAssoc(DefinitionProtos.Precedence.Assoc.NON_ASSOC);
-        break;
+      case LEFT_ASSOC -> builder.setAssoc(DefinitionProtos.Precedence.Assoc.LEFT);
+      case RIGHT_ASSOC -> builder.setAssoc(DefinitionProtos.Precedence.Assoc.RIGHT);
+      case NON_ASSOC -> builder.setAssoc(DefinitionProtos.Precedence.Assoc.NON_ASSOC);
     }
     builder.setPriority(precedence.priority);
     builder.setInfix(precedence.isInfix);

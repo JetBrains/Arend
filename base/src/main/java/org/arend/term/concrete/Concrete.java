@@ -1686,19 +1686,10 @@ public final class Concrete {
       return ((DataDefinition) definition).getParameters();
     }
     if (definition instanceof DefinableMetaDefinition) {
-      return ((DefinableMetaDefinition) definition).getParameters();
+      return definition.getParameters();
     }
     if (definition instanceof Constructor) {
-      if (onlyThisDef) {
-        return ((Constructor) definition).getParameters();
-      } else {
-        List<TypeParameter> dataTypeParameters = ((Constructor) definition).getRelatedDefinition().getParameters();
-        List<TypeParameter> parameters = ((Constructor) definition).getParameters();
-        List<TypeParameter> totalParameters = new ArrayList<>(dataTypeParameters.size() + parameters.size());
-        totalParameters.addAll(dataTypeParameters);
-        totalParameters.addAll(parameters);
-        return totalParameters;
-      }
+      return ((Constructor) definition).getParameters();
     }
     if (definition instanceof ClassDefinition) {
       List<TypeParameter> parameters = new ArrayList<>();
@@ -1776,6 +1767,33 @@ public final class Concrete {
   public static abstract class ResolvableDefinition implements GeneralDefinition {
     Stage stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
     private Status myStatus = Status.NO_ERRORS;
+    protected LevelParameters pLevelParameters;
+    protected LevelParameters hLevelParameters;
+
+    public LevelParameters getPLevelParameters() {
+      return pLevelParameters;
+    }
+
+    public void setPLevelParameters(ConcreteLevelParameters parameters) {
+      if (!(parameters instanceof LevelParameters || parameters == null)) {
+        throw new IllegalArgumentException();
+      }
+      pLevelParameters = (LevelParameters) parameters;
+    }
+
+    public LevelParameters getHLevelParameters() {
+      return hLevelParameters;
+    }
+
+    public void setHLevelParameters(ConcreteLevelParameters parameters) {
+      if (!(parameters instanceof LevelParameters || parameters == null)) {
+        throw new IllegalArgumentException();
+      }
+      hLevelParameters = (LevelParameters) parameters;
+    }
+
+    @Override
+    public abstract @NotNull TCDefReferable getData();
 
     public Status getStatus() {
       return myStatus;
@@ -1856,7 +1874,7 @@ public final class Concrete {
     }
 
     @Override
-    public @NotNull List<? extends Referable> getReferables() {
+    public @NotNull List<? extends LevelReferable> getReferables() {
       return referables;
     }
 
@@ -1954,8 +1972,6 @@ public final class Concrete {
 
   public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition, ConcreteDefinition {
     private final TCDefReferable myReferable;
-    private LevelParameters myPLevelParameters;
-    private LevelParameters myHLevelParameters;
     public TCDefReferable enclosingClass;
     private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
     private Map<TCDefReferable, ExternalParameters> myExternalParameters = Collections.emptyMap();
@@ -1964,21 +1980,21 @@ public final class Concrete {
 
     public Definition(TCDefReferable referable, LevelParameters pParams, LevelParameters hParams) {
       myReferable = referable;
-      myPLevelParameters = pParams;
-      myHLevelParameters = hParams;
+      pLevelParameters = pParams;
+      hLevelParameters = hParams;
     }
 
     public Definition(TCDefReferable referable) {
       myReferable = referable;
-      myPLevelParameters = null;
-      myHLevelParameters = null;
+      pLevelParameters = null;
+      hLevelParameters = null;
     }
 
     public void copyData(Concrete.Definition newDef) {
       newDef.stage = stage;
       newDef.setStatus(getStatus());
-      newDef.myPLevelParameters = myPLevelParameters;
-      newDef.myHLevelParameters = myHLevelParameters;
+      newDef.pLevelParameters = pLevelParameters;
+      newDef.hLevelParameters = hLevelParameters;
       newDef.enclosingClass = enclosingClass;
       newDef.myRecursiveDefinitions = myRecursiveDefinitions;
       newDef.myExternalParameters = myExternalParameters;
@@ -2036,32 +2052,6 @@ public final class Concrete {
     @Override
     public Definition getRelatedDefinition() {
       return this;
-    }
-
-    @Override
-    public LevelParameters getPLevelParameters() {
-      return myPLevelParameters;
-    }
-
-    @Override
-    public void setPLevelParameters(ConcreteLevelParameters parameters) {
-      if (!(parameters instanceof LevelParameters || parameters == null)) {
-        throw new IllegalArgumentException();
-      }
-      myPLevelParameters = (LevelParameters) parameters;
-    }
-
-    @Override
-    public LevelParameters getHLevelParameters() {
-      return myHLevelParameters;
-    }
-
-    @Override
-    public void setHLevelParameters(ConcreteLevelParameters parameters) {
-      if (!(parameters instanceof LevelParameters || parameters == null)) {
-        throw new IllegalArgumentException();
-      }
-      myHLevelParameters = (LevelParameters) parameters;
     }
 
     @Override

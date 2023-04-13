@@ -11,7 +11,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void funTermBody() {
     var referable = resolveNamesDef("\\func f => 0");
-    var def = (Concrete.FunctionDefinition) referable.getDefinition();
+    var def = (Concrete.FunctionDefinition) getDefinition(referable);
     Concrete.Expression term = def.getBody().getTerm();
     assertNotNull(term);
     var accept = def.accept(new CorrespondedSubDefVisitor(term), typeCheckDef(referable));
@@ -23,7 +23,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void errorReport() {
     var referable = resolveNamesDef("\\func f => 0");
-    var def = (Concrete.FunctionDefinition) referable.getDefinition();
+    var def = (Concrete.FunctionDefinition) getDefinition(referable);
     Concrete.Expression term = def.getBody().getTerm();
     assertNotNull(term);
     CorrespondedSubDefVisitor visitor = new CorrespondedSubDefVisitor(term);
@@ -36,7 +36,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void funResultType() {
     var referable = resolveNamesDef("\\func f : Nat => 0");
-    var def = (Concrete.FunctionDefinition) referable.getDefinition();
+    var def = (Concrete.FunctionDefinition) getDefinition(referable);
     assertNotNull(def.getResultType());
     var accept = def.accept(new CorrespondedSubDefVisitor(def.getResultType()), typeCheckDef(referable));
     assertNotNull(accept);
@@ -46,7 +46,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void funParamType() {
     var referable = resolveNamesDef("\\func f (a : Nat) => a");
-    var def = (Concrete.FunctionDefinition) referable.getDefinition();
+    var def = (Concrete.FunctionDefinition) getDefinition(referable);
     assertFalse(def.getParameters().isEmpty());
     Concrete.Expression type = def.getParameters().get(0).getType();
     assertNotNull(type);
@@ -72,7 +72,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
             }
           }
         """);
-    var def = (Concrete.FunctionDefinition) referable.getDefinition();
+    var def = (Concrete.FunctionDefinition) getDefinition(referable);
     Definition coreDef = typeCheckDef(referable);
     Concrete.ClassFieldImpl clause = (Concrete.ClassFieldImpl) def.getBody().getCoClauseElements().get(1);
     var accept = def.accept(new CorrespondedSubDefVisitor(clause.implementation), coreDef);
@@ -90,7 +90,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
           | B : Int
         }
         """);
-    var def = (Concrete.ClassDefinition) referable.getDefinition();
+    var def = (Concrete.ClassDefinition) getDefinition(referable);
     {
       var clause = (Concrete.ClassField) def.getElements().get(0);
       var accept = def.accept(new CorrespondedSubDefVisitor(clause.getResultType()), typeCheckDef(referable));
@@ -110,7 +110,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void classParam() {
     var referable = resolveNamesDef("\\record T (A B : Nat) {}");
-    var def = (Concrete.ClassDefinition) referable.getDefinition();
+    var def = (Concrete.ClassDefinition) getDefinition(referable);
     var clause = (Concrete.ClassField) def.getElements().get(1);
     var accept = def.accept(new CorrespondedSubDefVisitor(clause.getResultType()), typeCheckDef(referable));
     assertNotNull(accept);
@@ -127,7 +127,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
           | B (a : \\Sigma) : Nat
         }
         """);
-    var def = (Concrete.ClassDefinition) referable.getDefinition();
+    var def = (Concrete.ClassDefinition) getDefinition(referable);
     {
       var clauseTy = (Concrete.PiExpression) ((Concrete.ClassField) def.getElements().get(0)).getResultType();
       var accept = def.accept(new CorrespondedSubDefVisitor(clauseTy.getCodomain()), typeCheckDef(referable));
@@ -158,7 +158,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
             }
           }
         """);
-    var def = (Concrete.FunctionDefinition) referable.getDefinition();
+    var def = (Concrete.FunctionDefinition) getDefinition(referable);
     Definition coreDef = typeCheckDef(referable);
     var clause = (Concrete.ClassFieldImpl) def.getBody().getCoClauseElements().get(1);
     var accept = def.accept(new CorrespondedSubDefVisitor(clause.implementation), coreDef);
@@ -175,7 +175,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
           | zero => a
           | suc b => c
         """);
-    var def = (Concrete.FunctionDefinition) referable.getDefinition();
+    var def = (Concrete.FunctionDefinition) getDefinition(referable);
     Definition coreDef = typeCheckDef(referable);
     var clauses = def.getBody().getClauses();
     assertFalse(clauses.isEmpty());
@@ -200,7 +200,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void dataParam() {
     var referable = resolveNamesDef("\\data D (a : Nat)");
-    var def = (Concrete.DataDefinition) referable.getDefinition();
+    var def = (Concrete.DataDefinition) getDefinition(referable);
     assertFalse(def.getParameters().isEmpty());
     var accept = def.accept(new CorrespondedSubDefVisitor(def.getParameters().get(0).getType()), typeCheckDef(referable));
     assertNotNull(accept);
@@ -211,7 +211,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   @Test
   public void cons() {
     var referable = resolveNamesDef("\\data D Int | c Nat");
-    var def = (Concrete.DataDefinition) referable.getDefinition();
+    var def = (Concrete.DataDefinition) getDefinition(referable);
     assertFalse(def.getConstructorClauses().isEmpty());
     var accept = def.accept(new CorrespondedSubDefVisitor(def.getConstructorClauses().get(0).getConstructors().get(0).getParameters().get(0).getType()), typeCheckDef(referable));
     assertNotNull(accept);

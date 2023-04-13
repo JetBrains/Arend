@@ -131,12 +131,12 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   }
 
   private void testDefinition(String s) {
-    ConcreteLocatedReferable def = resolveNamesDef(s);
+    ConcreteLocatedReferable def = (ConcreteLocatedReferable) resolveNamesDef(s);
     StringBuilder sb = new StringBuilder();
     PrettyPrintVisitor visitor = new PrettyPrintVisitor(sb, 0);
     ((Concrete.Definition) def.getDefinition()).accept(visitor, null);
     String s2 = sb.toString();
-    ConcreteLocatedReferable def2 = resolveNamesDef(s2);
+    ConcreteLocatedReferable def2 = (ConcreteLocatedReferable) resolveNamesDef(s2);
     assertTrue(ConcreteCompareVisitor.compare(def.getDefinition(), def2.getDefinition()));
   }
 
@@ -347,7 +347,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   }
 
   private void testLamPatterns(String body) {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) resolveNamesDef("\\func foo => " + body).getDefinition();
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) getDefinition(resolveNamesDef("\\func foo => " + body));
     assertEquals(body, Objects.requireNonNull(def.getBody().getTerm()).toString());
   }
 

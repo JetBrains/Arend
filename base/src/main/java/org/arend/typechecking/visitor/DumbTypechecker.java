@@ -32,10 +32,9 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void> {
   }
 
   @Override
-  public Void visitFunctionBody(Concrete.BaseFunctionDefinition def, Void params) {
+  public void visitFunctionBody(Concrete.BaseFunctionDefinition def, Void params) {
     checkClauses(def.getBody().getClauses(), def.getBody().getEliminatedReferences(), def.getParameters());
     super.visitFunctionBody(def, null);
-    return null;
   }
 
   @Override

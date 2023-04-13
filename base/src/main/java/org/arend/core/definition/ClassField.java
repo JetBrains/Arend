@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.List;
 
-public class ClassField extends Definition implements CoreClassField {
+public class ClassField extends CallableDefinition implements CoreClassField {
   private final ClassDefinition myParentClass;
   private boolean myProperty;
   private PiExpression myType;

@@ -18,13 +18,13 @@ public class ConcreteComparatorTest extends NameResolverTestCase {
 
   @Test
   public void testLamPatternsCopy() {
-    Concrete.Definition def = (Concrete.Definition) resolveNamesDef("\\func foo => \\lam (path f) n (path g) => f").getDefinition();
+    Concrete.Definition def = (Concrete.Definition) getDefinition(resolveNamesDef("\\func foo => \\lam (path f) n (path g) => f"));
     assertTrue(def.accept(new ConcreteCompareVisitor(), (Concrete.Definition) def.accept(new ReplaceDataVisitor(), null)));
   }
 
   @Test
   public void testSubstitution() {
-    Concrete.Definition def = (Concrete.Definition) resolveNamesDef("\\func foo => \\lam n (path f) m (path g) => f").getDefinition();
+    Concrete.Definition def = (Concrete.Definition) getDefinition(resolveNamesDef("\\func foo => \\lam n (path f) m (path g) => f"));
     ConcreteCompareVisitor visitor = new ConcreteCompareVisitor();
     def.accept(visitor, (Concrete.Definition) def.accept(new ReplaceDataVisitor(), null));
     assertTrue(visitor.getSubstitution().isEmpty());
@@ -32,7 +32,7 @@ public class ConcreteComparatorTest extends NameResolverTestCase {
 
   @Test
   public void testLetPatterns() {
-    Concrete.Definition def = (Concrete.Definition) resolveNamesDef("\\func foo => \\let (x,y) => (0,1) \\in x").getDefinition();
+    Concrete.Definition def = (Concrete.Definition) getDefinition(resolveNamesDef("\\func foo => \\let (x,y) => (0,1) \\in x"));
     ConcreteCompareVisitor visitor = new ConcreteCompareVisitor();
     def.accept(visitor, (Concrete.Definition) def.accept(new ReplaceDataVisitor(), null));
     assertTrue(visitor.getSubstitution().isEmpty());

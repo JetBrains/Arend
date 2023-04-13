@@ -24,7 +24,6 @@ import org.arend.util.StringEscapeUtils;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.arend.frontend.parser.ArendParser.*;
 
@@ -464,24 +463,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return ctx == null ? null : (Concrete.LevelParameters) parseLevelParameters(ctx.start, ctx.ID(), null, false);
   }
 
-  private List<LevelReferable> visitMetaLevels(List<TerminalNode> ids, boolean isPLevels) {
-    List<LevelReferable> refs = new ArrayList<>();
-    for (TerminalNode id : ids) {
-      refs.add(new DataLevelReferable(tokenPosition(id.getSymbol()), id.getText(), isPLevels));
-    }
-    return refs;
-  }
-
-  @Override
-  public List<LevelReferable> visitMetaPLevels(MetaPLevelsContext ctx) {
-    return ctx == null ? null : visitMetaLevels(ctx.ID(), true);
-  }
-
-  @Override
-  public List<LevelReferable> visitMetaHLevels(MetaHLevelsContext ctx) {
-    return ctx == null ? null : visitMetaLevels(ctx.ID(), false);
-  }
-
   private List<ParameterReferable> makeParameterReferableList(ConcreteLocatedReferable defReferable) {
     LocatedReferable parent = defReferable.getLocatedReferableParent();
     if (!(parent instanceof ConcreteLocatedReferable)) return Collections.emptyList();
@@ -636,10 +617,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     var reference = new MetaReferable(precedence, name, alias.proj2, alias.proj1, "", null, null, parent.getReferable());
     var body = ctx.expr();
     if (body != null) {
-      var params = ctx.ID().stream()
-        .map(r -> new Concrete.NameParameter(tokenPosition(r.getSymbol()), true, new LocalReferable(r.getText())))
-        .collect(Collectors.toList());
-      reference.setDefinition(new DefinableMetaDefinition(reference, visitMetaPLevels(ctx.metaPLevels()), visitMetaHLevels(ctx.metaHLevels()), params, visitExpr(body)));
+      var params = visitLamTeles(ctx.tele(), false);
+      reference.setDefinition(new DefinableMetaDefinition(reference, visitPlevelParams(ctx.plevelParams()), visitHlevelParams(ctx.hlevelParams()), params, visitExpr(body)));
     }
 
     var resultGroup = new StaticGroup(reference, statements, Collections.emptyList(), parent);

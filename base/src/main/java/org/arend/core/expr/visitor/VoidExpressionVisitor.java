@@ -328,4 +328,10 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
     }
     return null;
   }
+
+  @Override
+  public Void visitMeta(MetaTopDefinition def, P params) {
+    visitParameters(def.getParameters(), params);
+    return null;
+  }
 }

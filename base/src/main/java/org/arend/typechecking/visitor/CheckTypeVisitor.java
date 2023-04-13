@@ -1761,9 +1761,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return referableToDefinition(referable, ClassField.class, "Expected a class field", sourceNode);
   }
 
-  private Definition getTypeCheckedDefinition(TCDefReferable definition, Concrete.Expression expr) {
+  private CallableDefinition getTypeCheckedDefinition(TCDefReferable definition, Concrete.Expression expr) {
     Definition typeCheckedDefinition = definition.getTypechecked();
-    if (typeCheckedDefinition == null) {
+    if (!(typeCheckedDefinition instanceof CallableDefinition)) {
       errorReporter.report(new IncorrectReferenceError(definition, expr));
       return null;
     }
@@ -1776,7 +1776,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       } else if (typeCheckedDefinition.status().hasDepWarnings()) {
         setStatus(Definition.TypeCheckingStatus.DEP_WARNiNGS);
       }
-      return typeCheckedDefinition;
+      return (CallableDefinition) typeCheckedDefinition;
     }
   }
 
@@ -1854,7 +1854,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private TResult typeCheckDefCall(TCDefReferable resolvedDefinition, Concrete.ReferenceExpression expr, boolean withoutUniverses) {
-    Definition definition = getTypeCheckedDefinition(resolvedDefinition, expr);
+    CallableDefinition definition = getTypeCheckedDefinition(resolvedDefinition, expr);
     if (definition == null) {
       return null;
     }
@@ -3041,10 +3041,51 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private TypecheckingResult checkMeta(Concrete.ReferenceExpression refExpr, List<Concrete.Argument> arguments, Concrete.Coclauses coclauses, Expression expectedType) {
-    MetaDefinition meta = ((MetaReferable) refExpr.getReferent()).getDefinition();
+    MetaReferable metaRef = (MetaReferable) refExpr.getReferent();
+    MetaDefinition meta = metaRef.getDefinition();
     if (meta == null) {
       errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' is empty", refExpr));
       return null;
+    }
+    MetaTopDefinition def = metaRef.getTypechecked();
+    LevelSubstitution levelSubst = def == null ? null : typecheckLevels(def, refExpr, null, false).makeSubstitution(def);
+    if (def != null && def.getParameters().hasNext()) {
+      ExprSubstitution substitution = new ExprSubstitution();
+      arguments = new ArrayList<>(arguments);
+      int i = 0;
+      List<? extends Boolean> typedParameters = def.getTypedParameters();
+      DependentLink param = def.getParameters();
+      for (int j = 0; j < typedParameters.size(); j++) {
+        Boolean isTyped = typedParameters.get(j);
+        boolean isExplicit = !isTyped || param.isExplicit();
+        if (isExplicit && i >= arguments.size()) {
+          int c = 1;
+          for (j++; j < typedParameters.size(); j++) {
+            if (typedParameters.get(j)) c++;
+          }
+          errorReporter.report(new TypecheckingError("Not enough arguments. Expected " + c + " more.", refExpr));
+          return null;
+        } else if (isExplicit && !arguments.get(i).isExplicit()) {
+          errorReporter.report(new ArgumentExplicitnessError(true, refExpr));
+          i++;
+        } else if (!isExplicit && (i >= arguments.size() || arguments.get(i).isExplicit())) {
+          Expression paramType = param.getTypeExpr().subst(substitution, levelSubst);
+          Expression expr = InferenceReferenceExpression.make(myArgsInference.newInferenceVariable(paramType, refExpr), getEquations());
+          substitution.add(param, expr);
+          arguments.add(i++, new Concrete.Argument(new Concrete.ReferenceExpression(refExpr.getData(), new CoreReferable(null, new TypecheckingResult(expr, paramType))), true));
+        } else {
+          if (isTyped) {
+            TypecheckingResult argResult = checkExpr(arguments.get(i).getExpression(), param.getTypeExpr().subst(substitution, levelSubst));
+            if (argResult == null) return null;
+            substitution.add(param, argResult.expression);
+            arguments.set(i, new Concrete.Argument(new Concrete.ReferenceExpression(refExpr.getData(), new CoreReferable(null, argResult)), true));
+          }
+          i++;
+        }
+        if (isTyped) {
+          param = param.getNext();
+        }
+      }
     }
     ContextData contextData = new ContextDataImpl(refExpr, arguments, coclauses, null, expectedType, null);
     if (!meta.checkContextData(contextData, errorReporter)) {

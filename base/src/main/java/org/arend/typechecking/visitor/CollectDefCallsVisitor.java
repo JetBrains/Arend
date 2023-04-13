@@ -2,6 +2,7 @@ package org.arend.typechecking.visitor;
 
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.DefinableMetaDefinition;
 
 import java.util.*;
 
@@ -20,11 +21,10 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void> {
   }
 
   @Override
-  protected Void visitFunctionBody(Concrete.BaseFunctionDefinition def, Void params) {
+  protected void visitFunctionBody(Concrete.BaseFunctionDefinition def, Void params) {
     if (myWithBodies) {
       super.visitFunctionBody(def, params);
     }
-    return null;
   }
 
   @Override
@@ -38,6 +38,13 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void> {
   protected void visitClassBody(Concrete.ClassDefinition def, Void params) {
     if (myWithBodies) {
       super.visitClassBody(def, params);
+    }
+  }
+
+  @Override
+  protected void visitMetaBody(DefinableMetaDefinition def, Void params) {
+    if (myWithBodies) {
+      super.visitMetaBody(def, params);
     }
   }
 
@@ -79,11 +86,8 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void> {
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
-    if (expr.getReferent() instanceof TCReferable) {
-      TCReferable ref = (TCReferable) expr.getReferent();
-      if (myExcluded == null || !myExcluded.contains(ref)) {
-        myDependencies.add(ref);
-      }
+    if (expr.getReferent() instanceof TCReferable ref && (myExcluded == null || !myExcluded.contains(ref))) {
+      myDependencies.add(ref);
     }
     return null;
   }

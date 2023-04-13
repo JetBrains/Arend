@@ -5,7 +5,7 @@ import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class DefinitionComparator implements PartialComparator<Concrete.Definition> {
+public class DefinitionComparator implements PartialComparator<Concrete.ResolvableDefinition> {
   private final PartialComparator<TCDefReferable> myComparator;
 
   DefinitionComparator(PartialComparator<TCDefReferable> comparator) {
@@ -14,7 +14,7 @@ public class DefinitionComparator implements PartialComparator<Concrete.Definiti
 
   @NotNull
   @Override
-  public Result compare(@Nullable Concrete.Definition def1, @Nullable Concrete.Definition def2) {
+  public Result compare(@Nullable Concrete.ResolvableDefinition def1, @Nullable Concrete.ResolvableDefinition def2) {
     if (def1 == def2) {
       return Result.EQUALS;
     }

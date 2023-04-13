@@ -213,8 +213,6 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
 
   public abstract Expression getTypeWithParams(List<? super DependentLink> params, Levels levels);
 
-  public abstract Expression getDefCall(Levels levels, List<Expression> args);
-
   public CoerceData getCoerceData() {
     return null;
   }

@@ -20,7 +20,7 @@ public class SFuncTest extends TypeCheckingTestCase {
   @Test
   public void normTest() {
     typeCheckModule("\\sfunc pred (n : Nat) : Nat | 0 => 0 | suc n => n");
-    Expression expr = getDefinition("pred").getDefCall(Levels.EMPTY, new SingletonList<>(ExpressionFactory.Zero()));
+    Expression expr = ((FunctionDefinition) getDefinition("pred")).getDefCall(Levels.EMPTY, new SingletonList<>(ExpressionFactory.Zero()));
     assertSame(expr, expr.normalize(NormalizationMode.WHNF));
   }
 
@@ -29,7 +29,7 @@ public class SFuncTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\sfunc pred (n : Nat) : Nat | 0 => 0 | suc n => n\n" +
       "\\func test => \\eval pred 2");
-    Expression expr = getDefinition("test").getDefCall(Levels.EMPTY, Collections.emptyList());
+    Expression expr = ((FunctionDefinition) getDefinition("test")).getDefCall(Levels.EMPTY, Collections.emptyList());
     assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), expr.normalize(NormalizationMode.WHNF));
   }
 
@@ -57,37 +57,45 @@ public class SFuncTest extends TypeCheckingTestCase {
   @Test
   public void squashedByUseTest() {
     typeCheckModule(
-      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
-      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
-      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
-      "\\sfunc f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : A \\elim d | con a => a");
+      """
+        \\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A
+          \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2
+            | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))
+        \\sfunc f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : A \\elim d | con a => a
+        """);
   }
 
   @Test
   public void squashedByUseError() {
     typeCheckModule(
-      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
-      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
-      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
-      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : A \\elim d | con a => a", 1);
+      """
+        \\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A
+          \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2
+            | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))
+        \\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : A \\elim d | con a => a
+        """, 1);
   }
 
   @Test
   public void squashedByUseWithLevelTest() {
     typeCheckModule(
-      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
-      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
-      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
-      "\\sfunc f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : \\level A p \\elim d | con a => a");
+      """
+        \\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A
+          \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2
+            | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))
+        \\sfunc f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : \\level A p \\elim d | con a => a
+        """);
   }
 
   @Test
   public void squashedByUseWithLevelError() {
     typeCheckModule(
-      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
-      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
-      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
-      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : \\level A p \\elim d | con a => a", 1);
+      """
+        \\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A
+          \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2
+            | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))
+        \\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : \\level A p \\elim d | con a => a
+        """, 1);
   }
 
   @Test
@@ -107,46 +115,56 @@ public class SFuncTest extends TypeCheckingTestCase {
   @Test
   public void squashedWithFuncLevelTest() {
     typeCheckModule(
-      "\\truncated \\data D (A : \\Type) : \\Prop | con A\n" +
-      "\\func id {A : \\Type} (p : \\Pi (x y : A) -> x = y) => A\n" +
-      " \\where \\use \\level levelProp {A : \\Type} (p : \\Pi (x y : A) -> x = y) (x y : id p) : x = y => p x y\n" +
-      "\\sfunc f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) : id p \\elim d | con a => a");
+      """
+        \\truncated \\data D (A : \\Type) : \\Prop | con A
+        \\func id {A : \\Type} (p : \\Pi (x y : A) -> x = y) => A
+         \\where \\use \\level levelProp {A : \\Type} (p : \\Pi (x y : A) -> x = y) (x y : id p) : x = y => p x y
+        \\sfunc f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) : id p \\elim d | con a => a
+        """);
   }
 
   @Test
   public void squashedWithFuncLevelError() {
     typeCheckModule(
-      "\\truncated \\data D (A : \\Type) : \\Prop | con A\n" +
-      "\\func id {A : \\Type} (p : \\Pi (x y : A) -> x = y) => A\n" +
-      " \\where \\use \\level levelProp {A : \\Type} (p : \\Pi (x y : A) -> x = y) (x y : id p) : x = y => p x y\n" +
-      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) : id p \\elim d | con a => a", 1);
+      """
+        \\truncated \\data D (A : \\Type) : \\Prop | con A
+        \\func id {A : \\Type} (p : \\Pi (x y : A) -> x = y) => A
+         \\where \\use \\level levelProp {A : \\Type} (p : \\Pi (x y : A) -> x = y) (x y : id p) : x = y => p x y
+        \\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) : id p \\elim d | con a => a
+        """, 1);
   }
 
   @Test
   public void pevalPropTest() {
     typeCheckModule(
-      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
-      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
-      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
-      "\\sfunc f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : \\level A p \\elim d | con a => a\n" +
-      "\\func test {A : \\Type} (p : \\Pi (x y : A) -> x = y) (a1 a2 : A) : (\\peval f p (con a1)) = (\\peval f p (con a2)) => idp", 1);
+      """
+        \\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A
+          \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2
+            | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))
+        \\sfunc f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : \\level A p \\elim d | con a => a
+        \\func test {A : \\Type} (p : \\Pi (x y : A) -> x = y) (a1 a2 : A) : (\\peval f p (con a1)) = (\\peval f p (con a2)) => idp
+        """, 1);
     assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
   public void pevalCmpTest() {
     typeCheckModule(
-      "\\data Bool | true | false\n" +
-      "\\sfunc f (b : Bool) : Nat | true => 0 | false => 0\n" +
-      "\\func test : (\\peval f true) = (\\peval f true) => idp");
+      """
+        \\data Bool | true | false
+        \\sfunc f (b : Bool) : Nat | true => 0 | false => 0
+        \\func test : (\\peval f true) = (\\peval f true) => idp
+        """);
   }
 
   @Test
   public void pevalCmpError() {
     typeCheckModule(
-      "\\data Bool | true | false\n" +
-      "\\sfunc f (b : Bool) : Nat | true => 0 | false => 0\n" +
-      "\\func test : (\\peval f true) = (\\peval f false) => idp", 1);
+      """
+        \\data Bool | true | false
+        \\sfunc f (b : Bool) : Nat | true => 0 | false => 0
+        \\func test : (\\peval f true) = (\\peval f false) => idp
+        """, 1);
     assertThatErrorsAre(typeMismatchError());
   }
 
@@ -182,37 +200,45 @@ public class SFuncTest extends TypeCheckingTestCase {
   @Test
   public void squashedByUseCaseTest() {
     typeCheckModule(
-      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
-      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
-      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
-      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) => \\scase d \\return A \\with { | con a => a }");
+      """
+        \\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A
+          \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2
+            | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))
+        \\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) => \\scase d \\return A \\with { | con a => a }
+        """);
   }
 
   @Test
   public void squashedByUseCaseError() {
     typeCheckModule(
-      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
-      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
-      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
-      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) => \\case d \\return A \\with { | con a => a }", 1);
+      """
+        \\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A
+          \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2
+            | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))
+        \\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) => \\case d \\return A \\with { | con a => a }
+        """, 1);
   }
 
   @Test
   public void squashedByUseCaseWithLevelTest() {
     typeCheckModule(
-      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
-      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
-      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
-      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) => \\scase d \\return \\level A p \\with { | con a => a }");
+      """
+        \\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A
+          \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2
+            | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))
+        \\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) => \\scase d \\return \\level A p \\with { | con a => a }
+        """);
   }
 
   @Test
   public void squashedByUseCaseWithLevelError() {
     typeCheckModule(
-      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
-      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
-      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
-      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) => \\case d \\return \\level A p \\with { | con a => a }", 1);
+      """
+        \\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A
+          \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2
+            | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))
+        \\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) => \\case d \\return \\level A p \\with { | con a => a }
+        """, 1);
   }
 
   @Test
@@ -232,37 +258,45 @@ public class SFuncTest extends TypeCheckingTestCase {
   @Test
   public void squashedWithFuncLevelCaseTest() {
     typeCheckModule(
-      "\\truncated \\data D (A : \\Type) : \\Prop | con A\n" +
-      "\\func id {A : \\Type} (p : \\Pi (x y : A) -> x = y) => A\n" +
-      " \\where \\use \\level levelProp {A : \\Type} (p : \\Pi (x y : A) -> x = y) (x y : id p) : x = y => p x y\n" +
-      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) => \\scase d \\return id p \\with { | con a => a }");
+      """
+        \\truncated \\data D (A : \\Type) : \\Prop | con A
+        \\func id {A : \\Type} (p : \\Pi (x y : A) -> x = y) => A
+         \\where \\use \\level levelProp {A : \\Type} (p : \\Pi (x y : A) -> x = y) (x y : id p) : x = y => p x y
+        \\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) => \\scase d \\return id p \\with { | con a => a }
+        """);
   }
 
   @Test
   public void squashedWithFuncLevelCaseError() {
     typeCheckModule(
-      "\\truncated \\data D (A : \\Type) : \\Prop | con A\n" +
-      "\\func id {A : \\Type} (p : \\Pi (x y : A) -> x = y) => A\n" +
-      " \\where \\use \\level levelProp {A : \\Type} (p : \\Pi (x y : A) -> x = y) (x y : id p) : x = y => p x y\n" +
-      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) => \\case d \\return id p \\with { | con a => a }", 1);
+      """
+        \\truncated \\data D (A : \\Type) : \\Prop | con A
+        \\func id {A : \\Type} (p : \\Pi (x y : A) -> x = y) => A
+         \\where \\use \\level levelProp {A : \\Type} (p : \\Pi (x y : A) -> x = y) (x y : id p) : x = y => p x y
+        \\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) => \\case d \\return id p \\with { | con a => a }
+        """, 1);
   }
 
   @Test
   public void pevalPropCaseTest() {
     typeCheckModule(
-      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
-      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
-      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
-      "\\func test {A : \\Type} (p : \\Pi (x y : A) -> x = y) (a1 a2 : A) : (\\peval \\scase con a1 \\return \\level A p \\with { | con a => a }) = (\\peval \\scase con a2 \\return \\level A p \\with { | con a => a }) => idp", 1);
+      """
+        \\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A
+          \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2
+            | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))
+        \\func test {A : \\Type} (p : \\Pi (x y : A) -> x = y) (a1 a2 : A) : (\\peval \\scase con a1 \\return \\level A p \\with { | con a => a }) = (\\peval \\scase con a2 \\return \\level A p \\with { | con a => a }) => idp
+        """, 1);
     assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
   public void pevalCmpCaseTest() {
     typeCheckModule(
-      "\\data Bool | true | false\n" +
-      "\\func f (b : Bool) : Nat | true => 0 | false => 0\n" +
-      "\\func test : (\\peval \\scase true \\return Nat \\with { | true => 0 | false => 0 }) = (\\peval \\scase true \\return Nat \\with { | true => 0 | false => 0 }) => idp");
+      """
+        \\data Bool | true | false
+        \\func f (b : Bool) : Nat | true => 0 | false => 0
+        \\func test : (\\peval \\scase true \\return Nat \\with { | true => 0 | false => 0 }) = (\\peval \\scase true \\return Nat \\with { | true => 0 | false => 0 }) => idp
+        """);
   }
 
   @Test
@@ -276,18 +310,22 @@ public class SFuncTest extends TypeCheckingTestCase {
   @Test
   public void arrowTest() {
     typeCheckModule(
-      "\\sfunc c => 3\n" +
-      "\\func test : c = 3 => \\peval c\n" +
-      "\\func test1 : c = \\eval c => \\peval c\n" +
-      "\\func test2 : (\\eval c) = 3 => idp");
+      """
+        \\sfunc c => 3
+        \\func test : c = 3 => \\peval c
+        \\func test1 : c = \\eval c => \\peval c
+        \\func test2 : (\\eval c) = 3 => idp
+        """);
   }
 
   @Test
   public void intervalTest() {
     typeCheckModule(
-      "\\sfunc f (i : I) : Nat\n" +
-      "  | _ => 0\n" +
-      "  | left => 0\n" +
-      "  | right => 0", 1);
+      """
+        \\sfunc f (i : I) : Nat
+          | _ => 0
+          | left => 0
+          | right => 0
+        """, 1);
   }
 }

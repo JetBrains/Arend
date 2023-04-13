@@ -177,7 +177,14 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     checkNameAndPrecedence(def, def.getData());
 
     List<Referable> context = new ArrayList<>();
-    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, def.getPLevelParameters(), def.getHLevelParameters());
+    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
+    for (Iterator<? extends Concrete.Parameter> iterator = def.getParameters().iterator(); iterator.hasNext(); ) {
+      Concrete.Parameter parameter = iterator.next();
+      if (parameter.getType() == null && !parameter.isExplicit()) {
+        myErrorReporter.report(new NameResolverError("Untyped parameters must be explicit", parameter));
+        iterator.remove();
+      }
+    }
     exprVisitor.visitParameters(def.getParameters(), null);
 
     if (def.body != null) {

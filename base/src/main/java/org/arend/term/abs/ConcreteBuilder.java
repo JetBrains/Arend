@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.arend.term.concrete.Concrete.LevelParameters.getLevelParametersRefs;
 
@@ -102,20 +101,14 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
 
   @Override
   public DefinableMetaDefinition visitMeta(Abstract.MetaDefinition def) {
-    var parameters = buildParameters(def.getParameters(), true).stream()
-            .map(parameter -> {
-              if (parameter instanceof Concrete.NameParameter)
-                return (Concrete.NameParameter) parameter;
-              myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Definable meta parameters can only be identifiers", parameter));
-              return null;
-            }).collect(Collectors.toList());
+    var parameters = buildParameters(def.getParameters(), false);
     var term = def.getTerm();
     var body = term != null ? term.accept(this, null) : null;
     var referable = myReferableConverter.toDataLocatedReferable(def.getReferable());
     if (!(referable instanceof MetaReferable)) {
       throw new IllegalStateException("Expected MetaReferable, got: " + referable.getClass());
     }
-    var definition = new DefinableMetaDefinition((MetaReferable) referable, getLevelParametersRefs(def.getPLevelParameters(), true), getLevelParametersRefs(def.getHLevelParameters(), false), parameters, body);
+    var definition = new DefinableMetaDefinition((MetaReferable) referable, visitLevelParameters(def.getPLevelParameters(), true), visitLevelParameters(def.getHLevelParameters(), false), parameters, body);
     if (term != null) { // if term == null, it may be a generated meta, in which case we shouldn't replace its definition
       ((MetaReferable) referable).setDefinition(definition);
     }

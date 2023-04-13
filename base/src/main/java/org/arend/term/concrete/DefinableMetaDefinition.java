@@ -17,43 +17,50 @@ import org.arend.ext.util.Pair;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.naming.reference.LevelReferable;
 import org.arend.naming.reference.MetaReferable;
+import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * User-defined meta in Arend, not Java extension meta.
  */
 public class DefinableMetaDefinition extends Concrete.ResolvableDefinition implements MetaDefinition {
-  private final List<Concrete.NameParameter> myParameters;
+  private final List<Concrete.Parameter> myParameters;
   private final MetaReferable myReferable;
   public Concrete.@Nullable Expression body;
-  private final List<LevelReferable> myPLevelParameters;
-  private final List<LevelReferable> myHLevelParameters;
 
-  public DefinableMetaDefinition(MetaReferable referable, List<LevelReferable> pLevelParameters, List<LevelReferable> hLevelParameters, List<Concrete.NameParameter> parameters, Concrete.@Nullable Expression body) {
+  public DefinableMetaDefinition(MetaReferable referable, Concrete.LevelParameters pLevelParameters, Concrete.LevelParameters hLevelParameters, List<Concrete.Parameter> parameters, Concrete.@Nullable Expression body) {
     myReferable = referable;
-    myPLevelParameters = pLevelParameters;
-    myHLevelParameters = hLevelParameters;
+    this.pLevelParameters = pLevelParameters;
+    this.hLevelParameters = hLevelParameters;
     myParameters = parameters;
     this.body = body;
     stage = Concrete.Stage.NOT_RESOLVED;
   }
 
-  public List<LevelReferable> getPLevelParameters() {
-    return myPLevelParameters;
+  public Concrete.LevelParameters getPLevelParameters() {
+    return pLevelParameters;
   }
 
-  public List<LevelReferable> getHLevelParameters() {
-    return myHLevelParameters;
+  public List<? extends LevelReferable> getPLevelParametersList() {
+    return pLevelParameters == null ? null : pLevelParameters.getReferables();
+  }
+
+  public Concrete.LevelParameters getHLevelParameters() {
+    return hLevelParameters;
+  }
+
+  public List<? extends LevelReferable> getHLevelParametersList() {
+    return hLevelParameters == null ? null : hLevelParameters.getReferables();
   }
 
   @Override
-  public List<? extends Concrete.NameParameter> getParameters() {
+  public List<? extends Concrete.Parameter> getParameters() {
     return myParameters;
   }
 
@@ -76,9 +83,14 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
         return false;
       }
     }
-    boolean ok = arguments.size() >= myParameters.size();
+
+    int params = 0;
+    for (Concrete.Parameter parameter : myParameters) {
+      params += parameter.getRefList().size();
+    }
+    boolean ok = arguments.size() >= params;
     if (!ok && errorReporter != null) {
-      errorReporter.report(new TypecheckingError("Expected " + myParameters.size() + " arguments, found " + arguments.size(), marker));
+      errorReporter.report(new TypecheckingError("Expected " + params + " arguments, found " + arguments.size(), marker));
     }
     return ok;
   }
@@ -95,18 +107,26 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   protected @Nullable ConcreteExpression getConcreteRepresentation(@Nullable Object data, @Nullable List<Concrete.LevelExpression> pLevels, @Nullable List<Concrete.LevelExpression> hLevels, @NotNull List<? extends ConcreteArgument> arguments, @Nullable ConcreteCoclauses coclauses) {
     if (body == null) return null;
-    assert myParameters.size() <= arguments.size();
-    var subst = new SubstConcreteVisitor(data);
-    for (int i = 0; i < myParameters.size(); i++) {
-      subst.bind(Objects.requireNonNull(myParameters.get(i).getReferable()),
-        (Concrete.Expression) arguments.get(i).getExpression());
+    List<Referable> refs = new ArrayList<>();
+    for (Concrete.Parameter parameter : myParameters) {
+      refs.addAll(parameter.getRefList());
     }
-    binLevelParameters(subst, pLevels, myPLevelParameters);
-    binLevelParameters(subst, hLevels, myHLevelParameters);
+    assert refs.size() <= arguments.size();
+
+    var subst = new SubstConcreteVisitor(data);
+    for (int i = 0; i < refs.size(); i++) {
+      Referable ref = refs.get(i);
+      if (ref != null) {
+        subst.bind(ref, (Concrete.Expression) arguments.get(i).getExpression());
+      }
+    }
+
+    binLevelParameters(subst, pLevels, getPLevelParametersList());
+    binLevelParameters(subst, hLevels, getHLevelParametersList());
     Concrete.Expression result = body.accept(subst, null);
     if (result == null) return null;
-    if (arguments.size() > myParameters.size()) {
-      result = new ConcreteFactoryImpl(result.getData()).app(result, arguments.subList(myParameters.size(), arguments.size()));
+    if (arguments.size() > refs.size()) {
+      result = new ConcreteFactoryImpl(result.getData()).app(result, arguments.subList(refs.size(), arguments.size()));
     }
     if (coclauses != null) {
       if (!(coclauses instanceof Concrete.Coclauses)) {
@@ -117,7 +137,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     return result;
   }
 
-  private void binLevelParameters(SubstConcreteVisitor subst, @Nullable List<Concrete.LevelExpression> levels, List<LevelReferable> levelParameters) {
+  private void binLevelParameters(SubstConcreteVisitor subst, @Nullable List<Concrete.LevelExpression> levels, List<? extends LevelReferable> levelParameters) {
     if (levelParameters != null && levels != null) {
       for (int i = 0; i < levelParameters.size() && i < levels.size(); i++) {
         subst.bind(levelParameters.get(i), levels.get(i));

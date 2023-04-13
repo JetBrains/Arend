@@ -39,6 +39,7 @@ import org.arend.naming.reference.*;
 import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.typechecking.visitor.VoidConcreteVisitor;
 import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
@@ -47,7 +48,7 @@ import java.util.*;
 
 import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 
-public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> implements DefinitionVisitor<Void, Concrete.ReferableDefinition> {
+public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> implements DefinitionVisitor<Void, Concrete.GeneralDefinition> {
   private final PrettyPrinterConfig myConfig;
   private final DefinitionRenamer myDefinitionRenamer;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
@@ -114,7 +115,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }, null, null, new ReferableRenamer()).visitLevel(level);
   }
 
-  public static Concrete.ReferableDefinition convert(Definition definition, PrettyPrinterConfig config) {
+  public static Concrete.GeneralDefinition convert(Definition definition, PrettyPrinterConfig config) {
     DefinitionRenamer definitionRenamer = config.getDefinitionRenamer();
     if (definitionRenamer == null) {
       definitionRenamer = new ConflictDefinitionRenamer();
@@ -1165,5 +1166,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   @Override
   public Concrete.ClassField visitField(ClassField field, Void params) {
     return visitField(field, (Concrete.ClassDefinition) null);
+  }
+
+  @Override
+  public Concrete.GeneralDefinition visitMeta(MetaTopDefinition def, Void params) {
+    Pair<Concrete.LevelParameters, Concrete.LevelParameters> pair = visitLevelParameters(def.getLevelParameters(), def.getNumberOfPLevelParameters());
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    visitDependentLink(def.getParameters(), parameters, true);
+    return new DefinableMetaDefinition(def.getReferable(), pair.proj1, pair.proj2, parameters, null);
   }
 }

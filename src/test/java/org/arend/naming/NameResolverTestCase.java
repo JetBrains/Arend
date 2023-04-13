@@ -6,11 +6,7 @@ import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.frontend.ConcreteReferableProvider;
-import org.arend.naming.reference.ConcreteLocatedReferable;
-import org.arend.naming.reference.FullModuleReferable;
-import org.arend.naming.reference.MetaReferable;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
@@ -115,14 +111,17 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return lastGroup;
   }
 
-  protected ConcreteLocatedReferable resolveNamesDef(String text, int errors) {
-    return (ConcreteLocatedReferable) resolveNamesDefGroup(text, errors).getReferable();
+  protected TCDefReferable resolveNamesDef(String text, int errors) {
+    return (TCDefReferable) resolveNamesDefGroup(text, errors).getReferable();
   }
 
-  protected ConcreteLocatedReferable resolveNamesDef(String text) {
+  protected TCDefReferable resolveNamesDef(String text) {
     return resolveNamesDef(text, 0);
   }
 
+  protected Concrete.GeneralDefinition getDefinition(TCDefReferable ref) {
+    return typechecking.getConcreteProvider().getConcrete(ref);
+  }
 
   private void resolveNamesModule(ChildGroup group, int errors) {
     Scope scope = CachingScope.make(new MergeScope(ScopeFactory.forGroup(group, moduleScopeProvider), metaScope));

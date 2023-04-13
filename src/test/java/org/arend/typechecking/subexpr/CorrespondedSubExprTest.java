@@ -169,7 +169,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
           \\func f (a b : Nat) => \\lam c => a + b + c
         }
         """);
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
     {
@@ -200,7 +200,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
           \\func f (a b : Nat) => a + b
         }
         """);
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
     var accept = concreteDef.accept(new CorrespondedSubDefVisitor(
@@ -220,7 +220,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
           \\func const {A : \\Type} (a b : A) => a
         }
         """);
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
     {
@@ -248,7 +248,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
           \\func const => \\lam {A : \\Type} (a b : A) => a
         }
         """);
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
     {
@@ -290,7 +290,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
             | con Nat
         }
         """);
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
     {
@@ -310,7 +310,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
           \\class X (A : \\Type0) { }
         }
         """);
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var concrete = (Concrete.ClassExtExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
     var accept = concreteDef.accept(new CorrespondedSubDefVisitor(
@@ -408,7 +408,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
         \\instance x : X Nat | B => 114514
       }
       """);
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var concrete = (Concrete.ClassExtExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
     Concrete.Expression c = concrete.getStatements().get(1).implementation;
@@ -423,7 +423,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   public void exprInGoal() {
     var resolved = resolveNamesDef(
             "\\func test : Nat => {?(10)}");
-    var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    var concreteDef = (Concrete.FunctionDefinition) getDefinition(resolved);
     var concrete = (Concrete.GoalExpression) concreteDef.getBody().getTerm();
     assertNotNull(concrete);
     assertNotNull(concrete.getExpression());

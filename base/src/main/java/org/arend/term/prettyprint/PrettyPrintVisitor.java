@@ -1453,10 +1453,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitMeta(DefinableMetaDefinition def, Void params) {
     myBuilder.append("\\meta ");
     prettyPrintNameWithPrecedence(def.getData());
-    for (var parameter : def.getParameters()) {
-      myBuilder.append(" ").append(
-        Objects.requireNonNull(parameter.getReferable()).textRepresentation());
-    }
+    myBuilder.append(" ");
+    prettyPrintParameters(def.getParameters());
     if (def.body == null) {
       return null;
     }

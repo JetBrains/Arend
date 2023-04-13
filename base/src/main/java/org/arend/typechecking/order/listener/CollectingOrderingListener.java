@@ -16,9 +16,9 @@ public class CollectingOrderingListener implements OrderingListener {
   }
 
   private static class MyHeader implements Element {
-    final Concrete.Definition definition;
+    final Concrete.ResolvableDefinition definition;
 
-    private MyHeader(Concrete.Definition definition) {
+    private MyHeader(Concrete.ResolvableDefinition definition) {
       this.definition = definition;
     }
 
@@ -103,9 +103,9 @@ public class CollectingOrderingListener implements OrderingListener {
       if (kind == MyDefinitions.Kind.USE) {
         listener.useFound((List<Concrete.UseDefinition>) definitions);
       } else if (kind == Kind.PRE_BODIES) {
-        listener.preBodiesFound((List<Concrete.Definition>) definitions);
+        listener.preBodiesFound((List<Concrete.ResolvableDefinition>) definitions);
       } else if (kind == Kind.BODIES) {
-        listener.bodiesFound((List<Concrete.Definition>) definitions);
+        listener.bodiesFound((List<Concrete.ResolvableDefinition>) definitions);
       } else {
         listener.cycleFound((List<Concrete.ResolvableDefinition>) definitions);
       }
@@ -146,17 +146,17 @@ public class CollectingOrderingListener implements OrderingListener {
   }
 
   @Override
-  public void preBodiesFound(List<Concrete.Definition> definitions) {
+  public void preBodiesFound(List<Concrete.ResolvableDefinition> definitions) {
     myElements.add(new MyDefinitions(definitions, MyDefinitions.Kind.PRE_BODIES));
   }
 
   @Override
-  public void headerFound(Concrete.Definition definition) {
+  public void headerFound(Concrete.ResolvableDefinition definition) {
     myElements.add(new MyHeader(definition));
   }
 
   @Override
-  public void bodiesFound(List<Concrete.Definition> bodies) {
+  public void bodiesFound(List<Concrete.ResolvableDefinition> bodies) {
     myElements.add(new MyDefinitions(bodies, MyDefinitions.Kind.BODIES));
   }
 

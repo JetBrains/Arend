@@ -1,7 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.Definition;
+import org.arend.core.definition.CallableDefinition;
 import org.arend.core.definition.ParametersLevel;
 import org.arend.core.definition.UniverseKind;
 import org.arend.ext.core.expr.CoreDefCallExpression;
@@ -12,9 +12,9 @@ import java.util.Collections;
 import java.util.List;
 
 public abstract class DefCallExpression extends Expression implements CoreDefCallExpression {
-  private final Definition myDefinition;
+  private final CallableDefinition myDefinition;
 
-  public DefCallExpression(Definition definition) {
+  public DefCallExpression(CallableDefinition definition) {
     myDefinition = definition;
   }
 
@@ -28,7 +28,7 @@ public abstract class DefCallExpression extends Expression implements CoreDefCal
   }
 
   @Override
-  public @NotNull Definition getDefinition() {
+  public @NotNull CallableDefinition getDefinition() {
     return myDefinition;
   }
 

@@ -14,6 +14,7 @@ message Definition {
         DataData data = 2;
         FunctionData function = 3;
         DConstructorData constructor = 4;
+        MetaData meta = 5;
     }
     UniverseKind universe_kind = 6;
     map<string, bytes> user_data = 7;
@@ -150,7 +151,12 @@ message Definition {
             REALLY_HIDDEN = 2;
         }
     }
-    message DConstructorData {
+    message MetaData {
+      repeated LevelParameter level_param = 1;
+      repeated Telescope param = 2;
+      repeated bool typed_param = 3;
+    }
+  message DConstructorData {
         FunctionData function = 1;
         int32 number_of_parameters = 2;
         DPattern pattern = 3;

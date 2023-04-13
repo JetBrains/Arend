@@ -3,6 +3,7 @@ package org.arend.typechecking.result;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
+import org.arend.core.definition.CallableDefinition;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.CompareVisitor;
@@ -23,13 +24,13 @@ import java.util.List;
 
 public class DefCallResult implements TResult {
   private final Concrete.ReferenceExpression myDefCall;
-  private final Definition myDefinition;
+  private final CallableDefinition myDefinition;
   private final Levels myLevels;
   private final List<Expression> myArguments;
   private List<DependentLink> myParameters;
   private Expression myResultType;
 
-  private DefCallResult(Concrete.ReferenceExpression defCall, Definition definition, Levels levels, List<Expression> arguments, List<DependentLink> parameters, Expression resultType) {
+  private DefCallResult(Concrete.ReferenceExpression defCall, CallableDefinition definition, Levels levels, List<Expression> arguments, List<DependentLink> parameters, Expression resultType) {
     myDefCall = defCall;
     myDefinition = definition;
     myLevels = levels;
@@ -38,7 +39,7 @@ public class DefCallResult implements TResult {
     myResultType = resultType;
   }
 
-  public static TResult makeTResult(Concrete.ReferenceExpression defCall, Definition definition, Levels levels) {
+  public static TResult makeTResult(Concrete.ReferenceExpression defCall, CallableDefinition definition, Levels levels) {
     List<DependentLink> parameters = new ArrayList<>();
     Expression resultType = definition.getTypeWithParams(parameters, levels);
 
@@ -50,7 +51,7 @@ public class DefCallResult implements TResult {
   }
 
   public static TResult makePathType(Concrete.ReferenceExpression defCall, boolean isInfix, Levels levels, Sort resultSort) {
-    Definition definition = isInfix ? Prelude.PATH_INFIX : Prelude.PATH;
+    CallableDefinition definition = isInfix ? Prelude.PATH_INFIX : Prelude.PATH;
     List<DependentLink> parameters = new ArrayList<>();
     definition.getTypeWithParams(parameters, levels);
     return new DefCallResult(defCall, definition, levels, new ArrayList<>(), parameters, new UniverseExpression(resultSort));

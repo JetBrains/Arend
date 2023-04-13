@@ -190,8 +190,8 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
     } else {
       if (withLoops) {
         myOrderingListener.cycleFound(Collections.singletonList(unit));
-      } else if (unit instanceof Concrete.Definition) {
-        myOrderingListener.headerFound((Concrete.Definition) unit);
+      } else {
+        myOrderingListener.headerFound(unit);
       }
     }
   }
@@ -273,11 +273,13 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
     }
 
     Set<TCDefReferable> defSet = new HashSet<>();
-    List<Concrete.Definition> defs = new ArrayList<>(scc.size());
+    List<Concrete.ResolvableDefinition> defs = new ArrayList<>(scc.size());
     for (Concrete.ResolvableDefinition def : scc) {
-      defs.add((Concrete.Definition) def);
-      defSet.add(((Concrete.Definition) def).getData());
-      ((Concrete.Definition) def).setRecursiveDefinitions(defSet);
+      defs.add(def);
+      defSet.add(def.getData());
+      if (def instanceof Concrete.Definition) {
+        ((Concrete.Definition) def).setRecursiveDefinitions(defSet);
+      }
     }
 
     myOrderingListener.preBodiesFound(defs);

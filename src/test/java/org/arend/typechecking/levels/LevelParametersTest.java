@@ -261,7 +261,7 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void metaTest() {
     typeCheckModule(
-      "\\meta m \\plevels p1, p2 => \\Sigma (\\Type p1) (\\Type p2)\n" +
+      "\\meta m \\plevels p1 <= p2 => \\Sigma (\\Type p1) (\\Type p2)\n" +
       "\\func f => m \\levels (1,2) _");
     DependentLink params = ((SigmaExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getParameters();
     assertEquals(new UniverseExpression(new Sort(new Level(1), new Level(LevelVariable.HVAR))), params.getTypeExpr());
