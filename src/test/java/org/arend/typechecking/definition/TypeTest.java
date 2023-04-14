@@ -272,4 +272,11 @@ public class TypeTest extends TypeCheckingTestCase {
       "\\func test (A : Type \\levels 2 _) : Type \\levels 1 _ => A", 1);
     assertThatErrorsAre(Matchers.typeMismatchError());
   }
+
+  @Test
+  public void mutuallyRecursive() {
+    typeCheckModule(
+      "\\data D : \\Set | con f\n" +
+      "\\type f : \\Set => D -> Nat", 1);
+  }
 }
