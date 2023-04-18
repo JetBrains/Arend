@@ -228,10 +228,6 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
         }
         hasUse = true;
       }
-      if (!(definition instanceof Concrete.Definition)) {
-        myOrderingListener.cycleFound(scc);
-        return;
-      }
     }
 
     Set<TCReferable> dependencies = new HashSet<>();

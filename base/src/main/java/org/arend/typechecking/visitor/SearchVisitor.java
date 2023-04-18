@@ -46,7 +46,7 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     return preserveOrder() && expression.getDefinition().getRecursiveParameter() >= 0 && expression.getDefinition().getRecursiveParameter() < expression.getDefCallArguments().size() - 1;
   }
 
-  private Boolean visitConCallWithStack(ConCallExpression expression, P param) {
+  private boolean visitConCallWithStack(ConCallExpression expression, P param) {
     List<ConCallExpression> stack = new ArrayList<>();
     while (true) {
       switch (processDefCall(expression, param)) {

@@ -167,4 +167,18 @@ public class DefinableMetaTest extends TypeCheckingTestCase {
       "\\func test => f \\levels 3 _ \\Type3", 1);
     assertThatErrorsAre(Matchers.typeMismatchError());
   }
+
+  @Test
+  public void mutuallyRecursive() {
+    typeCheckModule(
+      "\\data D : \\Set | con f\n" +
+      "\\meta f => D");
+  }
+
+  @Test
+  public void mutuallyRecursive2() {
+    typeCheckModule(
+      "\\data D : \\Set | con f\n" +
+      "\\meta f => D -> Nat", 1);
+  }
 }
