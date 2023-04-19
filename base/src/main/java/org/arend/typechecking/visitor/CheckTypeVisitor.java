@@ -3411,8 +3411,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
     }
 
-    errorReporter.report(new GeneralError(GeneralError.Level.ERROR, "`StringTypechecker` not found!"));
-    return null;
+    return checkResult(expectedType, new TypecheckingResult(new StringExpression(string), ExpressionFactory.String()), expr);
   }
 
   @Override

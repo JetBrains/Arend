@@ -29,208 +29,217 @@ public class FindSubexpressionVisitor extends SearchVisitor<Void> {
 
   @Override
   public Boolean visitPath(PathExpression expr, Void param) {
-    switch (myFunction.apply(expr)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitPath(expr, param);
-    }
+    return switch (myFunction.apply(expr)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitPath(expr, param);
+    };
   }
 
   @Override
   public Boolean visitAt(AtExpression expr, Void params) {
-    switch (myFunction.apply(expr)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitAt(expr, params);
-    }
+    return switch (myFunction.apply(expr)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitAt(expr, params);
+    };
   }
 
   @Override
   public Boolean visitApp(AppExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitApp(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitApp(expression, param);
+    };
   }
 
   @Override
   public Boolean visitLet(LetExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitLet(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitLet(expression, param);
+    };
   }
 
   @Override
   public Boolean visitCase(CaseExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitCase(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitCase(expression, param);
+    };
   }
 
   @Override
   public Boolean visitLam(LamExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitLam(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitLam(expression, param);
+    };
   }
 
   @Override
   public Boolean visitPi(PiExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitPi(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitPi(expression, param);
+    };
   }
 
   @Override
   public Boolean visitSigma(SigmaExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitSigma(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitSigma(expression, param);
+    };
   }
 
   @Override
   public Boolean visitTuple(TupleExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitTuple(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitTuple(expression, param);
+    };
   }
 
   @Override
   public Boolean visitProj(ProjExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitProj(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitProj(expression, param);
+    };
   }
 
   @Override
   public Boolean visitNew(NewExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitNew(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitNew(expression, param);
+    };
   }
 
   @Override
   public Boolean visitPEval(PEvalExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitPEval(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitPEval(expression, param);
+    };
   }
 
   @Override
   public Boolean visitBox(BoxExpression expr, Void params) {
-    switch (myFunction.apply(expr)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitBox(expr, null);
-    }
+    return switch (myFunction.apply(expr)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitBox(expr, null);
+    };
   }
 
   @Override
   public Boolean visitUniverse(UniverseExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitUniverse(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitUniverse(expression, param);
+    };
   }
 
   @Override
   public Boolean visitError(ErrorExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitError(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitError(expression, param);
+    };
   }
 
   @Override
   public Boolean visitReference(ReferenceExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitReference(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitReference(expression, param);
+    };
   }
 
   @Override
   public Boolean visitInferenceReference(InferenceReferenceExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitInferenceReference(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitInferenceReference(expression, param);
+    };
   }
 
   @Override
   public Boolean visitSubst(SubstExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitSubst(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitSubst(expression, param);
+    };
   }
 
   @Override
   public Boolean visitOfType(OfTypeExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitOfType(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitOfType(expression, param);
+    };
   }
 
   @Override
   public Boolean visitInteger(IntegerExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitInteger(expression, param);
-    }
+    return switch (myFunction.apply(expression)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitInteger(expression, param);
+    };
+  }
+
+  @Override
+  public Boolean visitString(StringExpression expr, Void param) {
+    return switch (myFunction.apply(expr)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitString(expr, param);
+    };
   }
 
   @Override
   public Boolean visitTypeConstructor(TypeConstructorExpression expr, Void param) {
-    switch (myFunction.apply(expr)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitTypeConstructor(expr, param);
-    }
+    return switch (myFunction.apply(expr)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitTypeConstructor(expr, param);
+    };
   }
 
   @Override
   public Boolean visitTypeDestructor(TypeDestructorExpression expr, Void param) {
-    switch (myFunction.apply(expr)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitTypeDestructor(expr, param);
-    }
+    return switch (myFunction.apply(expr)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitTypeDestructor(expr, param);
+    };
   }
 
   @Override
   public Boolean visitArray(ArrayExpression expr, Void params) {
-    switch (myFunction.apply(expr)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitArray(expr, params);
-    }
+    return switch (myFunction.apply(expr)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitArray(expr, params);
+    };
   }
 }

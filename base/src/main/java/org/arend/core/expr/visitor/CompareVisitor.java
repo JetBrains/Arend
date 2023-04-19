@@ -2042,6 +2042,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return visitInteger(expr, expr2);
   }
 
+  @Override
+  public Boolean visitString(StringExpression expr, Expression expr2, Expression type) {
+    StringExpression string2 = expr2.cast(StringExpression.class);
+    return string2 != null && expr.getString().equals(string2.getString());
+  }
+
   private Boolean visitTypeConstructor(TypeConstructorExpression expr1, Expression expr2, boolean correctOrder) {
     TypeConstructorExpression typeCoerce2 = expr2.cast(TypeConstructorExpression.class);
     if (typeCoerce2 == null) {

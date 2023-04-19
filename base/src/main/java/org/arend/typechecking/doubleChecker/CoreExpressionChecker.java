@@ -890,6 +890,11 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   }
 
   @Override
+  public Expression visitString(StringExpression expr, Expression expectedType) {
+    return check(expectedType, ExpressionFactory.String(), expr);
+  }
+
+  @Override
   public Expression visitTypeConstructor(TypeConstructorExpression expr, Expression expectedType) {
     if (expr.getDefinition().getReallyActualBody() instanceof ElimBody) {
       List<? extends ElimClause<Pattern>> clauses = ((ElimBody) expr.getDefinition().getReallyActualBody()).getClauses();

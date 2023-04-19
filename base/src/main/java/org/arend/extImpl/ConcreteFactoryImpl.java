@@ -406,6 +406,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.NumericLiteral(myData, BigInteger.valueOf(number));
   }
 
+  @Override
+  public @NotNull ConcreteExpression string(@NotNull String s) {
+    return new Concrete.StringLiteral(myData, s);
+  }
+
   @NotNull
   @Override
   public ConcreteExpression typed(@NotNull ConcreteExpression expression, @NotNull ConcreteExpression type) {

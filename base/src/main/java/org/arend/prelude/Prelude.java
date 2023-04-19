@@ -18,6 +18,7 @@ import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
+import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.ArendRef;
@@ -61,6 +62,8 @@ public class Prelude implements ArendPrelude {
   public static DataDefinition INT;
   public static Constructor POS, NEG;
 
+  public static DataDefinition STRING;
+
   public static FunctionDefinition COERCE, COERCE2;
 
   public static DataDefinition PATH;
@@ -95,13 +98,13 @@ public class Prelude implements ArendPrelude {
 
   public static void update(Definition definition) {
     switch (definition.getReferable().textRepresentation()) {
-      case "Nat":
+      case "Nat" -> {
         NAT = (DataDefinition) definition;
         ZERO = NAT.getConstructor("zero");
         SUC = NAT.getConstructor("suc");
         DIV_MOD_TYPE = new SigmaExpression(Sort.SET0, parameter(true, Arrays.asList(null, null), Nat()));
-        break;
-      case "Fin":
+      }
+      case "Fin" -> {
         FIN = (DataDefinition) definition;
         FIN.setSort(Sort.SET0);
         if (FIN.getConstructors().isEmpty()) {
@@ -123,51 +126,45 @@ public class Prelude implements ArendPrelude {
           FIN_ZERO = FIN.getConstructor("zero");
           FIN_SUC = FIN.getConstructor("suc");
         }
-        break;
-      case "+":
-        PLUS = (FunctionDefinition) definition;
-        break;
-      case "-":
-        MINUS = (FunctionDefinition) definition;
-        break;
-      case "*":
-        MUL = (FunctionDefinition) definition;
-        break;
-      case "Int":
+      }
+      case "+" -> PLUS = (FunctionDefinition) definition;
+      case "-" -> MINUS = (FunctionDefinition) definition;
+      case "*" -> MUL = (FunctionDefinition) definition;
+      case "Int" -> {
         INT = (DataDefinition) definition;
         POS = INT.getConstructor("pos");
         NEG = INT.getConstructor("neg");
-        break;
-      case "I":
+      }
+      case "String" -> STRING = (DataDefinition) definition;
+      case "I" -> {
         INTERVAL = (DataDefinition) definition;
         INTERVAL.setSort(new Sort(new Level(0), Level.INFINITY));
         LEFT = INTERVAL.getConstructor("left");
         RIGHT = INTERVAL.getConstructor("right");
-        break;
-      case "squeeze":
+      }
+      case "squeeze" -> {
         SQUEEZE = (FunctionDefinition) definition;
         SQUEEZE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "squeezeR":
+      }
+      case "squeezeR" -> {
         SQUEEZE_R = (FunctionDefinition) definition;
         SQUEEZE_R.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "Path":
+      }
+      case "Path" -> {
         PATH = (DataDefinition) definition;
         PATH.setSort(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1)));
         PATH.setCovariant(1, false);
         PATH.setCovariant(2, false);
         PATH_CON = PATH.getConstructor("path");
-        break;
-      case "=": {
+      }
+      case "=" -> {
         PATH_INFIX = (FunctionDefinition) definition;
         PATH_INFIX.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1))));
         DataCallExpression dataCall = (DataCallExpression) PATH_INFIX.getBody();
         assert dataCall != null;
         PATH_INFIX.setBody(DataCallExpression.make(dataCall.getDefinition(), dataCall.getLevels(), Arrays.asList(new LamExpression(new Sort(new Level(LevelVariable.PVAR, 1), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) dataCall.getDefCallArguments().get(0)).getBody()), dataCall.getDefCallArguments().get(1), dataCall.getDefCallArguments().get(2))));
-        break;
       }
-      case "idp": {
+      case "idp" -> {
         IDP = (DConstructor) definition;
         List<Expression> args = new ArrayList<>(2);
         args.add(new ReferenceExpression(IDP.getParameters()));
@@ -179,78 +176,74 @@ public class Prelude implements ArendPrelude {
         assert pathExpr != null;
         Sort sort = new Sort(new Level(LevelVariable.PVAR), Level.INFINITY);
         IDP.setBody(new PathExpression(pathExpr.getLevels(), new LamExpression(sort, UnusedIntervalDependentLink.INSTANCE, args.get(0)), new LamExpression(sort, UnusedIntervalDependentLink.INSTANCE, ((LamExpression) pathExpr.getArgument()).getBody())));
-        break;
       }
-      case "@": {
+      case "@" -> {
         AT = (FunctionDefinition) definition;
         AT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
       }
-      case "coe":
+      case "coe" -> {
         COERCE = (FunctionDefinition) definition;
         COERCE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "coe2":
+      }
+      case "coe2" -> {
         COERCE2 = (FunctionDefinition) definition;
         COERCE2.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "iso": {
+      }
+      case "iso" -> {
         ISO = (FunctionDefinition) definition;
         ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
       }
-      case "fromNat":
+      case "fromNat" -> {
         FIN_FROM_NAT = (FunctionDefinition) definition;
         FIN_FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "inProp":
+      }
+      case "inProp" -> {
         IN_PROP = (FunctionDefinition) definition;
         IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "divMod":
+      }
+      case "divMod" -> {
         DIV_MOD = (FunctionDefinition) definition;
         DIV_MOD.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "div":
+      }
+      case "div" -> {
         DIV = (FunctionDefinition) definition;
         DIV.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "mod":
+      }
+      case "mod" -> {
         MOD = (FunctionDefinition) definition;
         MOD.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "divModProp":
+      }
+      case "divModProp" -> {
         DIV_MOD_PROPERTY = (FunctionDefinition) definition;
         DIV_MOD_PROPERTY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "DArray":
+      }
+      case "DArray" -> {
         DEP_ARRAY = (ClassDefinition) definition;
         ARRAY_ELEMENTS_TYPE = DEP_ARRAY.getPersonalFields().get(1);
         ARRAY_LENGTH = DEP_ARRAY.getPersonalFields().get(0);
         ARRAY_AT = DEP_ARRAY.getPersonalFields().get(2);
-        break;
-      case "Array":
+      }
+      case "Array" -> {
         ARRAY = (FunctionDefinition) definition;
         if (ARRAY.getRef() instanceof TypedLocatedReferable) {
           ((TypedLocatedReferable) ARRAY.getRef()).setBodyReference(DEP_ARRAY.getRef());
         }
-        break;
-      case "nil":
+      }
+      case "nil" -> {
         EMPTY_ARRAY = (DConstructor) definition;
         EMPTY_ARRAY.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(EMPTY_ARRAY, LevelPair.STD, Collections.emptyList()), Collections.singletonList(new BindingPattern(EMPTY_ARRAY.getParameters()))));
         EMPTY_ARRAY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "::":
+      }
+      case "::" -> {
         ARRAY_CONS = (DConstructor) definition;
         ARRAY_CONS.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(ARRAY_CONS, LevelPair.STD, Collections.emptyList()), Arrays.asList(new BindingPattern(ARRAY_CONS.getParameters()), new BindingPattern(ARRAY_CONS.getParameters().getNext()), new BindingPattern(ARRAY_CONS.getParameters().getNext().getNext()), new BindingPattern(ARRAY_CONS.getParameters().getNext().getNext().getNext()))));
         ARRAY_CONS.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "!!":
+      }
+      case "!!" -> {
         ARRAY_INDEX = (FunctionDefinition) definition;
         ARRAY_INDEX.setBody(null);
-        break;
-      default:
-        throw new IllegalStateException();
+      }
+      default -> throw new IllegalStateException();
     }
   }
 
@@ -266,6 +259,7 @@ public class Prelude implements ArendPrelude {
     consumer.accept(INT);
     consumer.accept(POS);
     consumer.accept(NEG);
+    consumer.accept(STRING);
     consumer.accept(INTERVAL);
     consumer.accept(LEFT);
     consumer.accept(RIGHT);
@@ -401,6 +395,11 @@ public class Prelude implements ArendPrelude {
   @Override
   public Constructor getNeg() {
     return NEG;
+  }
+
+  @Override
+  public CoreDataDefinition getString() {
+    return STRING;
   }
 
   @Override

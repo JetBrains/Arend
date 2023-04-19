@@ -72,6 +72,10 @@ public class ExpressionFactory {
     return DataCallExpression.make(Prelude.FIN, Levels.EMPTY, new SingletonList<>(cardinality));
   }
 
+  public static DataCallExpression String() {
+    return DataCallExpression.make(Prelude.STRING, Levels.EMPTY, Collections.emptyList());
+  }
+
   public static SigmaExpression divModType(Type type) {
     return new SigmaExpression(Sort.SET0, new TypedDependentLink(true, null, Nat(), new TypedDependentLink(true, null, type, EmptyDependentLink.getInstance())));
   }

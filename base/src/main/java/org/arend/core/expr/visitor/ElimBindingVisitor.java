@@ -456,6 +456,11 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
   }
 
   @Override
+  public Expression visitString(StringExpression expr, Void params) {
+    return expr;
+  }
+
+  @Override
   public Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     List<Expression> newArgs = visitDefCallArguments(expr.getClauseArguments());
     if (newArgs == null) return null;

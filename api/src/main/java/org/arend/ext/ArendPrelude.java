@@ -23,6 +23,7 @@ public interface ArendPrelude {
   CoreDataDefinition getInt();
   CoreConstructor getPos();
   CoreConstructor getNeg();
+  CoreDataDefinition getString();
   CoreFunctionDefinition getCoerce();
   CoreFunctionDefinition getCoerce2();
   CoreDataDefinition getPath();

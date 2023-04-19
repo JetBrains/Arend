@@ -292,6 +292,11 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     return false;
   }
 
+  @Override
+  public Boolean visitString(StringExpression expr, P params) {
+    return false;
+  }
+
   public boolean visitBody(Body body, P param) {
     if (body instanceof Expression) {
       return ((Expression) body).accept(this, param);
