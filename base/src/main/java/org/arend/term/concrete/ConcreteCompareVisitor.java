@@ -325,7 +325,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   private boolean compareClause(Concrete.Clause clause1, Concrete.Clause clause2, Supplier<Boolean> bodyHandler) {
     if (clause1.getPatterns() == clause2.getPatterns()) {
-      return true;
+      return bodyHandler == null || bodyHandler.get();
     }
     if (clause1.getPatterns() == null || clause2.getPatterns() == null) {
       return false;
