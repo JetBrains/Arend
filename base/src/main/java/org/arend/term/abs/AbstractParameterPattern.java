@@ -77,7 +77,7 @@ public class AbstractParameterPattern implements Abstract.Pattern {
   }
 
   @Override
-  public @NotNull List<? extends Abstract.TypedReferable> getAsPatterns() {
-    return Collections.emptyList();
+  public @Nullable Abstract.TypedReferable getAsPattern() {
+    return null;
   }
 }

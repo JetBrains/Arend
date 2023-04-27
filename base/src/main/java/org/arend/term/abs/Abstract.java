@@ -99,7 +99,7 @@ public final class Abstract {
     @Nullable Fixity getFixity();
     @NotNull List<? extends Pattern> getSequence();
     @Nullable Expression getType();
-    @NotNull List<? extends TypedReferable> getAsPatterns();
+    @Nullable TypedReferable getAsPattern();
   }
 
   public interface Reference extends org.arend.naming.reference.Reference, SourceNode {

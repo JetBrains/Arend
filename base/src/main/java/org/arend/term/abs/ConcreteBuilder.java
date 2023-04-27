@@ -440,20 +440,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     return parameters;
   }
 
-  public Concrete.TypedReferable buildTypedReferables(List<? extends Abstract.TypedReferable> typedReferables) {
-    Concrete.TypedReferable result = null;
-    for (Abstract.TypedReferable typedReferable : typedReferables) {
-      Referable referable = typedReferable.getReferable();
-      if (referable != null) {
-        if (result == null) {
-          Abstract.Expression type = typedReferable.getType();
-          result = new Concrete.TypedReferable(typedReferable.getData(), DataLocalReferable.make(referable), type == null ? null : type.accept(this, null));
-        } else {
-          myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.WARNING_UNUSED, "\\as binding is ignored", typedReferable.getData()));
-        }
-      }
-    }
-    return result;
+  public Concrete.TypedReferable buildTypedReferable(Abstract.TypedReferable typedReferable) {
+    Referable referable = typedReferable == null ? null : typedReferable.getReferable();
+    if (referable == null) return null;
+    Abstract.Expression type = typedReferable.getType();
+    return new Concrete.TypedReferable(typedReferable.getData(), DataLocalReferable.make(referable), type == null ? null : type.accept(this, null));
   }
 
   public Concrete.Pattern buildPattern(Abstract.Pattern pattern) {
@@ -463,7 +454,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       if (!subPatterns.get(0).isExplicit() || !pattern.isExplicit()) {
         innerPattern.setExplicit(false);
       }
-      Concrete.TypedReferable typedReferables = buildTypedReferables(pattern.getAsPatterns());
+      Concrete.TypedReferable typedReferables = buildTypedReferable(pattern.getAsPattern());
       if (typedReferables != null) {
         innerPattern.setAsReferable(typedReferables);
       }
@@ -476,7 +467,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     }
     Integer number = pattern.getInteger();
     if (number != null) {
-      Concrete.Pattern cPattern = new Concrete.NumberPattern(pattern.getData(), number, buildTypedReferables(pattern.getAsPatterns()));
+      Concrete.Pattern cPattern = new Concrete.NumberPattern(pattern.getData(), number, buildTypedReferable(pattern.getAsPattern()));
       cPattern.setExplicit(pattern.isExplicit());
       return cPattern;
     }
@@ -489,7 +480,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       Fixity fixity = pattern.getFixity();
       return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), longRef, type == null ? null : type.accept(this, null), fixity == null ? Fixity.NONFIX : fixity);
     } else if (pattern.isTuplePattern()) {
-      return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), buildPatterns(pattern.getSequence()), buildTypedReferables(pattern.getAsPatterns()));
+      return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), buildPatterns(pattern.getSequence()), buildTypedReferable(pattern.getAsPattern()));
     } else {
       List<? extends Abstract.Pattern> args = pattern.getSequence();
       List<Concrete.BinOpSequenceElem<Concrete.Pattern>> binOps = new ArrayList<>();
@@ -498,9 +489,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       }
       if (args.isEmpty()) {
         myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Empty pattern is disallowed here", pattern.getData()));
-        return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), List.of(), buildTypedReferables(pattern.getAsPatterns()));
+        return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), List.of(), buildTypedReferable(pattern.getAsPattern()));
       }
-      return new Concrete.UnparsedConstructorPattern(pattern.getData(), pattern.isExplicit(), binOps, buildTypedReferables(pattern.getAsPatterns()));
+      return new Concrete.UnparsedConstructorPattern(pattern.getData(), pattern.isExplicit(), binOps, buildTypedReferable(pattern.getAsPattern()));
     }
   }
 
