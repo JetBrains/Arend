@@ -688,6 +688,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         if (myResolverListener != null) {
           myResolverListener.patternParsed(result);
         }
+        result.setExplicit(pattern.isExplicit());
         return result;
       }
       if (parsedPattern instanceof Concrete.UnparsedConstructorPattern) {
@@ -722,7 +723,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         newPatterns.set(i, fixParsedConstructorPattern(subPattern.getData(), pattern, new HashMap<>(usedNames), (Concrete.ConstructorPattern) subPattern));
       }
     }
-    return new Concrete.ConstructorPattern(data, pattern.isExplicit(), parsedPattern.getConstructorData(), constructor == null ? null : myReferableConverter.convert(constructor), newPatterns, pattern.getAsReferable());
+    return new Concrete.ConstructorPattern(data, true, parsedPattern.getConstructorData(), constructor == null ? null : myReferableConverter.convert(constructor), newPatterns, pattern.getAsReferable());
   }
 
   private List<Concrete.BinOpSequenceElem<Concrete.Pattern>> resolveBinOpComponents(Concrete.UnparsedConstructorPattern pattern) {

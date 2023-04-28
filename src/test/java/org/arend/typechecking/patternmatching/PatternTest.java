@@ -642,4 +642,14 @@ public class PatternTest extends TypeCheckingTestCase {
         }
         """, 1);
   }
+
+  @Test
+  public void implicitTest() {
+    typeCheckModule("""
+      \\data Tree | nil | \\infixl 1 :: Tree Tree
+      \\func match {t : Tree} : Tree
+        | {t1 :: t2 :: t3} => t1
+        | {_} => nil
+      """);
+  }
 }
