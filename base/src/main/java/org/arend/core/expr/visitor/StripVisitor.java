@@ -329,6 +329,11 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitQName(QNameExpression expr, Void params) {
+    return expr;
+  }
+
+  @Override
   public Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     List<Expression> args = expr.getClauseArguments();
     args.replaceAll(expression -> expression.accept(this, null));

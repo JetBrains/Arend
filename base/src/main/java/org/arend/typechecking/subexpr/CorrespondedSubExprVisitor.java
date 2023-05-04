@@ -97,6 +97,11 @@ public class CorrespondedSubExprVisitor implements
   }
 
   @Override
+  public @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression> visitQNameLiteral(Concrete.QNameLiteral expr, @NotNull Expression coreExpr) {
+    return atomicExpr(expr, coreExpr);
+  }
+
+  @Override
   public Pair<Expression, Concrete.Expression> visitUniverse(Concrete.UniverseExpression expr, Expression coreExpr) {
     return atomicExpr(expr, coreExpr);
   }
@@ -300,8 +305,7 @@ public class CorrespondedSubExprVisitor implements
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     Expression body = coreExpr;
     for (Concrete.Parameter parameter : expr.getParameters()) {
-      if (body instanceof LamExpression) {
-        var coreLamExpr = (LamExpression) body;
+      if (body instanceof LamExpression coreLamExpr) {
         Concrete.Expression type = parameter.getType();
         if (type != null) {
           var ty = type.accept(this, coreLamExpr.getParameters().getTypeExpr());

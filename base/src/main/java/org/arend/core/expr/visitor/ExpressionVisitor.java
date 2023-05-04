@@ -27,6 +27,7 @@ public interface ExpressionVisitor<P, R> {
   R visitOfType(OfTypeExpression expr, P params);
   R visitInteger(IntegerExpression expr, P params);
   R visitString(StringExpression expr, P params);
+  R visitQName(QNameExpression expr, P params);
   R visitTypeConstructor(TypeConstructorExpression expr, P params);
   R visitTypeDestructor(TypeDestructorExpression expr, P params);
   R visitArray(ArrayExpression expr, P params);

@@ -1,6 +1,7 @@
 package org.arend.extImpl;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.definition.*;
@@ -394,6 +395,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.LetExpression(myData, isHave, isStrict, cClauses, (Concrete.Expression) expression);
   }
 
+  @Override
+  public @NotNull ConcreteExpression boxExpr(@NotNull ConcreteExpression expression) {
+    if (!(expression instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.BoxExpression(myData, (Concrete.Expression) expression);
+  }
+
   @NotNull
   @Override
   public ConcreteExpression number(@NotNull BigInteger number) {
@@ -409,6 +418,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @Override
   public @NotNull ConcreteExpression string(@NotNull String s) {
     return new Concrete.StringLiteral(myData, s);
+  }
+
+  @Override
+  public @NotNull ConcreteExpression qName(@NotNull ArendRef ref) {
+    if (!(ref instanceof Referable)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.QNameLiteral(myData, new Concrete.ReferenceExpression(myData, (Referable) ref));
   }
 
   @NotNull
@@ -894,6 +911,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     return new Concrete.MaxLevelExpression(myData, (Concrete.LevelExpression) level1, (Concrete.LevelExpression) level2);
+  }
+
+  @Override
+  public @NotNull ConcreteLevel varLevel(@NotNull ArendRef ref, boolean isPLevel) {
+    if (!(ref instanceof Referable)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.VarLevelExpression(myData, (Referable) ref, isPLevel ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL);
   }
 
   @NotNull

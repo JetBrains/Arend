@@ -63,6 +63,7 @@ public class Prelude implements ArendPrelude {
   public static Constructor POS, NEG;
 
   public static DataDefinition STRING;
+  public static DataDefinition QNAME;
 
   public static FunctionDefinition COERCE, COERCE2;
 
@@ -136,6 +137,7 @@ public class Prelude implements ArendPrelude {
         NEG = INT.getConstructor("neg");
       }
       case "String" -> STRING = (DataDefinition) definition;
+      case "QName" -> QNAME = (DataDefinition) definition;
       case "I" -> {
         INTERVAL = (DataDefinition) definition;
         INTERVAL.setSort(new Sort(new Level(0), Level.INFINITY));
@@ -260,6 +262,7 @@ public class Prelude implements ArendPrelude {
     consumer.accept(POS);
     consumer.accept(NEG);
     consumer.accept(STRING);
+    consumer.accept(QNAME);
     consumer.accept(INTERVAL);
     consumer.accept(LEFT);
     consumer.accept(RIGHT);
@@ -400,6 +403,11 @@ public class Prelude implements ArendPrelude {
   @Override
   public CoreDataDefinition getString() {
     return STRING;
+  }
+
+  @Override
+  public CoreDataDefinition getQName() {
+    return QNAME;
   }
 
   @Override

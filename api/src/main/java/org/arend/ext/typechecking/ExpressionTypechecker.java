@@ -323,6 +323,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable TypedExpression checkNumber(@NotNull BigInteger number, @Nullable CoreExpression expectedType, @NotNull ConcreteExpression marker);
 
   /**
+   * Typechecks a string.
+   */
+  @Nullable TypedExpression checkString(@NotNull String string, @Nullable CoreExpression expectedType, @NotNull ConcreteExpression marker);
+
+  /**
    * Checks if the type-checking was cancelled.
    * Should be invoked often during heavy computations.
    */

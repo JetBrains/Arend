@@ -103,8 +103,7 @@ public class SearchConcreteVisitor<P,R> implements ConcreteExpressionVisitor<P,R
       if (result != null) return result;
     }
 
-    if (pattern instanceof Concrete.NamePattern) {
-      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+    if (pattern instanceof Concrete.NamePattern namePattern) {
       return namePattern.type != null ? namePattern.type.accept(this, params) : null;
     }
     if (pattern instanceof Concrete.ConstructorPattern) {
@@ -215,6 +214,11 @@ public class SearchConcreteVisitor<P,R> implements ConcreteExpressionVisitor<P,R
   }
 
   @Override
+  public R visitQNameLiteral(Concrete.QNameLiteral expr, P params) {
+    return null;
+  }
+
+  @Override
   public R visitTyped(Concrete.TypedExpression expr, P params) {
     R result = expr.expression.accept(this, params);
     return result != null ? result : expr.type.accept(this, params);
@@ -244,8 +248,7 @@ public class SearchConcreteVisitor<P,R> implements ConcreteExpressionVisitor<P,R
 
   protected R visitClassElements(List<? extends Concrete.ClassElement> elements, P params) {
     for (Concrete.ClassElement element : elements) {
-      if (element instanceof Concrete.ClassField) {
-        Concrete.ClassField field = (Concrete.ClassField) element;
+      if (element instanceof Concrete.ClassField field) {
         R result = visitParameters(field.getParameters(), params);
         if (result != null) return null;
         result = field.getResultType().accept(this, params);
@@ -256,8 +259,7 @@ public class SearchConcreteVisitor<P,R> implements ConcreteExpressionVisitor<P,R
         }
       } else if (element instanceof Concrete.ClassFieldImpl) {
         return visitClassFieldImpl((Concrete.ClassFieldImpl) element, params);
-      } else if (element instanceof Concrete.OverriddenField) {
-        Concrete.OverriddenField field = (Concrete.OverriddenField) element;
+      } else if (element instanceof Concrete.OverriddenField field) {
         R result = visitParameters(field.getParameters(), params);
         if (result != null) return null;
         result = field.getResultType().accept(this, params);

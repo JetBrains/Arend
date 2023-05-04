@@ -980,6 +980,30 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
+  public Concrete.Expression visitQNameLiteral(Concrete.QNameLiteral expr, Void params) {
+    Concrete.ReferenceExpression refExpr = expr.getReferenceExpression();
+    Referable origRef = refExpr.getReferent();
+    while (origRef instanceof RedirectingReferable) {
+      origRef = ((RedirectingReferable) origRef).getOriginalReferable();
+    }
+
+    if (origRef instanceof UnresolvedReference) {
+      refExpr.setReferent(origRef);
+      List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
+      resolve(refExpr, myScope, false, resolvedList);
+      if (refExpr.getReferent() instanceof ErrorReference) {
+        myErrorReporter.report(((ErrorReference) refExpr.getReferent()).getError());
+      }
+      convertExpr(refExpr);
+      if (myResolverListener != null) {
+        myResolverListener.referenceResolved(null, origRef, refExpr, resolvedList, myScope);
+      }
+    }
+
+    return expr;
+  }
+
+  @Override
   public Concrete.LevelExpression visitInf(Concrete.InfLevelExpression expr, LevelVariable param) {
     return expr;
   }

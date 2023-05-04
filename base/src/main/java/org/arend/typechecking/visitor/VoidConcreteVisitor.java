@@ -333,6 +333,11 @@ public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>
   }
 
   @Override
+  public Void visitQNameLiteral(Concrete.QNameLiteral expr, P params) {
+    return null;
+  }
+
+  @Override
   public Void visitTyped(Concrete.TypedExpression expr, P params) {
     expr.expression.accept(this, params);
     expr.type.accept(this, params);

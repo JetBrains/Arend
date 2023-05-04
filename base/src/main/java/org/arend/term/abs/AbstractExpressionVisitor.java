@@ -27,5 +27,6 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitLet(@Nullable Object data, boolean isHave, boolean isStrict, @NotNull Collection<? extends Abstract.LetClause> clauses, /* @NotNull */ @Nullable Abstract.Expression expression, P params);
   R visitNumericLiteral(@Nullable Object data, @NotNull BigInteger number, P params);
   R visitStringLiteral(@Nullable Object data, @NotNull String unescapedString, P params);
+  R visitQName(@Nullable Object data, @Nullable Object refData, /* @NotNull */ @Nullable Referable reference, P params);
   R visitTyped(@Nullable Object data, @NotNull Abstract.Expression expr, @NotNull Abstract.Expression type, P params);
 }

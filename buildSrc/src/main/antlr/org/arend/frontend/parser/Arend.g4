@@ -275,6 +275,7 @@ literal : longName ('.' (INFIX | POSTFIX))? # name
         | '_'                               # unknown
         | INFIX                             # infix
         | POSTFIX                           # postfix
+        | '``' longName                     # qName
         | '{?' ID? ('(' expr? ')')? '}'     # goal
         ;
 

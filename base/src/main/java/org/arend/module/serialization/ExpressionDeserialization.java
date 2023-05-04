@@ -329,6 +329,7 @@ class ExpressionDeserialization {
       case SMALL_INTEGER -> readSmallInteger(proto.getSmallInteger());
       case BIG_INTEGER -> readBigInteger(proto.getBigInteger());
       case STRING -> readString(proto.getString());
+      case QNAME -> readQName(proto.getQName());
       case PATH -> readPath(proto.getPath());
       case AT -> readAt(proto.getAt());
       default -> throw new DeserializationException("Unknown Expression kind: " + proto.getKindCase());
@@ -575,5 +576,9 @@ class ExpressionDeserialization {
 
   private StringExpression readString(ExpressionProtos.Expression.String proto) {
     return new StringExpression(proto.getValue());
+  }
+
+  private QNameExpression readQName(ExpressionProtos.Expression.QName proto) throws DeserializationException {
+    return new QNameExpression(myCallTargetProvider.getCallTarget(proto.getReference()));
   }
 }

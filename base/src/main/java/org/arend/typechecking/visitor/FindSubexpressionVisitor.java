@@ -217,6 +217,15 @@ public class FindSubexpressionVisitor extends SearchVisitor<Void> {
   }
 
   @Override
+  public Boolean visitQName(QNameExpression expr, Void params) {
+    return switch (myFunction.apply(expr)) {
+      case STOP -> true;
+      case SKIP -> false;
+      default -> super.visitQName(expr, params);
+    };
+  }
+
+  @Override
   public Boolean visitTypeConstructor(TypeConstructorExpression expr, Void param) {
     return switch (myFunction.apply(expr)) {
       case STOP -> true;

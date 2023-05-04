@@ -30,6 +30,7 @@ message Expression {
         SmallInteger small_integer = 18;
         BigInteger big_integer = 19;
         String string = 30;
+        QName qName = 31;
         PEval pEval = 20;
         Box box = 29;
         TypeConstructor type_constructor = 27;
@@ -202,6 +203,9 @@ message Expression {
     }
     message String {
         string value = 1;
+    }
+    message QName {
+      int32 reference = 1;
     }
 }
 

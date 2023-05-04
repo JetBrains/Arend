@@ -317,6 +317,11 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
   }
 
   @Override
+  public Expression visitQName(QNameExpression expr, Void params) {
+    return expr;
+  }
+
+  @Override
   public Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     List<Expression> args = new ArrayList<>(expr.getClauseArguments().size());
     for (Expression arg : expr.getClauseArguments()) {

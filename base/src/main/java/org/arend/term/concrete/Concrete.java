@@ -1523,6 +1523,29 @@ public final class Concrete {
     }
   }
 
+  public static class QNameLiteral extends Expression implements ConcreteQNameExpression {
+    private final ReferenceExpression myReference;
+
+    public QNameLiteral(Object data, ReferenceExpression reference) {
+      super(data);
+      myReference = reference;
+    }
+
+    @Override
+    public @NotNull Referable getReference() {
+      return myReference.myReferent;
+    }
+
+    public ReferenceExpression getReferenceExpression() {
+      return myReference;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitQNameLiteral(this, params);
+    }
+  }
+
   // Level expressions
 
   public static abstract class LevelExpression extends SourceNodeImpl implements ConcreteLevel {

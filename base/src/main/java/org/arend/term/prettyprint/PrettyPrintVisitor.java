@@ -1001,6 +1001,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
+  public Void visitQNameLiteral(Concrete.QNameLiteral expr, Precedence params) {
+    myBuilder.append("``").append(expr.getReference());
+    return null;
+  }
+
+  @Override
   public Void visitTyped(Concrete.TypedExpression expr, Precedence prec) {
     if (prec.priority > Concrete.TypedExpression.PREC) myBuilder.append('(');
     printExpr(expr.expression, new Precedence(Concrete.TypedExpression.PREC));

@@ -24,6 +24,7 @@ public interface ArendPrelude {
   CoreConstructor getPos();
   CoreConstructor getNeg();
   CoreDataDefinition getString();
+  CoreDataDefinition getQName();
   CoreFunctionDefinition getCoerce();
   CoreFunctionDefinition getCoerce2();
   CoreDataDefinition getPath();

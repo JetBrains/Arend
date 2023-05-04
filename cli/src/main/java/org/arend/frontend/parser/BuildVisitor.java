@@ -994,6 +994,13 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
+  public Concrete.Expression visitQName(QNameContext ctx) {
+    LongNameContext longName = ctx.longName();
+    Position position = tokenPosition(longName.start);
+    return new Concrete.QNameLiteral(tokenPosition(ctx.start), new Concrete.ReferenceExpression(position, Objects.requireNonNull(LongUnresolvedReference.make(position, visitLongNamePath(longName)))));
+  }
+
+  @Override
   public Concrete.GoalExpression visitGoal(GoalContext ctx) {
     TerminalNode id = ctx.ID();
     ExprContext exprCtx = ctx.expr();

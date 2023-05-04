@@ -25,6 +25,7 @@ public interface CoreExpressionVisitor<P, R> {
   R visitCase(@NotNull CoreCaseExpression expr, P params);
   R visitInteger(@NotNull CoreIntegerExpression expr, P params);
   R visitString(@NotNull CoreStringExpression expr, P params);
+  R visitQName(@NotNull CoreQNameExpression expr, P params);
   R visitTypeConstructor(@NotNull CoreTypeConstructorExpression expr, P params);
   R visitTypeDestructor(@NotNull CoreTypeDestructorExpression expr, P params);
   R visitArray(@NotNull CoreArrayExpression expr, P params);

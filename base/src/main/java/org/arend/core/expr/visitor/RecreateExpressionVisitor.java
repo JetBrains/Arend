@@ -247,6 +247,15 @@ public class RecreateExpressionVisitor extends SubstVisitor {
   }
 
   @Override
+  public Expression visitQName(QNameExpression expr, Void params) {
+    Expression result = UncheckedExpressionImpl.extract(myMapper.map(expr));
+    if (result != null) {
+      return result;
+    }
+    return super.visitQName(expr, params);
+  }
+
+  @Override
   public Expression visitFunCall(FunCallExpression expr, Void params) {
     Expression result = UncheckedExpressionImpl.extract(myMapper.map(expr));
     if (result != null) {

@@ -243,6 +243,11 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
   }
 
   @Override
+  public Void visitQName(QNameExpression expr, P params) {
+    return null;
+  }
+
+  @Override
   public Void visitTypeConstructor(TypeConstructorExpression expr, P params) {
     for (Expression argument : expr.getClauseArguments()) {
       argument.accept(this, params);

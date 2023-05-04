@@ -989,6 +989,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   @Override
+  public Concrete.Expression visitQName(QNameExpression expr, Void params) {
+    return new Concrete.QNameLiteral(null, new Concrete.ReferenceExpression(null, expr.getDefinition().getRef()));
+  }
+
+  @Override
   public Concrete.Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     return convertExpr(expr.getArgument());
   }

@@ -55,9 +55,11 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression classExt(@NotNull ConcreteExpression expression, @NotNull Collection<? extends ConcreteClassElement> elements);
   @NotNull ConcreteExpression newExpr(@NotNull ConcreteExpression expression);
   @NotNull ConcreteExpression letExpr(boolean isHave, boolean isStrict, @NotNull Collection<? extends ConcreteLetClause> clauses, @NotNull ConcreteExpression expression);
+  @NotNull ConcreteExpression boxExpr(@NotNull ConcreteExpression expression);
   @NotNull ConcreteExpression number(@NotNull BigInteger number);
   @NotNull ConcreteExpression number(int number);
   @NotNull ConcreteExpression string(@NotNull String s);
+  @NotNull ConcreteExpression qName(@NotNull ArendRef ref);
   @NotNull ConcreteExpression typed(@NotNull ConcreteExpression expression, @NotNull ConcreteExpression type);
   @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, @NotNull Collection<? extends ConcreteArgument> arguments);
   @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, boolean isExplicit, @NotNull Collection<? extends ConcreteExpression> arguments);
@@ -121,6 +123,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteLevel numLevel(int level);
   @NotNull ConcreteLevel sucLevel(@NotNull ConcreteLevel level);
   @NotNull ConcreteLevel maxLevel(@NotNull ConcreteLevel level1, @NotNull ConcreteLevel level2);
+  @NotNull ConcreteLevel varLevel(@NotNull ArendRef ref, boolean isPLevel);
 
   @NotNull ConcreteFactory copy();
   @NotNull ConcreteFactory withData(@Nullable Object data);

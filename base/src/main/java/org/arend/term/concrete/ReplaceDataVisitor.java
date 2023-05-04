@@ -223,6 +223,11 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
   }
 
   @Override
+  public Concrete.Expression visitQNameLiteral(Concrete.QNameLiteral expr, Void params) {
+    return new Concrete.QNameLiteral(getData(expr), visitReference(expr.getReferenceExpression(), params));
+  }
+
+  @Override
   public Concrete.Expression visitTyped(Concrete.TypedExpression expr, Void params) {
     return new Concrete.TypedExpression(getData(expr), expr.expression.accept(this, null), expr.type.accept(this, null));
   }

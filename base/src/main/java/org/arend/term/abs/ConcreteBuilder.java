@@ -775,6 +775,16 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   }
 
   @Override
+  public Concrete.Expression visitQName(@Nullable Object data, @Nullable Object refData, @Nullable Referable reference, Void params) {
+    if (reference == null) {
+      AbstractExpressionError error = new IncompleteExpressionError(data);
+      myErrorReporter.report(error);
+      return new Concrete.ErrorHoleExpression(data, error);
+    }
+    return new Concrete.QNameLiteral(data, new Concrete.ReferenceExpression(refData, reference));
+  }
+
+  @Override
   public Concrete.Expression visitTyped(@Nullable Object data, @NotNull Abstract.Expression expr, @NotNull Abstract.Expression type, Void params) {
     return new Concrete.TypedExpression(data, expr.accept(this, null), type.accept(this, null));
   }

@@ -3379,6 +3379,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
+  public @Nullable TypedExpression checkString(@NotNull String string, @Nullable CoreExpression expectedType, @NotNull ConcreteExpression marker) {
+    if (!((expectedType == null || expectedType instanceof Expression) && marker instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return checkResult((Expression) expectedType, new TypecheckingResult(new StringExpression(string), ExpressionFactory.String()), (Concrete.Expression) marker);
+  }
+
+  @Override
   public TypecheckingResult visitNumericLiteral(Concrete.NumericLiteral expr, Expression expectedType) {
     BigInteger number = expr.getNumber();
     if (myArendExtension != null) {
@@ -3412,6 +3420,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     return checkResult(expectedType, new TypecheckingResult(new StringExpression(string), ExpressionFactory.String()), expr);
+  }
+
+  @Override
+  public TypecheckingResult visitQNameLiteral(Concrete.QNameLiteral expr, Expression expectedType) {
+    Referable ref = expr.getReference();
+    Definition def = ref instanceof TCDefReferable ? ((TCDefReferable) ref).getTypechecked() : null;
+    if (def == null) {
+      errorReporter.report(new TypecheckingError("Expected a definition", expr));
+      return null;
+    }
+    return checkResult(expectedType, new TypecheckingResult(new QNameExpression(def), ExpressionFactory.QName()), expr);
   }
 
   @Override

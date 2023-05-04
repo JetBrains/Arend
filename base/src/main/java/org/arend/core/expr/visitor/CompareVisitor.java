@@ -2048,6 +2048,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return string2 != null && expr.getString().equals(string2.getString());
   }
 
+  @Override
+  public Boolean visitQName(QNameExpression expr, Expression expr2, Expression type) {
+    QNameExpression qname = expr2.cast(QNameExpression.class);
+    return qname != null && expr.getDefinition().equals(qname.getDefinition());
+  }
+
   private Boolean visitTypeConstructor(TypeConstructorExpression expr1, Expression expr2, boolean correctOrder) {
     TypeConstructorExpression typeCoerce2 = expr2.cast(TypeConstructorExpression.class);
     if (typeCoerce2 == null) {

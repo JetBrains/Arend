@@ -116,6 +116,11 @@ public abstract class BaseCoreExpressionVisitor<P, R> implements CoreExpressionV
   }
 
   @Override
+  public R visitQName(@NotNull CoreQNameExpression expr, P params) {
+    return visit(expr, params);
+  }
+
+  @Override
   public R visitTypeConstructor(@NotNull CoreTypeConstructorExpression expr, P params) {
     return visit(expr, params);
   }

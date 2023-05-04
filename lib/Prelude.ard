@@ -82,6 +82,8 @@
 
 \data String
 
+\data QName
+
 \record DArray {len : Nat} (A : Fin len -> \Type) (\coerce at : \Pi (j : Fin len) -> A j)
   \where \func \infixl 9 !! (a : DArray) (i : Fin a.len) => a.at i
 

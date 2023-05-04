@@ -106,6 +106,11 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
+  public R visitQName(@Nullable Object data, @Nullable Object refData, @Nullable Referable reference, P params) {
+    return defaultValue;
+  }
+
+  @Override
   public R visitTyped(@Nullable Object data, @NotNull Abstract.Expression expr, @NotNull Abstract.Expression type, P params) {
     return defaultValue;
   }

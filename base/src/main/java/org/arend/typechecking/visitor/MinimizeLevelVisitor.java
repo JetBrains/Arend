@@ -157,6 +157,11 @@ public class MinimizeLevelVisitor extends BaseExpressionVisitor<Void, Type> {
   }
 
   @Override
+  public Type visitQName(QNameExpression expr, Void params) {
+    return null;
+  }
+
+  @Override
   public Type visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     return null;
   }

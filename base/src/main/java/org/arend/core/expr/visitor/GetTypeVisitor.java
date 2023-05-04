@@ -394,6 +394,11 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitQName(QNameExpression expr, Void params) {
+    return QName();
+  }
+
+  @Override
   public Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     return expr.getType();
   }

@@ -257,6 +257,11 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
   }
 
   @Override
+  public Result visitQName(QNameExpression expr, Boolean params) {
+    return Result.NONE;
+  }
+
+  @Override
   public Result visitTypeConstructor(TypeConstructorExpression expr, Boolean good) {
     Result result = visitList(expr.getClauseArguments(), good);
     return result != Result.NONE ? result : expr.getArgument().accept(this, good);
