@@ -1311,7 +1311,8 @@ public final class Concrete {
       this.expression = expression;
       this.referable = null;
       this.type = type;
-      isElim = expression.getReferent().isLocalRef() || expression.getReferent() instanceof UnresolvedReference;
+      Referable ref = expression.getReferent();
+      isElim = ref instanceof UnresolvedReference || ref instanceof CoreReferable || ref.isLocalRef();
     }
 
     public CaseArgument(@NotNull ApplyHoleExpression expression, @Nullable Expression type) {
