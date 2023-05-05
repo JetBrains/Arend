@@ -248,6 +248,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return context.get(ref);
   }
 
+  @Override
+  public @Nullable LevelReferable getLevelVariable(int index, boolean isPLevel) {
+    return myLevelContext == null ? null : myLevelContext.get(index, isPLevel ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL);
+  }
+
+  @Override
+  public @NotNull List<? extends ArendRef> getLevelVariables(boolean isPLevel) {
+    return myLevelContext == null ? Collections.emptyList() : myLevelContext.getList(isPLevel ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL);
+  }
+
   @NotNull
   @Override
   public ErrorReporter getErrorReporter() {

@@ -789,10 +789,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   private List<LevelVariable> typecheckLevelParameters(Concrete.ResolvableDefinition def) {
     if (def.getPLevelParameters() == null && def.getHLevelParameters() == null) return null;
     List<LevelVariable> parameters = new ArrayList<>();
-    Map<LevelReferable, ParamLevelVariable> variables = new HashMap<>();
-    boolean isPBased = typecheckLevelParameters(def.getPLevelParameters(), LevelVariable.PVAR, parameters, variables);
-    boolean isHBased = typecheckLevelParameters(def.getHLevelParameters(), LevelVariable.HVAR, parameters, variables);
-    typechecker.setLevelContext(new LevelContext(variables, isPBased, isHBased));
+    Map<LevelReferable, ParamLevelVariable> pVars = new LinkedHashMap<>();
+    Map<LevelReferable, ParamLevelVariable> hVars = new LinkedHashMap<>();
+    boolean isPBased = typecheckLevelParameters(def.getPLevelParameters(), LevelVariable.PVAR, parameters, pVars);
+    boolean isHBased = typecheckLevelParameters(def.getHLevelParameters(), LevelVariable.HVAR, parameters, hVars);
+    typechecker.setLevelContext(new LevelContext(pVars, hVars, isPBased, isHBased));
     return parameters;
   }
 

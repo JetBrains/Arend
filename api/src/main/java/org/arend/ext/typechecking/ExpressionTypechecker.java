@@ -50,6 +50,20 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable CoreBinding getFreeBinding(@NotNull ArendRef ref);
 
   /**
+   * Returns a level variable by its index.
+   *
+   * @param index     the index of the variable
+   * @param isPLevel  {@code true} if the variable has the p-level, {@code false} otherwise
+   * @return          the variable at the given index
+   */
+  @Nullable ArendRef getLevelVariable(int index, boolean isPLevel);
+
+  /**
+   * Returns the list of level variables of the given type.
+   */
+  @NotNull List<? extends ArendRef> getLevelVariables(boolean isPLevel);
+
+  /**
    * All errors that occur during invocation of a meta definition should be reported through the reporter returned by this method.
    */
   @NotNull ErrorReporter getErrorReporter();
