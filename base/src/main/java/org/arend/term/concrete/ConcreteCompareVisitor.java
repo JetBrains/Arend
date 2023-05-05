@@ -180,7 +180,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return level2 instanceof Concrete.MaxLevelExpression max2 && compareLevel(max1.getLeft(), max2.getLeft()) && compareLevel(max1.getRight(), max2.getRight());
     }
     if (level1 instanceof Concrete.VarLevelExpression var1) {
-      return level2 instanceof Concrete.VarLevelExpression var2 && var1.getReferent().equals(var2.getReferent()) && var1.isInference() == var2.isInference() && var1.getLevelType().equals(var2.getLevelType());
+      return level2 instanceof Concrete.VarLevelExpression var2 && var1.getReferent().equals(var2.getReferent()) && var1.isInference() == var2.isInference();
     }
     throw new IllegalStateException();
   }

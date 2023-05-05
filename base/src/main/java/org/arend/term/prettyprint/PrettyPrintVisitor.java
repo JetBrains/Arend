@@ -487,7 +487,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitVar(Concrete.VarLevelExpression expr, Precedence param) {
     myBuilder.append(expr.getReferent().getRefName());
     if (expr.isInference()) {
-      myBuilder.append(getLevelVariableText(expr.getReferent(), expr.getLevelType()));
+      myBuilder.append(expr.getReferent().getRefName());
     }
     return null;
   }

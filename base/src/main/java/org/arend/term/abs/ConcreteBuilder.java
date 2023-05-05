@@ -813,7 +813,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
 
   @Override
   public Concrete.LevelExpression visitId(@Nullable Object data, Referable ref, LevelVariable base) {
-    return new Concrete.VarLevelExpression(data, ref, base.getType());
+    return new Concrete.VarLevelExpression(data, ref);
   }
 
   @Override

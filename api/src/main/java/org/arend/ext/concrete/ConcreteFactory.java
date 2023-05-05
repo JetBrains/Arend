@@ -123,7 +123,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteLevel numLevel(int level);
   @NotNull ConcreteLevel sucLevel(@NotNull ConcreteLevel level);
   @NotNull ConcreteLevel maxLevel(@NotNull ConcreteLevel level1, @NotNull ConcreteLevel level2);
-  @NotNull ConcreteLevel varLevel(@NotNull ArendRef ref, boolean isPLevel);
+  @NotNull ConcreteLevel varLevel(@NotNull ArendRef ref);
 
   @NotNull ConcreteFactory copy();
   @NotNull ConcreteFactory withData(@Nullable Object data);

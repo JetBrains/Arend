@@ -1,7 +1,6 @@
 package org.arend.extImpl;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.definition.*;
@@ -914,11 +913,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   @Override
-  public @NotNull ConcreteLevel varLevel(@NotNull ArendRef ref, boolean isPLevel) {
+  public @NotNull ConcreteLevel varLevel(@NotNull ArendRef ref) {
     if (!(ref instanceof Referable)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.VarLevelExpression(myData, (Referable) ref, isPLevel ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL);
+    return new Concrete.VarLevelExpression(myData, (Referable) ref);
   }
 
   @NotNull

@@ -1031,7 +1031,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       myErrorReporter.report(((ErrorReference) ref).getError());
     }
     Referable convertedRef = convertReferable(ref, expr.getData());
-    Concrete.VarLevelExpression result = new Concrete.VarLevelExpression(expr.getData(), convertedRef, type.getType());
+    Concrete.VarLevelExpression result = new Concrete.VarLevelExpression(expr.getData(), convertedRef);
     if (myResolverListener != null) {
       myResolverListener.levelResolved(expr.getReferent(), result, ref, new ArrayList<>(myScope.getElements(refKind)));
     }

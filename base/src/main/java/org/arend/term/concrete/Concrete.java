@@ -1615,21 +1615,15 @@ public final class Concrete {
   public static class VarLevelExpression extends LevelExpression {
     private Referable myReferent;
     private final boolean myInference;
-    private final LevelVariable.LvlType myLevelType;
 
-    public VarLevelExpression(Object data, Referable referable, boolean isInference, LevelVariable.LvlType levelType) {
+    public VarLevelExpression(Object data, Referable referable, boolean isInference) {
       super(data);
       myReferent = referable;
       myInference = isInference;
-      myLevelType = levelType;
-    }
-
-    public VarLevelExpression(Object data, Referable referable, LevelVariable.LvlType levelType) {
-      this(data, referable, false, levelType);
     }
 
     public VarLevelExpression(Object data, Referable referable) {
-      this(data, referable, LevelVariable.LvlType.PLVL);
+      this(data, referable, false);
     }
 
     public Referable getReferent() {
@@ -1642,10 +1636,6 @@ public final class Concrete {
 
     public boolean isInference() {
       return myInference;
-    }
-
-    public LevelVariable.LvlType getLevelType() {
-      return myLevelType;
     }
 
     @Override

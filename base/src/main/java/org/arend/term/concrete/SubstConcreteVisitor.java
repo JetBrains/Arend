@@ -352,7 +352,7 @@ public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> im
   @Override
   public Concrete.LevelExpression visitVar(Concrete.VarLevelExpression expr, Void param) {
     Concrete.LevelExpression result = myLevelSubstitution.get(expr.getReferent());
-    return result != null ? (myData == null ? result : result.accept(new SubstConcreteVisitor(myData), null)) : (myData == null ? expr : new Concrete.VarLevelExpression(myData, expr.getReferent(), expr.isInference(), expr.getLevelType()));
+    return result != null ? (myData == null ? result : result.accept(new SubstConcreteVisitor(myData), null)) : (myData == null ? expr : new Concrete.VarLevelExpression(myData, expr.getReferent(), expr.isInference()));
   }
 
   @Override

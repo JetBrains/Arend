@@ -2056,9 +2056,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return new Level(base);
     }
     ParamLevelVariable var = myLevelContext != null && expr.getReferent() instanceof LevelReferable ? myLevelContext.getVariable((LevelReferable) expr.getReferent()) : null;
-    if (var == null) {
-      if (checkUnresolved(expr.getReferent(), expr)) {
-        errorReporter.report(new IncorrectReferenceError(expr.getReferent(), expr));
+    if (var == null || var.getType() != base.getType()) {
+      if (var == null) {
+        if (checkUnresolved(expr.getReferent(), expr)) {
+          errorReporter.report(new IncorrectReferenceError(expr.getReferent(), expr));
+        }
+      } else {
+        errorReporter.report(new IncorrectLevelTypeError(expr.getReferent(), base.getType(), expr));
       }
       return new Level(base);
     }
