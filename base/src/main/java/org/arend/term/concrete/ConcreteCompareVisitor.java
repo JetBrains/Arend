@@ -180,7 +180,9 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return level2 instanceof Concrete.MaxLevelExpression max2 && compareLevel(max1.getLeft(), max2.getLeft()) && compareLevel(max1.getRight(), max2.getRight());
     }
     if (level1 instanceof Concrete.VarLevelExpression var1) {
-      return level2 instanceof Concrete.VarLevelExpression var2 && var1.getReferent().equals(var2.getReferent()) && var1.isInference() == var2.isInference() && var1.getLevelType().equals(var2.getLevelType());
+      Referable ref = mySubstitution.get(var1.getReferent());
+      if (ref == null) ref = var1.getReferent();
+      return level2 instanceof Concrete.VarLevelExpression var2 && ref.equals(var2.getReferent()) && var1.isInference() == var2.isInference() && var1.getLevelType().equals(var2.getLevelType());
     }
     throw new IllegalStateException();
   }
@@ -511,6 +513,20 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return false;
   }
 
+  private boolean compareLevelParameters(Concrete.LevelParameters params1, Concrete.LevelParameters params2) {
+    if ((params1 == null) != (params2 == null)) return false;
+    if (params1 == null) return true;
+    if (params1.isIncreasing != params2.isIncreasing || params1.referables.size() != params2.referables.size()) return false;
+    for (int i = 0; i < params1.referables.size(); i++) {
+      mySubstitution.put(params1.referables.get(i), params2.referables.get(i));
+    }
+    return true;
+  }
+
+  private boolean compareLevelParameters(Concrete.ResolvableDefinition def1, Concrete.ResolvableDefinition def2) {
+    return compareLevelParameters(def1.pLevelParameters, def2.pLevelParameters) && compareLevelParameters(def1.hLevelParameters, def2.hLevelParameters);
+  }
+
   @Override
   public Boolean visitFunction(Concrete.BaseFunctionDefinition def, Concrete.Definition def2) {
     if (!(def2 instanceof Concrete.BaseFunctionDefinition fun2)) {
@@ -522,7 +538,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     if (def.getKind() != fun2.getKind()) {
       return false;
     }
-    if (!compareParameters(def.getParameters(), fun2.getParameters())) {
+    if (!compareLevelParameters(def, def2) || !compareParameters(def.getParameters(), fun2.getParameters())) {
       return false;
     }
     if ((def.getResultType() != null || fun2.getResultType() != null) && (def.getResultType() == null || fun2.getResultType() == null || !compare(def.getResultType(), fun2.getResultType()))) {
@@ -554,7 +570,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
     mySubstitution.put(def.getData(), data2.getData());
 
-    if (!(compareParameters(def.getParameters(), data2.getParameters()) && (def.getUniverse() == data2.getUniverse() || visitUniverse(def.getUniverse(), data2.getUniverse())))) {
+    if (!(compareLevelParameters(def, def2) && compareParameters(def.getParameters(), data2.getParameters()) && (def.getUniverse() == data2.getUniverse() || visitUniverse(def.getUniverse(), data2.getUniverse())))) {
       return false;
     }
     List<Concrete.ReferenceExpression> elimRefs1 = def.getEliminatedReferences();
@@ -620,7 +636,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
     mySubstitution.put(def.getData(), class2.getData());
 
-    if (!compareExpressionList(def.getSuperClasses(), class2.getSuperClasses())) {
+    if (!compareLevelParameters(def, def2) || !compareExpressionList(def.getSuperClasses(), class2.getSuperClasses())) {
       return false;
     }
     if (def.getElements().size() != class2.getElements().size()) {
