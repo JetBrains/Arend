@@ -46,7 +46,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -178,11 +177,21 @@ public abstract class BaseCliFrontend {
       stopTimer(definition);
     }
 
+    private boolean noParent(LocatedReferable ref) {
+      LocatedReferable parent = ref == null ? null : ref.getLocatedReferableParent();
+      return parent == null || parent instanceof ModuleReferable;
+    }
+
+    private boolean isDynamic(ConcreteLocatedReferable ref) {
+      Concrete.ReferableDefinition def = ref.getDefinition();
+      return def instanceof Concrete.Definition && ((Concrete.Definition) def).enclosingClass == ref.getLocatedReferableParent();
+    }
+
     private void handleDef(Definition definition) {
       flushErrors();
 
-      LocatedReferable parent = definition.getRef().getLocatedReferableParent();
-      if (parent == null || parent instanceof ModuleReferable) {
+      LocatedReferable ref = definition.getRef();
+      if (noParent(ref) || ref instanceof ConcreteLocatedReferable && isDynamic((ConcreteLocatedReferable) ref) && noParent(ref.getLocatedReferableParent())) {
         total++;
         if (definition.status().hasErrors()) {
           failed++;
@@ -190,7 +199,6 @@ public abstract class BaseCliFrontend {
       }
 
       if (myPrintModule != null) {
-        TCDefReferable ref = definition.getRef();
         ModuleLocation location = ref.getLocation();
         if (location != null && location.getModulePath().equals(myPrintModule) && (myPrintDefinition == null || myPrintDefinition.equals(ref.getRefLongName()))) {
           myPrintDefinitions.add(definition);
@@ -320,15 +328,9 @@ public abstract class BaseCliFrontend {
     boolean recompile = recompileString == null && cmdLine.hasOption("r");
     if (cmdLine.hasOption("i")) {
       switch (replKind.toLowerCase()) {
-        default:
-          System.err.println("[ERROR] Unrecognized repl type: " + replKind);
-          break;
-        case "plain":
-          PlainCliRepl.launch(recompile, libDirs);
-          break;
-        case "jline":
-          JLineCliRepl.launch(recompile, libDirs);
-          break;
+        case "plain" -> PlainCliRepl.launch(recompile, libDirs);
+        case "jline" -> JLineCliRepl.launch(recompile, libDirs);
+        default -> System.err.println("[ERROR] Unrecognized repl type: " + replKind);
       }
       return null;
     }
@@ -694,13 +696,10 @@ public abstract class BaseCliFrontend {
     if (result == null) {
       return ' ';
     }
-    switch (result) {
-      case GOAL:
-        return '\u25ef';
-      case ERROR:
-        return '\u2717';
-      default:
-        return '\u00b7';
-    }
+    return switch (result) {
+      case GOAL -> '◯';
+      case ERROR -> '✗';
+      default -> '·';
+    };
   }
 }

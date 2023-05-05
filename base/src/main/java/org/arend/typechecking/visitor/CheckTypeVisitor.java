@@ -249,6 +249,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
+  public @Nullable ArendRef getThisReference() {
+    for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
+      if (entry.getKey() instanceof ThisLocalReferable) {
+        return entry.getKey();
+      }
+    }
+    return null;
+  }
+
+  @Override
   public @Nullable LevelReferable getLevelVariable(int index, boolean isPLevel) {
     return myLevelContext == null ? null : myLevelContext.get(index, isPLevel ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL);
   }
@@ -1968,6 +1978,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (expectedType instanceof DataCallExpression && ((DataCallExpression) expectedType).getDefinition() == Prelude.FIN) {
         return checkResult(expectedType, new TypecheckingResult(new SmallIntegerExpression(0), DataCallExpression.make(Prelude.FIN, Levels.EMPTY, new SingletonList<>(new SmallIntegerExpression(1)))), expr);
       }
+    }
+
+    if (expr.getReferent() instanceof ThisLocalReferable) {
+      errorReporter.report(new TypecheckingError("A reference to \\this variable", expr));
+      return null;
     }
 
     TResult result = visitReference(expr);

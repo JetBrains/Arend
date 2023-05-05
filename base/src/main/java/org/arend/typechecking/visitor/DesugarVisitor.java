@@ -91,7 +91,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       Definition enclosingClass = def.enclosingClass.getTypechecked();
       List<CoreClassDefinition> superClasses = enclosingClass instanceof ClassDefinition ? Collections.singletonList((CoreClassDefinition) enclosingClass) : Collections.emptyList();
 
-      Referable thisParameter = new HiddenLocalReferable("this");
+      Referable thisParameter = new ThisLocalReferable();
       def.accept(new ClassFieldChecker(thisParameter, def.getRecursiveDefinitions(), def.enclosingClass, superClasses, fields, null, myErrorReporter), null);
       return thisParameter;
     } else {
@@ -181,7 +181,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     for (int i = 0; i < classFields.size(); i++) {
       Concrete.ClassField classField = classFields.get(i);
       Concrete.Expression fieldType = classField.getResultType();
-      Referable thisParameter = new HiddenLocalReferable("this");
+      Referable thisParameter = new ThisLocalReferable();
       classFieldChecker.setThisParameter(thisParameter);
       if (fieldType == previousType && classField.getParameters().isEmpty()) {
         classField.getParameters().addAll(classFields.get(i - 1).getParameters());
@@ -206,11 +206,11 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     for (Concrete.ClassElement element : def.getElements()) {
       if (element instanceof Concrete.ClassFieldImpl && !(element instanceof Concrete.CoClauseFunctionReference)) {
         Concrete.Expression impl = ((Concrete.ClassFieldImpl) element).implementation;
-        Referable thisParameter = new HiddenLocalReferable("this");
+        Referable thisParameter = new ThisLocalReferable();
         classFieldChecker.setThisParameter(thisParameter);
         ((Concrete.ClassFieldImpl) element).implementation = new Concrete.LamExpression(impl.getData(), Collections.singletonList(new Concrete.TelescopeParameter(impl.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(impl.getData(), def.getData()), false)), impl.accept(classFieldChecker, null));
       } else if (element instanceof Concrete.OverriddenField field) {
-        Referable thisParameter = new HiddenLocalReferable("this");
+        Referable thisParameter = new ThisLocalReferable();
         classFieldChecker.setThisParameter(thisParameter);
         classFieldChecker.visitParameters(field.getParameters(), null);
         field.getParameters().add(0, new Concrete.TelescopeParameter(field.getResultType().getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(field.getResultType().getData(), def.getData()), false));

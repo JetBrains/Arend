@@ -50,6 +50,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable CoreBinding getFreeBinding(@NotNull ArendRef ref);
 
   /**
+   * Returns a reference to \this parameter.
+   */
+  @Nullable ArendRef getThisReference();
+
+  /**
    * Returns a level variable by its index.
    *
    * @param index     the index of the variable

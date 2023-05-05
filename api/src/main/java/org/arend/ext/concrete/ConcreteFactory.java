@@ -29,7 +29,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr);
   @NotNull ConcreteExpression abstracted(@NotNull AbstractedExpression expr, @NotNull List<? extends ConcreteExpression> arguments);
   @NotNull ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta);
-  @NotNull ConcreteExpression thisExpr();
+  @NotNull ConcreteExpression thisExpr(@Nullable ArendRef ref);
   @NotNull ConcreteExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body);
   @NotNull ConcreteExpression pi(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression codomain);
   @NotNull ConcreteExpression arr(@NotNull ConcreteExpression domain, @NotNull ConcreteExpression codomain);
