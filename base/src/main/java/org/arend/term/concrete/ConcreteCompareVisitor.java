@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concrete.Expression, Boolean>, ConcreteDefinitionVisitor<Concrete.Definition, Boolean> {
+public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concrete.Expression, Boolean>, ConcreteResolvableDefinitionVisitor<Concrete.ResolvableDefinition, Boolean> {
   private final Map<Referable, Referable> mySubstitution = new HashMap<>();
 
   public boolean compare(Concrete.Expression expr1, Concrete.Expression expr2) {
@@ -533,7 +533,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   @Override
-  public Boolean visitFunction(Concrete.BaseFunctionDefinition def, Concrete.Definition def2) {
+  public Boolean visitFunction(Concrete.BaseFunctionDefinition def, Concrete.ResolvableDefinition def2) {
     if (!(def2 instanceof Concrete.BaseFunctionDefinition fun2)) {
       return false;
     }
@@ -568,7 +568,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   @Override
-  public Boolean visitData(Concrete.DataDefinition def, Concrete.Definition def2) {
+  public Boolean visitData(Concrete.DataDefinition def, Concrete.ResolvableDefinition def2) {
     if (!(def2 instanceof Concrete.DataDefinition data2)) {
       return false;
     }
@@ -634,7 +634,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   @Override
-  public Boolean visitClass(Concrete.ClassDefinition def, Concrete.Definition def2) {
+  public Boolean visitClass(Concrete.ClassDefinition def, Concrete.ResolvableDefinition def2) {
     if (!(def2 instanceof Concrete.ClassDefinition class2)) {
       return false;
     }
@@ -686,5 +686,10 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     boolean result = field1.isExplicit() == field2.isExplicit() && compareParameters(field1.getParameters(), field2.getParameters()) && compare(field1.getResultType(), field2.getResultType()) && compare(field1.getResultTypeLevel(), field2.getResultTypeLevel());
     freeParameters(field1.getParameters());
     return result;
+  }
+
+  @Override
+  public Boolean visitMeta(DefinableMetaDefinition def, Concrete.ResolvableDefinition def2) {
+    return def2 instanceof DefinableMetaDefinition meta2 && compareParameters(def.getParameters(), meta2.getParameters()) && (def.body == null) == (meta2.body == null) && (def.body == null || def.body.accept(this, meta2.body));
   }
 }
