@@ -570,7 +570,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
     mySubstitution.put(def.getData(), data2.getData());
 
-    if (!(compareLevelParameters(def, def2) && compareParameters(def.getParameters(), data2.getParameters()) && (def.getUniverse() == data2.getUniverse() || visitUniverse(def.getUniverse(), data2.getUniverse())))) {
+    if (!(compareLevelParameters(def, def2) && compareParameters(def.getParameters(), data2.getParameters()) && ((def.getUniverse() == null) == (data2.getUniverse() == null)) && (def.getUniverse() == null || visitUniverse(def.getUniverse(), data2.getUniverse())))) {
       return false;
     }
     List<Concrete.ReferenceExpression> elimRefs1 = def.getEliminatedReferences();
