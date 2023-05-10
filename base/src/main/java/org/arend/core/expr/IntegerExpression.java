@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 public abstract class IntegerExpression extends Expression implements CoreIntegerExpression {
   public abstract int getSmallInteger();
 
+  public abstract Integer getSmallIntegerOrNull();
+
   public abstract IntegerExpression suc();
 
   @Override

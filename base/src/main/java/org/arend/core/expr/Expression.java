@@ -634,4 +634,46 @@ public abstract class Expression implements Body, CoreExpression {
   public @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments() {
     return null;
   }
+
+  @Override
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return null;
+  }
+
+  @Override
+  public @Nullable List<? extends CoreExpression> getArrayElements() {
+    Expression expr = normalize(NormalizationMode.WHNF);
+    if (expr instanceof ArrayExpression array) {
+      if (array.getTail() == null) {
+        return array.getElements();
+      }
+      return null;
+    }
+
+    ClassCallExpression classCall = expr.getType().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+    if (classCall == null || classCall.getDefinition() != Prelude.DEP_ARRAY) {
+      return null;
+    }
+
+    Expression length = classCall.getImplementationHere(Prelude.ARRAY_LENGTH, expr);
+    if (!(length instanceof IntegerExpression intExpr)) {
+      return null;
+    }
+
+    Integer len = intExpr.getSmallIntegerOrNull();
+    if (len == null) {
+      return null;
+    }
+
+    Expression at = classCall.getImplementationHere(Prelude.ARRAY_AT, expr);
+    if (at == null) {
+      return null;
+    }
+
+    List<Expression> result = new ArrayList<>();
+    for (int i = 0; i < len; i++) {
+      result.add(AppExpression.make(at, new SmallIntegerExpression(i), true));
+    }
+    return result;
+  }
 }

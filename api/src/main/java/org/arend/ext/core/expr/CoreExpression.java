@@ -156,4 +156,9 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
    * @return true if the expression is boxed, false otherwise.
    */
   boolean isBoxed();
+
+  /**
+   * If this expression is an array of constant length, returns the list of its elements. Otherwise, returns {@code null}.
+   */
+  @Nullable List<? extends CoreExpression> getArrayElements();
 }

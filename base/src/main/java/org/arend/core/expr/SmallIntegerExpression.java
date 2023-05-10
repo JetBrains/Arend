@@ -35,6 +35,11 @@ public class SmallIntegerExpression extends IntegerExpression {
   }
 
   @Override
+  public Integer getSmallIntegerOrNull() {
+    return myInteger;
+  }
+
+  @Override
   public IntegerExpression suc() {
     if (myInteger < 0) {
       return new SmallIntegerExpression(myInteger + 1);

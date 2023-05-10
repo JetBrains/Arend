@@ -29,6 +29,15 @@ public class BigIntegerExpression extends IntegerExpression {
   }
 
   @Override
+  public Integer getSmallIntegerOrNull() {
+    try {
+      return myInteger.intValueExact();
+    } catch (ArithmeticException e) {
+      return null;
+    }
+  }
+
+  @Override
   public BigIntegerExpression suc() {
     return new BigIntegerExpression(myInteger.add(BigInteger.ONE));
   }
