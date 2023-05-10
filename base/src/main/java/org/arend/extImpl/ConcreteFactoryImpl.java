@@ -97,7 +97,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression thisExpr(@Nullable ArendRef ref) {
-    if (!(ref instanceof Referable)) {
+    if (!(ref instanceof Referable || ref == null)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.ThisExpression(myData, (Referable) ref);
