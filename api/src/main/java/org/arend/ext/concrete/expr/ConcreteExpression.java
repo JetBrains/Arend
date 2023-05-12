@@ -23,4 +23,6 @@ public interface ConcreteExpression extends ConcreteSourceNode {
    * Performs a substitution.
    */
   @NotNull ConcreteExpression substitute(@NotNull Map<ArendRef, ConcreteExpression> substitution);
+
+  <P, R> R accept(@NotNull ConcreteVisitor<? super P, ? extends R> visitor, P params);
 }

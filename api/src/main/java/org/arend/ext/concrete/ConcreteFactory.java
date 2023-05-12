@@ -2,6 +2,7 @@ package org.arend.ext.concrete;
 
 import org.arend.ext.concrete.definition.*;
 import org.arend.ext.concrete.expr.*;
+import org.arend.ext.concrete.level.ConcreteLevel;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.AbstractedExpression;

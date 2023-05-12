@@ -1,7 +1,7 @@
 package org.arend.ext.concrete.expr;
 
 import org.arend.ext.reference.ArendRef;
-import org.arend.ext.concrete.ConcreteLevel;
+import org.arend.ext.concrete.level.ConcreteLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
