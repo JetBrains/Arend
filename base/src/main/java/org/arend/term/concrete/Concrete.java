@@ -6,10 +6,7 @@ import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.definition.*;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.level.*;
-import org.arend.ext.concrete.pattern.ConcreteConstructorPattern;
-import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
-import org.arend.ext.concrete.pattern.ConcretePattern;
-import org.arend.ext.concrete.pattern.ConcreteReferencePattern;
+import org.arend.ext.concrete.pattern.*;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
@@ -915,6 +912,11 @@ public final class Concrete {
       return implementation;
     }
 
+    @Override
+    public @Nullable ArendRef getClassReference() {
+      return classRef;
+    }
+
     public List<ClassFieldImpl> getSubCoclauseList() {
       return mySubCoclauses == null ? Collections.emptyList() : mySubCoclauses.getCoclauseList();
     }
@@ -943,6 +945,7 @@ public final class Concrete {
       this.expression = expression;
     }
 
+    @Override
     @NotNull
     public Expression getExpression() {
       return expression;
@@ -1144,20 +1147,24 @@ public final class Concrete {
       return myPattern.getData();
     }
 
-    public Pattern getPattern() {
+    @Override
+    public @NotNull Pattern getPattern() {
       return myPattern;
     }
 
+    @Override
     @NotNull
     public Expression getTerm() {
       return term;
     }
 
+    @Override
     @NotNull
     public List<Parameter> getParameters() {
       return myParameters;
     }
 
+    @Override
     public Expression getResultType() {
       return resultType;
     }
@@ -1353,11 +1360,13 @@ public final class Concrete {
       myField = field;
     }
 
+    @Override
     @NotNull
     public Expression getExpression() {
       return expression;
     }
 
+    @Override
     public int getField() {
       return myField;
     }
@@ -1510,11 +1519,13 @@ public final class Concrete {
       myExpression = expression;
     }
 
+    @Override
     public boolean isPEval() {
       return myPEVal;
     }
 
-    public Expression getExpression() {
+    @Override
+    public @NotNull Expression getExpression() {
       return myExpression;
     }
 
@@ -1542,7 +1553,8 @@ public final class Concrete {
       myExpression = expression;
     }
 
-    public Expression getExpression() {
+    @Override
+    public @NotNull Expression getExpression() {
       return myExpression;
     }
 
@@ -3062,6 +3074,11 @@ public final class Concrete {
       return myReferable;
     }
 
+    @Override
+    public @Nullable ConcreteExpression getType() {
+      return type;
+    }
+
     @Nullable
     public Referable getReferable() {
       return myReferable;
@@ -3199,7 +3216,7 @@ public final class Concrete {
     }
   }
 
-  public static class TuplePattern extends Pattern {
+  public static class TuplePattern extends Pattern implements ConcreteTuplePattern {
     private final List<Pattern> myPatterns;
 
     public TuplePattern(Object data, List<Pattern> patterns, TypedReferable asReferable) {
