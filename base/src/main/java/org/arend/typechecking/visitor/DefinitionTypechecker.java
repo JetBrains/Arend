@@ -1219,7 +1219,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     List<Concrete.Argument> arguments = new ArrayList<>();
     for (Concrete.Parameter parameter : def.getParameters()) {
       for (Referable referable : parameter.getReferableList()) {
-        arguments.add(new Concrete.Argument(new Concrete.ReferenceExpression(def.getData(), referable), false));
+        arguments.add(new Concrete.Argument(referable instanceof ThisLocalReferable ? new Concrete.ThisExpression(def.getData(), referable) : new Concrete.ReferenceExpression(def.getData(), referable), false));
       }
     }
 
