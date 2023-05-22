@@ -76,7 +76,7 @@ public class ModuleSerialization {
   }
 
   private boolean doSave(Definition def) {
-    return def == null || def.status().withoutErrors() && def.getGoals().isEmpty();
+    return def == null || def.status().withoutErrors();
   }
 
   private ModuleProtos.Group writeGroup(Group group, ReferableConverter referableConverter) {
@@ -90,7 +90,7 @@ public class ModuleSerialization {
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
     Definition typechecked = tcReferable instanceof TCDefReferable ? ((TCDefReferable) tcReferable).getTypechecked() : null;
-    boolean save = typechecked != null && doSave(typechecked);
+    boolean save = typechecked != null && typechecked.status().withoutErrors() && typechecked.getGoals().isEmpty();
     if (save && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
