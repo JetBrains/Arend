@@ -361,7 +361,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     if (!(expr2 instanceof Concrete.CaseExpression case2)) {
       return false;
     }
-    if (expr1.getArguments().size() != case2.getArguments().size()) {
+    if (expr1.isSCase() != case2.isSCase() || expr1.getArguments().size() != case2.getArguments().size()) {
       return false;
     }
     for (int i = 0; i < expr1.getArguments().size(); i++) {
