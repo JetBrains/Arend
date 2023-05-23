@@ -42,8 +42,8 @@ public class SimpleCallTargetProvider implements CallTargetProvider {
   }
 
   public void putCallTarget(int index, TCReferable callTarget) throws DeserializationException {
-    if (!(callTarget instanceof MetaReferable || callTarget instanceof LevelReferable || callTarget instanceof TCDefReferable && ((TCDefReferable) callTarget).getTypechecked() != null)) {
-      throw new DeserializationException("Definition '" + callTarget.getRefName() + "' was not typechecked");
+    if (!(callTarget instanceof LevelReferable || callTarget instanceof TCDefReferable)) {
+      throw new DeserializationException("Unknown definition type");
     }
     myMap.putIfAbsent(index, callTarget);
   }

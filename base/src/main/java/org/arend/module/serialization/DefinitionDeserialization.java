@@ -274,7 +274,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
     if (protos.isEmpty()) return Collections.emptyList();
     List<Pair<TCDefReferable,Integer>> result = new ArrayList<>();
     for (DefinitionProtos.Definition.ParameterOriginalDef proto : protos) {
-      result.add(new Pair<>(myCallTargetProvider.getCallTarget(proto.getDefinition()).getRef(), proto.getIndex()));
+      result.add(new Pair<>((TCDefReferable) myCallTargetProvider.getRef(proto.getDefinition()), proto.getIndex()));
     }
     return result;
   }
