@@ -5,7 +5,7 @@ import org.arend.ext.util.Pair;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.renamer.Renamer;
-import org.arend.term.Fixity;
+import org.arend.ext.reference.Fixity;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,7 +45,7 @@ public class ExpressionBinOpEngine implements BinOpEngine<Concrete.Expression> {
     return "expression";
   }
 
-  public static @NotNull Concrete.Expression parse(@NotNull Concrete.BinOpSequenceExpression expression, @NotNull ErrorReporter reporter) {
+  public static @NotNull Concrete.Expression parse(@NotNull Concrete.BinOpSequenceExpression expression, @Nullable ErrorReporter reporter) {
     Concrete.BinOpSequenceElem<Concrete.Expression> first = expression.getSequence().get(0);
     if (first.fixity == Fixity.INFIX || first.fixity == Fixity.POSTFIX) {
       LocalReferable firstArg = new LocalReferable(Renamer.UNNAMED);

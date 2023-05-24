@@ -8,7 +8,7 @@ import org.arend.naming.error.PrecedenceError;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
-import org.arend.term.Fixity;
+import org.arend.ext.reference.Fixity;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.PartialComparator;
 
@@ -204,7 +204,7 @@ public class MetaBinOpParser {
             : PartialComparator.Result.LESS;
   }
 
-  public void resetReference(Concrete.BinOpSequenceElem<Concrete.Expression> elem, MetaBinOpParser.ResolvedReference resolvedReference) {
+  public static void resetReference(Concrete.BinOpSequenceElem<Concrete.Expression> elem, MetaBinOpParser.ResolvedReference resolvedReference) {
     if (resolvedReference != null && resolvedReference.originalReference != null) {
       resolvedReference.originalReference.reset();
       elem.setComponent(new Concrete.ReferenceExpression(resolvedReference.refExpr.getData(), resolvedReference.originalReference, resolvedReference.refExpr.getPLevels(), resolvedReference.refExpr.getHLevels()));

@@ -4,7 +4,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.util.Pair;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
-import org.arend.term.Fixity;
+import org.arend.ext.reference.Fixity;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

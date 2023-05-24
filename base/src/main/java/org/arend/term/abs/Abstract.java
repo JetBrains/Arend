@@ -5,7 +5,7 @@ import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
-import org.arend.term.Fixity;
+import org.arend.ext.reference.Fixity;
 import org.arend.term.NamespaceCommand;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

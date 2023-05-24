@@ -1,7 +1,7 @@
 package org.arend.term.abs;
 
 import org.arend.naming.reference.Referable;
-import org.arend.term.Fixity;
+import org.arend.ext.reference.Fixity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

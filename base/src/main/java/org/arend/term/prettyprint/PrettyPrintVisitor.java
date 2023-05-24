@@ -10,7 +10,7 @@ import org.arend.ext.variable.Variable;
 import org.arend.extImpl.AbstractedExpressionImpl;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.MapReferableRenamer;
-import org.arend.term.Fixity;
+import org.arend.ext.reference.Fixity;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.*;
 import org.arend.term.concrete.Concrete.BinOpSequenceElem;
@@ -1144,9 +1144,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }
 
       @Override
-      boolean printSpaceBefore() { return true;}
-
-      @Override
       boolean printSpaceAfter() { return false;}
     };
 
@@ -1502,9 +1499,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       void printLeft(PrettyPrintVisitor pp) {
         l.printLeft(pp);
       }
-
-      @Override
-      boolean printSpaceBefore() { return true; }
 
       @Override
       boolean printSpaceAfter() { return false; }

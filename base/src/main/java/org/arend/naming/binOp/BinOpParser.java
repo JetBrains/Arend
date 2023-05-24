@@ -10,7 +10,7 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.renamer.Renamer;
-import org.arend.term.Fixity;
+import org.arend.ext.reference.Fixity;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,7 +62,7 @@ class BinOpParser<T extends Concrete.SourceNode> {
     if (myStack.isEmpty()) {
       if (!isExplicit) {
         // This should never happen if the binOp expression is correct
-        myErrorReporter.report(new ParsingError("Expected an explicit " + myEngine.getPresentableComponentName(), component));
+        if (myErrorReporter != null) myErrorReporter.report(new ParsingError("Expected an explicit " + myEngine.getPresentableComponentName(), component));
       }
       myStack.add(new StackElem<>(component, null));
       return;
@@ -85,7 +85,7 @@ class BinOpParser<T extends Concrete.SourceNode> {
     while (true) {
       StackElem<T> topElem = myStack.get(myStack.size() - 1);
       if (topElem.precedence != null) {
-        myErrorReporter.report(new NameResolverError("Expected " + myEngine.getPresentableComponentName() + " after an infix operator", topElem.component));
+        if (myErrorReporter != null) myErrorReporter.report(new NameResolverError("Expected " + myEngine.getPresentableComponentName() + " after an infix operator", topElem.component));
         return;
       }
 
@@ -100,7 +100,7 @@ class BinOpParser<T extends Concrete.SourceNode> {
       }
 
       if (!(nextElem.precedence.priority > precedence.priority || nextElem.precedence.associativity == Precedence.Associativity.LEFT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.LEFT_ASSOC))) {
-        myErrorReporter.report(new PrecedenceError(myEngine.getReferable(nextElem.component), nextElem.precedence, myEngine.getReferable(component), precedence, component));
+        if (myErrorReporter != null) myErrorReporter.report(new PrecedenceError(myEngine.getReferable(nextElem.component), nextElem.precedence, myEngine.getReferable(component), precedence, component));
       }
 
       foldTop();
@@ -111,7 +111,7 @@ class BinOpParser<T extends Concrete.SourceNode> {
     StackElem<T> topElem = myStack.remove(myStack.size() - 1);
     if (topElem.precedence != null && myStack.size() > 1) {
       StackElem<T> nextElem = myStack.get(myStack.size() - 2);
-      myErrorReporter.report(new NameResolverError("The operator " + myEngine.getReferable(topElem.component) + " [" + topElem.precedence + "] of a section must have lower precedence than that of the operand, namely " + myEngine.getReferable(nextElem.component) + " [" + nextElem.precedence + "]", topElem.component));
+      if (myErrorReporter != null) myErrorReporter.report(new NameResolverError("The operator " + myEngine.getReferable(topElem.component) + " [" + topElem.precedence + "] of a section must have lower precedence than that of the operand, namely " + myEngine.getReferable(nextElem.component) + " [" + nextElem.precedence + "]", topElem.component));
       topElem = myStack.remove(myStack.size() - 1);
     }
     StackElem<T> midElem = myStack.remove(myStack.size() - 1);

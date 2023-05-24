@@ -21,7 +21,7 @@ import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.util.Pair;
 import org.arend.naming.reference.*;
 import org.arend.ext.concrete.definition.ClassFieldKind;
-import org.arend.term.Fixity;
+import org.arend.ext.reference.Fixity;
 import org.arend.term.abs.Abstract;
 import org.arend.term.group.Statement;
 import org.arend.term.prettyprint.PrettyPrintVisitor;

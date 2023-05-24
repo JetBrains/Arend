@@ -9,11 +9,10 @@ import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
-import org.arend.ext.reference.ArendRef;
-import org.arend.ext.reference.DataContainer;
-import org.arend.ext.reference.ExpressionResolver;
+import org.arend.ext.reference.*;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.extImpl.ContextDataImpl;
+import org.arend.naming.binOp.ExpressionBinOpEngine;
 import org.arend.naming.binOp.MetaBinOpParser;
 import org.arend.naming.binOp.PatternBinOpEngine;
 import org.arend.naming.error.DuplicateNameError;
@@ -25,7 +24,6 @@ import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.*;
 import org.arend.naming.scope.local.ElimScope;
 import org.arend.naming.scope.local.LocalListScope;
-import org.arend.term.Fixity;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
@@ -105,6 +103,61 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     return visitBinOpSequence(new Concrete.BinOpSequenceExpression(data, elems, null), null);
+  }
+
+  @Override
+  public @Nullable ResolvedApplication resolveApplication(@NotNull ConcreteExpression expression) {
+    if (!(expression instanceof Concrete.BinOpSequenceExpression binOpExpr)) {
+      return null;
+    }
+    List<Concrete.BinOpSequenceElem<Concrete.Expression>> sequence = binOpExpr.getSequence();
+    List<MetaBinOpParser.ResolvedReference> resolvedRefs = visitBinOpSequence(binOpExpr, false);
+
+    Concrete.Expression parsed = ExpressionBinOpEngine.parse(binOpExpr, null);
+    if (!(parsed instanceof Concrete.AppExpression appExpr)) {
+      return new ResolvedApplication(parsed, null, null, Collections.emptyList(), binOpExpr.getClauses());
+    }
+
+    Referable funRef = appExpr.getFunction() instanceof Concrete.ReferenceExpression refExpr ? refExpr.getReferent() : null;
+    int index = -1;
+    for (int i = 0; i < sequence.size(); i++) {
+      if (sequence.get(i).getComponent() instanceof Concrete.ReferenceExpression refExpr && refExpr.getReferent() == funRef) {
+        index = i;
+        break;
+      }
+    }
+
+    if (index <= 0) {
+      for (int i = 1; i < resolvedRefs.size(); i++) {
+        MetaBinOpParser.resetReference(sequence.get(i), resolvedRefs.get(i));
+      }
+      return new ResolvedApplication(appExpr.getFunction(), null, null, new ArrayList<>(appExpr.getArguments()), binOpExpr.getClauses());
+    }
+
+    for (int i = 0; i < resolvedRefs.size(); i++) {
+      if (i != index) {
+        MetaBinOpParser.resetReference(sequence.get(i), resolvedRefs.get(i));
+      }
+    }
+
+    boolean isPostfix = sequence.get(index).isPostfixReference();
+    return new ResolvedApplication(appExpr.getFunction(), binOpSequenceElemsToUnparsedSequenceElems(sequence.subList(0, index)), isPostfix ? null : binOpSequenceElemsToUnparsedSequenceElems(sequence.subList(index + 1, sequence.size())), isPostfix ? binOpSequenceElemsToArguments(sequence.subList(index + 1, sequence.size())) : null, binOpExpr.getClauses());
+  }
+
+  private List<UnparsedSequenceElem> binOpSequenceElemsToUnparsedSequenceElems(List<? extends Concrete.BinOpSequenceElem<Concrete.Expression>> sequence) {
+    List<UnparsedSequenceElem> result = new ArrayList<>(sequence.size());
+    for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : sequence) {
+      result.add(new UnparsedSequenceElem(elem.getComponent(), elem.fixity, elem.isExplicit));
+    }
+    return result;
+  }
+
+  private List<ConcreteArgument> binOpSequenceElemsToArguments(List<? extends Concrete.BinOpSequenceElem<Concrete.Expression>> sequence) {
+    List<ConcreteArgument> result = new ArrayList<>(sequence.size());
+    for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : sequence) {
+      result.add(new Concrete.Argument(elem.getComponent(), elem.isExplicit));
+    }
+    return result;
   }
 
   @Override
@@ -399,18 +452,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return visitBinOpSequence(expr.getData(), expr, null);
   }
 
-  private Concrete.Expression visitBinOpSequence(Object data, Concrete.BinOpSequenceExpression expr, Concrete.Coclauses coclauses) {
-    if (expr.getSequence().isEmpty() && expr.getClauses() == null) {
-      return visitClassExt(data, expr, coclauses);
-    }
-    if (expr.getSequence().size() == 1 && expr.getClauses() == null) {
-      return visitClassExt(data, expr.getSequence().get(0).getComponent().accept(this, null), coclauses);
-    }
-
-    boolean hasMeta = false;
+  private List<MetaBinOpParser.ResolvedReference> visitBinOpSequence(Concrete.BinOpSequenceExpression expr, boolean resolveAll) {
     List<MetaBinOpParser.ResolvedReference> resolvedRefs = new ArrayList<>();
     for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : expr.getSequence()) {
-      if (elem.getComponent() instanceof Concrete.ReferenceExpression refExpr) {
+      if ((resolveAll || elem.fixity != Fixity.NONFIX) && elem.getComponent() instanceof Concrete.ReferenceExpression refExpr) {
         Referable ref = refExpr.getReferent();
         while (ref instanceof RedirectingReferable) {
           ref = ((RedirectingReferable) ref).getOriginalReferable();
@@ -427,12 +472,29 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         }
 
         resolveLevels(refExpr);
-
-        if (!hasMeta && getMetaResolver(refExpr.getReferent()) != null) {
-          hasMeta = true;
-        }
       } else {
         resolvedRefs.add(null);
+      }
+    }
+    return resolvedRefs;
+  }
+
+  private Concrete.Expression visitBinOpSequence(Object data, Concrete.BinOpSequenceExpression expr, Concrete.Coclauses coclauses) {
+    if (expr.getSequence().isEmpty() && expr.getClauses() == null) {
+      return visitClassExt(data, expr, coclauses);
+    }
+    if (expr.getSequence().size() == 1 && expr.getClauses() == null) {
+      return visitClassExt(data, expr.getSequence().get(0).getComponent().accept(this, null), coclauses);
+    }
+
+    List<MetaBinOpParser.ResolvedReference> resolvedRefs = visitBinOpSequence(expr, true);
+    boolean hasMeta = false;
+    for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : expr.getSequence()) {
+      if (elem.getComponent() instanceof Concrete.ReferenceExpression refExpr) {
+        if (getMetaResolver(refExpr.getReferent()) != null) {
+          hasMeta = true;
+          break;
+        }
       }
     }
 

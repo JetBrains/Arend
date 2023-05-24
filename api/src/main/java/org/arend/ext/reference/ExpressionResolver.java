@@ -23,6 +23,11 @@ public interface ExpressionResolver {
   @NotNull ConcreteExpression resolve(@Nullable Object data, @NotNull List<? extends ConcreteArgument> arguments);
 
   /**
+   * Resolves an application expression. If the given expression is not an unresolved sequence, returns {@code null}.
+   */
+  @Nullable ResolvedApplication resolveApplication(@NotNull ConcreteExpression expression);
+
+  /**
    * Constructs a new resolver in which {@code refs} are removed from the context.
    */
   @NotNull ExpressionResolver hideRefs(@NotNull Set<? extends ArendRef> refs);
