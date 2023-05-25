@@ -8,6 +8,7 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
+import org.arend.ext.reference.Fixity;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.reference.ConcreteUnparsedSequenceElem;
 import org.arend.ext.typechecking.GoalSolver;
@@ -70,6 +71,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteArgument arg(@NotNull ConcreteExpression expression, boolean isExplicit);
   @NotNull ConcreteAppBuilder appBuilder(@NotNull ConcreteExpression function);
   @NotNull ConcreteExpression unparsedSequence(@NotNull Collection<? extends ConcreteUnparsedSequenceElem> sequence, @Nullable ConcreteClauses clauses);
+  @NotNull ConcreteUnparsedSequenceElem unparsedSequenceElem(@NotNull ConcreteExpression expression, @NotNull Fixity fixity, boolean isExplicit);
 
   @NotNull ConcreteDefinition function(@NotNull ArendRef ref, @NotNull FunctionKind kind, @NotNull Collection<? extends ConcreteParameter> parameters, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull ConcreteFunctionBody body);
   @NotNull ConcreteFunctionBody body(@NotNull ConcreteExpression term);

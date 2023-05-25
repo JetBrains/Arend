@@ -7,6 +7,7 @@ import org.arend.error.CountingErrorReporter;
 import org.arend.ext.concrete.ResolvedApplication;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.ConcreteUnparsedSequenceExpression;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
@@ -78,38 +79,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
-  public @NotNull ConcreteExpression resolve(@Nullable Object data, @NotNull List<? extends ConcreteArgument> arguments) {
-    if (arguments.isEmpty()) {
+  public @NotNull ResolvedApplication resolveApplication(@NotNull ConcreteUnparsedSequenceExpression expr) {
+    if (!(expr instanceof Concrete.BinOpSequenceExpression binOpExpr)) {
       throw new IllegalArgumentException();
-    }
-    if (arguments.size() == 1) {
-      if (!(arguments.get(0).getExpression() instanceof Concrete.Expression)) {
-        throw new IllegalArgumentException();
-      }
-      return ((Concrete.Expression) arguments.get(0).getExpression()).accept(this, null);
-    }
-
-    List<Concrete.ExpressionBinOpSequenceElem> elems = new ArrayList<>(arguments.size());
-    boolean first = true;
-    for (ConcreteArgument argument : arguments) {
-      if (!(argument instanceof Concrete.Argument)) {
-        throw new IllegalArgumentException();
-      }
-      if (first) {
-        elems.add(new Concrete.ExpressionBinOpSequenceElem(((Concrete.Argument) argument).expression));
-        first = false;
-      } else {
-        elems.add(new Concrete.ExpressionBinOpSequenceElem(((Concrete.Argument) argument).expression, Fixity.UNKNOWN, argument.isExplicit()));
-      }
-    }
-
-    return visitBinOpSequence(new Concrete.BinOpSequenceExpression(data, elems, null), null);
-  }
-
-  @Override
-  public @Nullable ResolvedApplication resolveApplication(@NotNull ConcreteExpression expression) {
-    if (!(expression instanceof Concrete.BinOpSequenceExpression binOpExpr)) {
-      return null;
     }
     List<Concrete.ExpressionBinOpSequenceElem> sequence = binOpExpr.getSequence();
     List<MetaBinOpParser.ResolvedReference> resolvedRefs = visitBinOpSequence(binOpExpr, false);
@@ -119,7 +91,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       for (int i = 0; i < sequence.size(); i++) {
         finalizeReference(sequence.get(i), resolvedRefs.get(i));
       }
-      return new ResolvedApplication(parsed, null, null, Collections.emptyList(), binOpExpr.getClauses());
+      return new ResolvedApplication(parsed, null, null, Collections.emptyList());
     }
 
     Referable funRef = appExpr.getFunction() instanceof Concrete.ReferenceExpression refExpr ? refExpr.getReferent() : null;
@@ -137,7 +109,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       for (int i = 1; i < resolvedRefs.size(); i++) {
         MetaBinOpParser.resetReference(sequence.get(i), resolvedRefs.get(i));
       }
-      return new ResolvedApplication(appExpr.getFunction(), null, null, new ArrayList<>(appExpr.getArguments()), binOpExpr.getClauses());
+      return new ResolvedApplication(appExpr.getFunction(), null, null, new ArrayList<>(appExpr.getArguments()));
     }
 
     for (int i = 0; i < resolvedRefs.size(); i++) {
@@ -147,7 +119,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     boolean isPostfix = sequence.get(index).isPostfixReference();
-    return new ResolvedApplication(appExpr.getFunction(), sequence.subList(0, index), isPostfix ? null : sequence.subList(index + 1, sequence.size()), isPostfix ? binOpSequenceElemsToArguments(sequence.subList(index + 1, sequence.size())) : null, binOpExpr.getClauses());
+    return new ResolvedApplication(appExpr.getFunction(), sequence.subList(0, index), isPostfix ? null : sequence.subList(index + 1, sequence.size()), isPostfix ? binOpSequenceElemsToArguments(sequence.subList(index + 1, sequence.size())) : null);
   }
 
   private List<ConcreteArgument> binOpSequenceElemsToArguments(List<? extends Concrete.BinOpSequenceElem<Concrete.Expression>> sequence) {

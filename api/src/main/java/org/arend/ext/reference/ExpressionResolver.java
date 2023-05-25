@@ -1,11 +1,10 @@
 package org.arend.ext.reference;
 
 import org.arend.ext.concrete.ResolvedApplication;
-import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.ConcreteUnparsedSequenceExpression;
 import org.arend.ext.error.ErrorReporter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
@@ -17,16 +16,11 @@ public interface ExpressionResolver {
   @NotNull ConcreteExpression resolve(@NotNull ConcreteExpression expression);
 
   /**
-   * Resolves the expression corresponding to a sequence of arguments.
+   * Resolves top-level references in an unparsed sequence.
    *
-   * @param arguments   a non-empty sequence of arguments
+   * @return the application of the reference with the smallest precedence to its arguments.
    */
-  @NotNull ConcreteExpression resolve(@Nullable Object data, @NotNull List<? extends ConcreteArgument> arguments);
-
-  /**
-   * Resolves an application expression. If the given expression is not an unresolved sequence, returns {@code null}.
-   */
-  @Nullable ResolvedApplication resolveApplication(@NotNull ConcreteExpression expression);
+  @NotNull ResolvedApplication resolveApplication(@NotNull ConcreteUnparsedSequenceExpression expression);
 
   /**
    * Constructs a new resolver in which {@code refs} are removed from the context.

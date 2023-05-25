@@ -303,11 +303,6 @@ public final class Concrete {
 
     public abstract <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params);
 
-    @Override
-    public @NotNull List<ConcreteArgument> getArgumentsSequence() {
-      return Collections.singletonList(new Argument(this, true));
-    }
-
     public ReferenceExpression getUnderlyingReferenceExpression() {
       Expression expr = this;
       while (true) {
@@ -470,14 +465,6 @@ public final class Concrete {
       return myArguments;
     }
 
-    @Override
-    public @NotNull List<ConcreteArgument> getArgumentsSequence() {
-      List<ConcreteArgument> result = new ArrayList<>(1 + myArguments.size());
-      result.add(new Argument(myFunction, true));
-      result.addAll(myArguments);
-      return result;
-    }
-
     public int getNumberOfExplicitArguments() {
       int sum = 0;
       for (Argument arg : myArguments) {
@@ -630,15 +617,6 @@ public final class Concrete {
 
     public List<FunctionClause> getClauseList() {
       return myClauses == null ? Collections.emptyList() : myClauses.getClauseList();
-    }
-
-    @Override
-    public @NotNull List<ConcreteArgument> getArgumentsSequence() {
-      List<ConcreteArgument> result = new ArrayList<>(mySequence.size());
-      for (BinOpSequenceElem<Expression> elem : mySequence) {
-        result.add(new Argument(elem.binOpComponent, elem.isExplicit));
-      }
-      return result;
     }
 
     @Override
