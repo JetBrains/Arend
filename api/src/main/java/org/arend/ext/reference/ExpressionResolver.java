@@ -1,5 +1,6 @@
 package org.arend.ext.reference;
 
+import org.arend.ext.concrete.ResolvedApplication;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;

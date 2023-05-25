@@ -4,6 +4,7 @@ import org.arend.core.context.Utils;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.error.CountingErrorReporter;
+import org.arend.ext.concrete.ResolvedApplication;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
@@ -115,11 +116,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
     Concrete.Expression parsed = ExpressionBinOpEngine.parse(binOpExpr, null);
     if (!(parsed instanceof Concrete.AppExpression appExpr)) {
+      for (int i = 0; i < sequence.size(); i++) {
+        finalizeReference(sequence.get(i), resolvedRefs.get(i));
+      }
       return new ResolvedApplication(parsed, null, null, Collections.emptyList(), binOpExpr.getClauses());
     }
 
     Referable funRef = appExpr.getFunction() instanceof Concrete.ReferenceExpression refExpr ? refExpr.getReferent() : null;
-    int index = -1;
+    int index = 0;
     for (int i = 0; i < sequence.size(); i++) {
       if (sequence.get(i).getComponent() instanceof Concrete.ReferenceExpression refExpr && refExpr.getReferent() == funRef) {
         index = i;
@@ -127,7 +131,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
     }
 
-    if (index <= 0) {
+    finalizeReference(sequence.get(index), resolvedRefs.get(index));
+
+    if (index == 0) {
       for (int i = 1; i < resolvedRefs.size(); i++) {
         MetaBinOpParser.resetReference(sequence.get(i), resolvedRefs.get(i));
       }

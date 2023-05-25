@@ -13,6 +13,7 @@ import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.reference.UnparsedSequenceElem;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
@@ -500,6 +501,21 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     return new ConcreteAppBuilderImpl(myData, (Concrete.Expression) function);
+  }
+
+  @Override
+  public @NotNull ConcreteExpression unparsedSequence(@NotNull Collection<? extends UnparsedSequenceElem> sequence, @Nullable ConcreteClauses clauses) {
+    if (!(clauses == null || clauses instanceof Concrete.FunctionClauses)) {
+      throw new IllegalArgumentException();
+    }
+    List<Concrete.BinOpSequenceElem<Concrete.Expression>> binOpSequence = new ArrayList<>(sequence.size());
+    for (UnparsedSequenceElem elem : sequence) {
+      if (!(elem.expression() instanceof Concrete.Expression expr)) {
+        throw new IllegalArgumentException();
+      }
+      binOpSequence.add(new Concrete.BinOpSequenceElem<>(expr, elem.fixity(), elem.isExplicit()));
+    }
+    return new Concrete.BinOpSequenceExpression(myData, binOpSequence, (Concrete.FunctionClauses) clauses);
   }
 
   @Override
