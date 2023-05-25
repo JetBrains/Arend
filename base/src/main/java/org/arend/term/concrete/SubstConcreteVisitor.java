@@ -98,11 +98,6 @@ public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> im
     }
   }
 
-  @Override
-  public Concrete.Expression visitThis(Concrete.ThisExpression expr, Void ignored) {
-    return expr;
-  }
-
   @SuppressWarnings("unchecked")
   protected <T extends Concrete.Parameter> T visitParameter(T parameter) {
     var data = myData != null ? myData : parameter.getData();
@@ -200,7 +195,7 @@ public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> im
     return new Concrete.BinOpSequenceExpression(
       myData != null ? myData : expr.getData(),
       expr.getSequence().stream()
-        .map(elem -> new Concrete.BinOpSequenceElem<>(elem.getComponent().accept(this, null), elem.fixity, elem.isExplicit))
+        .map(elem -> new Concrete.ExpressionBinOpSequenceElem(elem.getComponent().accept(this, null), elem.fixity, elem.isExplicit))
         .collect(Collectors.toList()),
       functionClauses
     );

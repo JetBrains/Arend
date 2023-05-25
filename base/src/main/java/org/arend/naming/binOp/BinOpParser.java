@@ -40,7 +40,7 @@ class BinOpParser<T extends Concrete.SourceNode> {
     }
   }
 
-  @NotNull T parse(@NotNull List<Concrete.BinOpSequenceElem<T>> sequence) {
+  @NotNull T parse(@NotNull List<? extends Concrete.BinOpSequenceElem<T>> sequence) {
     for (Concrete.BinOpSequenceElem<T> elem : sequence) {
       Referable referable = myEngine.getReferable(elem.getComponent());
       Precedence precedence = referable instanceof GlobalReferable ? ((GlobalReferable) referable).getPrecedence() : null;

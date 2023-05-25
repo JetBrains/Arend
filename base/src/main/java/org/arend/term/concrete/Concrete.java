@@ -15,6 +15,7 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
+import org.arend.ext.reference.ConcreteUnparsedSequenceElem;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.MetaDefinition;
@@ -560,6 +561,31 @@ public final class Concrete {
     }
   }
 
+  public static class ExpressionBinOpSequenceElem extends BinOpSequenceElem<Expression> implements ConcreteUnparsedSequenceElem {
+    public ExpressionBinOpSequenceElem(@NotNull Expression binOpComponent, Fixity fixity, boolean isExplicit) {
+      super(binOpComponent, fixity, isExplicit);
+    }
+
+    public ExpressionBinOpSequenceElem(@NotNull Expression binOpComponent) {
+      super(binOpComponent);
+    }
+
+    @Override
+    public @NotNull Expression getExpression() {
+      return getComponent();
+    }
+
+    @Override
+    public @NotNull Fixity getFixity() {
+      return fixity;
+    }
+
+    @Override
+    public boolean isExplicit() {
+      return isExplicit;
+    }
+  }
+
   public static class FunctionClauses extends SourceNodeImpl implements ConcreteClauses {
     private final List<FunctionClause> myClauses;
 
@@ -580,22 +606,24 @@ public final class Concrete {
     }
   }
 
-  public static class BinOpSequenceExpression extends Expression {
+  public static class BinOpSequenceExpression extends Expression implements ConcreteUnparsedSequenceExpression {
     public static final byte PREC = 0;
-    private final List<BinOpSequenceElem<Expression>> mySequence;
+    private final List<ExpressionBinOpSequenceElem> mySequence;
     private final FunctionClauses myClauses;
 
-    public BinOpSequenceExpression(Object data, List<BinOpSequenceElem<Expression>> sequence, FunctionClauses clauses) {
+    public BinOpSequenceExpression(Object data, List<ExpressionBinOpSequenceElem> sequence, FunctionClauses clauses) {
       super(data);
       mySequence = sequence;
       myClauses = clauses;
     }
 
+    @Override
     @NotNull
-    public List<BinOpSequenceElem<Expression>> getSequence() {
+    public List<ExpressionBinOpSequenceElem> getSequence() {
       return mySequence;
     }
 
+    @Override
     public FunctionClauses getClauses() {
       return myClauses;
     }

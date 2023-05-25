@@ -13,7 +13,7 @@ import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
-import org.arend.ext.reference.UnparsedSequenceElem;
+import org.arend.ext.reference.ConcreteUnparsedSequenceElem;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
@@ -504,16 +504,16 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   @Override
-  public @NotNull ConcreteExpression unparsedSequence(@NotNull Collection<? extends UnparsedSequenceElem> sequence, @Nullable ConcreteClauses clauses) {
+  public @NotNull ConcreteExpression unparsedSequence(@NotNull Collection<? extends ConcreteUnparsedSequenceElem> sequence, @Nullable ConcreteClauses clauses) {
     if (!(clauses == null || clauses instanceof Concrete.FunctionClauses)) {
       throw new IllegalArgumentException();
     }
-    List<Concrete.BinOpSequenceElem<Concrete.Expression>> binOpSequence = new ArrayList<>(sequence.size());
-    for (UnparsedSequenceElem elem : sequence) {
-      if (!(elem.expression() instanceof Concrete.Expression expr)) {
+    List<Concrete.ExpressionBinOpSequenceElem> binOpSequence = new ArrayList<>(sequence.size());
+    for (ConcreteUnparsedSequenceElem elem : sequence) {
+      if (!(elem instanceof Concrete.ExpressionBinOpSequenceElem)) {
         throw new IllegalArgumentException();
       }
-      binOpSequence.add(new Concrete.BinOpSequenceElem<>(expr, elem.fixity(), elem.isExplicit()));
+      binOpSequence.add((Concrete.ExpressionBinOpSequenceElem) elem);
     }
     return new Concrete.BinOpSequenceExpression(myData, binOpSequence, (Concrete.FunctionClauses) clauses);
   }

@@ -614,7 +614,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  private AbstractLayout createBinOpLayout(List<BinOpSequenceElem<Expression>> elems) {
+  private AbstractLayout createBinOpLayout(List<? extends BinOpSequenceElem<Expression>> elems) {
     Concrete.Expression lhs = elems.get(0).getComponent();
     if (lhs instanceof Concrete.AppExpression && elems.size() > 1) {
       lhs = Concrete.AppExpression.make(lhs.getData(), ((Concrete.AppExpression) lhs).getFunction(), new ArrayList<>(((Concrete.AppExpression) lhs).getArguments()));

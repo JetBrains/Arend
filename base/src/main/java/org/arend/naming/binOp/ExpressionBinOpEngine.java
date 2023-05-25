@@ -49,8 +49,8 @@ public class ExpressionBinOpEngine implements BinOpEngine<Concrete.Expression> {
     Concrete.BinOpSequenceElem<Concrete.Expression> first = expression.getSequence().get(0);
     if (first.fixity == Fixity.INFIX || first.fixity == Fixity.POSTFIX) {
       LocalReferable firstArg = new LocalReferable(Renamer.UNNAMED);
-      List<Concrete.BinOpSequenceElem<Concrete.Expression>> newSequence = new ArrayList<>(expression.getSequence().size() + 1);
-      newSequence.add(new Concrete.BinOpSequenceElem<>(new Concrete.ReferenceExpression(expression.getData(), firstArg)));
+      List<Concrete.ExpressionBinOpSequenceElem> newSequence = new ArrayList<>(expression.getSequence().size() + 1);
+      newSequence.add(new Concrete.ExpressionBinOpSequenceElem(new Concrete.ReferenceExpression(expression.getData(), firstArg)));
       newSequence.addAll(expression.getSequence());
       return new Concrete.LamExpression(expression.getData(), Collections.singletonList(new Concrete.NameParameter(expression.getData(), true, firstArg)), parse(new Concrete.BinOpSequenceExpression(expression.getData(), newSequence, expression.getClauses()), reporter));
     }

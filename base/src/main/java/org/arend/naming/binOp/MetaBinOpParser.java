@@ -20,22 +20,12 @@ import java.util.List;
  * This class extracts and invokes meta resolvers from a binOp sequences and replaces corresponding subsequences with results
  */
 public class MetaBinOpParser {
-  public static final class ResolvedReference {
-    public final Concrete.ReferenceExpression refExpr;
-    public final UnresolvedReference originalReference;
-    public final List<Referable> resolvedList;
-
-    public ResolvedReference(Concrete.ReferenceExpression refExpr, UnresolvedReference originalReference, List<Referable> resolvedList) {
-      this.refExpr = refExpr;
-      this.originalReference = originalReference;
-      this.resolvedList = resolvedList;
-    }
-  }
+  public record ResolvedReference(Concrete.ReferenceExpression refExpr, UnresolvedReference originalReference, List<Referable> resolvedList) {}
 
   private final ExpressionResolveNameVisitor myVisitor;
   private Concrete.BinOpSequenceExpression myExpression;
   private final List<ResolvedReference> myResolvedReferences;
-  private final List<Concrete.BinOpSequenceElem<Concrete.Expression>> myResult = new ArrayList<>();
+  private final List<Concrete.ExpressionBinOpSequenceElem> myResult = new ArrayList<>();
   private final Concrete.Coclauses myCoclauses;
   private boolean myClausesHandled;
 
@@ -52,13 +42,13 @@ public class MetaBinOpParser {
   }
 
   public Concrete.Expression parse(Object data) {
-    List<Concrete.BinOpSequenceElem<Concrete.Expression>> sequence = myExpression.getSequence();
+    List<Concrete.ExpressionBinOpSequenceElem> sequence = myExpression.getSequence();
     Concrete.BinOpSequenceElem<Concrete.Expression> first = sequence.get(0);
     if (first.fixity == Fixity.INFIX || first.fixity == Fixity.POSTFIX) {
       LocalReferable firstArg = new LocalReferable(Renamer.UNNAMED);
       myResolvedReferences.add(0, null);
-      List<Concrete.BinOpSequenceElem<Concrete.Expression>> newSequence = new ArrayList<>(sequence.size() + 1);
-      newSequence.add(new Concrete.BinOpSequenceElem<>(new Concrete.ReferenceExpression(myExpression.getData(), firstArg)));
+      List<Concrete.ExpressionBinOpSequenceElem> newSequence = new ArrayList<>(sequence.size() + 1);
+      newSequence.add(new Concrete.ExpressionBinOpSequenceElem(new Concrete.ReferenceExpression(myExpression.getData(), firstArg)));
       newSequence.addAll(sequence);
       myExpression = new Concrete.BinOpSequenceExpression(myExpression.getData(), newSequence, myExpression.getClauses());
       return new Concrete.LamExpression(myExpression.getData(), Collections.singletonList(new Concrete.NameParameter(myExpression.getData(), true, firstArg)), parse(data));
@@ -78,7 +68,7 @@ public class MetaBinOpParser {
     int conflictIndex = -1;
     int minIndex = -1;
     Precedence minPrecedence = Precedence.DEFAULT;
-    List<Concrete.BinOpSequenceElem<Concrete.Expression>> sequence = myExpression.getSequence();
+    List<Concrete.ExpressionBinOpSequenceElem> sequence = myExpression.getSequence();
 
     for (int i = start; i < end; i++) {
       ResolvedReference resolvedRef = myResolvedReferences.get(i);
@@ -124,7 +114,7 @@ public class MetaBinOpParser {
           args.add(new Concrete.Argument(sequence.get(i).getComponent(), sequence.get(i).isExplicit));
         }
         myClausesHandled = true;
-        myResult.add(new Concrete.BinOpSequenceElem<>(myVisitor.convertMetaResult(meta.resolvePrefix(myVisitor, new ContextDataImpl(firstRef.refExpr, args, myCoclauses, myExpression.getClauses(), null, null)), firstRef.refExpr, args, null, myExpression.getClauses())));
+        myResult.add(new Concrete.ExpressionBinOpSequenceElem(myVisitor.convertMetaResult(meta.resolvePrefix(myVisitor, new ContextDataImpl(firstRef.refExpr, args, myCoclauses, myExpression.getClauses(), null, null)), firstRef.refExpr, args, null, myExpression.getClauses())));
       } else {
         for (int i = start; i < end; i++) {
           boolean isRef = sequence.get(i).getComponent() instanceof Concrete.ReferenceExpression;
@@ -175,7 +165,7 @@ public class MetaBinOpParser {
         }
         metaResult = minMeta.resolveInfix(myVisitor, new ContextDataImpl(refExpr, implicitArgs, null, null, null, null), leftArg, i >= end ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(i, end), null));
       }
-      myResult.add(new Concrete.BinOpSequenceElem<>(myVisitor.convertMetaResult(metaResult, refExpr, resultArgs, null, null)));
+      myResult.add(new Concrete.ExpressionBinOpSequenceElem(myVisitor.convertMetaResult(metaResult, refExpr, resultArgs, null, null)));
     } else {
       parse(start, minIndex);
       myVisitor.finalizeReference(sequence.get(minIndex), myResolvedReferences.get(minIndex));
@@ -184,7 +174,7 @@ public class MetaBinOpParser {
     }
   }
 
-  private static List<Concrete.Argument> binOpSeqToArgs(List<Concrete.BinOpSequenceElem<Concrete.Expression>> sequence, int start, int end) {
+  private static List<Concrete.Argument> binOpSeqToArgs(List<? extends Concrete.BinOpSequenceElem<Concrete.Expression>> sequence, int start, int end) {
     List<Concrete.Argument> args = new ArrayList<>();
     for (int i = start; i < end; i++) {
       args.add(new Concrete.Argument(sequence.get(i).getComponent(), sequence.get(i).isExplicit));

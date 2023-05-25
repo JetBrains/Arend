@@ -159,10 +159,10 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
       return expr.getSequence().get(0).getComponent().accept(this, wideExpr.getSequence().get(0).getComponent());
     }
 
-    var newExpressions = new ArrayList<Concrete.BinOpSequenceElem<Concrete.Expression>>();
+    var newExpressions = new ArrayList<Concrete.ExpressionBinOpSequenceElem>();
     for (int i = 0; i < expr.getSequence().size(); ++i) {
       var currentElem = expr.getSequence().get(i);
-      newExpressions.add(new Concrete.BinOpSequenceElem<>(currentElem.getComponent().accept(this, wideExpr.getSequence().get(i).getComponent()), currentElem.fixity, currentElem.isExplicit));
+      newExpressions.add(new Concrete.ExpressionBinOpSequenceElem(currentElem.getComponent().accept(this, wideExpr.getSequence().get(i).getComponent()), currentElem.fixity, currentElem.isExplicit));
     }
     List<Concrete.FunctionClause> newClauses;
     if (expr.getClauses() != null) {
