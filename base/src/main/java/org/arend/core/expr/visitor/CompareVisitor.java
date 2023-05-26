@@ -2051,7 +2051,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   @Override
   public Boolean visitQName(QNameExpression expr, Expression expr2, Expression type) {
     QNameExpression qname = expr2.cast(QNameExpression.class);
-    return qname != null && expr.getDefinition().equals(qname.getDefinition());
+    return qname != null && expr.getRef().equals(qname.getRef());
   }
 
   private Boolean visitTypeConstructor(TypeConstructorExpression expr1, Expression expr2, boolean correctOrder) {

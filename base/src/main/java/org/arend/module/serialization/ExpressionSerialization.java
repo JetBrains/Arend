@@ -653,7 +653,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
   @Override
   public ExpressionProtos.Expression visitQName(QNameExpression expr, Void params) {
-    return ExpressionProtos.Expression.newBuilder().setQName(ExpressionProtos.Expression.QName.newBuilder().setReference(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()))).build();
+    return ExpressionProtos.Expression.newBuilder().setQName(ExpressionProtos.Expression.QName.newBuilder().setReference(myCallTargetIndexProvider.getDefIndex(expr.getRef()))).build();
   }
 
   @Override

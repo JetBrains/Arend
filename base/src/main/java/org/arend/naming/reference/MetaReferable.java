@@ -135,4 +135,9 @@ public class MetaReferable implements TCDefReferable, MetaRef {
     // If it's a definable meta, we always need to typecheck its dependencies
     return myDefinition != null && (!(myDefinition instanceof DefinableMetaDefinition) || myTypechecked != null);
   }
+
+  @Override
+  public String toString() {
+    return myName;
+  }
 }

@@ -1,23 +1,23 @@
 package org.arend.core.expr;
 
-import org.arend.core.definition.Definition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreQNameExpression;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
 public class QNameExpression extends Expression implements CoreQNameExpression {
-  private final Definition myDefinition;
+  private final TCDefReferable myReferable;
 
-  public QNameExpression(Definition definition) {
-    myDefinition = definition;
+  public QNameExpression(TCDefReferable referable) {
+    myReferable = referable;
   }
 
   @Override
-  public @NotNull Definition getDefinition() {
-    return myDefinition;
+  public @NotNull TCDefReferable getRef() {
+    return myReferable;
   }
 
   @Override
