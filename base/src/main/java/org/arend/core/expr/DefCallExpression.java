@@ -5,6 +5,8 @@ import org.arend.core.definition.CallableDefinition;
 import org.arend.core.definition.ParametersLevel;
 import org.arend.core.definition.UniverseKind;
 import org.arend.ext.core.expr.CoreDefCallExpression;
+import org.arend.ext.typechecking.TypedExpression;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
@@ -65,5 +67,16 @@ public abstract class DefCallExpression extends Expression implements CoreDefCal
   @Override
   public Expression getStuckExpression() {
     return null;
+  }
+
+  @Override
+  public @NotNull TypedExpression makeTypedExpression() {
+    DependentLink param1 = myDefinition.getParameters();
+    DependentLink param2 = param1.hasNext() ? param1.getNext() : param1;
+    if (param2.hasNext() && param2.getTypeExpr() instanceof ReferenceExpression refExpr && refExpr.getBinding() == param1) {
+      return new TypecheckingResult(getDefCallArguments().get(1), getDefCallArguments().get(0));
+    } else {
+      throw new IllegalStateException();
+    }
   }
 }
