@@ -1144,6 +1144,10 @@ public final class Concrete {
       this(parameters, resultType, term, new NamePattern(referable, true, referable, null));
     }
 
+    public LetClause(Pattern pattern, List<Parameter> parameters, Expression resultType, Expression term) {
+      this(parameters, resultType, term, pattern);
+    }
+
     public LetClause(Pattern pattern, Expression resultType, Expression term) {
       this(Collections.emptyList(), resultType, term, pattern);
     }

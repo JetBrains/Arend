@@ -106,6 +106,7 @@ public interface ConcreteFactory {
 
   @NotNull ConcreteLetClause letClause(@NotNull ArendRef ref, @NotNull Collection<? extends ConcreteParameter> parameters, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term);
   @NotNull ConcreteLetClause letClause(@NotNull ConcretePattern pattern, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term);
+  @NotNull ConcreteLetClause letClause(@NotNull ConcretePattern pattern, @NotNull Collection<? extends ConcreteParameter> parameters, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term);
 
   @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression);
   @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull ArendRef classRef, @NotNull ConcreteClassElement... subclauses);

@@ -784,6 +784,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.LetClause((Concrete.Pattern) pattern, (Concrete.Expression) type, (Concrete.Expression) term);
   }
 
+  @Override
+  public @NotNull ConcreteLetClause letClause(@NotNull ConcretePattern pattern, @NotNull Collection<? extends ConcreteParameter> parameters, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term) {
+    if (!(pattern instanceof Concrete.Pattern && (type == null || type instanceof Concrete.Expression) && term instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.LetClause((Concrete.Pattern) pattern, parameters(parameters), (Concrete.Expression) type, (Concrete.Expression) term);
+  }
+
   @NotNull
   @Override
   public ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression) {
