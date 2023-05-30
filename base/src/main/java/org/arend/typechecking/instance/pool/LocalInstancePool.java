@@ -58,7 +58,7 @@ public class LocalInstancePool implements InstancePool {
       return null;
     }
     if (expectedType == null) {
-      return new TypecheckingResult(result, null);
+      return result.computeTyped();
     }
 
     Expression actualType = result.getType();
