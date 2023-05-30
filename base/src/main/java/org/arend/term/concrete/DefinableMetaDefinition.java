@@ -1,6 +1,5 @@
 package org.arend.term.concrete;
 
-import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCoclauses;
 import org.arend.ext.concrete.expr.ConcreteExpression;
@@ -43,16 +42,8 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     stage = Concrete.Stage.NOT_RESOLVED;
   }
 
-  public Concrete.LevelParameters getPLevelParameters() {
-    return pLevelParameters;
-  }
-
   public List<? extends LevelReferable> getPLevelParametersList() {
     return pLevelParameters == null ? null : pLevelParameters.getReferables();
-  }
-
-  public Concrete.LevelParameters getHLevelParameters() {
-    return hLevelParameters;
   }
 
   public List<? extends LevelReferable> getHLevelParametersList() {
@@ -71,33 +62,27 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments) {
-    return checkArguments(arguments, null, null, null);
+    return checkArguments(arguments, null);
   }
 
-  protected boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments, @Nullable ConcreteCoclauses coclauses, @Nullable ErrorReporter errorReporter, @Nullable ConcreteSourceNode marker) {
-    for (var argument : arguments) {
-      if (!argument.isExplicit()) {
-        if (errorReporter != null) {
-          errorReporter.report(new ArgumentExplicitnessError(false, argument.getExpression()));
+  protected boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments, @Nullable ErrorReporter errorReporter) {
+    int i = 0;
+    for (Concrete.Parameter parameter : myParameters) {
+      for (Referable ignored : parameter.getRefList()) {
+        if (i >= arguments.size()) return true;
+        ConcreteArgument argument = arguments.get(i++);
+        if (!argument.isExplicit()) {
+          if (errorReporter != null) errorReporter.report(new ArgumentExplicitnessError(true, argument.getExpression()));
+          return false;
         }
-        return false;
       }
     }
-
-    int params = 0;
-    for (Concrete.Parameter parameter : myParameters) {
-      params += parameter.getRefList().size();
-    }
-    boolean ok = arguments.size() >= params;
-    if (!ok && errorReporter != null) {
-      errorReporter.report(new TypecheckingError("Expected " + params + " arguments, found " + arguments.size(), marker));
-    }
-    return ok;
+    return true;
   }
 
   @Override
   public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
-    return checkArguments(contextData.getArguments(), contextData.getCoclauses(), errorReporter, contextData.getMarker());
+    return checkArguments(contextData.getArguments(), errorReporter);
   }
 
   @Override
