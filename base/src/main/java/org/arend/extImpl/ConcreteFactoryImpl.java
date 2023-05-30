@@ -831,14 +831,6 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.CaseArgument((Concrete.ReferenceExpression) expression, (Concrete.Expression) type);
   }
 
-  @Override
-  public @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteCoreExpression expression, @Nullable ConcreteExpression type) {
-    if (!(expression instanceof Concrete.CoreExpression && (type == null || type instanceof Concrete.Expression))) {
-      throw new IllegalArgumentException();
-    }
-    return new Concrete.CaseArgument((Concrete.CoreExpression) expression, (Concrete.Expression) type);
-  }
-
   private List<Concrete.Pattern> patterns(Collection<? extends ConcretePattern> patterns) {
     if (patterns == null) return null;
     List<Concrete.Pattern> result = new ArrayList<>(patterns.size());

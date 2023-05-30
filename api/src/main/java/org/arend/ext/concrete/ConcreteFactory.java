@@ -113,7 +113,6 @@ public interface ConcreteFactory {
 
   @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteExpression expression, @Nullable ArendRef asRef, @Nullable ConcreteExpression type);
   @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteReferenceExpression expression, @Nullable ConcreteExpression type);
-  @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteCoreExpression expression, @Nullable ConcreteExpression type);
   @NotNull ConcreteClause clause(@NotNull Collection<? extends ConcretePattern> patterns, @Nullable ConcreteExpression expression);
   @NotNull ConcretePattern refPattern(@Nullable ArendRef ref, @Nullable ConcreteExpression type);
   @NotNull ConcretePattern tuplePattern(@NotNull ConcretePattern... subpatterns);
