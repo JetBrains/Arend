@@ -42,7 +42,7 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
 
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Concrete.SourceNode params) {
-    return new Concrete.ReferenceExpression(expr.getData(), expr.getReferent());
+    return new Concrete.ReferenceExpression(expr.getData(), expr.getReferent(), expr.getPLevels(), expr.getHLevels());
   }
 
   protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {
@@ -330,5 +330,25 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
   public Concrete.Expression visitTyped(Concrete.TypedExpression expr, Concrete.SourceNode params) {
     var wideTypedExpression = (Concrete.TypedExpression) params;
     return new Concrete.TypedExpression(expr.getData(), expr.getExpression().accept(this, wideTypedExpression.getExpression()), expr.getType().accept(this, wideTypedExpression.getType()));
+  }
+
+  @Override
+  public Concrete.Expression visitCore(Concrete.CoreExpression expr, Concrete.SourceNode params) {
+    return new Concrete.CoreExpression(expr.getData(), expr.getTypedExpression());
+  }
+
+  @Override
+  public Concrete.Expression visitNumericLiteral(Concrete.NumericLiteral expr, Concrete.SourceNode params) {
+    return new Concrete.NumericLiteral(expr.getData(), expr.getNumber());
+  }
+
+  @Override
+  public Concrete.Expression visitStringLiteral(Concrete.StringLiteral expr, Concrete.SourceNode params) {
+    return new Concrete.StringLiteral(expr.getData(), expr.getUnescapedString());
+  }
+
+  @Override
+  public Concrete.Expression visitQNameLiteral(Concrete.QNameLiteral expr, Concrete.SourceNode params) {
+    return new Concrete.QNameLiteral(expr.getData(), expr.getReferenceExpression());
   }
 }

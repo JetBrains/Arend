@@ -27,9 +27,8 @@ import java.util.List;
 public interface ConcreteFactory {
   @NotNull ConcreteReferenceExpression ref(@NotNull ArendRef ref);
   @NotNull ConcreteReferenceExpression ref(@NotNull ArendRef ref, @Nullable List<? extends ConcreteLevel> pLevels, @Nullable List<? extends ConcreteLevel> hLevels);
-  @NotNull ConcreteReferenceExpression ref(@NotNull CoreBinding ref);
+  @NotNull ConcreteExpression ref(@NotNull CoreBinding ref);
   @NotNull ConcreteExpression core(@NotNull TypedExpression expr);
-  @NotNull ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr);
   @NotNull ConcreteExpression abstracted(@NotNull AbstractedExpression expr, @NotNull List<? extends ConcreteExpression> arguments);
   @NotNull ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta);
   @NotNull ConcreteExpression thisExpr(@Nullable ArendRef ref);
@@ -114,6 +113,7 @@ public interface ConcreteFactory {
 
   @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteExpression expression, @Nullable ArendRef asRef, @Nullable ConcreteExpression type);
   @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteReferenceExpression expression, @Nullable ConcreteExpression type);
+  @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteCoreExpression expression, @Nullable ConcreteExpression type);
   @NotNull ConcreteClause clause(@NotNull Collection<? extends ConcretePattern> patterns, @Nullable ConcreteExpression expression);
   @NotNull ConcretePattern refPattern(@Nullable ArendRef ref, @Nullable ConcreteExpression type);
   @NotNull ConcretePattern tuplePattern(@NotNull ConcretePattern... subpatterns);

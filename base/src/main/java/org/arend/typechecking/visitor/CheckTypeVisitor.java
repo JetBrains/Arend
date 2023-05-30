@@ -491,7 +491,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         for (int i = 1; i < n; i++) {
           refs.add(new GeneratedLocalReferable("i" + i));
         }
-        Concrete.Expression newExpr = new Concrete.ReferenceExpression(expr.getData(), new CoreReferable(null, result));
+        Concrete.Expression newExpr = new Concrete.CoreExpression(expr.getData(), result);
         if (!refs.isEmpty()) {
           List<Concrete.Argument> args = new ArrayList<>(refs.size());
           for (Referable ref : refs) {
@@ -507,7 +507,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         return checkExpr(newExpr, expectedType);
       }
     } else if (expectedType instanceof PiExpression && result.type instanceof DataCallExpression && ((DataCallExpression) result.type).getDefinition() == Prelude.PATH) {
-      return checkExpr(Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), Prelude.AT.getRef()), new Concrete.ReferenceExpression(expr.getData(), new CoreReferable(null, result)), true), expectedType);
+      return checkExpr(Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), Prelude.AT.getRef()), new Concrete.CoreExpression(expr.getData(), result), true), expectedType);
     }
 
     if (result.type instanceof DataCallExpression && ((DataCallExpression) result.type).getDefinition() == Prelude.FIN && expectedType instanceof DataCallExpression && ((DataCallExpression) expectedType).getDefinition() == Prelude.INT) {
@@ -1037,7 +1037,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
       Concrete.Expression marker = deferredMeta.contextData.getMarker();
       TypecheckingResult result = checkTypeVisitor.invokeMeta(deferredMeta.meta, deferredMeta.contextData);
-      fixCheckedExpression(result, refExpr == null ? null : refExpr.getReferent(), marker);
       if (result != null) {
         result = checkTypeVisitor.checkResult(type, result, marker);
         if (afterLevels) {
@@ -1937,11 +1936,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private TResult visitReference(Concrete.ReferenceExpression expr, boolean withoutUniverses) {
     Referable ref = expr.getReferent();
-    if (ref instanceof CoreReferable) {
-      TypecheckingResult result = ((CoreReferable) ref).result;
-      fixCheckedExpression(result, ref, expr);
-      return new TypecheckingResult(result.expression, result.type);
-    } else if (ref instanceof AbstractedReferable) {
+    if (ref instanceof AbstractedReferable) {
       Expression core = (Expression) substituteAbstractedExpression(((AbstractedReferable) ref).expression, LevelSubstitution.EMPTY, ((AbstractedReferable) ref).arguments, expr);
       return core == null ? null : new TypecheckingResult(core, core.getType());
     }
@@ -3043,19 +3038,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return myAllowDeferredMetas;
   }
 
-  private void fixCheckedExpression(TypecheckingResult result, Referable referable, Concrete.SourceNode sourceNode) {
-    if (result == null || result.type != null) {
-      return;
-    }
-
-    result.type = result.expression.getType();
-    if (result.type == null) {
-      TypecheckingError error = new TypeComputationError(referable, result.expression, sourceNode);
-      errorReporter.report(error);
-      result.type = new ErrorExpression(error);
-    }
-  }
-
   private TypecheckingResult invokeMeta(MetaDefinition meta, ContextData contextData) {
     try {
       return TypecheckingResult.fromChecked(meta.invokeMeta(this, contextData));
@@ -3101,13 +3083,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           Expression paramType = param.getTypeExpr().subst(substitution, levelSubst);
           Expression expr = InferenceReferenceExpression.make(myArgsInference.newInferenceVariable(paramType, refExpr), getEquations());
           substitution.add(param, expr);
-          arguments.add(i++, new Concrete.Argument(new Concrete.ReferenceExpression(refExpr.getData(), new CoreReferable(null, new TypecheckingResult(expr, paramType))), true));
+          arguments.add(i++, new Concrete.Argument(new Concrete.CoreExpression(refExpr.getData(), new TypecheckingResult(expr, paramType)), true));
         } else {
           if (isTyped) {
             TypecheckingResult argResult = checkExpr(arguments.get(i).getExpression(), param.getTypeExpr().subst(substitution, levelSubst));
             if (argResult == null) return null;
             substitution.add(param, argResult.expression);
-            arguments.set(i, new Concrete.Argument(new Concrete.ReferenceExpression(refExpr.getData(), new CoreReferable(null, argResult)), true));
+            arguments.set(i, new Concrete.Argument(new Concrete.CoreExpression(refExpr.getData(), argResult), true));
           }
           i++;
         }
@@ -3123,7 +3105,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     int numberOfErrors = getNumberOfErrors();
     TypecheckingResult result = invokeMeta(meta, contextData);
-    fixCheckedExpression(result, refExpr.getReferent(), refExpr);
     if (result != null) {
       return result.getType() == expectedType ? result : checkResult(expectedType, result, refExpr);
     }
@@ -3716,6 +3697,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   public TypecheckingResult visitApplyHole(Concrete.ApplyHoleExpression expr, Expression params) {
     errorReporter.report(new TypecheckingError("`__` not allowed here", expr));
     return null;
+  }
+
+  @Override
+  public TypecheckingResult visitCore(Concrete.CoreExpression expr, Expression expectedType) {
+    TypecheckingResult result = expr.getTypedExpression();
+    return checkResult(expectedType, new TypecheckingResult(result.expression, result.type), expr);
   }
 
   public static Expression getLevelExpression(Type type, int level) {

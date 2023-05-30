@@ -26,6 +26,7 @@ import org.arend.ext.reference.Fixity;
 import org.arend.term.abs.Abstract;
 import org.arend.term.group.Statement;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -1321,6 +1322,30 @@ public final class Concrete {
     }
   }
 
+  public static class CoreExpression extends Expression implements ConcreteCoreExpression {
+    private final TypecheckingResult myExpression;
+
+    public CoreExpression(Object data, TypecheckingResult expression) {
+      super(data);
+      myExpression = expression;
+    }
+
+    @Override
+    public @NotNull TypecheckingResult getTypedExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public <P, R> R accept(@NotNull ConcreteVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitCore(this, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitCore(this, params);
+    }
+  }
+
   public static class UniverseExpression extends Expression implements ConcreteUniverseExpression {
     public static final byte PREC = 12;
     private final LevelExpression myPLevel;
@@ -1413,7 +1438,14 @@ public final class Concrete {
       this.referable = null;
       this.type = type;
       Referable ref = expression.getReferent();
-      isElim = ref instanceof UnresolvedReference || ref instanceof CoreReferable || ref.isLocalRef();
+      isElim = ref instanceof UnresolvedReference || ref.isLocalRef();
+    }
+
+    public CaseArgument(@NotNull CoreExpression expression, @Nullable Expression type) {
+      this.expression = expression;
+      this.referable = null;
+      this.type = type;
+      isElim = true;
     }
 
     public CaseArgument(@NotNull ApplyHoleExpression expression, @Nullable Expression type) {

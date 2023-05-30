@@ -12,7 +12,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.instance.InstanceSearchParameters;
-import org.arend.naming.reference.CoreReferable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.instance.provider.InstanceProvider;
@@ -130,28 +129,22 @@ public class GlobalInstancePool implements InstancePool {
         if (!compareClassifying(instanceParams.getTypeExpr(), inferredParams.getTypeExpr(), false)) return false;
       }
       return true;
-    } else if (instanceExpr instanceof PiExpression) {
-      if (!(inferredExpr instanceof PiExpression)) return false;
-      PiExpression instancePi = (PiExpression) instanceExpr;
-      PiExpression inferredPi = (PiExpression) inferredExpr;
+    } else if (instanceExpr instanceof PiExpression instancePi) {
+      if (!(inferredExpr instanceof PiExpression inferredPi)) return false;
       if (DependentLink.Helper.size(instancePi.getParameters()) != DependentLink.Helper.size(inferredPi.getParameters())) return false;
       for (DependentLink instanceParams = instancePi.getParameters(), inferredParams = inferredPi.getParameters(); instanceParams.hasNext(); instanceParams = instanceParams.getNext(), inferredParams = inferredParams.getNext()) {
         if (!compareClassifying(instanceParams.getTypeExpr(), inferredParams.getTypeExpr(), false)) return false;
       }
       return compareClassifying(instancePi.getCodomain(), inferredPi.getCodomain(), false);
-    } else if (instanceExpr instanceof IntegerExpression) {
-      IntegerExpression instanceIntExpr = (IntegerExpression) instanceExpr;
+    } else if (instanceExpr instanceof IntegerExpression instanceIntExpr) {
       return inferredExpr instanceof IntegerExpression && instanceIntExpr.isEqual((IntegerExpression) inferredExpr) || inferredExpr instanceof ConCallExpression && instanceIntExpr.match(((ConCallExpression) inferredExpr).getDefinition());
-    } else if (instanceExpr instanceof DefCallExpression && !(instanceExpr instanceof FieldCallExpression)) {
-      if (!(inferredExpr instanceof DefCallExpression)) return false;
-      DefCallExpression instanceDefCall = (DefCallExpression) instanceExpr;
-      DefCallExpression inferredDefCall = (DefCallExpression) inferredExpr;
+    } else if (instanceExpr instanceof DefCallExpression instanceDefCall && !(instanceExpr instanceof FieldCallExpression)) {
+      if (!(inferredExpr instanceof DefCallExpression inferredDefCall)) return false;
       if (instanceDefCall.getDefinition() != inferredDefCall.getDefinition()) return false;
       for (int i = 0; i < instanceDefCall.getDefCallArguments().size(); i++) {
         if (!compareClassifying(instanceDefCall.getDefCallArguments().get(i), inferredDefCall.getDefCallArguments().get(i), false)) return false;
       }
-      if (instanceDefCall instanceof ConCallExpression) {
-        ConCallExpression instanceConCall = (ConCallExpression) instanceDefCall;
+      if (instanceDefCall instanceof ConCallExpression instanceConCall) {
         for (int i = 0; i < instanceConCall.getDataTypeArguments().size(); i++) {
           if (!compareClassifying(instanceConCall.getDataTypeArguments().get(i), ((ConCallExpression) inferredDefCall).getDataTypeArguments().get(i), false)) return false;
         }
@@ -190,11 +183,10 @@ public class GlobalInstancePool implements InstancePool {
       @Override
       public boolean test(TCDefReferable instance) {
         instanceDef = (FunctionDefinition) instance.getTypechecked();
-        if (!(instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression && parameters.testClass(((ClassCallExpression) instanceDef.getResultType()).getDefinition()) && parameters.testGlobalInstance(instanceDef))) {
+        if (!(instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression classCall && parameters.testClass(((ClassCallExpression) instanceDef.getResultType()).getDefinition()) && parameters.testGlobalInstance(instanceDef))) {
           return false;
         }
 
-        ClassCallExpression classCall = (ClassCallExpression) instanceDef.getResultType();
         if (finalClassifyingExpression == null || classCall.getDefinition().getClassifyingField() == null) {
           return true;
         }
@@ -222,7 +214,7 @@ public class GlobalInstancePool implements InstancePool {
     DependentLink link = predicate.instanceDef.getParameters();
     ClassDefinition enclosingClass = currentDef != null ? currentDef.getEnclosingClass() : null;
     if (myInstancePool != null && !myInstancePool.getLocalInstances().isEmpty() && myInstancePool.getLocalInstances().get(0).classDef == enclosingClass && predicate.instanceDef.getEnclosingClass() == enclosingClass) {
-      instanceExpr = Concrete.AppExpression.make(data, instanceExpr, new Concrete.ReferenceExpression(data, new CoreReferable(null, myInstancePool.getLocalInstances().get(0).value.computeTyped())), link.isExplicit());
+      instanceExpr = Concrete.AppExpression.make(data, instanceExpr, new Concrete.CoreExpression(data, myInstancePool.getLocalInstances().get(0).value.computeTyped()), link.isExplicit());
       link = link.getNext();
     }
     for (; link.hasNext(); link = link.getNext()) {

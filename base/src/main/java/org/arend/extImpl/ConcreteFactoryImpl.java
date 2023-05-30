@@ -64,23 +64,17 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   @Override
-  public @NotNull ConcreteReferenceExpression ref(@NotNull CoreBinding ref) {
+  public @NotNull ConcreteExpression ref(@NotNull CoreBinding ref) {
     if (!(ref instanceof Binding)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.ReferenceExpression(myData, new CoreReferable(ref.getName(), new TypecheckingResult(new ReferenceExpression((Binding) ref), ((Binding) ref).getTypeExpr())));
+    return new Concrete.CoreExpression(myData, new TypecheckingResult(new ReferenceExpression((Binding) ref), ((Binding) ref).getTypeExpr()));
   }
 
   @NotNull
   @Override
   public ConcreteExpression core(@NotNull TypedExpression expr) {
-    return core(null, expr);
-  }
-
-  @NotNull
-  @Override
-  public ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr) {
-    return new Concrete.ReferenceExpression(myData, new CoreReferable(name, TypecheckingResult.fromChecked(Objects.requireNonNull(expr))));
+    return new Concrete.CoreExpression(myData, TypecheckingResult.fromChecked(expr));
   }
 
   @Override
@@ -835,6 +829,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     return new Concrete.CaseArgument((Concrete.ReferenceExpression) expression, (Concrete.Expression) type);
+  }
+
+  @Override
+  public @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteCoreExpression expression, @Nullable ConcreteExpression type) {
+    if (!(expression instanceof Concrete.CoreExpression && (type == null || type instanceof Concrete.Expression))) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.CaseArgument((Concrete.CoreExpression) expression, (Concrete.Expression) type);
   }
 
   private List<Concrete.Pattern> patterns(Collection<? extends ConcretePattern> patterns) {

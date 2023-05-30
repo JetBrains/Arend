@@ -22,4 +22,5 @@ public interface ConcreteVisitor<P, R> {
   R visitString(ConcreteStringExpression expr, P params);
   R visitQName(ConcreteQNameExpression expr, P params);
   R visitTyped(ConcreteTypedExpression expr, P params);
+  R visitCore(ConcreteCoreExpression expr, P params);
 }

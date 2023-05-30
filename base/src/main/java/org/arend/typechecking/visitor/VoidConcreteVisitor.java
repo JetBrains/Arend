@@ -169,6 +169,11 @@ public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>
   }
 
   @Override
+  public Void visitCore(Concrete.CoreExpression expr, P params) {
+    return null;
+  }
+
+  @Override
   public Void visitGoal(Concrete.GoalExpression expr, P params) {
     return null;
   }

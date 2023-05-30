@@ -207,9 +207,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   protected void printReferenceName(Concrete.ReferenceExpression expr, Precedence prec) {
     Referable ref = expr.getReferent();
-    if (ref instanceof CoreReferable && ((CoreReferable) ref).printExpression()) {
-      printExpr(ToAbstractVisitor.convert(((CoreReferable) ref).result.expression, PrettyPrinterConfig.DEFAULT), prec == null ? new Precedence(ReferenceExpression.PREC) : prec);
-    } else if (ref instanceof AbstractedReferable abs) {
+    if (ref instanceof AbstractedReferable abs) {
       List<Binding> bindings = new ArrayList<>();
       org.arend.core.expr.Expression core = AbstractedExpressionImpl.getExpression(abs.expression, bindings);
       Map<Variable, Concrete.Expression> mapper = new HashMap<>();
@@ -567,6 +565,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   @Override
   public Void visitApplyHole(Concrete.ApplyHoleExpression expr, Precedence params) {
     myBuilder.append("__");
+    return null;
+  }
+
+  @Override
+  public Void visitCore(Concrete.CoreExpression expr, Precedence prec) {
+    printExpr(ToAbstractVisitor.convert(expr.getTypedExpression().expression, PrettyPrinterConfig.DEFAULT), prec);
     return null;
   }
 

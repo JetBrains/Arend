@@ -207,6 +207,11 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   @Override
+  public Boolean visitCore(Concrete.CoreExpression expr, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.CoreExpression && expr.getTypedExpression() == ((Concrete.CoreExpression) expr2).getTypedExpression();
+  }
+
+  @Override
   public Boolean visitTuple(Concrete.TupleExpression expr1, Concrete.Expression expr2) {
     if (!(expr2 instanceof Concrete.TupleExpression)) return false;
     return compareExpressionList(expr1.getFields(), ((Concrete.TupleExpression) expr2).getFields());

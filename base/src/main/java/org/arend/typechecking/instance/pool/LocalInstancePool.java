@@ -12,7 +12,6 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.instance.InstanceSearchParameters;
-import org.arend.naming.reference.CoreReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -87,7 +86,7 @@ public class LocalInstancePool implements InstancePool {
 
   Concrete.Expression findInstance(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, Definition currentDef, FieldSearchParameters fieldSearch) {
     Expression result = findInstance(classifyingExpression, parameters, currentDef, fieldSearch);
-    return result == null ? null : new Concrete.ReferenceExpression(sourceNode, new CoreReferable(null, new TypecheckingResult(result, null)));
+    return result == null ? null : new Concrete.CoreExpression(sourceNode, new TypecheckingResult(result, null));
   }
 
   @Override

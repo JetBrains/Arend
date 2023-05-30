@@ -24,4 +24,5 @@ public interface ConcreteExpressionVisitor<P, R> {
   R visitQNameLiteral(Concrete.QNameLiteral expr, P params);
   R visitTyped(Concrete.TypedExpression expr, P params);
   R visitApplyHole(Concrete.ApplyHoleExpression expr, P params);
+  R visitCore(Concrete.CoreExpression expr, P params);
 }

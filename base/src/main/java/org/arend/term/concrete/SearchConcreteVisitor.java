@@ -62,6 +62,11 @@ public class SearchConcreteVisitor<P,R> implements ConcreteExpressionVisitor<P,R
   }
 
   @Override
+  public R visitCore(Concrete.CoreExpression expr, P params) {
+    return null;
+  }
+
+  @Override
   public R visitGoal(Concrete.GoalExpression expr, P params) {
     return expr.expression != null ? expr.expression.accept(this, params) : null;
   }
