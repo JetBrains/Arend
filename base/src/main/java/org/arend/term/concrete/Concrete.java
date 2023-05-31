@@ -3146,12 +3146,6 @@ public final class Concrete {
     public Pattern copy() {
       return new NamePattern(getData(), isExplicit(), myReferable, type);
     }
-
-    @NotNull
-    @Override
-    public ConcretePattern as(@NotNull ArendRef ref, @Nullable ConcreteExpression type) {
-      throw new IllegalArgumentException("\\as is not allowed for variable patterns");
-    }
   }
 
   public static class TypedReferable extends SourceNodeImpl {
