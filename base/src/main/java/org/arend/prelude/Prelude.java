@@ -136,8 +136,14 @@ public class Prelude implements ArendPrelude {
         POS = INT.getConstructor("pos");
         NEG = INT.getConstructor("neg");
       }
-      case "String" -> STRING = (DataDefinition) definition;
-      case "QName" -> QNAME = (DataDefinition) definition;
+      case "String" -> {
+        STRING = (DataDefinition) definition;
+        STRING.setSort(Sort.SET0);
+      }
+      case "QName" -> {
+        QNAME = (DataDefinition) definition;
+        QNAME.setSort(Sort.SET0);
+      }
       case "I" -> {
         INTERVAL = (DataDefinition) definition;
         INTERVAL.setSort(new Sort(new Level(0), Level.INFINITY));
