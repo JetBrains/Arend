@@ -633,7 +633,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   private boolean compareConstructor(Concrete.Constructor con1, Concrete.Constructor con2) {
     mySubstitution.put(con1.getData(), con2.getData());
-    boolean result = compareParameters(con1.getParameters(), con2.getParameters()) && compare(con1.getResultType(), con2.getResultType()) && compareExpressionList(con1.getEliminatedReferences(), con2.getEliminatedReferences()) && compareClauses(con1.getClauses(), con2.getClauses());
+    boolean result = con1.getData().getRefName().equals(con2.getData().getRefName()) && compareParameters(con1.getParameters(), con2.getParameters()) && compare(con1.getResultType(), con2.getResultType()) && compareExpressionList(con1.getEliminatedReferences(), con2.getEliminatedReferences()) && compareClauses(con1.getClauses(), con2.getClauses());
     freeParameters(con1.getParameters());
     return result;
   }
