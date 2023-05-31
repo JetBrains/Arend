@@ -23,8 +23,6 @@ import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.core.subst.ListLevels;
 import org.arend.ext.serialization.DeserializationException;
-import org.arend.naming.reference.TCDefReferable;
-import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;
 
@@ -581,10 +579,6 @@ class ExpressionDeserialization {
   }
 
   private QNameExpression readQName(ExpressionProtos.Expression.QName proto) throws DeserializationException {
-    TCReferable ref = myCallTargetProvider.getRef(proto.getReference());
-    if (!(ref instanceof TCDefReferable)) {
-      throw new DeserializationException("Not a definition");
-    }
-    return new QNameExpression((TCDefReferable) ref);
+    return new QNameExpression(myCallTargetProvider.getRef(proto.getReference()));
   }
 }

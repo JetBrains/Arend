@@ -4,19 +4,19 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreQNameExpression;
-import org.arend.naming.reference.TCDefReferable;
+import org.arend.naming.reference.TCReferable;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
 public class QNameExpression extends Expression implements CoreQNameExpression {
-  private final TCDefReferable myReferable;
+  private final TCReferable myReferable;
 
-  public QNameExpression(TCDefReferable referable) {
+  public QNameExpression(TCReferable referable) {
     myReferable = referable;
   }
 
   @Override
-  public @NotNull TCDefReferable getRef() {
+  public @NotNull TCReferable getRef() {
     return myReferable;
   }
 

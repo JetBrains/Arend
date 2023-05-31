@@ -7,6 +7,7 @@ import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Fixity;
 import org.arend.ext.reference.Precedence;
@@ -86,7 +87,7 @@ public interface ConcreteFactory {
 
   @NotNull ArendRef local(@NotNull String name);
   @NotNull ArendRef localDeclaration(@NotNull ArendRef ref);
-  @NotNull ArendRef global(@NotNull String name, @NotNull Precedence precedence);
+  @NotNull ArendRef global(@NotNull ModulePath module, @NotNull String name, @NotNull Precedence precedence);
   @NotNull ArendRef global(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec);
   @NotNull ArendRef classRef(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec);
   @NotNull ArendRef fieldRef(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec, boolean isExplicit, boolean isParameter);

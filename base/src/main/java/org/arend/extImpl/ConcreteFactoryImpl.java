@@ -11,6 +11,7 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
+import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Fixity;
 import org.arend.ext.reference.Precedence;
@@ -18,6 +19,7 @@ import org.arend.ext.reference.ConcreteUnparsedSequenceElem;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -691,8 +693,8 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   @Override
-  public @NotNull ArendRef global(@NotNull String name, @NotNull Precedence precedence) {
-    return new GlobalReferableImpl(name, precedence);
+  public @NotNull ArendRef global(@NotNull ModulePath module, @NotNull String name, @NotNull Precedence precedence) {
+    return global(new FullModuleReferable(new ModuleLocation("", true, ModuleLocation.LocationKind.SOURCE, module)), name, precedence, null, null);
   }
 
   @Override
