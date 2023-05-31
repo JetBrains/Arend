@@ -133,7 +133,7 @@ public class MetaReferable implements TCDefReferable, MetaRef {
   @Override
   public boolean isTypechecked() {
     // If it's a definable meta, we always need to typecheck its dependencies
-    return myDefinition != null && (!(myDefinition instanceof DefinableMetaDefinition) || myTypechecked != null);
+    return myDefinition != null && !(myDefinition instanceof DefinableMetaDefinition);
   }
 
   @Override
