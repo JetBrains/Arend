@@ -3046,6 +3046,16 @@ public final class Concrete {
       return this;
     }
 
+    @Override
+    public @Nullable ArendRef getAsRef() {
+      return myAsReferable == null ? null : myAsReferable.referable;
+    }
+
+    @Override
+    public @Nullable ConcreteExpression getAsRefType() {
+      return myAsReferable == null ? null : myAsReferable.type;
+    }
+
     @Nullable
     public TypedReferable getAsReferable() {
       return myAsReferable;

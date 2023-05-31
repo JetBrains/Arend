@@ -9,9 +9,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public interface ConcretePattern extends ConcreteSourceNode {
-  @NotNull ConcretePattern implicit();
-  @NotNull ConcretePattern as(@NotNull ArendRef ref, @Nullable ConcreteExpression type);
-
   boolean isExplicit();
   @NotNull List<? extends ConcretePattern> getPatterns();
+  @Nullable ArendRef getAsRef();
+  @Nullable ConcreteExpression getAsRefType();
+
+  @NotNull ConcretePattern implicit();
+  @NotNull ConcretePattern as(@NotNull ArendRef ref, @Nullable ConcreteExpression type);
 }
