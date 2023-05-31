@@ -3713,7 +3713,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Override
   public TypecheckingResult visitCore(Concrete.CoreExpression expr, Expression expectedType) {
     TypecheckingResult result = expr.getTypedExpression();
-    return checkResult(expectedType, new TypecheckingResult(result.expression, result.type), expr);
+    return tResultToResult(expectedType, new TypecheckingResult(result.expression, result.type), expr);
   }
 
   public static Expression getLevelExpression(Type type, int level) {
