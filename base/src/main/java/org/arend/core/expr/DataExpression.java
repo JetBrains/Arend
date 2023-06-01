@@ -7,17 +7,30 @@ import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Supplier;
+
 public class DataExpression extends Expression implements CoreDataExpression {
-  private final Expression myExpression;
+  private Expression myExpression;
+  private final Supplier<Expression> mySupplier;
   private final Object myMetaData;
 
-  public DataExpression(Expression expression, Object metaData) {
-    myExpression = expression;
+  public DataExpression(Supplier<Expression> supplier, Object metaData) {
+    mySupplier = supplier;
+    myMetaData = metaData;
+  }
+
+  public DataExpression(Expression expr, Object metaData) {
+    myExpression = expr;
+    mySupplier = null;
     myMetaData = metaData;
   }
 
   @Override
   public @NotNull Expression getExpression() {
+    if (myExpression == null) {
+      assert mySupplier != null;
+      myExpression = mySupplier.get();
+    }
     return myExpression;
   }
 

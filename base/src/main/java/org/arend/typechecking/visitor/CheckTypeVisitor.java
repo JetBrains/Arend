@@ -81,6 +81,7 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.arend.core.expr.ExpressionFactory.Int;
 import static org.arend.core.expr.ExpressionFactory.Pos;
@@ -3637,6 +3638,24 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       throw new IllegalArgumentException();
     }
     return Sort.generateInferVars(myEquations, true, (Concrete.SourceNode) marker);
+  }
+
+  @Override
+  public @NotNull TypecheckingResult makeDataExpression(@Nullable Object metaData, @NotNull Supplier<ConcreteExpression> supplier, @NotNull CoreExpression type) {
+    if (!(type instanceof Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new TypecheckingResult(new DataExpression(() -> {
+      ConcreteExpression expr = supplier.get();
+      if (expr == null) {
+        return new ErrorExpression();
+      }
+      if (!(expr instanceof Concrete.Expression)) {
+        throw new IllegalArgumentException();
+      }
+      TypecheckingResult result = checkExpr((Concrete.Expression) expr, (Expression) type);
+      return result == null ? new ErrorExpression() : result.expression;
+    }, metaData), (Expression) type);
   }
 
   @Override

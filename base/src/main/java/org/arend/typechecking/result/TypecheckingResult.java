@@ -5,7 +5,6 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.AppExpression;
-import org.arend.core.expr.DataExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.type.Type;
@@ -99,10 +98,5 @@ public class TypecheckingResult implements TResult, TypedExpression {
   @Override
   public @NotNull TypecheckingResult normalizeType() {
     return new TypecheckingResult(expression, type.normalize(NormalizationMode.WHNF));
-  }
-
-  @Override
-  public @NotNull TypedExpression makeDataExpression(@Nullable Object metaData) {
-    return new TypecheckingResult(new DataExpression(expression, metaData), type);
   }
 }

@@ -13,10 +13,7 @@ import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.context.CoreParameterBuilder;
 import org.arend.ext.core.definition.CoreClassDefinition;
-import org.arend.ext.core.expr.AbstractedExpression;
-import org.arend.ext.core.expr.CoreExpression;
-import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
-import org.arend.ext.core.expr.UncheckedExpression;
+import org.arend.ext.core.expr.*;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
@@ -34,6 +31,7 @@ import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * A type-checker is used to check and transform {@link ConcreteExpression} and {@link UncheckedExpression} to {@link CoreExpression}.
@@ -293,6 +291,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * @param marker                    a marker that is used to report errors related to generated variables.
    */
   @NotNull CoreSort generateSort(@NotNull ConcreteSourceNode marker);
+
+  /**
+   * Typecheks the expression provided by {@code supplier} and creates a new {@link CoreDataExpression} containing the result.
+   */
+  @NotNull TypedExpression makeDataExpression(@Nullable Object metaData, @NotNull Supplier<ConcreteExpression> supplier, @NotNull CoreExpression type);
 
   /**
    * Searches for an instance of the specified class.

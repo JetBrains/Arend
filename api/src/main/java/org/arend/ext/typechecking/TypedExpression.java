@@ -24,5 +24,4 @@ public interface TypedExpression {
    */
   @Nullable TypedExpression replaceType(@NotNull CoreExpression type);
   @NotNull TypedExpression normalizeType();
-  @NotNull TypedExpression makeDataExpression(@Nullable Object metaData);
 }
