@@ -1,5 +1,6 @@
 package org.arend.term.concrete;
 
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCoclauses;
 import org.arend.ext.concrete.expr.ConcreteExpression;
@@ -62,14 +63,23 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments) {
-    return checkArguments(arguments, null);
+    return checkArguments(arguments, null, null);
   }
 
-  protected boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments, @Nullable ErrorReporter errorReporter) {
+  protected boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments, @Nullable ErrorReporter errorReporter, @Nullable ConcreteSourceNode marker) {
     int i = 0;
     for (Concrete.Parameter parameter : myParameters) {
       for (Referable ignored : parameter.getRefList()) {
-        if (i >= arguments.size()) return true;
+        if (i >= arguments.size()) {
+          if (errorReporter != null) {
+            int params = 0;
+            for (Concrete.Parameter param : myParameters) {
+              params += param.getRefList().size();
+            }
+            errorReporter.report(new TypecheckingError("Expected " + params + " arguments, found " + arguments.size(), marker));
+          }
+          return false;
+        }
         ConcreteArgument argument = arguments.get(i++);
         if (!argument.isExplicit()) {
           if (errorReporter != null) errorReporter.report(new ArgumentExplicitnessError(true, argument.getExpression()));
@@ -82,7 +92,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
-    return checkArguments(contextData.getArguments(), errorReporter);
+    return checkArguments(contextData.getArguments(), errorReporter, contextData.getMarker());
   }
 
   @Override
