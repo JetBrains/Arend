@@ -225,4 +225,14 @@ public class ExpressionTest extends TypeCheckingTestCase {
             "\\func x : \\Sigma Unit Nat => (unit, 0)" +
             "\\func f : x.1 = unit => idp");
   }
+
+  @Test
+  public void stringTest() {
+    typeCheckDef("\\func test (x : String) : Nat", 1);
+  }
+
+  @Test
+  public void qNameTest() {
+    typeCheckDef("\\func test (x : QName) : Nat", 1);
+  }
 }

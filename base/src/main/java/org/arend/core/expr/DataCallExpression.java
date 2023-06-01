@@ -158,6 +158,9 @@ public class DataCallExpression extends LeveledDefCallExpression implements Type
 
   public List<ConCallExpression> getMatchedConstructors() {
     DataDefinition definition = getDefinition();
+    if (definition == Prelude.INTERVAL || definition == Prelude.STRING || definition == Prelude.QNAME) {
+      return null;
+    }
     if (definition == Prelude.PATH && getDefCallArguments().get(0).removeConstLam() != null && getDefCallArguments().get(1).areDisjointConstructors(getDefCallArguments().get(2))) {
       return Collections.emptyList();
     }

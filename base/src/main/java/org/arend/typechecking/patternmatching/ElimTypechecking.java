@@ -529,7 +529,8 @@ public class ElimTypechecking {
     if (myErrorReporter == null) return null;
     if (parameters.hasNext() && !parameters.getNext().hasNext()) {
       DataCallExpression dataCall = parameters.getTypeExpr().cast(DataCallExpression.class);
-      if (dataCall != null && dataCall.getDefinition() == Prelude.INTERVAL) {
+      DataDefinition def = dataCall == null ? null : dataCall.getDefinition();
+      if (def == Prelude.INTERVAL || def == Prelude.STRING || def == Prelude.QNAME) {
         myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", mySourceNode));
         return null;
       }
@@ -877,7 +878,7 @@ public class ElimTypechecking {
         dataType = null;
       }
 
-      if (dataType == Prelude.INTERVAL) {
+      if (dataType == Prelude.INTERVAL || dataType == Prelude.STRING || dataType == Prelude.QNAME) {
         if (myErrorReporter != null) myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", getClause(conClause.index, someConPattern)));
         myOK = false;
         return null;

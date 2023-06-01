@@ -847,7 +847,7 @@ public class PatternTypechecking {
         }
         return null;
       }
-      if (!myMode.allowInterval() && dataCall != null && dataCall.getDefinition() == Prelude.INTERVAL) {
+      if (dataCall != null && (!myMode.allowInterval() && dataCall.getDefinition() == Prelude.INTERVAL || dataCall.getDefinition() == Prelude.STRING || dataCall.getDefinition() == Prelude.QNAME)) {
         myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", pattern));
         return null;
       }
