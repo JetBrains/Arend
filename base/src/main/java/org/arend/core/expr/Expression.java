@@ -53,6 +53,7 @@ import org.jetbrains.annotations.TestOnly;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public abstract class Expression implements Body, CoreExpression {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
@@ -233,6 +234,16 @@ public abstract class Expression implements Body, CoreExpression {
   @Override
   public Expression normalize(@NotNull NormalizationMode mode) {
     return accept(NormalizeVisitor.INSTANCE, mode);
+  }
+
+  @Override
+  public @NotNull CoreExpression normalize(@NotNull NormalizationMode mode, @NotNull Predicate<CoreDataExpression> pred) {
+    return accept(new NormalizeVisitor() {
+      @Override
+      public Expression visitData(DataExpression expr, NormalizationMode mode) {
+        return pred.test(expr) ? expr : super.visitData(expr, mode);
+      }
+    }, mode);
   }
 
   @Override

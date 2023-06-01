@@ -185,4 +185,9 @@ public class MinimizeLevelVisitor extends BaseExpressionVisitor<Void, Type> {
   public Type visitAt(AtExpression expr, Void params) {
     return null;
   }
+
+  @Override
+  public Type visitData(DataExpression expr, Void params) {
+    return null;
+  }
 }

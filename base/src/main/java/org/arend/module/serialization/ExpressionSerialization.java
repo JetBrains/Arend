@@ -713,6 +713,11 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   }
 
   @Override
+  public ExpressionProtos.Expression visitData(DataExpression expr, Void params) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public ExpressionProtos.Expression visitFieldCall(FieldCallExpression expr, Void params) {
     ExpressionProtos.Expression.FieldCall.Builder builder = ExpressionProtos.Expression.FieldCall.newBuilder();
     builder.setFieldRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));

@@ -4,7 +4,6 @@ import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
-import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.variable.Variable;
@@ -37,11 +36,6 @@ public interface UncheckedExpression extends PrettyPrintable {
    * Note that expressions stored in type-checked definitions are always correct, so this method just returns the expression itself for them.
    */
   @NotNull UncheckedExpression getUnderlyingExpression();
-
-  /**
-   * Normalizes expression.
-   */
-  @NotNull UncheckedExpression normalize(@NotNull NormalizationMode mode);
 
   /**
    * Unfolds all occurrences of given functions, fields, and variables in this expression.

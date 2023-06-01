@@ -972,4 +972,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     expr.getIntervalArgument().accept(this, Interval());
     return check(expectedType, AppExpression.make(((DataCallExpression) type).getDefCallArguments().get(0), expr.getIntervalArgument(), true), expr);
   }
+
+  @Override
+  public Expression visitData(DataExpression expr, Expression expectedType) {
+    return expr.getExpression().accept(this, expectedType);
+  }
 }

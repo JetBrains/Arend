@@ -289,6 +289,12 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
   }
 
   @Override
+  public Void visitData(DataExpression expr, P params) {
+    expr.getExpression().accept(this, params);
+    return null;
+  }
+
+  @Override
   public Void visitFunction(FunctionDefinition def, P params) {
     visitParameters(def.getParameters(), params);
     def.getResultType().accept(this, params);

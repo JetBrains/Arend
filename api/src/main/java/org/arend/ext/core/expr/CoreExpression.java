@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * A core expression is an internal representation of Arend expressions.
@@ -55,7 +56,12 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
   /**
    * Normalizes expression.
    */
-  @Override @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);
+  @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);
+
+  /**
+   * Normalizes expression until meets a {@link CoreDataExpression} which satisfies {@code pred}.
+   */
+  @NotNull CoreExpression normalize(@NotNull NormalizationMode mode, @NotNull Predicate<CoreDataExpression> pred);
 
   /**
    * Unfolds all occurrences of given functions, fields, and variables in this expression.

@@ -354,4 +354,9 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     Expression intervalArg = expr.getIntervalArgument().accept(this, null);
     return AtExpression.make(expr.getPathArgument().accept(this, null), intervalArg, !expr.getIntervalArgument().getClass().equals(intervalArg.getClass()));
   }
+
+  @Override
+  public Expression visitData(DataExpression expr, Void params) {
+    return new DataExpression(expr.getExpression().accept(this, null), expr.getMetaData());
+  }
 }

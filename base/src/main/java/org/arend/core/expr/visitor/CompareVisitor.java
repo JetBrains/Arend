@@ -628,6 +628,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return true;
   }
 
+  @Override
+  public Boolean visitData(DataExpression expr1, Expression expr2, Expression type) {
+    initResult(expr1, expr2);
+    return false;
+  }
+
   /*
   private boolean compareIsoArgs(List<? extends Expression> list1, List<? extends Expression> list2, ExprSubstitution substitution) {
     DependentLink link = Prelude.ISO.getParameters();

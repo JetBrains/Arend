@@ -365,6 +365,11 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitData(DataExpression expr, Void params) {
+    return expr.getExpression().accept(this, null);
+  }
+
+  @Override
   public Expression visitPEval(PEvalExpression expr, Void params) {
     return new PEvalExpression(expr.getExpression().accept(this, null));
   }

@@ -36,9 +36,6 @@ import static org.arend.core.expr.ExpressionFactory.*;
 public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  {
   public static final NormalizeVisitor INSTANCE = new NormalizeVisitor();
 
-  private NormalizeVisitor() {
-  }
-
   @Override
   public Expression visitApp(AppExpression expr, NormalizationMode mode) {
     Expression function = expr.getFunction().accept(this, mode);
@@ -1124,6 +1121,11 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       }
     }
     return mode == NormalizationMode.WHNF ? AtExpression.make(pathArg, intervalArg, false) : AtExpression.make(pathArg.accept(this, mode), intervalArg.accept(this, mode), false);
+  }
+
+  @Override
+  public Expression visitData(DataExpression expr, NormalizationMode mode) {
+    return expr.getExpression().accept(this, mode);
   }
 
   @Override

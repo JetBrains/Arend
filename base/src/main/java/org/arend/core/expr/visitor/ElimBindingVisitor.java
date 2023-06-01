@@ -510,4 +510,10 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
     Expression intervalArg = acceptSelf(expr.getIntervalArgument(), true);
     return intervalArg == null ? null : AtExpression.make(pathArg, intervalArg, false);
   }
+
+  @Override
+  public Expression visitData(DataExpression expr, Void params) {
+    Expression result = expr.getExpression().accept(this, null);
+    return result != null ? new DataExpression(result, expr.getMetaData()) : null;
+  }
 }

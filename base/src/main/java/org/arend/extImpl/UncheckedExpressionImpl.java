@@ -6,7 +6,6 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
-import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.variable.Variable;
@@ -50,11 +49,6 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
   @Override
   public @NotNull UncheckedExpression getUnderlyingExpression() {
     return wrap(myExpression.getUnderlyingExpression());
-  }
-
-  @Override
-  public @NotNull UncheckedExpression normalize(@NotNull NormalizationMode mode) {
-    return wrap(myExpression.normalize(mode));
   }
 
   @Override
