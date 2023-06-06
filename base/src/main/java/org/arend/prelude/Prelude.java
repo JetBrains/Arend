@@ -27,6 +27,7 @@ import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.Scope;
+import org.arend.term.group.AccessModifier;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
@@ -108,7 +109,7 @@ public class Prelude implements ArendPrelude {
         FIN = (DataDefinition) definition;
         FIN.setSort(Sort.SET0);
         if (FIN.getConstructors().isEmpty()) {
-          FIN_ZERO = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "zero", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
+          FIN_ZERO = new Constructor(new LocatedReferableImpl(AccessModifier.PUBLIC, Precedence.DEFAULT, "zero", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
           DependentLink binding = new TypedDependentLink(true, "n", ExpressionFactory.Nat(), EmptyDependentLink.getInstance());
           List<ExpressionPattern> patterns = Collections.singletonList(new ConstructorExpressionPattern(new ConCallExpression(SUC, Levels.EMPTY, Collections.emptyList(), Collections.emptyList()), Collections.singletonList(new BindingPattern(binding))));
           FIN_ZERO.setPatterns(patterns);
@@ -116,7 +117,7 @@ public class Prelude implements ArendPrelude {
           FIN_ZERO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           FIN_ZERO.getReferable().setTypechecked(FIN_ZERO);
           FIN.addConstructor(FIN_ZERO);
-          FIN_SUC = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "suc", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
+          FIN_SUC = new Constructor(new LocatedReferableImpl(AccessModifier.PUBLIC, Precedence.DEFAULT, "suc", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
           FIN_SUC.setPatterns(patterns);
           FIN_SUC.setParameters(new TypedDependentLink(true, null, DataCallExpression.make(FIN, Levels.EMPTY, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
           FIN_SUC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);

@@ -3,17 +3,20 @@ package org.arend.naming.reference;
 import org.arend.core.definition.Definition;
 import org.arend.ext.reference.Precedence;
 import org.arend.module.ModuleLocation;
+import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class LocatedReferableImpl implements TCDefReferable {
+  private final AccessModifier myAccessModifier;
   private Precedence myPrecedence;
   private final String myName;
   private final LocatedReferable myParent;
   private Kind myKind;
   private Definition myTypechecked;
 
-  public LocatedReferableImpl(Precedence precedence, String name, @Nullable LocatedReferable parent, Kind kind) {
+  public LocatedReferableImpl(AccessModifier accessModifier, Precedence precedence, String name, @Nullable LocatedReferable parent, Kind kind) {
+    myAccessModifier = accessModifier;
     myPrecedence = precedence;
     myName = name;
     myParent = parent;
@@ -63,6 +66,11 @@ public class LocatedReferableImpl implements TCDefReferable {
 
   public void setKind(Kind kind) {
     myKind = kind;
+  }
+
+  @Override
+  public @NotNull AccessModifier getAccessModifier() {
+    return myAccessModifier;
   }
 
   @Nullable

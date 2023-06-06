@@ -9,6 +9,7 @@ import org.arend.ext.typechecking.MetaResolver;
 import org.arend.module.ModuleLocation;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
+import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Supplier;
 
 public class MetaReferable implements TCDefReferable, MetaRef {
+  private final AccessModifier myAccessModifier;
   private final Precedence myPrecedence;
   private final String myName;
   private MetaDefinition myDefinition;
@@ -27,7 +29,8 @@ public class MetaReferable implements TCDefReferable, MetaRef {
   private final LocatedReferable myParent;
   private MetaTopDefinition myTypechecked;
 
-  public MetaReferable(Precedence precedence, String name, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
+  public MetaReferable(AccessModifier accessModifier, Precedence precedence, String name, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
+    myAccessModifier = accessModifier;
     myPrecedence = precedence;
     myName = name;
     myAliasName = aliasName;
@@ -38,8 +41,8 @@ public class MetaReferable implements TCDefReferable, MetaRef {
     myParent = parent;
   }
 
-  public MetaReferable(Precedence precedence, String name, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
-    this(precedence, name, null, null, description, definition, resolver, parent);
+  public MetaReferable(AccessModifier accessModifier, Precedence precedence, String name, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
+    this(accessModifier, precedence, name, null, null, description, definition, resolver, parent);
   }
 
   @Override
@@ -105,6 +108,11 @@ public class MetaReferable implements TCDefReferable, MetaRef {
   @Override
   public Kind getKind() {
     return Kind.OTHER;
+  }
+
+  @Override
+  public @NotNull AccessModifier getAccessModifier() {
+    return myAccessModifier;
   }
 
   @Override
