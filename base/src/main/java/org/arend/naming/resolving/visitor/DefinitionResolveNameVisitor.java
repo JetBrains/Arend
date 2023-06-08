@@ -165,6 +165,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       myResolverListener.beforeDefinitionResolved(def);
     }
 
+    scope = new PrivateFilteredScope(scope);
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
       if (def.getStage() == Concrete.Stage.NOT_RESOLVED && def.body != null) {
@@ -325,6 +326,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
+    scope = new PrivateFilteredScope(scope);
     ExpressionResolveNameVisitor exprVisitor = resolveFunctionHeader(def, scope);
     if (myResolveTypeClassReferences) return null;
     if (exprVisitor == null) exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, new ArrayList<>(), myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
@@ -507,6 +509,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
+    scope = new PrivateFilteredScope(scope);
     ExpressionResolveNameVisitor exprVisitor = resolveDataHeader(def, scope);
     List<? extends Referable> pLevels = visitLevelParameters(def.getPLevelParameters());
     List<? extends Referable> hLevels = visitLevelParameters(def.getHLevelParameters());
@@ -615,6 +618,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       myResolverListener.beforeDefinitionResolved(def);
     }
 
+    scope = new PrivateFilteredScope(scope);
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
       if (def.getStage() == Concrete.Stage.NOT_RESOLVED) {
@@ -740,7 +744,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         addExternalParameters(def);
       }
     }
-    definition.accept(this, defScope);
+    definition.accept(this, new PrivateFilteredScope(defScope));
     if (definition instanceof Concrete.Definition && !myExternalParameters.isEmpty()) {
       ((Concrete.Definition) definition).setExternalParameters(new HashMap<>(myExternalParameters));
     }
@@ -792,7 +796,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       resolveSuperClasses((Concrete.ClassDefinition) def, new PrivateFilteredScope(cachedScope), false);
     }
     if (def instanceof Concrete.ResolvableDefinition) {
-      ((Concrete.ResolvableDefinition) def).accept(this, new PrivateFilteredScope(cachedScope));
+      ((Concrete.ResolvableDefinition) def).accept(this, cachedScope);
     } else {
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }
