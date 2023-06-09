@@ -2,14 +2,15 @@ package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
+import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.Nullable;
 
 public class TypedLocatedReferable extends LocatedReferableImpl implements TypedReferable {
-  private ClassReferable myTypeClassReference;
+  private final ClassReferable myTypeClassReference;
   private Referable myBodyReference;
 
-  public TypedLocatedReferable(Precedence precedence, String name, @Nullable LocatedReferable parent, Kind kind, ClassReferable typeClassReference, Referable bodyReference) {
-    super(precedence, name, parent, kind);
+  public TypedLocatedReferable(AccessModifier accessModifier, Precedence precedence, String name, @Nullable LocatedReferable parent, Kind kind, ClassReferable typeClassReference, Referable bodyReference) {
+    super(accessModifier, precedence, name, parent, kind);
     myTypeClassReference = typeClassReference;
     myBodyReference = bodyReference;
   }
@@ -17,10 +18,6 @@ public class TypedLocatedReferable extends LocatedReferableImpl implements Typed
   @Override
   public @Nullable ClassReferable getTypeClassReference() {
     return myTypeClassReference;
-  }
-
-  public void setTypeClassReference(ClassReferable ref) {
-    myTypeClassReference = ref;
   }
 
   @Override

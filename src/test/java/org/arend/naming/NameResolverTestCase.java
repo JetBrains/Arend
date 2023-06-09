@@ -14,6 +14,7 @@ import org.arend.naming.scope.*;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ReplaceDataVisitor;
+import org.arend.term.group.AccessModifier;
 import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TestLocalErrorReporter;
 import org.arend.typechecking.visitor.DesugarVisitor;
@@ -64,7 +65,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected void addMeta(String name, Precedence prec, MetaDefinition meta) {
-    metaDefs.put(name, new MetaReferable(prec, name, "", meta, meta instanceof MetaResolver ? (MetaResolver) meta : null, new FullModuleReferable(MODULE_PATH)));
+    metaDefs.put(name, new MetaReferable(AccessModifier.PUBLIC, prec, name, "", meta, meta instanceof MetaResolver ? (MetaResolver) meta : null, new FullModuleReferable(MODULE_PATH)));
   }
 
   private Concrete.Expression resolveNamesExpr(Scope parentScope, List<Referable> context, String text, int errors) {

@@ -6,6 +6,7 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
+import org.arend.term.group.AccessModifier;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
@@ -156,7 +157,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     LocalReferable t = ref("t");
     LocalReferable y = ref("y");
     LocalReferable z = ref("z");
-    ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, "f", Precedence.DEFAULT, null, Precedence.DEFAULT, MODULE_REF, GlobalReferable.Kind.FUNCTION);
+    ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, AccessModifier.PUBLIC, "f", Precedence.DEFAULT, null, Precedence.DEFAULT, MODULE_REF, GlobalReferable.Kind.FUNCTION);
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(FunctionKind.FUNC, reference, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), null, body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
     reference.setDefinition(def);
     testDef(def, def);

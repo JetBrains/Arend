@@ -9,10 +9,7 @@ import org.arend.naming.reference.FullModuleReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteCompareVisitor;
-import org.arend.term.group.ChildGroup;
-import org.arend.term.group.FileGroup;
-import org.arend.term.group.Statement;
-import org.arend.term.group.StaticGroup;
+import org.arend.term.group.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +40,7 @@ public abstract class ParserTestCase extends ArendTestCase {
     ArendParser.DefinitionContext ctx = _parse(text).definition();
     List<Statement> statements = new ArrayList<>(1);
     FileGroup fileGroup = new FileGroup(new FullModuleReferable(MODULE_PATH), statements);
-    StaticGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(ctx, fileGroup, null) : null;
+    StaticGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(AccessModifier.PUBLIC, ctx, fileGroup, null) : null;
     if (definition != null) {
       statements.add(definition);
     }

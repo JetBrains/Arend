@@ -1,5 +1,6 @@
 package org.arend.naming.reference;
 
+import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.NotNull;
 
 public interface RedirectingReferable extends GlobalReferable {
@@ -10,6 +11,12 @@ public interface RedirectingReferable extends GlobalReferable {
       ref = ((RedirectingReferable) ref).getOriginalReferable();
     }
     return ref;
+  }
+
+  @Override
+  default @NotNull AccessModifier getAccessModifier() {
+    Referable ref = getOriginalReferable();
+    return ref instanceof GlobalReferable ? ((GlobalReferable) ref).getAccessModifier() : AccessModifier.PUBLIC;
   }
 
   @NotNull

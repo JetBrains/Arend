@@ -8,6 +8,7 @@ import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.util.Pair;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.*;
+import org.arend.term.group.AccessModifier;
 import org.arend.term.prettyprint.FreeVariableCollectorConcrete;
 
 import java.util.*;
@@ -192,7 +193,7 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
             List<Referable> newRefs = new ArrayList<>(param.getRefList().size());
             pair.proj1.set(i, new Concrete.TelescopeParameter(param.getData(), param.isExplicit(), newRefs, param.getType() == null ? null : param.getType().accept(visitor, null), param.isProperty()));
             for (Referable referable : param.getRefList()) {
-              FieldReferableImpl newRef = new FieldReferableImpl(Precedence.DEFAULT, referable.getRefName(), param.isExplicit(), true, true, definition.getData());
+              FieldReferableImpl newRef = new FieldReferableImpl(AccessModifier.PUBLIC, Precedence.DEFAULT, referable.getRefName(), param.isExplicit(), true, true, definition.getData());
               newRefs.add(newRef);
               visitor.bind(referable, newRef);
             }
