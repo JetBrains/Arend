@@ -7,9 +7,9 @@ import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.module.ModuleLocation;
-import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.term.group.AccessModifier;
+import org.arend.typechecking.computation.ComputationRunner;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,7 +57,7 @@ public class MetaReferable implements TCDefReferable, MetaRef {
   }
 
   @Override
-  public Concrete.ResolvableDefinition getDefaultConcrete() {
+  public DefinableMetaDefinition getDefaultConcrete() {
     return myDefinition instanceof DefinableMetaDefinition ? (DefinableMetaDefinition) myDefinition : null;
   }
 
@@ -142,6 +142,14 @@ public class MetaReferable implements TCDefReferable, MetaRef {
   public boolean isTypechecked() {
     // If it's a definable meta, we always need to typecheck its dependencies
     return myDefinition != null && !(myDefinition instanceof DefinableMetaDefinition);
+  }
+
+  @Override
+  public void dropAndCancelTypechecking() {
+    synchronized (getUpdateLock()) {
+      ComputationRunner.getCancellationIndicator().cancel();
+      myTypechecked = null;
+    }
   }
 
   @Override
