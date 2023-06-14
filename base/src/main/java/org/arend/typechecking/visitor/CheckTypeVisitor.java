@@ -1073,6 +1073,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return null;
     }
 
+    if (result.expression != null || result.type != null) { // This is needed just to force evaluation of DataExpression
+      VoidExpressionVisitor<Void> visitor = new VoidExpressionVisitor<>();
+      if (result.expression != null) result.expression.accept(visitor, null);
+      if (result.type != null) result.type.accept(visitor, null);
+    }
+
     invokeDeferredMetas(null, null, false);
     LevelEquationsSolver levelSolver = myEquations.makeLevelEquationsSolver();
     if (propIfPossible) {
