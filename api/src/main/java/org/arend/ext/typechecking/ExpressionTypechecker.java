@@ -48,6 +48,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @NotNull List<ArendRef> getFreeReferencesList();
 
   /**
+   * Returns the list of references and corresponding bindings available in the given context.
+   */
+  @NotNull List<Pair<ArendRef, CoreBinding>> getFreeVariablesList();
+
+  /**
    * Returns the free binding corresponding to the given reference.
    */
   @Nullable CoreBinding getFreeBinding(@NotNull ArendRef ref);

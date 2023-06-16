@@ -253,6 +253,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
+  public @NotNull List<Pair<ArendRef, CoreBinding>> getFreeVariablesList() {
+    List<Pair<ArendRef, CoreBinding>> result = new ArrayList<>();
+    for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
+      if (!(entry.getKey() instanceof VeryFakeLocalReferable)) {
+        result.add(new Pair<>(entry.getKey(), entry.getValue()));
+      }
+    }
+    return result;
+  }
+
+  @Override
   public @Nullable CoreBinding getFreeBinding(@NotNull ArendRef ref) {
     if (!(ref instanceof Referable)) {
       throw new IllegalArgumentException();
