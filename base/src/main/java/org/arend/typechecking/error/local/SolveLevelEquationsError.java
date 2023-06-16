@@ -25,7 +25,7 @@ public class SolveLevelEquationsError extends TypecheckingError {
   }
 
   public String getInferLevelVarText(PrettyPrintVisitor ppv, InferenceLevelVariable variable, Map<InferenceLevelVariable, Referable> refMap) {
-    return ppv.getLevelVariableText(refMap.computeIfAbsent(variable, v -> new LocalReferable("?" + v.getName())), variable.getType());
+    return ppv.getLevelVariableText(refMap.computeIfAbsent(variable, v -> new LocalReferable(v.getName())), variable.getType());
   }
 
   @Override
