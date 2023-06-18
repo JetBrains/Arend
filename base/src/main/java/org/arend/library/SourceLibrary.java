@@ -278,12 +278,17 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
     loadGeneratedModules();
 
+    ArendDependencyProviderImpl provider = new ArendDependencyProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
     try {
       SourceLoader sourceLoader = new SourceLoader(this, libraryManager, true);
-      if (hasRawSources()) {
+      boolean hasRawSources = hasRawSources();
+      if (hasRawSources) {
         for (ModulePath module : header.modules) {
           sourceLoader.preloadRaw(module, false);
         }
+      }
+      myExtension.loadRefs(provider);
+      if (hasRawSources) {
         sourceLoader.loadRawSources();
       }
 
@@ -313,7 +318,6 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     myExtension.setDefinitionProvider(DefinitionProviderImpl.INSTANCE);
-    ArendDependencyProviderImpl provider = new ArendDependencyProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
     try {
       myExtension.load(provider);
     } finally {

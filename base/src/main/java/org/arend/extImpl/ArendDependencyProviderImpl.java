@@ -6,6 +6,7 @@ import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.dependency.Dependency;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.reference.ArendRef;
 import org.arend.library.Library;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.GlobalReferable;
@@ -31,7 +32,8 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     myLibrary = library;
   }
 
-  private @NotNull Referable getReference(@NotNull ModulePath module, @NotNull LongName name) {
+  @Override
+  public @NotNull Referable getRef(@NotNull ModulePath module, @NotNull LongName name) {
     checkEnabled();
     Scope scope = myModuleScopeProvider.forModule(module);
     Referable ref = scope == null ? null : Scope.resolveName(scope, name.toList(), true);
@@ -44,8 +46,7 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
   @NotNull
   @Override
   public <T extends CoreDefinition> T getDefinition(@NotNull ModulePath module, @NotNull LongName name, Class<T> clazz) {
-    checkEnabled();
-    Referable ref = getReference(module, name);
+    Referable ref = getRef(module, name);
     Concrete.ReferableDefinition def;
     var generalDef = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
     if (generalDef instanceof Concrete.ReferableDefinition) {
@@ -62,22 +63,33 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     return clazz.cast(result);
   }
 
-  @Override
-  public void load(@NotNull Object dependencyContainer) {
+  private void load(@NotNull Object dependencyContainer, boolean isDef) {
     try {
       for (Field field : dependencyContainer.getClass().getDeclaredFields()) {
         Class<?> fieldType = field.getType();
-        if (CoreDefinition.class.isAssignableFrom(fieldType)) {
+        if (isDef ? CoreDefinition.class.isAssignableFrom(fieldType) : ArendRef.class.isAssignableFrom(fieldType)) {
           Dependency dependency = field.getAnnotation(Dependency.class);
           if (dependency != null) {
             field.setAccessible(true);
             String name = dependency.name();
-            field.set(dependencyContainer, getDefinition(ModulePath.fromString(dependency.module()), name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name), fieldType.asSubclass(CoreDefinition.class)));
+            ModulePath module = ModulePath.fromString(dependency.module());
+            LongName longName = name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name);
+            field.set(dependencyContainer, isDef ? getDefinition(module, longName, fieldType.asSubclass(CoreDefinition.class)) : getRef(module, longName));
           }
         }
       }
     } catch (IllegalAccessException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  @Override
+  public void loadRefs(@NotNull Object dependencyContainer) {
+    load(dependencyContainer, false);
+  }
+
+  @Override
+  public void load(@NotNull Object dependencyContainer) {
+    load(dependencyContainer, true);
   }
 }

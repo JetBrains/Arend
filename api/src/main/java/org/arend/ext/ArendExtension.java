@@ -52,6 +52,18 @@ public interface ArendExtension {
   default void setUI(@NotNull ArendUI ui) {}
 
   /**
+   * This method is invoked before loading and can be used to initialize the extension.
+   * It should store all the definition that will be used in the extension.
+   * <p>
+   * This method can be invoked multiple times if one of the definitions is updated.
+   *
+   * @param dependencyProvider  provides the access to definitions defined in the library; can be used only inside this method.
+   */
+  default void loadRefs(@NotNull ArendDependencyProvider dependencyProvider) {
+    dependencyProvider.loadRefs(this);
+  }
+
+  /**
    * Declares meta definitions defined in this extension.
    * This method is invoked first, so it does not have access to the library itself.
    * All definitions must be declared in this method, that is {@code contributor} cannot be stored and invoked later.
@@ -66,7 +78,7 @@ public interface ArendExtension {
   /**
    * This method is invoked last and can be used to initialize the extension.
    * It should store all the definition that will be used in the extension.
-   *
+   * <p>
    * This method can be invoked multiple times if one of the definitions is updated.
    *
    * @param dependencyProvider  provides the access to definitions defined in the library; can be used only inside this method.
