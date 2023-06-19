@@ -335,6 +335,9 @@ public final class Concrete {
 
     @Override
     public @NotNull ConcreteExpression substitute(@NotNull Map<ArendRef, ConcreteExpression> substitution) {
+      if (substitution.isEmpty()) {
+        return this;
+      }
       Map<Referable, Expression> map = new HashMap<>();
       for (Map.Entry<ArendRef, ConcreteExpression> entry : substitution.entrySet()) {
         if (!(entry.getKey() instanceof Referable && entry.getValue() instanceof Expression)) {
