@@ -22,6 +22,7 @@ import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.repl.action.*;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.group.AccessModifier;
 import org.arend.term.group.Group;
 import org.arend.term.group.Statement;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -73,7 +74,7 @@ public abstract class Repl {
     myErrorReporter = listErrorReporter;
     myLibraryManager = libraryManager;
     typechecking = typecheckingOrderingListener;
-    myModuleReferable = new LocatedReferableImpl(Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.OTHER);
+    myModuleReferable = new LocatedReferableImpl(AccessModifier.PUBLIC, Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.OTHER);
   }
 
   protected abstract void loadLibraries();

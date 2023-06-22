@@ -3,6 +3,7 @@ package org.arend.naming.reference;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.reference.Precedence;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,6 +29,10 @@ public interface GlobalReferable extends Referable {
   }
 
   @NotNull Precedence getPrecedence();
+
+  default @NotNull AccessModifier getAccessModifier() {
+    return AccessModifier.PUBLIC;
+  }
 
   default boolean hasAlias() {
     return getAliasName() != null;
@@ -62,11 +67,11 @@ public interface GlobalReferable extends Referable {
   }
 
   static Kind kindFromFunction(FunctionKind kind) {
-    switch (kind) {
-      case FUNC_COCLAUSE: case CLASS_COCLAUSE: return Kind.COCLAUSE_FUNCTION;
-      case CONS: return Kind.DEFINED_CONSTRUCTOR;
-      case INSTANCE: return Kind.INSTANCE;
-      default: return Kind.FUNCTION;
-    }
+    return switch (kind) {
+      case FUNC_COCLAUSE, CLASS_COCLAUSE -> Kind.COCLAUSE_FUNCTION;
+      case CONS -> Kind.DEFINED_CONSTRUCTOR;
+      case INSTANCE -> Kind.INSTANCE;
+      default -> Kind.FUNCTION;
+    };
   }
 }

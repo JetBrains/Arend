@@ -1609,7 +1609,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             }
             Levels levels = typecheckLevels(actualDef, baseRefExpr, actualDef.generateInferVars(myEquations, expr), false);
             actualClassCall = new ClassCallExpression(actualClass, levels, new LinkedHashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
-            if (!actualClass.castLevels(expectedClassCall.getDefinition(), levels).compare(expectedClassCall.getLevels(), CMP.LE, myEquations, expr)) {
+            // It's probably better to use CMP.LE here, but then we need to check that copied implementations fit into their types with new levels.
+            if (!actualClass.castLevels(expectedClassCall.getDefinition(), levels).compare(expectedClassCall.getLevels(), CMP.EQ, myEquations, expr)) {
               errorReporter.report(new TypeMismatchWithSubexprError(new CompareVisitor.Result(actualClassCall, expectedClassCall, actualClassCall, expectedClassCall, actualClassCall.getLevels(), expectedClassCall.getLevels()), expr));
               fieldsOK = false;
             }

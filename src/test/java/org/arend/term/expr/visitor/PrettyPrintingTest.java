@@ -20,6 +20,7 @@ import org.arend.naming.reference.LocalReferable;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteCompareVisitor;
+import org.arend.term.group.AccessModifier;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;
@@ -39,11 +40,6 @@ import static org.junit.Assert.*;
 public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   public static PrettyPrinterConfig EMPTY = new PrettyPrinterConfig() {
-    @Override
-    public boolean isSingleLine() {
-      return false;
-    }
-
     @Override
     public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
       return EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE);
@@ -100,7 +96,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     LocalReferable x = ref("X");
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
-    ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, "f", Precedence.DEFAULT, null, Precedence.DEFAULT, MODULE_REF, GlobalReferable.Kind.FUNCTION);
+    ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, AccessModifier.PUBLIC, "f", Precedence.DEFAULT, null, Precedence.DEFAULT, MODULE_REF, GlobalReferable.Kind.FUNCTION);
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(FunctionKind.FUNC, reference, arguments, cVar(X), null, body(cVar(x)));
     reference.setDefinition(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), 0), null);

@@ -16,6 +16,7 @@ import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.SimpleScope;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.group.AccessModifier;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -102,16 +103,15 @@ public class DefinitionContributorImpl extends Disableable implements Definition
 
   @Override
   public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec, @Nullable MetaDefinition meta, @Nullable MetaResolver resolver) {
-    return declare(module, longName, alias, ((locationRef, prevRef, name) -> new MetaReferable(precedence, name, aliasPrec, alias, description, meta, resolver, prevRef instanceof LocatedReferable ? (LocatedReferable) prevRef : locationRef)));
+    return declare(module, longName, alias, ((locationRef, prevRef, name) -> new MetaReferable(AccessModifier.PUBLIC, precedence, name, aliasPrec, alias, description, meta, resolver, prevRef instanceof LocatedReferable ? (LocatedReferable) prevRef : locationRef)));
   }
 
   @Override
   public void declare(@NotNull ConcreteDefinition definition) {
-    if (!(definition instanceof Concrete.Definition)) {
+    if (!(definition instanceof Concrete.Definition def)) {
       throw new IllegalArgumentException();
     }
 
-    Concrete.Definition def = (Concrete.Definition) definition;
     List<String> longName = new ArrayList<>();
     ModulePath module = LocatedReferable.Helper.getLocation(def.getData(), longName).getModulePath();
     longName.add(def.getData().getRefName());

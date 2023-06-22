@@ -2,6 +2,7 @@ package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,8 +16,8 @@ public class ConcreteResolvedClassReferable extends ConcreteLocatedReferable imp
   protected final List<ConcreteClassFieldReferable> fields;
   protected List<GlobalReferable> dynamicReferables = Collections.emptyList();
 
-  public ConcreteResolvedClassReferable(Object data, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, LocatedReferable parent, List<ConcreteClassFieldReferable> fields) {
-    super(data, name, precedence, aliasName, aliasPrecedence, parent, Kind.CLASS);
+  public ConcreteResolvedClassReferable(Object data, AccessModifier accessModifier, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, LocatedReferable parent, List<ConcreteClassFieldReferable> fields) {
+    super(data, accessModifier, name, precedence, aliasName, aliasPrecedence, parent, Kind.CLASS);
     superClasses = new ArrayList<>();
     this.fields = fields;
   }

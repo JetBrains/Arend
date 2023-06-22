@@ -2,7 +2,8 @@ grammar Arend;
 
 statements : statement* EOF;
 
-statement : definition                                                      # statDef
+statement : accessMod? definition                                           # statDef
+          | accessMod '{' statement* '}'                                    # statAccessMod
           | nsCmd longName nsUsing? ('\\hiding' '(' ID (',' ID)* ')')?      # statCmd
           | '\\plevels' ID*                                                 # statPLevels
           | '\\hlevels' ID*                                                 # statHLevels
@@ -12,11 +13,15 @@ nsCmd : '\\open'                        # openCmd
       | '\\import'                      # importCmd
       ;
 
+accessMod : '\\private'   # privateMod
+          | '\\protected' # protectedMod
+          ;
+
 nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
 nsId : ID (AS precedence ID)?;
 
-classFieldDef : (CLASSIFYING | COERCE)? defId tele* ':' returnExpr;
+classFieldDef : accessMod? (CLASSIFYING | COERCE)? defId tele* ':' returnExpr;
 
 classFieldOrImpl : classFieldDef    # classField
                  | localCoClause    # classImpl
@@ -27,7 +32,7 @@ fieldMod  : '\\field'     # fieldField
           ;
 
 classStat : '|' classFieldOrImpl                        # classFieldOrImplStat
-          | definition                                  # classDefinitionStat
+          | accessMod? definition                       # classDefinitionStat
           | fieldMod classFieldDef                      # classFieldStat
           | '\\override' longName tele* ':' returnExpr  # classOverrideStat
           | '\\default' coClause                        # classDefaultStat
@@ -111,7 +116,7 @@ atomPattern : (longName '.')? (INFIX | POSTFIX | ID) # patternID
             | '_'                                    # patternAny
             ;
 
-constructor : COERCE? defId tele* (':' expr2)? (elim? '{' clause? ('|' clause)* '}')?;
+constructor : accessMod? COERCE? defId tele* (':' expr2)? (elim? '{' clause? ('|' clause)* '}')?;
 
 topDefId : defId plevelParams? hlevelParams? COMMA?;
 
@@ -304,8 +309,8 @@ idOrUnknown : ID            # iuId
 
 nameTypedExpr : expr ':' expr ;
 
-fieldTele : '(' (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldTele
-          | '{' (CLASSIFYING | COERCE)? ID+ ':' expr '}'        # implicitFieldTele
+fieldTele : '(' accessMod? (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldTele
+          | '{' accessMod? (CLASSIFYING | COERCE)? ID+ ':' expr '}'        # implicitFieldTele
           ;
 
 LET : '\\let';

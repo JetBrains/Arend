@@ -18,6 +18,7 @@ import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.group.AccessModifier;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,7 +92,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta) {
-    return new Concrete.ReferenceExpression(myData, new MetaReferable(Precedence.DEFAULT, name, "", meta, null, null));
+    return new Concrete.ReferenceExpression(myData, new MetaReferable(AccessModifier.PUBLIC, Precedence.DEFAULT, name, "", meta, null, null));
   }
 
   @NotNull
@@ -657,7 +658,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(parent instanceof LocatedReferable)) {
       throw new IllegalArgumentException();
     }
-    return new ConcreteLocatedReferable(myData, name, precedence, alias, aliasPrec, (LocatedReferable) parent, GlobalReferable.Kind.OTHER);
+    return new ConcreteLocatedReferable(myData, AccessModifier.PUBLIC, name, precedence, alias, aliasPrec, (LocatedReferable) parent, GlobalReferable.Kind.OTHER);
   }
 
   @Override
@@ -665,7 +666,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(parent instanceof LocatedReferable)) {
       throw new IllegalArgumentException();
     }
-    return new ConcreteResolvedClassReferable(myData, name, precedence, alias, aliasPrec, (LocatedReferable) parent, new ArrayList<>());
+    return new ConcreteResolvedClassReferable(myData, AccessModifier.PUBLIC, name, precedence, alias, aliasPrec, (LocatedReferable) parent, new ArrayList<>());
   }
 
   @Override
@@ -673,7 +674,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(parent instanceof TCDefReferable)) {
       throw new IllegalArgumentException();
     }
-    return new ConcreteClassFieldReferable(myData, name, precedence, alias, aliasPrec, !isParameter, isExplicit, isParameter, (TCDefReferable) parent);
+    return new ConcreteClassFieldReferable(myData, AccessModifier.PUBLIC, name, precedence, alias, aliasPrec, !isParameter, isExplicit, isParameter, (TCDefReferable) parent);
   }
 
   private static Referable makeLocalRef(ArendRef ref) {

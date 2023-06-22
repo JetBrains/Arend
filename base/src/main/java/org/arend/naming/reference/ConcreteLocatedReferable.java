@@ -4,6 +4,7 @@ import org.arend.ext.reference.DataContainer;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,8 +15,8 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements Da
   private Concrete.ReferableDefinition myDefinition;
   private String myDescription = "";
 
-  public ConcreteLocatedReferable(Object data, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, LocatedReferable parent, Kind kind) {
-    super(precedence, name, parent, kind);
+  public ConcreteLocatedReferable(Object data, AccessModifier accessModifier, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, LocatedReferable parent, Kind kind) {
+    super(accessModifier, precedence, name, parent, kind);
     myData = data;
     myAliasName = aliasName;
     myAliasPrecedence = aliasPrecedence;
@@ -68,12 +69,6 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements Da
 
   @Override
   public @Nullable Referable getBodyReference(TypeClassReferenceExtractVisitor visitor) {
-    if (myDefinition instanceof Concrete.FunctionDefinition) {
-      Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) myDefinition;
-      if (function.getBody() instanceof Concrete.TermFunctionBody) {
-        return visitor.getTypeReference(function.getBody().getTerm(), false);
-      }
-    }
-    return null;
+    return myDefinition instanceof Concrete.FunctionDefinition function && function.getBody() instanceof Concrete.TermFunctionBody ? visitor.getTypeReference(function.getBody().getTerm(), false) : null;
   }
 }

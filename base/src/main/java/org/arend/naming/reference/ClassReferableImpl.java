@@ -1,6 +1,7 @@
 package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
+import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -14,8 +15,8 @@ public class ClassReferableImpl extends LocatedReferableImpl implements ClassRef
   private final List<? extends TCFieldReferable> myFieldReferables;
   private final List<GlobalReferable> myDynamicReferables;
 
-  public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, List<ClassReferable> superClassReferences, List<Boolean> superLevels, List<? extends TCFieldReferable> fieldReferables, List<GlobalReferable> dynamicReferables, LocatedReferable parent) {
-    super(precedence, name, parent, Kind.CLASS);
+  public ClassReferableImpl(AccessModifier accessModifier, Precedence precedence, String name, boolean isRecord, List<ClassReferable> superClassReferences, List<Boolean> superLevels, List<? extends TCFieldReferable> fieldReferables, List<GlobalReferable> dynamicReferables, LocatedReferable parent) {
+    super(accessModifier, precedence, name, parent, Kind.CLASS);
     myRecord = isRecord;
     mySuperClassReferences = superClassReferences;
     mySuperLevels = superLevels;

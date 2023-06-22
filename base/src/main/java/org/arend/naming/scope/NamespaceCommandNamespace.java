@@ -3,6 +3,7 @@ package org.arend.naming.scope;
 import org.arend.naming.reference.*;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
+import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,7 +35,7 @@ public class NamespaceCommandNamespace implements Scope {
   }
 
   private Referable resolve(Referable ref, Referable.RefKind kind) {
-    return ref instanceof UnresolvedReference ? ((UnresolvedReference) ref).resolve(myModuleNamespace, null, kind) : ref;
+    return ref instanceof UnresolvedReference ? ((UnresolvedReference) ref).resolve(new PrivateFilteredScope(myModuleNamespace, true), null, kind) : ref;
   }
 
   @NotNull
@@ -49,7 +50,7 @@ public class NamespaceCommandNamespace implements Scope {
     Collection<? extends NameRenaming> opened = myNamespaceCommand.getOpenedReferences();
     for (NameRenaming renaming : opened) {
       Referable oldRef = resolve(renaming.getOldReference(), null);
-      if (!(oldRef == null || oldRef instanceof ErrorReference)) {
+      if (!(oldRef == null || oldRef instanceof ErrorReference || oldRef instanceof GlobalReferable && ((GlobalReferable) oldRef).getAccessModifier() == AccessModifier.PRIVATE)) {
         String newName = renaming.getName();
         String name = newName != null ? newName : oldRef.textRepresentation();
         if (!hidden.contains(name)) {
@@ -63,8 +64,8 @@ public class NamespaceCommandNamespace implements Scope {
 
     if (myNamespaceCommand.isUsing()) {
       elemLoop:
-      for (Referable ref : refKind == null ? myModuleNamespace.getElements(null) : myModuleNamespace.getElements(refKind)) {
-        if (hidden.contains(ref.textRepresentation())) {
+      for (Referable ref : myModuleNamespace.getElements(refKind)) {
+        if (hidden.contains(ref.textRepresentation()) || ref instanceof GlobalReferable && ((GlobalReferable) ref).getAccessModifier() != AccessModifier.PUBLIC) {
           continue;
         }
 
@@ -132,7 +133,9 @@ public class NamespaceCommandNamespace implements Scope {
       }
     }
 
-    return isHiddenByUsing(name, kind) ? null : myModuleNamespace.resolveName(name, kind);
+    if (isHiddenByUsing(name, kind)) return null;
+    Referable ref = myModuleNamespace.resolveName(name, kind);
+    return ref instanceof GlobalReferable && ((GlobalReferable) ref).getAccessModifier() != AccessModifier.PUBLIC ? null : ref;
   }
 
   @Nullable
@@ -146,6 +149,9 @@ public class NamespaceCommandNamespace implements Scope {
     for (NameRenaming renaming : opened) {
       String newName = renaming.getName();
       Referable oldRef = renaming.getOldReference();
+      if (oldRef instanceof GlobalReferable && ((GlobalReferable) oldRef).getAccessModifier() == AccessModifier.PRIVATE) {
+        continue;
+      }
       boolean ok;
       if (newName != null) {
         ok = newName.equals(name);

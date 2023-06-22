@@ -485,9 +485,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitVar(Concrete.VarLevelExpression expr, Precedence param) {
-    myBuilder.append(expr.getReferent().getRefName());
     if (expr.isInference()) {
       myBuilder.append(getLevelVariableText(expr.getReferent(), expr.getLevelType()));
+    } else {
+      myBuilder.append(expr.getReferent().getRefName());
     }
     return null;
   }
@@ -1138,9 +1139,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }
 
       @Override
-      boolean printSpaceBefore() { return true;}
-
-      @Override
       boolean printSpaceAfter() { return false;}
     };
 
@@ -1496,9 +1494,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       void printLeft(PrettyPrintVisitor pp) {
         l.printLeft(pp);
       }
-
-      @Override
-      boolean printSpaceBefore() { return true; }
 
       @Override
       boolean printSpaceAfter() { return false; }

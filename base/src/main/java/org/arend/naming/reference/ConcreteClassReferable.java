@@ -8,6 +8,7 @@ import org.arend.naming.scope.LexicalScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.group.AccessModifier;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.jetbrains.annotations.NotNull;
@@ -23,8 +24,8 @@ public class ConcreteClassReferable extends ConcreteResolvedClassReferable imple
   private final List<? extends Reference> myUnresolvedSuperClasses;
   private boolean myResolved = false;
 
-  public ConcreteClassReferable(Object data, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, List<ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, LocatedReferable parent) {
-    super(data, name, precedence, aliasName, aliasPrecedence, parent, fields);
+  public ConcreteClassReferable(Object data, AccessModifier accessModifier, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, List<ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, LocatedReferable parent) {
+    super(data, accessModifier, name, precedence, aliasName, aliasPrecedence, parent, fields);
     myUnresolvedSuperClasses = superClasses;
   }
 

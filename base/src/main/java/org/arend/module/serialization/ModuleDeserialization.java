@@ -261,7 +261,7 @@ public class ModuleDeserialization {
       dynamicReferables = new ArrayList<>();
       fieldReferables = new ArrayList<>();
       DefinitionProtos.Definition.ClassData classProto = groupProto.getDefinition().getClass_();
-      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), classProto.getIsRecord(), new ArrayList<>(), new ArrayList<>(), fieldReferables, dynamicReferables, parent.getReferable());
+      referable = new ClassReferableImpl(AccessModifier.PUBLIC, readPrecedence(referableProto.getPrecedence()), referableProto.getName(), classProto.getIsRecord(), new ArrayList<>(), new ArrayList<>(), fieldReferables, dynamicReferables, parent.getReferable());
     } else {
       dynamicReferables = null;
       fieldReferables = new ArrayList<>(0);
@@ -270,9 +270,9 @@ public class ModuleDeserialization {
       } else {
         String name = referableProto.getName();
         if (myPrelude && kind == GlobalReferable.Kind.FUNCTION && Prelude.ARRAY_NAME.equals(name)) {
-          referable = new TypedLocatedReferable(readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind, null, null);
+          referable = new TypedLocatedReferable(AccessModifier.PUBLIC, readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind, null, null);
         } else {
-          referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind);
+          referable = new LocatedReferableImpl(AccessModifier.PUBLIC, readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind);
         }
       }
     }
@@ -359,7 +359,7 @@ public class ModuleDeserialization {
         for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
           DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
           if (fillInternalDefinitions || fieldProto.getIsRealParameter()) {
-            TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), fieldProto.getIsRealParameter(), referable);
+            TCFieldReferable absField = new FieldReferableImpl(AccessModifier.PUBLIC, readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), fieldProto.getIsRealParameter(), referable);
             ClassField res = new ClassField(absField, classDef);
             classDef.addPersonalField(res);
             absField.setTypechecked(res);
@@ -373,7 +373,7 @@ public class ModuleDeserialization {
         if (fillInternalDefinitions) {
           for (DefinitionProtos.Definition.DataData.Constructor constructor : defProto.getData().getConstructorList()) {
             DefinitionProtos.Referable conReferable = constructor.getReferable();
-            TCDefReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, LocatedReferableImpl.Kind.CONSTRUCTOR);
+            TCDefReferable absConstructor = new LocatedReferableImpl(AccessModifier.PUBLIC, readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, LocatedReferableImpl.Kind.CONSTRUCTOR);
             Constructor res = new Constructor(absConstructor, dataDef);
             dataDef.addConstructor(res);
             absConstructor.setTypechecked(res);

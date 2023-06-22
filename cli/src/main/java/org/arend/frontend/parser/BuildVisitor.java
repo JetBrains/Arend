@@ -129,23 +129,35 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return (Concrete.UniverseExpression) visit(expr);
   }
 
-  private void visitStatementList(List<StatementContext> statementCtxs, List<Statement> statements, ChildGroup parent, TCDefReferable enclosingClass) {
+  private void visitStatementList(AccessModifier accessModifier, List<StatementContext> statementCtxs, List<Statement> statements, ChildGroup parent, TCDefReferable enclosingClass) {
     for (StatementContext statementCtx : statementCtxs) {
       try {
-        statements.add(visitStatement(statementCtx, parent, enclosingClass));
+        statements.addAll(visitStatement(accessModifier, statementCtx, parent, enclosingClass));
       } catch (ParseException ignored) {}
     }
   }
 
-  private Statement visitStatement(StatementContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
+  private AccessModifier visitAccessModifier(AccessModContext ctx, AccessModifier defaultModifier) {
+    return ctx == null ? defaultModifier : ctx instanceof PrivateModContext ? AccessModifier.PRIVATE : AccessModifier.PROTECTED;
+  }
+
+  private AccessModifier visitAccessModifier(AccessModContext ctx) {
+    return visitAccessModifier(ctx, AccessModifier.PUBLIC);
+  }
+
+  private List<Statement> visitStatement(AccessModifier accessModifier, StatementContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     if (ctx instanceof StatCmdContext) {
-      return visitStatCmd((StatCmdContext) ctx, parent);
-    } else if (ctx instanceof StatDefContext) {
-      return visitDefinition(((StatDefContext) ctx).definition(), parent, enclosingClass);
+      return Collections.singletonList(visitStatCmd((StatCmdContext) ctx, parent));
+    } else if (ctx instanceof StatDefContext statDef) {
+      return Collections.singletonList(visitDefinition(visitAccessModifier(statDef.accessMod(), accessModifier), statDef.definition(), parent, enclosingClass));
+    } else if (ctx instanceof StatAccessModContext stat) {
+      List<Statement> statements = new ArrayList<>();
+      visitStatementList(visitAccessModifier(stat.accessMod(), accessModifier), stat.statement(), statements, parent, enclosingClass);
+      return statements;
     } else if (ctx instanceof StatPLevelsContext) {
-      return visitStatPLevels((StatPLevelsContext) ctx, parent.getReferable());
+      return Collections.singletonList(visitStatPLevels((StatPLevelsContext) ctx, parent.getReferable()));
     } else if (ctx instanceof StatHLevelsContext) {
-      return visitStatHLevels((StatHLevelsContext) ctx, parent.getReferable());
+      return Collections.singletonList(visitStatHLevels((StatHLevelsContext) ctx, parent.getReferable()));
     } else {
       if (ctx != null) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown statement"));
@@ -158,29 +170,28 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   public FileGroup visitStatements(StatementsContext ctx) {
     List<Statement> statements = new ArrayList<>();
     FileGroup parentGroup = new FileGroup(new FullModuleReferable(myModule), statements);
-    visitStatementList(ctx.statement(), statements, parentGroup, null);
+    visitStatementList(AccessModifier.PUBLIC, ctx.statement(), statements, parentGroup, null);
     return parentGroup;
   }
 
-  public StaticGroup visitDefinition(DefinitionContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
+  public StaticGroup visitDefinition(AccessModifier accessModifier, DefinitionContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     if (ctx instanceof DefFunctionContext) {
-      return visitDefFunction((DefFunctionContext) ctx, parent, enclosingClass);
+      return visitDefFunction(accessModifier, (DefFunctionContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefDataContext) {
-      return visitDefData((DefDataContext) ctx, parent, enclosingClass);
+      return visitDefData(accessModifier, (DefDataContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefClassContext) {
-      return visitDefClass((DefClassContext) ctx, parent, enclosingClass);
+      return visitDefClass(accessModifier, (DefClassContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefInstanceContext) {
-      return visitDefInstance((DefInstanceContext) ctx, parent, enclosingClass);
+      return visitDefInstance(accessModifier, (DefInstanceContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefModuleContext moduleCtx) {
-      return visitDefModule(moduleCtx.ID(), moduleCtx.where(), parent, enclosingClass);
+      return visitDefModule(accessModifier, moduleCtx.ID(), moduleCtx.where(), parent, enclosingClass);
     } else if (ctx instanceof DefMetaContext) {
-      return visitDefMeta((DefMetaContext) ctx, parent, enclosingClass);
+      return visitDefMeta(accessModifier, (DefMetaContext) ctx, parent, enclosingClass);
     } else {
       if (ctx != null) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown definition"));
       }
       throw new ParseException();
-
     }
   }
 
@@ -409,10 +420,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.NamePattern(tokenPosition(ctx.start), true, null, null);
   }
 
-  private ConcreteLocatedReferable makeReferable(Position position, String name, Precedence precedence, String aliasName, Precedence aliasPrecedence, ChildGroup parent, GlobalReferable.Kind kind) {
+  private ConcreteLocatedReferable makeReferable(Position position, AccessModifier accessModifier, String name, Precedence precedence, String aliasName, Precedence aliasPrecedence, ChildGroup parent, GlobalReferable.Kind kind) {
     return parent instanceof FileGroup
-      ? new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, new FullModuleReferable(myModule), kind)
-      : new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, parent.getReferable(), kind);
+      ? new ConcreteLocatedReferable(position, accessModifier, name, precedence, aliasName, aliasPrecedence, new FullModuleReferable(myModule), kind)
+      : new ConcreteLocatedReferable(position, accessModifier, name, precedence, aliasName, aliasPrecedence, parent.getReferable(), kind);
   }
 
   private Object parseLevelParameters(Token token, List<TerminalNode> ids, LocatedReferable parent, boolean isPLevels) {
@@ -493,13 +504,13 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return result;
   }
 
-  private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
+  private StaticGroup visitDefInstance(AccessModifier accessModifier, DefInstanceContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     boolean isInstance = ctx.instanceKw() instanceof FuncKwInstanceContext;
     List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele(), true);
     TopDefIdContext topDefId = ctx.topDefId();
     DefIdContext defId = topDefId.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
-    ConcreteLocatedReferable reference = makeReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, isInstance ? LocatedReferableImpl.Kind.INSTANCE : GlobalReferable.Kind.DEFINED_CONSTRUCTOR);
+    ConcreteLocatedReferable reference = makeReferable(tokenPosition(defId.ID().getSymbol()), accessModifier, defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, isInstance ? LocatedReferableImpl.Kind.INSTANCE : GlobalReferable.Kind.DEFINED_CONSTRUCTOR);
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr2());
 
     List<Statement> statements = new ArrayList<>();
@@ -550,7 +561,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   private void visitWhere(WhereContext ctx, List<Statement> statements, ChildGroup parent, TCDefReferable enclosingClass) {
     if (ctx != null) {
-      visitStatementList(ctx.statement(), statements, parent, enclosingClass);
+      visitStatementList(AccessModifier.PUBLIC, ctx.statement(), statements, parent, enclosingClass);
     }
   }
 
@@ -606,7 +617,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return returnExprCtx == null ? new Pair<>(null, null) : (Pair<Concrete.Expression,Concrete.Expression>) visit(returnExprCtx);
   }
 
-  private StaticGroup visitDefMeta(DefMetaContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
+  private StaticGroup visitDefMeta(AccessModifier accessModifier, DefMetaContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     DefIdContext defId = ctx.defId();
     var where = ctx.where();
     List<Statement> statements = where == null ? Collections.emptyList() : new ArrayList<>();
@@ -614,7 +625,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     String name = defId.ID().getText();
     var precedence = visitPrecedence(defId.precedence());
     var alias = visitAlias(defId.alias());
-    var reference = new MetaReferable(precedence, name, alias.proj2, alias.proj1, "", null, null, parent.getReferable());
+    var reference = new MetaReferable(accessModifier, precedence, name, alias.proj2, alias.proj1, "", null, null, parent.getReferable());
     var body = ctx.expr();
     if (body != null) {
       var params = visitLamTeles(ctx.tele(), false);
@@ -634,13 +645,13 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return (Concrete.LevelsDefinition) parseLevelParameters(ctx.start, ctx.ID(), parent, false);
   }
 
-  private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
+  private StaticGroup visitDefFunction(AccessModifier accessModifier, DefFunctionContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     Concrete.FunctionBody body;
     FunctionBodyContext functionBodyCtx = ctx.functionBody();
     TopDefIdContext topDefId = ctx.topDefId();
     DefIdContext defId = topDefId.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
-    ConcreteLocatedReferable referable = makeReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, GlobalReferable.Kind.FUNCTION);
+    ConcreteLocatedReferable referable = makeReferable(tokenPosition(defId.ID().getSymbol()), accessModifier, defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, GlobalReferable.Kind.FUNCTION);
     List<Statement> statements = new ArrayList<>();
     StaticGroup resultGroup = new StaticGroup(referable, statements, makeParameterReferableList(referable), parent);
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr2());
@@ -695,7 +706,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return resultGroup;
   }
 
-  private StaticGroup visitDefData(DefDataContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
+  private StaticGroup visitDefData(AccessModifier accessModifier, DefDataContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     final Concrete.UniverseExpression universe;
     Expr2Context exprCtx = ctx.expr2();
     if (exprCtx != null) {
@@ -716,7 +727,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     TopDefIdContext topDefId = ctx.topDefId();
     DefIdContext defId = topDefId.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
-    ConcreteLocatedReferable referable = makeReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, LocatedReferableImpl.Kind.DATA);
+    ConcreteLocatedReferable referable = makeReferable(tokenPosition(defId.ID().getSymbol()), accessModifier, defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, LocatedReferableImpl.Kind.DATA);
     Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(referable, visitPlevelParams(topDefId.plevelParams()), visitHlevelParams(topDefId.hlevelParams()), visitTeles(ctx.tele(), true), eliminatedReferences, ctx.TRUNCATED() != null, universe, new ArrayList<>());
     dataDefinition.enclosingClass = enclosingClass;
     referable.setDefinition(dataDefinition);
@@ -796,7 +807,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
         DefIdContext defId = conCtx.defId();
         Pair<String, Precedence> alias = visitAlias(defId.alias());
-        InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, def.getData(), LocatedReferableImpl.Kind.CONSTRUCTOR);
+        InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(defId.ID().getSymbol()), visitAccessModifier(conCtx.accessMod()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, def.getData(), LocatedReferableImpl.Kind.CONSTRUCTOR);
         Concrete.Constructor constructor = new Concrete.Constructor(reference, def, visitTeles(conCtx.tele(), true), visitElim(elimCtx), clauses, conCtx.COERCE() != null);
         reference.setDefinition(constructor);
         Expr2Context type = conCtx.expr2();
@@ -832,7 +843,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     DefIdContext defId = ctx.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
-    ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, true, false, parentClass.getData());
+    ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(defId.ID().getSymbol()), visitAccessModifier(ctx.accessMod()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, true, false, parentClass.getData());
     Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, kind, parameters, returnPair.proj1, returnPair.proj2, ctx.COERCE() != null);
     reference.setDefinition(field);
     if (ctx.CLASSIFYING() != null) {
@@ -868,8 +879,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       try {
         if (statementCtx instanceof ClassFieldOrImplStatContext) {
           visitInstanceStatement(((ClassFieldOrImplStatContext) statementCtx).classFieldOrImpl(), elements, parentClass);
-        } else if (statementCtx instanceof ClassDefinitionStatContext) {
-          statements.add(visitDefinition(((ClassDefinitionStatContext) statementCtx).definition(), parent, parentClass.getData()));
+        } else if (statementCtx instanceof ClassDefinitionStatContext defStat) {
+          statements.add(visitDefinition(visitAccessModifier(defStat.accessMod()), defStat.definition(), parent, parentClass.getData()));
         } else if (statementCtx instanceof ClassFieldStatContext fieldStatCtx) {
           elements.add(visitClassFieldDef(fieldStatCtx.classFieldDef(), (ClassFieldKind) visit(fieldStatCtx.fieldMod()), parentClass));
         } else if (statementCtx instanceof ClassOverrideStatContext overrideCtx) {
@@ -887,9 +898,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
-  private StaticGroup visitDefModule(TerminalNode id, WhereContext where, ChildGroup parent, TCDefReferable enclosingClass) {
+  private StaticGroup visitDefModule(AccessModifier accessModifier, TerminalNode id, WhereContext where, ChildGroup parent, TCDefReferable enclosingClass) {
     List<Statement> statements = where == null ? Collections.emptyList() : new ArrayList<>();
-    var reference = makeReferable(tokenPosition(id.getSymbol()), id.getText(), Precedence.DEFAULT, null, null, parent, GlobalReferable.Kind.OTHER);
+    var reference = makeReferable(tokenPosition(id.getSymbol()), accessModifier, id.getText(), Precedence.DEFAULT, null, null, parent, GlobalReferable.Kind.OTHER);
     StaticGroup resultGroup = new StaticGroup(reference, statements, Collections.emptyList(), parent);
     visitWhere(where, statements, resultGroup, enclosingClass);
     return resultGroup;
@@ -908,7 +919,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return result;
   }
 
-  private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
+  private ClassGroup visitDefClass(AccessModifier accessModifier, DefClassContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     WhereContext where = ctx.where();
 
     List<Statement> statements = where == null ? Collections.emptyList() : new ArrayList<>();
@@ -928,8 +939,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<ConcreteClassFieldReferable> fieldReferables = new ArrayList<>();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
     reference = parent instanceof FileGroup
-      ? new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, new FullModuleReferable(myModule))
-      : new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, parent.getReferable());
+      ? new ConcreteClassReferable(pos, accessModifier, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, new FullModuleReferable(myModule))
+      : new ConcreteClassReferable(pos, accessModifier, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, parent.getReferable());
     ClassGroup resultGroup = new ClassGroup(reference, fieldReferables, dynamicSubgroups, statements, makeParameterReferableList(reference), parent);
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     ClassBodyContext classBodyCtx = ctx.classBody();
@@ -1292,7 +1303,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           term = Concrete.PatternLamExpression.make(pos, parameters, patterns, term);
         }
       } else {
-        ConcreteLocatedReferable reference = makeReferable(position, id != null ? id.getText() : path.get(path.size() - 1), precCtx == null || precCtx instanceof NoPrecedenceContext ? null : visitPrecedence(precCtx), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.COCLAUSE_FUNCTION);
+        ConcreteLocatedReferable reference = makeReferable(position, AccessModifier.PUBLIC, id != null ? id.getText() : path.get(path.size() - 1), precCtx == null || precCtx instanceof NoPrecedenceContext ? null : visitPrecedence(precCtx), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.COCLAUSE_FUNCTION);
         EmptyGroup myGroup = new EmptyGroup(reference, parentGroup);
         statements.add(myGroup);
         Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(returnCtx);
@@ -1649,27 +1660,30 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       boolean explicit;
       List<TerminalNode> vars;
       ExprContext exprCtx;
+      AccessModContext accessMod;
       boolean forced;
       boolean coerced;
-      if (tele instanceof ExplicitFieldTeleContext) {
+      if (tele instanceof ExplicitFieldTeleContext expCtx) {
         explicit = true;
-        vars = ((ExplicitFieldTeleContext) tele).ID();
-        exprCtx = ((ExplicitFieldTeleContext) tele).expr();
-        forced = ((ExplicitFieldTeleContext) tele).CLASSIFYING() != null;
-        coerced = ((ExplicitFieldTeleContext) tele).COERCE() != null;
-      } else if (tele instanceof ImplicitFieldTeleContext) {
+        vars = expCtx.ID();
+        exprCtx = expCtx.expr();
+        forced = expCtx.CLASSIFYING() != null;
+        coerced = expCtx.COERCE() != null;
+        accessMod = expCtx.accessMod();
+      } else if (tele instanceof ImplicitFieldTeleContext impCtx) {
         explicit = false;
-        vars = ((ImplicitFieldTeleContext) tele).ID();
-        exprCtx = ((ImplicitFieldTeleContext) tele).expr();
-        forced = ((ImplicitFieldTeleContext) tele).CLASSIFYING() != null;
-        coerced = ((ImplicitFieldTeleContext) tele).COERCE() != null;
+        vars = impCtx.ID();
+        exprCtx = impCtx.expr();
+        forced = impCtx.CLASSIFYING() != null;
+        coerced = impCtx.COERCE() != null;
+        accessMod = impCtx.accessMod();
       } else {
         throw new IllegalStateException();
       }
 
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
-        ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, null, Precedence.DEFAULT, false, explicit, true, classDef.getData());
+        ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), visitAccessModifier(accessMod), var.getText(), Precedence.DEFAULT, null, Precedence.DEFAULT, false, explicit, true, classDef.getData());
         Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), type, null, coerced);
         fieldRef.setDefinition(field);
         fields.add(field);
