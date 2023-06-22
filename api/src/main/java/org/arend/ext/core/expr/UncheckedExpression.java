@@ -58,8 +58,10 @@ public interface UncheckedExpression extends PrettyPrintable {
    * The mapper is invoked on every subexpression.
    * If it returns {@code null}, the subexpression won't be changed.
    * If it returns some expression, the subexpression will be replaced with it.
+   *
+   * @param makeSubstitution if true occurrences of variables in the expression returned by the mapper will be replaced by corresponding new variables.
    */
-  @Nullable UncheckedExpression replaceSubexpressions(@NotNull ExpressionMapper mapper);
+  @Nullable UncheckedExpression replaceSubexpressions(@NotNull ExpressionMapper mapper, boolean makeSubstitution);
 
   /**
    * Performs a substitution.

@@ -240,10 +240,36 @@ public abstract class Expression implements Body, CoreExpression {
     return functions.isEmpty() && !unfoldLet && !unfoldFields ? this : accept(new UnfoldVisitor(functions, unfolded, unfoldLet, unfoldFields ? UnfoldVisitor.UnfoldFields.ALL_FIELDS : UnfoldVisitor.UnfoldFields.ONLY_SPECIFIED), null);
   }
 
+  private static class SubstMapperWrapper implements ExpressionMapper {
+    private SubstVisitor substVisitor;
+    private final ExpressionMapper mapper;
+
+    public SubstMapperWrapper(ExpressionMapper mapper) {
+      this.mapper = mapper;
+    }
+
+    public void setSubstVisitor(SubstVisitor substVisitor) {
+      this.substVisitor = substVisitor;
+    }
+
+    @Override
+    public @Nullable UncheckedExpression map(@NotNull CoreExpression expression) {
+      Expression result = UncheckedExpressionImpl.extract(mapper.map(expression));
+      if (result == null) return null;
+      return result.subst(substVisitor.getExprSubstitution()); //result.accept(substVisitor, null);
+    }
+  }
+
   @Nullable
   @Override
-  public UncheckedExpressionImpl replaceSubexpressions(@NotNull ExpressionMapper mapper) {
+  public UncheckedExpressionImpl replaceSubexpressions(@NotNull ExpressionMapper mapper, boolean makeSubstitution) {
     try {
+      if (makeSubstitution) {
+        SubstMapperWrapper substMapper = new SubstMapperWrapper(mapper);
+        var visitor = new RecreateExpressionVisitor(substMapper);
+        substMapper.setSubstVisitor(visitor);
+        return new UncheckedExpressionImpl(accept(visitor, null));
+      }
       return new UncheckedExpressionImpl(accept(new RecreateExpressionVisitor(mapper), null));
     } catch (SubstVisitor.SubstException e) {
       return null;

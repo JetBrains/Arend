@@ -63,8 +63,8 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
   }
 
   @Override
-  public @Nullable UncheckedExpression replaceSubexpressions(@NotNull ExpressionMapper mapper) {
-    return wrap(myExpression.replaceSubexpressions(mapper));
+  public @Nullable UncheckedExpression replaceSubexpressions(@NotNull ExpressionMapper mapper, boolean makeSubstitution) {
+    return wrap(myExpression.replaceSubexpressions(mapper, makeSubstitution));
   }
 
   @Override
