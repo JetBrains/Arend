@@ -55,7 +55,17 @@ public class SourceInfoReference implements SourceInfo, ArendRef, DataContainer 
   }
 
   @Override
+  public @NotNull RefKind getRefKind() {
+    return RefKind.EXPR;
+  }
+
+  @Override
   public boolean isLocalRef() {
+    return false;
+  }
+
+  @Override
+  public boolean isInferenceRef() {
     return false;
   }
 }

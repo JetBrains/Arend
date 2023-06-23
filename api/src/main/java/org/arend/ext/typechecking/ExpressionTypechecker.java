@@ -67,7 +67,7 @@ public interface ExpressionTypechecker extends UserDataHolder {
    *
    * @param index     the index of the variable
    * @param isPLevel  {@code true} if the variable has the p-level, {@code false} otherwise
-   * @return          the variable at the given index
+   * @return          the variable at th
    */
   @Nullable ArendRef getLevelVariable(int index, boolean isPLevel);
 
@@ -75,6 +75,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * Returns the list of level variables of the given type.
    */
   @NotNull List<? extends ArendRef> getLevelVariables(boolean isPLevel);
+
+  /**
+   * Returns the index of the reference or -1 if the reference is unknown.
+   */
+  int getLevelVariableIndex(@NotNull ArendRef ref);
 
   /**
    * All errors that occur during invocation of a meta definition should be reported through the reporter returned by this method.

@@ -1,5 +1,6 @@
 package org.arend.naming.scope;
 
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,23 +35,23 @@ public class ListScope extends DelegateScope {
   @Override
   public Collection<? extends Referable> getElements(Referable.RefKind kind) {
     if (parent == EmptyScope.INSTANCE && kind != null) {
-      return kind == Referable.RefKind.EXPR ? myContext : kind == Referable.RefKind.PLEVEL ? myPLevels : myHLevels;
+      return kind == ArendRef.RefKind.EXPR ? myContext : kind == ArendRef.RefKind.PLEVEL ? myPLevels : myHLevels;
     }
     List<Referable> result = new ArrayList<>();
     Set<String> names = new HashSet<>();
-    if (kind == Referable.RefKind.EXPR || kind == null) {
+    if (kind == ArendRef.RefKind.EXPR || kind == null) {
       result.addAll(myContext);
       for (Referable referable : myContext) {
         names.add(referable.getRefName());
       }
     }
-    if (kind == Referable.RefKind.PLEVEL || kind == null) {
+    if (kind == ArendRef.RefKind.PLEVEL || kind == null) {
       result.addAll(myPLevels);
       for (Referable referable : myPLevels) {
         names.add(referable.getRefName());
       }
     }
-    if (kind == Referable.RefKind.HLEVEL || kind == null) {
+    if (kind == ArendRef.RefKind.HLEVEL || kind == null) {
       result.addAll(myHLevels);
       for (Referable referable : myHLevels) {
         names.add(referable.getRefName());
@@ -86,12 +87,12 @@ public class ListScope extends DelegateScope {
 
   private Referable resolveNameLocal(@NotNull String name, Referable.RefKind kind) {
     if (kind == null) {
-      for (Referable.RefKind refKind : Referable.RefKind.values()) {
+      for (Referable.RefKind refKind : ArendRef.RefKind.values()) {
         Referable ref = resolveName(name, refKind);
         if (ref != null) return ref;
       }
     } else {
-      List<? extends Referable> list = kind == Referable.RefKind.EXPR ? myContext : kind == Referable.RefKind.PLEVEL ? myPLevels : myHLevels;
+      List<? extends Referable> list = kind == ArendRef.RefKind.EXPR ? myContext : kind == ArendRef.RefKind.PLEVEL ? myPLevels : myHLevels;
       for (int i = list.size() - 1; i >= 0; i--) {
         if (list.get(i).getRefName().equals(name)) {
           return list.get(i);
@@ -109,6 +110,6 @@ public class ListScope extends DelegateScope {
 
   @Override
   public @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
-    return resolveNameLocal(name, Referable.RefKind.EXPR) != null ? EmptyScope.INSTANCE : parent.resolveNamespace(name, onlyInternal);
+    return resolveNameLocal(name, ArendRef.RefKind.EXPR) != null ? EmptyScope.INSTANCE : parent.resolveNamespace(name, onlyInternal);
   }
 }

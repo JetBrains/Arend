@@ -1,5 +1,6 @@
 package org.arend.naming.scope;
 
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
@@ -57,7 +58,7 @@ public class CachingScope implements Scope {
   @Override
   public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
     if (kind == null) {
-      for (Referable.RefKind refKind : Referable.RefKind.values()) {
+      for (Referable.RefKind refKind : ArendRef.RefKind.values()) {
         Referable ref = resolveName(name, refKind);
         if (ref != null) {
           return ref;

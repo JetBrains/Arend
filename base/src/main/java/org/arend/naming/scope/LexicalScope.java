@@ -1,6 +1,7 @@
 package org.arend.naming.scope;
 
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.reference.ArendRef;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.*;
 import org.arend.term.NamespaceCommand;
@@ -226,7 +227,7 @@ public class LexicalScope implements Scope {
     }
 
     for (Statement statement : myGroup.getStatements()) {
-      if (resolveType != ResolveType.REF || refKind == null || refKind == Referable.RefKind.EXPR) {
+      if (resolveType != ResolveType.REF || refKind == null || refKind == ArendRef.RefKind.EXPR) {
         Group subgroup = statement.getGroup();
         if (subgroup != null) {
           Object result = resolveSubgroup(subgroup, name, resolveType);
@@ -235,7 +236,7 @@ public class LexicalScope implements Scope {
           }
         }
       }
-      if (refKind == null || refKind == Referable.RefKind.PLEVEL) {
+      if (refKind == null || refKind == ArendRef.RefKind.PLEVEL) {
         Abstract.LevelParameters levelParams = statement.getPLevelsDefinition();
         if (levelParams != null) {
           for (Referable ref : levelParams.getReferables()) {
@@ -245,7 +246,7 @@ public class LexicalScope implements Scope {
           }
         }
       }
-      if (refKind == null || refKind == Referable.RefKind.HLEVEL) {
+      if (refKind == null || refKind == ArendRef.RefKind.HLEVEL) {
         Abstract.LevelParameters levelParams = statement.getHLevelsDefinition();
         if (levelParams != null) {
           for (Referable ref : levelParams.getReferables()) {
@@ -257,7 +258,7 @@ public class LexicalScope implements Scope {
       }
     }
 
-    if (resolveType != ResolveType.REF || refKind == null || refKind == Referable.RefKind.EXPR) {
+    if (resolveType != ResolveType.REF || refKind == null || refKind == ArendRef.RefKind.EXPR) {
       if (myExtent == Extent.EVERYTHING) {
         for (Group subgroup : myGroup.getDynamicSubgroups()) {
           Object result = resolveSubgroup(subgroup, name, resolveType);

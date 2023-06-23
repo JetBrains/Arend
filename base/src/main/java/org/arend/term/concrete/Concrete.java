@@ -1802,16 +1802,10 @@ public final class Concrete {
 
   public static class VarLevelExpression extends LevelExpression implements ConcreteVarLevel {
     private Referable myReferent;
-    private final boolean myInference;
-
-    public VarLevelExpression(Object data, Referable referable, boolean isInference) {
-      super(data);
-      myReferent = referable;
-      myInference = isInference;
-    }
 
     public VarLevelExpression(Object data, Referable referable) {
-      this(data, referable, false);
+      super(data);
+      myReferent = referable;
     }
 
     @Override
@@ -1821,10 +1815,6 @@ public final class Concrete {
 
     public void setReferent(Referable referent) {
       myReferent = referent;
-    }
-
-    public boolean isInference() {
-      return myInference;
     }
 
     @Override

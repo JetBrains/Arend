@@ -1,5 +1,6 @@
 package org.arend.naming.scope.local;
 
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.DelegateScope;
@@ -78,7 +79,7 @@ public class LetScope extends DelegateScope {
   @Nullable
   @Override
   public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
-    if (kind == Referable.RefKind.EXPR || kind == null) {
+    if (kind == ArendRef.RefKind.EXPR || kind == null) {
       for (int i = myClauses.size() - 1; i >= 0; i--) {
         Referable ref = myClauses.get(i).getReferable();
         if (ref != null) {

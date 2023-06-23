@@ -539,7 +539,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? convertExpr(expr.getSubstExpression()) : new Concrete.ReferenceExpression(null, new LocalReferable(expr.getVariable().toString()));
+    return expr.getSubstExpression() != null ? convertExpr(expr.getSubstExpression()) : new Concrete.ReferenceExpression(null, new InferenceReferable(expr.getVariable()));
   }
 
   @Override
@@ -734,15 +734,22 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     Concrete.LevelExpression result;
-    if (level.getVar() == LevelVariable.PVAR) {
+    LevelVariable var = level.getVar();
+    if (var == LevelVariable.PVAR) {
       result = new Concrete.PLevelExpression(null);
-    } else if (level.getVar() == LevelVariable.HVAR) {
+    } else if (var == LevelVariable.HVAR) {
       result = new Concrete.HLevelExpression(null);
     } else {
       if (!hasFlag(PrettyPrinterFlag.SHOW_LEVELS)) {
         return null;
       }
-      result = new Concrete.VarLevelExpression(null, new LocalReferable(level.getVar().getName()), level.getVar() instanceof InferenceLevelVariable);
+      if (var instanceof ParamLevelVariable) {
+        result = new Concrete.VarLevelExpression(null, new IndexLevelReferable(null, var.getName(), var.getType() == LevelVariable.LvlType.PLVL, ((ParamLevelVariable) var).getIndex()));
+      } else if (var instanceof InferenceLevelVariable) {
+        result = new Concrete.VarLevelExpression(null, new InferenceLevelReferable(null, (InferenceLevelVariable) var));
+      } else {
+        throw new IllegalStateException();
+      }
     }
 
     for (int i = 0; i < level.getConstant(); i++) {

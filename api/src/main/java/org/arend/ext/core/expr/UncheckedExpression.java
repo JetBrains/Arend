@@ -1,11 +1,13 @@
 package org.arend.ext.core.expr;
 
 import org.arend.ext.concrete.ConcreteSourceNode;
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.prettyprinting.PrettyPrintable;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.variable.Variable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -104,4 +106,9 @@ public interface UncheckedExpression extends PrettyPrintable {
    * Checks if this expression and {@param expression} are disjoint constructors of the same data type.
    */
   boolean areDisjointConstructors(@NotNull UncheckedExpression expression);
+
+  /**
+   * Converts this expression to a concrete expression.
+   */
+  @NotNull ConcreteExpression toConcrete(@NotNull PrettyPrinterConfig config);
 }

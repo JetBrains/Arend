@@ -4,8 +4,6 @@ import org.arend.ext.reference.ArendRef;
 import org.jetbrains.annotations.NotNull;
 
 public interface Referable extends ArendRef {
-  enum RefKind { EXPR, PLEVEL, HLEVEL }
-
   @NotNull String textRepresentation();
 
   @NotNull
@@ -15,6 +13,7 @@ public interface Referable extends ArendRef {
   }
 
   @NotNull
+  @Override
   default Referable.RefKind getRefKind() {
     return RefKind.EXPR;
   }
@@ -31,5 +30,10 @@ public interface Referable extends ArendRef {
   @Override
   default boolean isLocalRef() {
     return true;
+  }
+
+  @Override
+  default boolean isInferenceRef() {
+    return false;
   }
 }

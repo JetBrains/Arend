@@ -109,6 +109,13 @@ public abstract class InferenceVariable implements Variable, CoreInferenceVariab
     return myReference == null ? null : myReference.getSubstExpression();
   }
 
+  public InferenceReferenceExpression getOrSetExpression() {
+    if (myReference == null) {
+      myReference = new InferenceReferenceExpression(this);
+    }
+    return myReference;
+  }
+
   public Concrete.SourceNode getSourceNode() {
     return mySourceNode;
   }

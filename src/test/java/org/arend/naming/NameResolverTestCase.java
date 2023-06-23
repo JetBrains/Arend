@@ -2,6 +2,7 @@ package org.arend.naming;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.error.DummyErrorReporter;
+import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
@@ -34,12 +35,12 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   private final Scope metaScope = new Scope() {
     @Override
     public @Nullable Referable resolveName(@NotNull String name, Referable.RefKind kind) {
-      return kind == null || kind == Referable.RefKind.EXPR ? metaDefs.get(name) : null;
+      return kind == null || kind == ArendRef.RefKind.EXPR ? metaDefs.get(name) : null;
     }
 
     @Override
     public @NotNull Collection<? extends Referable> getElements(Referable.RefKind kind) {
-      return kind == null || kind == Referable.RefKind.EXPR ? metaDefs.values() : Collections.emptyList();
+      return kind == null || kind == ArendRef.RefKind.EXPR ? metaDefs.values() : Collections.emptyList();
     }
   };
 

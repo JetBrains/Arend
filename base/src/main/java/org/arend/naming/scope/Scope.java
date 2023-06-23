@@ -1,5 +1,6 @@
 package org.arend.naming.scope;
 
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +38,7 @@ public interface Scope {
 
   @NotNull
   default Collection<? extends Referable> getElements() {
-    return getElements(Referable.RefKind.EXPR);
+    return getElements(ArendRef.RefKind.EXPR);
   }
 
   /**
@@ -53,7 +54,7 @@ public interface Scope {
 
   @Nullable
   default Referable resolveName(@NotNull String name) {
-    return resolveName(name, Referable.RefKind.EXPR);
+    return resolveName(name, ArendRef.RefKind.EXPR);
   }
 
   default @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {

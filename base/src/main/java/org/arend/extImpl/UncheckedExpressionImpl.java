@@ -2,6 +2,7 @@ package org.arend.extImpl;
 
 import org.arend.core.expr.Expression;
 import org.arend.ext.concrete.ConcreteSourceNode;
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
@@ -99,6 +100,11 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
   @Override
   public boolean areDisjointConstructors(@NotNull UncheckedExpression expression) {
     return myExpression.areDisjointConstructors(expression);
+  }
+
+  @Override
+  public @NotNull ConcreteExpression toConcrete(@NotNull PrettyPrinterConfig config) {
+    return myExpression.toConcrete(config);
   }
 
   @Override

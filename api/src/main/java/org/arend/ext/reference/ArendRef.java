@@ -8,7 +8,11 @@ import org.jetbrains.annotations.Nullable;
  * A reference either to a definition or a local binding.
  */
 public interface ArendRef {
+  enum RefKind { EXPR, PLEVEL, HLEVEL }
+
   @NotNull String getRefName();
+
+  @NotNull RefKind getRefKind();
 
   /**
    * Returns the long name of a definition; returns null for local bindings.
@@ -22,4 +26,6 @@ public interface ArendRef {
   }
 
   boolean isLocalRef();
+
+  boolean isInferenceRef();
 }

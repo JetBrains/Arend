@@ -1,5 +1,6 @@
 package org.arend.naming.scope.local;
 
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.Scope;
@@ -31,7 +32,7 @@ public class TelescopeScope extends DelegateScope {
 
   @Override
   public @NotNull Collection<? extends Referable> getElements(Referable.@Nullable RefKind kind) {
-    if (!(kind == Referable.RefKind.EXPR || kind == null)) {
+    if (!(kind == ArendRef.RefKind.EXPR || kind == null)) {
       return parent.getElements();
     }
 

@@ -2,6 +2,7 @@ package org.arend.typechecking;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.ParamLevelVariable;
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.LevelReferable;
 
 import java.util.ArrayList;
@@ -43,5 +44,18 @@ public class LevelContext {
   public List<LevelReferable> getList(LevelVariable.LvlType type) {
     var vars = type == LevelVariable.LvlType.PLVL ? myPVars : myHVars;
     return new ArrayList<>(vars.keySet());
+  }
+
+  public int getIndex(LevelReferable ref) {
+    if (ref.getRefKind() == ArendRef.RefKind.EXPR) return -1;
+    var vars = ref.getRefKind() == ArendRef.RefKind.PLEVEL ? myPVars : myHVars;
+    int index = 0;
+    for (LevelReferable referable : vars.keySet()) {
+      if (referable.equals(ref)) {
+        return index;
+      }
+      index++;
+    }
+    return -1;
   }
 }

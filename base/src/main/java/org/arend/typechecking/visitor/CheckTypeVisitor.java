@@ -291,6 +291,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return myLevelContext == null ? Collections.emptyList() : myLevelContext.getList(isPLevel ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL);
   }
 
+  @Override
+  public int getLevelVariableIndex(@NotNull ArendRef ref) {
+    return ref instanceof IndexLevelReferable ? ((IndexLevelReferable) ref).getIndex() : ref instanceof LevelReferable && myLevelContext != null ? myLevelContext.getIndex((LevelReferable) ref) : -1;
+  }
+
   @NotNull
   @Override
   public ErrorReporter getErrorReporter() {
@@ -2092,17 +2097,21 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public Level visitVar(Concrete.VarLevelExpression expr, LevelVariable base) {
-    if (expr.getReferent() instanceof ErrorReference) {
+    Referable ref = expr.getReferent();
+    if (ref instanceof ErrorReference) {
       return new Level(base);
     }
-    ParamLevelVariable var = myLevelContext != null && expr.getReferent() instanceof LevelReferable ? myLevelContext.getVariable((LevelReferable) expr.getReferent()) : null;
+    if (ref instanceof InferenceLevelReferable) {
+      return new Level(((InferenceLevelReferable) ref).getVariable());
+    }
+    ParamLevelVariable var = myLevelContext != null && ref instanceof LevelReferable ? myLevelContext.getVariable((LevelReferable) ref) : null;
     if (var == null || var.getType() != base.getType()) {
       if (var == null) {
-        if (checkUnresolved(expr.getReferent(), expr)) {
-          errorReporter.report(new IncorrectReferenceError(expr.getReferent(), expr));
+        if (checkUnresolved(ref, expr)) {
+          errorReporter.report(new IncorrectReferenceError(ref, expr));
         }
       } else {
-        errorReporter.report(new IncorrectLevelTypeError(expr.getReferent(), base.getType(), expr));
+        errorReporter.report(new IncorrectLevelTypeError(ref, base.getType(), expr));
       }
       return new Level(base);
     }
@@ -3465,6 +3474,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Override
   public TypecheckingResult visitQNameLiteral(Concrete.QNameLiteral expr, Expression expectedType) {
     Referable ref = expr.getReference();
+    if (ref instanceof InferenceReferable infRef) {
+      Expression result = infRef.getVariable().getOrSetExpression();
+      return checkResult(expectedType, new TypecheckingResult(result, result.getType()), expr);
+    }
     if (!(ref instanceof TCReferable)) {
       errorReporter.report(new TypecheckingError("Local references are not allowed", expr));
       return null;

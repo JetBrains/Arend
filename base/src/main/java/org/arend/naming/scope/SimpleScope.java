@@ -1,5 +1,6 @@
 package org.arend.naming.scope;
 
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,13 +14,13 @@ public class SimpleScope implements Scope {
   @NotNull
   @Override
   public Collection<? extends Referable> getElements(Referable.RefKind kind) {
-    return kind == null || kind == Referable.RefKind.EXPR ? names.values() : Collections.emptyList();
+    return kind == null || kind == ArendRef.RefKind.EXPR ? names.values() : Collections.emptyList();
   }
 
   @Nullable
   @Override
   public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
-    return kind == null || kind == Referable.RefKind.EXPR ? names.get(name) : null;
+    return kind == null || kind == ArendRef.RefKind.EXPR ? names.get(name) : null;
   }
 
   @Nullable

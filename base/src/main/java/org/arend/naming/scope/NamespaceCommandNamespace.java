@@ -1,5 +1,6 @@
 package org.arend.naming.scope;
 
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.*;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
@@ -141,7 +142,7 @@ public class NamespaceCommandNamespace implements Scope {
   @Nullable
   @Override
   public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
-    if (isHidden(name, Referable.RefKind.EXPR)) {
+    if (isHidden(name, ArendRef.RefKind.EXPR)) {
       return null;
     }
 
@@ -156,7 +157,7 @@ public class NamespaceCommandNamespace implements Scope {
       if (newName != null) {
         ok = newName.equals(name);
       } else {
-        oldRef = resolve(oldRef, Referable.RefKind.EXPR);
+        oldRef = resolve(oldRef, ArendRef.RefKind.EXPR);
         ok = oldRef.getRefName().equals(name);
       }
       if (ok) {
@@ -164,6 +165,6 @@ public class NamespaceCommandNamespace implements Scope {
       }
     }
 
-    return isHiddenByUsing(name, Referable.RefKind.EXPR) ? null : myModuleNamespace.resolveNamespace(name, onlyInternal);
+    return isHiddenByUsing(name, ArendRef.RefKind.EXPR) ? null : myModuleNamespace.resolveNamespace(name, onlyInternal);
   }
 }

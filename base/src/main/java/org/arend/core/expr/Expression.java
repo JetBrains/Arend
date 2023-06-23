@@ -687,4 +687,9 @@ public abstract class Expression implements Body, CoreExpression {
     }
     return result;
   }
+
+  @Override
+  public @NotNull Concrete.Expression toConcrete(@NotNull PrettyPrinterConfig config) {
+    return ToAbstractVisitor.convert(this, config);
+  }
 }
