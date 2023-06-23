@@ -10,6 +10,7 @@ import org.arend.naming.renamer.Renamer;
 import org.arend.term.concrete.Concrete;
 import org.arend.ext.error.LocalError;
 import org.arend.typechecking.implicitargs.equations.InferenceVariableListener;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.jetbrains.annotations.NotNull;
 
@@ -71,6 +72,11 @@ public abstract class InferenceVariable implements Variable, CoreInferenceVariab
 
   public boolean isSolvableFromEquations() {
     return true;
+  }
+
+  @Override
+  public @NotNull TypecheckingResult computeTyped() {
+    return new TypecheckingResult(getOrSetExpression(), getType());
   }
 
   public void addListener(InferenceVariableListener listener) {

@@ -2,6 +2,7 @@ package org.arend.naming.reference;
 
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -10,10 +11,6 @@ public class InferenceReferable implements Referable {
 
   public InferenceReferable(InferenceVariable var) {
     myVar = var;
-  }
-
-  public InferenceVariable getVariable() {
-    return myVar;
   }
 
   @Override
@@ -27,6 +24,11 @@ public class InferenceReferable implements Referable {
   }
 
   @Override
+  public @Nullable InferenceVariable getInferenceVariable() {
+    return myVar;
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
@@ -37,5 +39,10 @@ public class InferenceReferable implements Referable {
   @Override
   public int hashCode() {
     return Objects.hash(myVar);
+  }
+
+  @Override
+  public String toString() {
+    return textRepresentation();
   }
 }

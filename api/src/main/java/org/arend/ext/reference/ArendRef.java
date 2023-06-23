@@ -1,5 +1,6 @@
 package org.arend.ext.reference;
 
+import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.module.LongName;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,4 +29,6 @@ public interface ArendRef {
   boolean isLocalRef();
 
   boolean isInferenceRef();
+
+  @Nullable CoreInferenceVariable getInferenceVariable();
 }

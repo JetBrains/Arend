@@ -1,7 +1,9 @@
 package org.arend.naming.reference;
 
+import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.reference.ArendRef;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface Referable extends ArendRef {
   @NotNull String textRepresentation();
@@ -35,5 +37,10 @@ public interface Referable extends ArendRef {
   @Override
   default boolean isInferenceRef() {
     return false;
+  }
+
+  @Override
+  default @Nullable CoreInferenceVariable getInferenceVariable() {
+    return null;
   }
 }

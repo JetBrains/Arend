@@ -3474,12 +3474,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Override
   public TypecheckingResult visitQNameLiteral(Concrete.QNameLiteral expr, Expression expectedType) {
     Referable ref = expr.getReference();
-    if (ref instanceof InferenceReferable infRef) {
-      Expression result = infRef.getVariable().getOrSetExpression();
-      return checkResult(expectedType, new TypecheckingResult(result, result.getType()), expr);
-    }
     if (!(ref instanceof TCReferable)) {
-      errorReporter.report(new TypecheckingError("Local references are not allowed", expr));
+      errorReporter.report(new TypecheckingError(ref.isInferenceRef() ? "Inference variables are not allowed" : ref.isLocalRef() ? "Local references are not allowed" : "Unsupported reference", expr));
       return null;
     }
     return checkResult(expectedType, new TypecheckingResult(new QNameExpression((TCReferable) ref), ExpressionFactory.QName()), expr);

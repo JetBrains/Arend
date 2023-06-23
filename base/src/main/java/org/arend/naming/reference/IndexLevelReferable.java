@@ -49,4 +49,9 @@ public class IndexLevelReferable implements LevelReferable {
   public int hashCode() {
     return Objects.hash(myPLevels, myIndex);
   }
+
+  @Override
+  public String toString() {
+    return textRepresentation();
+  }
 }

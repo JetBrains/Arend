@@ -1,8 +1,10 @@
 package org.arend.ext.error;
 
+import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.DataContainer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class SourceInfoReference implements SourceInfo, ArendRef, DataContainer {
   private final SourceInfo sourceInfo;
@@ -67,5 +69,10 @@ public class SourceInfoReference implements SourceInfo, ArendRef, DataContainer 
   @Override
   public boolean isInferenceRef() {
     return false;
+  }
+
+  @Override
+  public @Nullable CoreInferenceVariable getInferenceVariable() {
+    return null;
   }
 }

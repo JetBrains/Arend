@@ -52,4 +52,9 @@ public class InferenceLevelReferable implements LevelReferable {
   public int hashCode() {
     return Objects.hash(myVariable);
   }
+
+  @Override
+  public String toString() {
+    return textRepresentation();
+  }
 }
