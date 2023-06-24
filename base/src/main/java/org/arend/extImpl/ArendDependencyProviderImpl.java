@@ -32,8 +32,7 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     myLibrary = library;
   }
 
-  @Override
-  public @NotNull Referable getRef(@NotNull ModulePath module, @NotNull LongName name) {
+  private @NotNull Referable getReferable(@NotNull ModulePath module, @NotNull LongName name) {
     checkEnabled();
     Scope scope = myModuleScopeProvider.forModule(module);
     Referable ref = scope == null ? null : Scope.resolveName(scope, name.toList(), true);
@@ -43,10 +42,15 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     return ref;
   }
 
+  @Override
+  public @NotNull Referable getRef(@NotNull ModulePath module, @NotNull LongName name) {
+    return myTypechecking.getReferableConverter().convert(getReferable(module, name));
+  }
+
   @NotNull
   @Override
   public <T extends CoreDefinition> T getDefinition(@NotNull ModulePath module, @NotNull LongName name, Class<T> clazz) {
-    Referable ref = getRef(module, name);
+    Referable ref = getReferable(module, name);
     Concrete.ReferableDefinition def;
     var generalDef = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
     if (generalDef instanceof Concrete.ReferableDefinition) {
