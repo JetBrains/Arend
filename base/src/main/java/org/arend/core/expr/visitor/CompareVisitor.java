@@ -537,12 +537,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         if (initResult(args1.get(i), args2.get(i))) {
           List<Pair<Expression, Boolean>> argsExp1 = getArguments(expr1);
           for (int j = 0; j < argsExp1.size(); j++) {
-            fun1 = i == j ? myResult.wholeExpr1 : AppExpression.make(fun1, argsExp1.get(j).proj1, argsExp1.get(j).proj2);
+            fun1 = AppExpression.make(fun1, i == j ? myResult.wholeExpr1 : argsExp1.get(j).proj1, argsExp1.get(j).proj2);
           }
           myResult.wholeExpr1 = fun1;
           List<Pair<Expression, Boolean>> argsExp2 = getArguments(expr2);
           for (int j = 0; j < argsExp2.size(); j++) {
-            fun2 = i == j ? myResult.wholeExpr2 : AppExpression.make(fun2, argsExp2.get(j).proj1, argsExp2.get(j).proj2);
+            fun2 = AppExpression.make(fun2, i == j ? myResult.wholeExpr2 : argsExp2.get(j).proj1, argsExp2.get(j).proj2);
           }
           myResult.wholeExpr2 = fun2;
         }
