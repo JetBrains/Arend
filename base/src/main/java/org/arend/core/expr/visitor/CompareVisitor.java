@@ -1771,7 +1771,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private boolean compareClassInstances(Expression expr1, ClassCallExpression classCall1, Expression expr2, ClassCallExpression classCall2, Expression type) {
-    if (expr1 instanceof ArrayExpression && expr2 instanceof ArrayExpression) return false;
+    if (expr1 instanceof ArrayExpression array1 && expr2 instanceof ArrayExpression array2 && array1.getElements().size() == array2.getElements().size()) return false;
     if (classCall1.getDefinition() == Prelude.DEP_ARRAY && classCall2.getDefinition() == Prelude.DEP_ARRAY) {
       Expression length1 = classCall1.getImplementationHere(Prelude.ARRAY_LENGTH, expr1);
       Expression length2 = classCall2.getImplementationHere(Prelude.ARRAY_LENGTH, expr1);

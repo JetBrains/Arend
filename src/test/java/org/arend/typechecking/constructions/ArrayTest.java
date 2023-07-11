@@ -725,4 +725,24 @@ public class ArrayTest extends TypeCheckingTestCase {
       "\\lemma test {A : \\Set} (x y : A) (l : Array A) (p : x = y) : x :: l = y :: l\n" +
       "  => path (\\lam i => p @ i :: l)");
   }
+
+  @Test
+  public void compareTest() {
+    typeCheckDef("\\func test {A : \\Type} {n : Nat} (l : Array A (suc n)) : l 0 :: (\\new Array A n (\\lam j => l (suc j))) = l => idp");
+  }
+
+  @Test
+  public void compareTest2() {
+    typeCheckDef("\\func test {A : \\Type} {n : Nat} (l : Array A (suc n)) : l = l 0 :: (\\new Array A n (\\lam j => l (suc j))) => idp");
+  }
+
+  @Test
+  public void compareTest3() {
+    typeCheckDef("\\func test {A : \\Type} (a : A) {n : Nat} (l : Array A (suc n)) : a :: l 0 :: (\\new Array A n (\\lam j => l (suc j))) = a :: l => idp");
+  }
+
+  @Test
+  public void compareTest4() {
+    typeCheckDef("\\func test {A : \\Type} (a : A) {n : Nat} (l : Array A (suc n)) : a :: l = a :: l 0 :: (\\new Array A n (\\lam j => l (suc j))) => idp");
+  }
 }
