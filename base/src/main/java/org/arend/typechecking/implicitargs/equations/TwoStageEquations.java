@@ -723,15 +723,7 @@ public class TwoStageEquations implements Equations {
     loop:
     for (Pair<InferenceVariable, List<ClassCallExpression>> pair : list) {
       if (pair.proj2.size() == 1) {
-        if (pair.proj2.get(0).getDefinition() == Prelude.DEP_ARRAY) {
-          ClassCallExpression classCall = pair.proj2.get(0);
-          ClassCallExpression solution = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), new LinkedHashMap<>(), classCall.getSort(), classCall.getUniverseKind());
-          copyArray(classCall, pair.proj1, solution);
-          solution.setSort(Prelude.DEP_ARRAY.computeSort(solution.getImplementedHere(), solution.getThisBinding()));
-          solve(pair.proj1, solution, true);
-        } else {
-          solve(pair.proj1, pair.proj2.get(0), true);
-        }
+        solve(pair.proj1, pair.proj2.get(0), true);
         solved = true;
         continue;
       }

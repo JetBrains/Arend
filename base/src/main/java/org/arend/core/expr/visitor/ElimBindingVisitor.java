@@ -3,6 +3,7 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.inference.InferenceVariable;
+import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.param.DependentLink;
@@ -16,6 +17,7 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.prelude.Prelude;
 
 import java.util.*;
 
@@ -131,6 +133,13 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
       Expression newImpl = acceptSelf(entry.getValue(), true);
       if (newImpl == null) {
         if (removeImplementations) {
+          if (entry.getKey() == Prelude.ARRAY_ELEMENTS_TYPE) {
+            Expression type = entry.getValue().removeConstLam();
+            Expression newType = type == null ? null : acceptSelf(type, true);
+            if (newType != null) {
+              newFieldSet.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(expr.getSort(), new TypedSingleDependentLink(true, null, ExpressionFactory.Fin(ExpressionFactory.FieldCall(Prelude.ARRAY_LENGTH, new ReferenceExpression(result.getThisBinding())))), newType));
+            }
+          }
           continue;
         } else {
           if (myKeepVisitor != null) {
@@ -141,7 +150,13 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
       }
       newFieldSet.put(entry.getKey(), newImpl.subst(expr.getThisBinding(), new ReferenceExpression(result.getThisBinding())));
     }
-    result.removeDependencies(expr.getImplementedHere().keySet());
+    if (expr.getDefinition() == Prelude.DEP_ARRAY) {
+      if (result.getImplementedHere().size() <= 2) {
+        newFieldSet.remove(Prelude.ARRAY_AT);
+      }
+    } else {
+      result.removeDependencies(expr.getImplementedHere().keySet());
+    }
 
     if (myKeepVisitor != null) {
       myKeepVisitor.getBindings().remove(expr.getThisBinding());
