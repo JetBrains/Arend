@@ -37,7 +37,6 @@ import org.arend.ext.util.Pair;
 
 import java.util.*;
 
-import static org.arend.core.expr.ExpressionFactory.Fin;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 
 public class TwoStageEquations implements Equations {
@@ -674,51 +673,6 @@ public class TwoStageEquations implements Equations {
     solveClassCallLowerBounds(Collections.singletonList(new Pair<>(var, bounds)), true, false, CMP.LE, false);
   }
 
-  // removes implementations of at and len if possible
-  private void copyArray(ClassCallExpression classCall, InferenceVariable var, ClassCallExpression result) {
-    Map<ClassField, Expression> implementations = result.getImplementedHere();
-    Map<ClassField, Expression> impls = classCall.getImplementedHere();
-    Expression length = impls.get(Prelude.ARRAY_LENGTH);
-    Expression at = impls.get(Prelude.ARRAY_AT);
-    boolean needLength = false;
-    boolean needAt = false;
-    if (length != null || at != null) {
-      for (Equation equation : myEquations) {
-        Expression lower = equation.getLowerBound();
-        ClassCallExpression upper = equation.getLowerBound().cast(ClassCallExpression.class);
-        if (upper != null && lower.getInferenceVariable() == var) {
-          if (!needLength && upper.isImplemented(Prelude.ARRAY_LENGTH)) {
-            needLength = true;
-          }
-          if (!needAt && upper.isImplemented(Prelude.ARRAY_LENGTH)) {
-            needAt = true;
-          }
-          if (needLength && needAt) break;
-        }
-      }
-    }
-    if (length == null) needLength = false;
-    if (at == null) needAt = false;
-    Expression elementsType = impls.get(Prelude.ARRAY_ELEMENTS_TYPE);
-    if (elementsType != null) {
-      if (!needLength) {
-        Expression constType = elementsType.removeConstLam();
-        if (constType != null) {
-          elementsType = new LamExpression(result.getLevels().toLevelPair().toSort().max(Sort.SET0), new TypedSingleDependentLink(true, null, Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(result.getThisBinding())))), constType);
-        } else {
-          needLength = true;
-        }
-      }
-    }
-    if (needLength) {
-      implementations.put(Prelude.ARRAY_LENGTH, length);
-    }
-    if (elementsType != null) {
-      implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
-    }
-    if (needAt) implementations.put(Prelude.ARRAY_AT, at);
-  }
-
   private boolean solveClassCallLowerBounds(List<Pair<InferenceVariable, List<ClassCallExpression>>> list, boolean allOK, boolean solved, CMP cmp, boolean useWrapper) {
     loop:
     for (Pair<InferenceVariable, List<ClassCallExpression>> pair : list) {
@@ -777,12 +731,8 @@ public class TwoStageEquations implements Equations {
 
         ClassCallExpression minClassCall = pair.proj2.get(minIndex);
         pair.proj2.remove(minIndex);
-        if (classDef == Prelude.DEP_ARRAY) {
-          copyArray(minClassCall, pair.proj1, solution);
-        } else {
-          for (Map.Entry<ClassField, Expression> entry : minClassCall.getImplementedHere().entrySet()) {
-            implementations.put(entry.getKey(), entry.getValue().subst(minClassCall.getThisBinding(), thisExpr));
-          }
+        for (Map.Entry<ClassField, Expression> entry : minClassCall.getImplementedHere().entrySet()) {
+          implementations.put(entry.getKey(), entry.getValue().subst(minClassCall.getThisBinding(), thisExpr));
         }
 
         for (ClassCallExpression bound : pair.proj2) {
@@ -805,7 +755,34 @@ public class TwoStageEquations implements Equations {
           }
         }
 
-        if (classDef != Prelude.DEP_ARRAY) {
+        if (classDef == Prelude.DEP_ARRAY) {
+          if (!implementations.containsKey(Prelude.ARRAY_ELEMENTS_TYPE)) {
+            Expression expr = minClassCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+            if (expr != null) {
+              expr = expr.removeConstLam();
+            }
+            if (expr != null) {
+              boolean ok = true;
+              for (ClassCallExpression bound : pair.proj2) {
+                Expression other = bound.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+                if (other != null) {
+                  other = other.removeConstLam();
+                }
+                if (other != null) {
+                  Expression type = expr.getType();
+                  CompareVisitor cmpVisitor = new CompareVisitor(wrapper, CMP.EQ, pair.proj1.getSourceNode());
+                  if (!(cmpVisitor.compare(type, other.getType(), Type.OMEGA, false) && cmpVisitor.normalizedCompare(expr, other, type, true))) {
+                    ok = false;
+                    break;
+                  }
+                }
+              }
+              if (ok) {
+                implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(minClassCall.getSort(), new TypedSingleDependentLink(true, null, ExpressionFactory.Fin(ExpressionFactory.FieldCall(Prelude.ARRAY_LENGTH, new ReferenceExpression(solution.getThisBinding())))), expr));
+              }
+            }
+          }
+        } else {
           solution.removeDependencies(minClassCall.getImplementedHere().keySet());
         }
         solution.setSort(classDef.computeSort(implementations, solution.getThisBinding()));
@@ -906,9 +883,7 @@ public class TwoStageEquations implements Equations {
         actualType = dataCall != null && dataCall.getDefinition() == Prelude.FIN ? result.getType() : Nat();
       } else {
         actualType = result.getType().normalize(NormalizationMode.WHNF);
-        if (actualType instanceof ClassCallExpression && expectedType instanceof ClassCallExpression) {
-          ClassCallExpression actualClassCall = (ClassCallExpression) actualType;
-          ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
+        if (actualType instanceof ClassCallExpression actualClassCall && expectedType instanceof ClassCallExpression expectedClassCall) {
           /* I don't know if this is necessary or not
           if (var.compareClassCallsExactly()) {
             if (!expectedClassCall.getLevels().compare(actualClassCall.getLevels(expectedClassCall.getDefinition()), CMP.GE, this, var.getSourceNode())) {

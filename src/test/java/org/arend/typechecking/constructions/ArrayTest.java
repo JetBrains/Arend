@@ -698,4 +698,31 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void positiveTest() {
     typeCheckDef("\\data D | con (Array D)");
   }
+
+  @Test
+  public void inferTest() {
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test {A : \\Type} {n : Nat} (l : Array A n) : l = l => idp");
+    assertTrue(((ClassCallExpression) ((FunCallExpression) def.getResultType()).getDefCallArguments().get(0)).isImplemented(Prelude.ARRAY_LENGTH));
+  }
+
+  @Test
+  public void inferTest2() {
+    typeCheckDef(
+      "\\lemma test {A : \\Set} (x y : A) (l1 l2 : Array A) (p : x = y) (q : l1 = l2) : x :: l1 = y :: l2\n" +
+      "  => path (\\lam i => p @ i :: q @ i)");
+  }
+
+  @Test
+  public void inferTest3() {
+    typeCheckDef(
+      "\\lemma test {A : \\Set} (x y : A) (l : Array A) (p : x = y) : x :: nil = y :: nil\n" +
+      "  => path (\\lam i => p @ i :: nil)");
+  }
+
+  @Test
+  public void inferTest4() {
+    typeCheckDef(
+      "\\lemma test {A : \\Set} (x y : A) (l : Array A) (p : x = y) : x :: l = y :: l\n" +
+      "  => path (\\lam i => p @ i :: l)");
+  }
 }

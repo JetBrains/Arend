@@ -91,8 +91,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       InferenceVariable infVar = null;
 
       // If result is defCall, then try to infer class instances.
-      if (result instanceof DefCallResult) {
-        DefCallResult defCallResult = (DefCallResult) result;
+      if (result instanceof DefCallResult defCallResult) {
         ClassDefinition classDef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
         if (classDef != null && !classDef.isRecord()) {
           Definition.TypeClassParameterKind kind = defCallResult.getDefinition().getTypeClassParameterKind(i);
@@ -169,8 +168,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     }
 
     if (isExplicit) {
-      if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
-        DefCallResult defCallResult = (DefCallResult) result;
+      if (result instanceof DefCallResult defCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
         SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
         Sort sort0 = Sort.STD.subst(defCallResult.getLevels().toLevelPair());
         Sort sort = sort0.succ();
@@ -450,6 +448,19 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         .applyExpression(result1.expression, true, myVisitor, arguments.get(index).expression)
         .applyExpression(result2.expression, true, myVisitor, arguments.get(index2).expression);
       index = index2 + 1;
+
+      if (result instanceof TypecheckingResult tcResult && tcResult.type instanceof ClassCallExpression resultClassCall && arguments.get(0).isExplicit() && result2.type instanceof ClassCallExpression result2ClassCall && !result2ClassCall.isImplemented(Prelude.ARRAY_LENGTH)) {
+        Expression resultElementsType = resultClassCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+        if (resultElementsType != null) {
+          resultElementsType = resultElementsType.removeConstLam();
+          if (resultElementsType != null) {
+            resultClassCall.getImplementedHere().remove(Prelude.ARRAY_LENGTH);
+            resultClassCall.getImplementedHere().put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(result2ClassCall.getSort(), new TypedSingleDependentLink(true, null, ExpressionFactory.Fin(ExpressionFactory.FieldCall(Prelude.ARRAY_LENGTH, new ReferenceExpression(resultClassCall.getThisBinding())))), resultElementsType));
+          }
+        } else {
+          resultClassCall.getImplementedHere().remove(Prelude.ARRAY_LENGTH);
+        }
+      }
     } else if (definition == Prelude.ARRAY_CONS && elementsType == null && index2 == arguments.size() && index < arguments.size() && defCallResult != null && defCallResult.getArguments().isEmpty()) {
       TypecheckingResult result1 = myVisitor.checkExpr(arguments.get(index).expression, null);
       if (result1 == null) return null;
@@ -489,8 +500,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
   public TResult infer(Concrete.AppExpression expr, Expression expectedType) {
     TResult result;
     Concrete.Expression fun = expr.getFunction();
-    if (fun instanceof Concrete.ReferenceExpression) {
-      Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) fun;
+    if (fun instanceof Concrete.ReferenceExpression refExpr) {
       if (!expr.getArguments().get(0).isExplicit() && (refExpr.getReferent() == Prelude.ZERO.getRef() || refExpr.getReferent() == Prelude.SUC.getRef())) {
         TypecheckingResult argResult = myVisitor.checkExpr(expr.getArguments().get(0).getExpression(), Nat());
         if (argResult == null) {
@@ -777,11 +787,10 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     loop:
     while (true) {
       type = type.normalize(NormalizationMode.WHNF);
-      if (!(type instanceof PiExpression)) {
+      if (!(type instanceof PiExpression pi)) {
         break;
       }
 
-      PiExpression pi = (PiExpression) type;
       piTypes.add(pi);
       type = pi.getCodomain();
       SingleDependentLink link = pi.getParameters();
@@ -869,10 +878,9 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
   private Expression dropPiParameters(Expression type, List<? extends ConcreteArgument> arguments, int i) {
     while (i < arguments.size()) {
-      if (!(type instanceof PiExpression)) {
+      if (!(type instanceof PiExpression pi)) {
         return null;
       }
-      PiExpression pi = (PiExpression) type;
       type = pi.getCodomain();
       SingleDependentLink param = pi.getParameters();
       loop:
