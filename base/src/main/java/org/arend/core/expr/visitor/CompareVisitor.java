@@ -33,8 +33,7 @@ import org.jetbrains.annotations.TestOnly;
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.arend.core.expr.ExpressionFactory.Fin;
-import static org.arend.core.expr.ExpressionFactory.Suc;
+import static org.arend.core.expr.ExpressionFactory.*;
 
 @SuppressWarnings("BooleanMethodIsAlwaysInverted")
 public class CompareVisitor implements ExpressionVisitor2<Expression, Expression, Boolean> {
@@ -1770,6 +1769,38 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return true;
   }
 
+  private Expression addSucs(Expression expr, BigInteger n) {
+    for (BigInteger i = BigInteger.ZERO; i.compareTo(n) < 0; i = i.add(BigInteger.ONE)) {
+      expr = Suc(expr);
+    }
+    return expr;
+  }
+
+  private Expression dropElements(Expression expr, Expression length, ClassCallExpression classCall, BigInteger n) {
+    if (expr instanceof ArrayExpression arrayExpr && n.compareTo(BigInteger.valueOf(arrayExpr.getElements().size())) <= 0) {
+      return arrayExpr.drop(n.intValue());
+    }
+
+    Map<ClassField, Expression> implementations = new LinkedHashMap<>();
+    Expression oldElementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+    Expression elementsType = null;
+    if (oldElementsType != null) {
+      Expression constType = oldElementsType.removeConstLam();
+      if (constType != null) {
+        elementsType = new LamExpression(classCall.getSort(), new TypedSingleDependentLink(true, null, Fin(length)), constType);
+      }
+    }
+    if (elementsType == null) {
+      TypedSingleDependentLink param = new TypedSingleDependentLink(true, "j", Fin(length));
+      elementsType = new LamExpression(classCall.getSort(), param, AppExpression.make(FieldCall(Prelude.ARRAY_ELEMENTS_TYPE, expr), addSucs(new ReferenceExpression(param), n), true));
+    }
+    implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
+    implementations.put(Prelude.ARRAY_LENGTH, length);
+    TypedSingleDependentLink param = new TypedSingleDependentLink(true, "j", Fin(length));
+    implementations.put(Prelude.ARRAY_AT, new LamExpression(classCall.getSort(), param, AppExpression.make(FieldCall(Prelude.ARRAY_AT, expr), addSucs(new ReferenceExpression(param), n), true)));
+    return new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
+  }
+
   private boolean compareClassInstances(Expression expr1, ClassCallExpression classCall1, Expression expr2, ClassCallExpression classCall2, Expression type) {
     if (expr1 instanceof ArrayExpression array1 && expr2 instanceof ArrayExpression array2 && array1.getElements().size() == array2.getElements().size()) return false;
     if (classCall1.getDefinition() == Prelude.DEP_ARRAY && classCall2.getDefinition() == Prelude.DEP_ARRAY) {
@@ -1799,7 +1830,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
                 return false;
               }
             }
-            return true;
+            return compare(dropElements(expr1, pair1.proj1, classCall1, m), dropElements(expr2, pair2.proj1, classCall2, m), new ClassCallExpression(Prelude.DEP_ARRAY, classCall1.getLevels()), true);
           }
         }
       }

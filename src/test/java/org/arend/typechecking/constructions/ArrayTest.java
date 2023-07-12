@@ -745,4 +745,10 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void compareTest4() {
     typeCheckDef("\\func test {A : \\Type} (a : A) {n : Nat} (l : Array A (suc n)) : a :: l = a :: l 0 :: (\\new Array A n (\\lam j => l (suc j))) => idp");
   }
+
+  @Test
+  public void compareTest5() {
+    typeCheckDef("\\func test {A : \\Type} {n : Nat} (l : Array A (suc n)) (l' : Array A n) : l = l 0 :: l' => idp", 1);
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
+  }
 }
