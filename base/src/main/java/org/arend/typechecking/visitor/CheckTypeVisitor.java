@@ -1245,10 +1245,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
     TypecheckingResult typeCheckedBaseClass;
     if (baseClassExpr instanceof Concrete.ReferenceExpression) {
-      boolean withoutUniverses = true;
       Referable ref = ((Concrete.ReferenceExpression) baseClassExpr).getReferent();
+      boolean withoutUniverses = true;
       if (ref instanceof TCDefReferable && ((TCDefReferable) ref).getTypechecked() instanceof ClassDefinition classDef) {
-        if (classDef.getUniverseKind() != UniverseKind.NO_UNIVERSES) {
+        withoutUniverses = classDef.getUniverseKind() != UniverseKind.WITH_UNIVERSES;
+        if (withoutUniverses && classDef.getUniverseKind() != UniverseKind.NO_UNIVERSES) {
           Set<ClassField> implemented = new HashSet<>(classDef.getImplementedFields());
           for (Concrete.ClassFieldImpl classFieldImpl : expr.getStatements()) {
             Referable fieldRef = classFieldImpl.getImplementedField();
