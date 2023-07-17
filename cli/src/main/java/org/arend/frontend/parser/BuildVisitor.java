@@ -253,15 +253,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Precedence(prec.associativity, (byte) priority, prec.isInfix);
   }
 
-  private static class PrecedenceWithoutPriority {
-    private final Precedence.Associativity associativity;
-    private final boolean isInfix;
-
-    private PrecedenceWithoutPriority(Precedence.Associativity associativity, boolean isInfix) {
-      this.associativity = associativity;
-      this.isInfix = isInfix;
-    }
-  }
+  private record PrecedenceWithoutPriority(Precedence.Associativity associativity, boolean isInfix) {}
 
   @Override
   public PrecedenceWithoutPriority visitNonAssocInfix(NonAssocInfixContext ctx) {
@@ -496,7 +488,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     for (Concrete.Parameter parameter : parameters) {
       for (Referable referable : parameter.getReferableList()) {
         if (referable != null && !eliminated.contains(referable.getRefName())) {
-          result.add(new ParameterReferable((ConcreteLocatedReferable) parent, i, referable, new TypeClassReferenceExtractVisitor().getTypeReferenceExpression(parameter.getType(), true)));
+          result.add(new ParameterReferable((ConcreteLocatedReferable) parent, i, referable, TypeClassReferenceExtractVisitor.getTypeReferenceExpression(parameter.getType(), true)));
         }
         i++;
       }

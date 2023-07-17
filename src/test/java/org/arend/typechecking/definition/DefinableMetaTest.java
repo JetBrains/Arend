@@ -181,4 +181,15 @@ public class DefinableMetaTest extends TypeCheckingTestCase {
       "\\data D : \\Set | con f\n" +
       "\\meta f => D -> Nat", 1);
   }
+
+  @Test
+  public void dotWhereVarTest() {
+    resolveNamesModule("""
+      \\record R (x : Nat)
+      \\meta M => R
+      \\func foo (m : M) => 0
+        \\where \\func test => m.x
+      """
+    );
+  }
 }
