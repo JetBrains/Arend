@@ -100,6 +100,7 @@ public final class CommandHandler implements ReplHandler {
           .mapToInt(String::length)
           .summaryStatistics();
       int maxWidth = statistics.getMax() + 1;
+      api.println("Enter Arend expression, statement (e. g. an \\import-command) or a REPL command");
       api.println("There are " + statistics.getCount() + " commands available.");
       var set = new HashSet<AliasableCommand>();
       for (var replCommand : commandMap.entrySet()) {

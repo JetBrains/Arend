@@ -13,7 +13,6 @@ import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
-import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.completer.AggregateCompleter;
 import org.jline.reader.impl.completer.StringsCompleter;
 import org.jline.reader.impl.history.DefaultHistory;
@@ -100,7 +99,9 @@ public class JLineCliRepl extends CommonCliRepl {
       .terminal(myTerminal)
       .build();
     while (true) try {
-      if (repl(reader.readLine(prompt()), reader::readLine)) break;
+      reader.readLine(prompt());
+      String buffer = reader.getBuffer().toString();
+      if (repl(buffer, reader::readLine)) break;
     } catch (UserInterruptException ignored) {
     } catch (EndOfFileException e) {
       break;
@@ -147,11 +148,11 @@ public class JLineCliRepl extends CommonCliRepl {
       return;
     }
     var repl = new JLineCliRepl(terminal);
-    repl.println(ASCII_BANNER);
-    repl.println();
     repl.addLibraryDirectories(libDirs);
     if (recompile) repl.getReplLibrary().addFlag(SourceLibrary.Flag.RECOMPILE);
     repl.initialize();
+    repl.println(ASCII_BANNER);
+    repl.println();
     repl.runRepl();
   }
 

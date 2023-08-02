@@ -45,7 +45,7 @@ public abstract class Repl {
   protected final List<Scope> myMergedScopes = new LinkedList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
   private final TCDefReferable myModuleReferable;
-  protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
+  protected @NotNull ReplScope myReplScope = new ReplScope(null, myMergedScopes);
   protected @NotNull Scope myScope = myReplScope;
   protected @NotNull TypecheckingOrderingListener typechecking;
   protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
@@ -67,6 +67,7 @@ public abstract class Repl {
   };
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull LibraryManager myLibraryManager;
+  public final List<Statement> statements = new ArrayList<>();
 
   public Repl(@NotNull ListErrorReporter listErrorReporter,
               @NotNull LibraryManager libraryManager,
@@ -162,6 +163,7 @@ public abstract class Repl {
     if (checkErrors()) {
       myMergedScopes.remove(scope);
     } else {
+      statements.addAll(group.getStatements());
       typecheckStatements(group, scope);
     }
   }
@@ -197,6 +199,8 @@ public abstract class Repl {
     registerAction("libraries", ShowLoadedLibrariesCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);
     registerAction("help", CommandHandler.HELP_COMMAND_INSTANCE);
+    registerAction("show_context", ShowContextCommand.INSTANCE);
+    registerAction("reset_context", ResetContextCommand.INSTANCE);
   }
 
   public final @Nullable ReplCommand registerAction(@NotNull String name, @NotNull ReplCommand action) {
@@ -328,6 +332,14 @@ public abstract class Repl {
     }
     errorList.clear();
     return hasErrors;
+  }
+
+  public void resetReplContext() {
+    Scope prelude = myMergedScopes.get(myMergedScopes.size() - 1);
+    myMergedScopes.clear();
+    myMergedScopes.add(prelude);
+    myReplScope = new ReplScope(null, myMergedScopes);
+    statements.clear();
   }
 
   private static class ShowLoadedLibrariesCommand implements ReplCommand {

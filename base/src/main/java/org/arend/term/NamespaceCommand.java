@@ -40,9 +40,9 @@ public interface NamespaceCommand extends PrettyPrintable {
     }
 
     List<LineDoc> docPath = new ArrayList<>(path.size());
-    for (int i = 1; i <= path.size(); i++) {
-      docPath.add(refDoc(new ModuleReferable(new ModulePath(path.subList(0, i)))));
-    }
+    //for (int i = 1; i <= path.size(); i++) {
+      docPath.add(refDoc(new ModuleReferable(new ModulePath(path))));
+    //}
     LineDoc referenceDoc = hSep(text("."), docPath);
 
     Collection<? extends NameRenaming> openedReferences = getOpenedReferences();

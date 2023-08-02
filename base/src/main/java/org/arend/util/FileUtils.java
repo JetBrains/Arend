@@ -77,7 +77,7 @@ public class FileUtils {
       return false;
     }
     for (String name : names) {
-      if (!DEFINITION_NAME_REGEX.matcher(name).matches()) {
+      if (!DEFINITION_NAME_REGEX.matcher(name).matches() || name.equals("__")) {
         return false;
       }
     }

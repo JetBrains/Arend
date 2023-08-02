@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 
 public class ImportCompleter implements Completer {
   private final Supplier<Stream<String>> moduleSupplier;
+  static final String IMPORT_KW = "\\import";
 
   public ImportCompleter(@NotNull Supplier<Stream<String>> moduleSupplier) {
     this.moduleSupplier = moduleSupplier;
@@ -22,7 +23,7 @@ public class ImportCompleter implements Completer {
   @Override
   public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
     if (line.words().size() < 1) return;
-    if (!Objects.equals("\\import", line.words().get(0))) return;
+    if (!Objects.equals(IMPORT_KW, line.words().get(0))) return;
     if (line.wordIndex() == 1)
       candidates.addAll(moduleSupplier.get().map(Candidate::new).collect(Collectors.toList()));
   }
