@@ -1814,7 +1814,11 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
           Expression elemsType2 = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
           if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
-          return compare(elemsType1, elemsType2, null, false);
+          if (!compare(elemsType1, elemsType2, null, false)) {
+            myResult = null;
+            return false;
+          }
+          return true;
         } else {
           if (!classCall1.isImplemented(Prelude.ARRAY_AT) && !(expr1 instanceof ArrayExpression) && !classCall2.isImplemented(Prelude.ARRAY_AT) && !(expr2 instanceof ArrayExpression)) {
             return false;
@@ -1826,11 +1830,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
             for (BigInteger i = BigInteger.ZERO; i.compareTo(m) < 0; i = i.add(BigInteger.ONE)) {
               IntegerExpression index = new BigIntegerExpression(i);
               if (!normalizedCompare(FunCallExpression.make(Prelude.ARRAY_INDEX, classCall1.getLevels(), Arrays.asList(expr1, index)).normalize(NormalizationMode.WHNF),
-                                     FunCallExpression.make(Prelude.ARRAY_INDEX, classCall2.getLevels(), Arrays.asList(expr2, index)).normalize(NormalizationMode.WHNF), null, true)) {
+                                     FunCallExpression.make(Prelude.ARRAY_INDEX, classCall2.getLevels(), Arrays.asList(expr2, index)).normalize(NormalizationMode.WHNF), null, true) ||
+                  !compare(dropElements(expr1, pair1.proj1, classCall1, m), dropElements(expr2, pair2.proj1, classCall2, m), new ClassCallExpression(Prelude.DEP_ARRAY, classCall1.getLevels()), true)) {
+                myResult = null;
                 return false;
               }
             }
-            return compare(dropElements(expr1, pair1.proj1, classCall1, m), dropElements(expr2, pair2.proj1, classCall2, m), new ClassCallExpression(Prelude.DEP_ARRAY, classCall1.getLevels()), true);
+            return true;
           }
         }
       }
@@ -1875,6 +1881,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         Expression impl1 = absImpl1 == null ? FieldCallExpression.make(field, expr1) : classCall1.getImplementation(field, expr1);
         Expression impl2 = absImpl2 == null ? FieldCallExpression.make(field, expr2) : classCall2.getImplementation(field, expr2);
         if (!compare(impl1, impl2, field.getType(classCall1.getLevels(field.getParentClass())).applyExpression(expr1), true)) {
+          myResult = null;
           return false;
         }
       } else {
@@ -1889,7 +1896,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         }
         boolean ok = compare(impl1, impl2, field.getType(classCall1.getLevels(field.getParentClass())).applyExpression(expr1), true);
         mySubstitution.remove(classCall2.getThisBinding());
-        if (!ok) return false;
+        if (!ok) {
+          myResult = null;
+          return false;
+        }
       }
     }
 

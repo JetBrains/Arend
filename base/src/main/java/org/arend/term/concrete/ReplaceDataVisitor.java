@@ -81,6 +81,8 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
       result = new Concrete.TuplePattern(getData(pattern), pattern.isExplicit(), args, null);
     } else if (pattern instanceof Concrete.NumberPattern) {
       result = new Concrete.NumberPattern(getData(pattern), ((Concrete.NumberPattern) pattern).getNumber(), null);
+    } else if (pattern instanceof Concrete.UnparsedConstructorPattern) {
+      result = new Concrete.UnparsedConstructorPattern(getData(pattern), pattern.isExplicit(), ((Concrete.UnparsedConstructorPattern) pattern).getUnparsedPatterns(), null);
     } else {
       throw new IllegalStateException();
     }
