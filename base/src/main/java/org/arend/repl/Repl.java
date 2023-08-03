@@ -338,7 +338,7 @@ public abstract class Repl {
     Scope prelude = myMergedScopes.get(myMergedScopes.size() - 1);
     myMergedScopes.clear();
     myMergedScopes.add(prelude);
-    myReplScope = new ReplScope(null, myMergedScopes);
+    myReplScope = new ReplScope(myReplScope.myCurrentLineScope, myMergedScopes);
     statements.clear();
   }
 

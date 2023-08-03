@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 public class ReplScope implements Scope {
-  private @Nullable Scope myCurrentLineScope;
+  @Nullable Scope myCurrentLineScope;
   private final @NotNull List<Scope> myPreviousScopes;
   private final MergeScope myPreviousMergeScope;
 
