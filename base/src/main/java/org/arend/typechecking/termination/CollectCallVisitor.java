@@ -9,6 +9,7 @@ import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.prelude.Prelude;
 import org.arend.typechecking.visitor.SearchVisitor;
 import org.arend.ext.util.Pair;
 
@@ -27,8 +28,7 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
     myCollectedCalls = new HashSet<>();
 
     Body body = def.getReallyActualBody();
-    if (body instanceof IntervalElim) {
-      IntervalElim elim = (IntervalElim) body;
+    if (body instanceof IntervalElim elim) {
       List<ExpressionPattern> patternList = new ArrayList<>();
       for (DependentLink link = myDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
         patternList.add(new BindingPattern(link));
@@ -73,22 +73,20 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
   }
 
   private static BaseCallMatrix.R isLess(Expression expr1, ExpressionPattern pattern2) {
-    if (pattern2 instanceof ConstructorExpressionPattern) {
-      ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern2;
-
+    if (pattern2 instanceof ConstructorExpressionPattern conPattern) {
       List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, false);
-      for (ExpressionPattern arg : conPattern.getSubPatterns()) {
+      List<? extends ExpressionPattern> subPatterns = conPattern.getSubPatterns();
+      for (ExpressionPattern arg : subPatterns) {
         if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
       }
 
       if (exprArguments != null) {
-        List<? extends ExpressionPattern> cpSubpatterns = conPattern.getSubPatterns();
-        for (int i = 0; i < Math.min(exprArguments.size(), cpSubpatterns.size()); i++) {
-          BaseCallMatrix.R ord = isLess(exprArguments.get(i), cpSubpatterns.get(i));
+        for (int i = conPattern.getDefinition() == Prelude.ARRAY_CONS && subPatterns.size() == 3 ? 1 : 0; i < Math.min(exprArguments.size(), subPatterns.size()); i++) {
+          BaseCallMatrix.R ord = isLess(exprArguments.get(i), subPatterns.get(i));
           if (ord != BaseCallMatrix.R.Equal) return ord;
         }
 
-        if (exprArguments.size() >= cpSubpatterns.size()) return BaseCallMatrix.R.Equal;
+        if (exprArguments.size() >= subPatterns.size()) return BaseCallMatrix.R.Equal;
         return BaseCallMatrix.R.Unknown;
       }
 
