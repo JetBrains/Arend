@@ -184,6 +184,17 @@ public class TypeTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void patternMatchingTest3() {
+    typeCheckModule(
+      """
+        \\type Nat' => Nat
+        \\lemma test (n m : Nat') : n Nat.+ m = m Nat.+ n \\elim n
+          | 0 => idp
+          | suc n => path (\\lam i => suc (test n m @ i))
+        """);
+  }
+
+  @Test
   public void emptyPatternMatchingTest() {
     typeCheckModule(
       """

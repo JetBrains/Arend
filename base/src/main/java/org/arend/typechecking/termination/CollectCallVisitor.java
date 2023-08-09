@@ -167,8 +167,14 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
     }
 
     CallMatrix cm = new CallMatrix(myDefinition, expression);
-    doProcessLists(cm, myDefinition.getParameters(), myPatterns,
-      expression.getDefinition().getParameters(), expression.getDefCallArguments());
+    List<Expression> args = new ArrayList<>();
+    for (Expression arg : expression.getDefCallArguments()) {
+      while (arg instanceof TypeConstructorExpression) {
+        arg = ((TypeConstructorExpression) arg).getArgument();
+      }
+      args.add(arg);
+    }
+    doProcessLists(cm, myDefinition.getParameters(), myPatterns, expression.getDefinition().getParameters(), args);
 
     myCollectedCalls.add(cm);
     return CoreExpression.FindAction.CONTINUE;

@@ -21,6 +21,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.concrete.pattern.ConcretePattern;
@@ -476,6 +477,17 @@ public class PatternTypechecking {
     }
   }
 
+  public static Expression unfoldType(Expression type, List<FunCallExpression> funCalls) {
+    type = type.normalize(NormalizationMode.WHNF);
+    while (type instanceof FunCallExpression funCall && funCall.getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+      Expression next = TypeConstructorExpression.match(funCall, null);
+      if (next == null) return type;
+      funCalls.add(funCall);
+      type = ((TypeConstructorExpression) next).getArgumentType().normalize(NormalizationMode.WHNF);
+    }
+    return type;
+  }
+
   private Result doTypechecking(List<Concrete.Pattern> patterns, DependentLink parameters, ExprSubstitution paramsSubst, ExprSubstitution totalSubst, ConcreteSourceNode sourceNode, boolean withElim, int addIntervalVars) {
     List<ExpressionPattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
@@ -838,7 +850,8 @@ public class PatternTypechecking {
       }
 
       // Constructor patterns
-      Expression unfoldedExpr = TypeConstructorExpression.unfoldType(expr).getUnderlyingExpression();
+      List<FunCallExpression> typeConstructorFunCalls = new ArrayList<>();
+      Expression unfoldedExpr = unfoldType(expr, typeConstructorFunCalls).getUnderlyingExpression();
       DataCallExpression dataCall = unfoldedExpr instanceof DataCallExpression ? (DataCallExpression) unfoldedExpr : null;
       ClassCallExpression classCall = unfoldedExpr instanceof ClassCallExpression ? (ClassCallExpression) unfoldedExpr : null;
       if (!(dataCall != null || classCall != null && classCall.getDefinition() == Prelude.DEP_ARRAY)) {
@@ -1038,6 +1051,9 @@ public class PatternTypechecking {
             funCallArgs = conResult.exprs;
           }
           newConCall = FunCallExpression.make((FunctionDefinition) constructor, classCall.getLevels(), funCallArgs);
+        }
+        for (int i = typeConstructorFunCalls.size() - 1; i >= 0; i--) {
+          newConCall = TypeConstructorExpression.match(typeConstructorFunCalls.get(i), newConCall);
         }
         typecheckAsPattern(pattern.getAsReferable(), newConCall, expr);
         exprs.add(newConCall);

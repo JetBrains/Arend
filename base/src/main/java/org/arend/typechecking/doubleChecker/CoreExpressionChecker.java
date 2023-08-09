@@ -730,8 +730,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         throw new CoreException(CoreErrorWrapper.make(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, mySourceNode), errorExpr));
       }
       Expression type = parameters.getTypeExpr().subst(substitution);
+      List<FunCallExpression> typeConstructorFunCalls = new ArrayList<>();
       if (pattern instanceof ConstructorPattern) {
-        type = TypeConstructorExpression.unfoldType(type);
+        type = PatternTypechecking.unfoldType(type, typeConstructorFunCalls);
       } else {
         type = type.normalize(NormalizationMode.WHNF);
       }
@@ -755,6 +756,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       }
       Expression expression = exprPattern.toExpression();
       if (expression != null) {
+        for (int i = typeConstructorFunCalls.size() - 1; i >= 0; i--) {
+          expression = TypeConstructorExpression.match(typeConstructorFunCalls.get(i), expression);
+        }
         substitution.add(parameters, expression);
       }
       parameters = parameters.getNext();
