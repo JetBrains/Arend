@@ -1096,7 +1096,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       elements.addAll(((ArrayExpression) tail).getElements());
       return ArrayExpression.make(expr.getLevels(), mode == NormalizationMode.NF ? expr.getElementsType().accept(this, NormalizationMode.NF) : expr.getElementsType(), elements, ((ArrayExpression) tail).getTail());
     }
-    return ArrayExpression.make(expr.getLevels(), mode == NormalizationMode.NF ? expr.getElementsType().accept(this, NormalizationMode.NF) : expr.getElementsType(), elements, tail);
+    return ArrayExpression.make(expr.getLevels(), mode == NormalizationMode.NF || mode == NormalizationMode.RNF ? expr.getElementsType().accept(this, NormalizationMode.NF) : expr.getElementsType(), elements, tail);
   }
 
   @Override
