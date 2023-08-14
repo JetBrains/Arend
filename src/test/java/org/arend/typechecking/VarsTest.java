@@ -757,6 +757,20 @@ public class VarsTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void coclauseTest2() {
+    typeCheckModule("""
+      \\record R (a : Nat) (f : a = a -> Nat)
+      \\func test (a : Nat) : R a \\cowith
+        | f (p : a = a) : Nat => g
+        \\where {
+          \\func g => a
+          \\func h => (a, f {a} idp)
+        }
+      """);
+    assertEquals(2, DependentLink.Helper.size(getDefinition("test.f").getParameters()));
+  }
+
+  @Test
   public void classTest2() {
     typeCheckModule(
       """

@@ -44,7 +44,6 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
       List<Concrete.Parameter> newParams = Collections.emptyList();
       List<Pair<TCDefReferable, Integer>> parametersOriginalDefinitions = Collections.emptyList();
       if (!whereVars.proj1.isEmpty() || !whereVars.proj2.isEmpty()) {
-
         Set<Pair<TCDefReferable, Integer>> wherePairs = new HashSet<>();
         Map<TCDefReferable, Set<Referable>> refMap = new HashMap<>();
         for (ParameterReferable whereRef : whereVars.proj1) {
@@ -88,7 +87,7 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         int myLevel = getReferableLevel(definition.getData());
         for (Definition def : whereVars.proj2) {
           for (Pair<TCDefReferable, Integer> pair : def.getParametersOriginalDefinitions()) {
-            if (pair.proj1 != definition.getData() && !wherePairs.contains(pair) && getReferableLevel(pair.proj1) < myLevel) {
+            if (pair.proj1 != definition.getData() && !wherePairs.contains(pair) && getReferableLevel(pair.proj1) < myLevel && !(definition instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) definition).getUseParent() == pair.proj1)) {
               wherePairs.add(pair);
             }
           }
