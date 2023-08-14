@@ -2137,9 +2137,27 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return true;
   }
 
+  private boolean isEmptyArray(Expression expr) {
+    expr = expr.normalize(NormalizationMode.WHNF);
+    if (expr instanceof ArrayExpression) {
+      return ((ArrayExpression) expr).isEmpty();
+    }
+
+    Expression type = expr.getType().normalize(NormalizationMode.WHNF);
+    if (type instanceof ClassCallExpression classCall) {
+      Expression length = classCall.getImplementationHere(Prelude.ARRAY_LENGTH, expr);
+      if (length != null) {
+        length = length.normalize(NormalizationMode.WHNF);
+        return length instanceof IntegerExpression && ((IntegerExpression) length).isZero();
+      }
+    }
+
+    return false;
+  }
+
   @Override
   public Boolean visitArray(ArrayExpression expr, Expression other, Expression type) {
-    if (!(other instanceof ArrayExpression array2 && expr.getElements().size() == array2.getElements().size() && (expr.getTail() == null) == (array2.getTail() == null))) {
+    if (!(other instanceof ArrayExpression array2 && expr.getElements().size() == array2.getElements().size())) {
       initResult(expr, other);
       return false;
     }
@@ -2170,8 +2188,24 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
     }
 
-    if (expr.getTail() == null) {
+    if (expr.getTail() == null && array2.getTail() == null) {
       return true;
+    }
+    if (expr.getTail() == null) {
+      if (isEmptyArray(array2.getTail())) {
+        return true;
+      } else {
+        initResult(expr, other);
+        return false;
+      }
+    }
+    if (array2.getTail() == null) {
+      if (isEmptyArray(expr.getTail())) {
+        return true;
+      } else {
+        initResult(expr, other);
+        return false;
+      }
     }
 
     if (!compare(expr.getTail(), array2.getTail(), null, true)) {

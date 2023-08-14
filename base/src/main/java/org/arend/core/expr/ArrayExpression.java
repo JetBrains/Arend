@@ -37,11 +37,16 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
   }
 
   public static Expression make(LevelPair levels, Expression elementsType, List<Expression> elements, Expression tail) {
-    if (tail instanceof ArrayExpression) {
-      List<Expression> newElements = new ArrayList<>(elements.size() + ((ArrayExpression) tail).myElements.size());
-      newElements.addAll(elements);
-      newElements.addAll(((ArrayExpression) tail).myElements);
-      return new ArrayExpression(levels, elementsType, newElements, ((ArrayExpression) tail).myTail);
+    if (tail instanceof ArrayExpression arrayExpr) {
+      List<Expression> newElements;
+      if (arrayExpr.myElements.isEmpty()) {
+        newElements = elements;
+      } else {
+        newElements = new ArrayList<>(elements.size() + arrayExpr.myElements.size());
+        newElements.addAll(elements);
+        newElements.addAll(arrayExpr.myElements);
+      }
+      return new ArrayExpression(levels, elementsType, newElements, arrayExpr.myTail);
     } else {
       return tail != null && elements.isEmpty() ? tail : new ArrayExpression(levels, elementsType, elements, tail);
     }
