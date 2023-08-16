@@ -30,6 +30,10 @@ public class InstanceInferenceError extends ArgInferenceError {
     this(classRef, null, null, classifyingExpression, cause, new CoreExpression[0]);
   }
 
+  public InstanceInferenceError(ArendRef classRef, CoreExpression classifyingExpression, ConcreteSourceNode cause, CoreExpression[] candidates) {
+    this(classRef, null, null, classifyingExpression, cause, candidates);
+  }
+
   public InstanceInferenceError(ArendRef classRef, CoreExpression expected, CoreExpression actual, ConcreteSourceNode cause, CoreExpression candidate) {
     this(classRef, expected, actual, null, cause, new CoreExpression[1]);
     candidates[0] = candidate;
