@@ -498,8 +498,7 @@ public final class Concrete {
       this.fixity = fixity != Fixity.UNKNOWN ? fixity
         : !isExplicit ? Fixity.NONFIX
         : binOpComponent instanceof FixityReferenceExpression
-          ? ((FixityReferenceExpression) binOpComponent).fixity
-          : binOpComponent instanceof ReferenceExpression ? Fixity.UNKNOWN : Fixity.NONFIX;
+          ? ((FixityReferenceExpression) binOpComponent).fixity : Fixity.UNKNOWN;
       if (isExplicit && fixity == Fixity.UNKNOWN && binOpComponent instanceof FixityReferenceExpression) {
         ((FixityReferenceExpression) binOpComponent).fixity = Fixity.NONFIX;
       }
