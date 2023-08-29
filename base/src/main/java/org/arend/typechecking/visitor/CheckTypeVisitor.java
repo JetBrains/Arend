@@ -82,8 +82,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.arend.core.expr.ExpressionFactory.Int;
-import static org.arend.core.expr.ExpressionFactory.Pos;
+import static org.arend.core.expr.ExpressionFactory.*;
 import static org.arend.ext.error.ArgInferenceError.expression;
 
 public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
@@ -870,7 +869,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public @NotNull CoreExpression makeLambda(@NotNull List<? extends CoreParameter> parameters, @NotNull CoreExpression body, @NotNull ConcreteSourceNode marker) {
-    if (parameters.size() == 0) return body;
+    if (parameters.isEmpty()) return body;
     if (!(body instanceof Expression && marker instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
@@ -2612,6 +2611,40 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public TypecheckingResult visitTuple(Concrete.TupleExpression expr, Expression expectedType) {
+    Expression expectedTypeNorm = expectedType == null ? null : expectedType.normalize(NormalizationMode.WHNF);
+    if (expectedTypeNorm instanceof ClassCallExpression classCall && classCall.getDefinition() == Prelude.DEP_ARRAY && !classCall.isImplementedHere(Prelude.ARRAY_AT)) {
+      Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+      if (elementsType != null) {
+        Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+        if (length == null) {
+          Map<ClassField, Expression> impls = new LinkedHashMap<>();
+          impls.put(Prelude.ARRAY_LENGTH, new SmallIntegerExpression(expr.getFields().size()));
+          impls.putAll(classCall.getImplementedHere());
+          elementsType = elementsType.subst(classCall.getThisBinding(), new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, classCall.getSort(), classCall.getUniverseKind())));
+        } else {
+          Expression actualLength = new SmallIntegerExpression(expr.getFields().size());
+          if (!CompareVisitor.compare(myEquations, CMP.EQ, length, actualLength, Nat(), expr)) {
+            errorReporter.report(new TypeMismatchWithSubexprError(new CompareVisitor.Result(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.PROP, Collections.singletonMap(Prelude.ARRAY_LENGTH, actualLength), Sort.SET0, UniverseKind.ONLY_COVARIANT), new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.PROP, Collections.singletonMap(Prelude.ARRAY_LENGTH, length), Sort.SET0, UniverseKind.ONLY_COVARIANT), actualLength, length), expr));
+            return null;
+          }
+        }
+        elementsType = elementsType.removeUnusedBinding(classCall.getThisBinding());
+        if (elementsType != null) {
+          List<Expression> elements = new ArrayList<>(expr.getFields().size());
+          boolean ok = true;
+          for (int i = 0; i < expr.getFields().size(); i++) {
+            TypecheckingResult field = checkExpr(expr.getFields().get(i), AppExpression.make(elementsType, new SmallIntegerExpression(i), true));
+            if (field == null) {
+              ok = false;
+            } else {
+              elements.add(field.expression);
+            }
+          }
+          return ok ? new TypecheckingResult(ArrayExpression.make(classCall.getLevels().toLevelPair(), elementsType, elements, null), classCall) : null;
+        }
+      }
+    }
+
     Function<Expression, Pair<Expression,Boolean>> checker = type -> {
       if (!(type instanceof SigmaExpression)) {
         return null;
@@ -2639,7 +2672,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return new Pair<>(new TupleExpression(fields, (SigmaExpression) type), true);
     };
 
-    Expression expectedTypeNorm = expectedType == null ? null : expectedType.normalize(NormalizationMode.WHNF);
     Pair<TypecheckingResult, Boolean> coerceResult = coerceToType(expectedTypeNorm, checker);
     if (coerceResult != null) {
       return coerceResult.proj1;

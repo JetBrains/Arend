@@ -751,4 +751,30 @@ public class ArrayTest extends TypeCheckingTestCase {
     typeCheckDef("\\func test {A : \\Type} {n : Nat} (l : Array A (suc n)) (l' : Array A n) : l = l 0 :: l' => idp", 1);
     assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
+
+  @Test
+  public void tupleTest() {
+    typeCheckModule(
+      "\\func array : Array Nat => (0, 1, 2)\n" +
+      "\\func test : array = 0 :: 1 :: 2 :: nil => idp");
+  }
+
+  @Test
+  public void tupleTest2() {
+    typeCheckModule(
+      "\\func array : Array Nat 3 => (0, 1, 2)\n" +
+      "\\func test : array = 0 :: 1 :: 2 :: nil => idp");
+  }
+
+  @Test
+  public void tupleTest3() {
+    typeCheckDef("\\func array : Array Nat 4 => (0, 1, 2)", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
+  }
+
+  @Test
+  public void tupleTest4() {
+    typeCheckDef("\\func array : Array Nat 3 (\\lam i => i) => (0, 1, 2)", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
+  }
 }
