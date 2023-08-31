@@ -349,6 +349,24 @@ public class ScopeFactory {
       return new PatternScope(parentScope, ((Abstract.Clause) parentSourceNode).getPatterns());
     }
 
+    // Extend the scope with previous patterns for the type in a pattern
+   if (sourceNode instanceof Abstract.Expression && parentSourceNode instanceof Abstract.Pattern) {
+     Abstract.SourceNode parentParentSourceNode = parentSourceNode.getParentSourceNode();
+     List<? extends Abstract.Pattern> patterns = parentParentSourceNode instanceof Abstract.Clause clause ? clause.getPatterns() : parentParentSourceNode instanceof Abstract.Pattern pattern ? pattern.getSequence() : Collections.emptyList();
+     if (!patterns.isEmpty()) {
+       List<Abstract.Pattern> newPatterns = new ArrayList<>(patterns.size());
+       for (Abstract.Pattern pattern : patterns) {
+         if (pattern == parentSourceNode) {
+           break;
+         }
+         newPatterns.add(pattern);
+       }
+       if (!newPatterns.isEmpty()) {
+         return new PatternScope(parentScope, newPatterns);
+       }
+     }
+   }
+
     return parentScope;
   }
 }
