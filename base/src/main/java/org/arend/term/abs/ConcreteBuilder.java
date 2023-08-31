@@ -460,7 +460,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       }
       Abstract.Expression type = pattern.getType();
       if (type != null) {
-        return new Concrete.NamePattern(innerPattern.getData(), pattern.isExplicit(), ((Concrete.NamePattern)innerPattern).getReferable(), type.accept(this, null));
+        if (innerPattern instanceof Concrete.NamePattern) {
+          return new Concrete.NamePattern(innerPattern.getData(), pattern.isExplicit(), ((Concrete.NamePattern) innerPattern).getReferable(), type.accept(this, null));
+        } else {
+          myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.WARNING_UNUSED, "Type is ignored", type));
+        }
       }
 
       return innerPattern;
