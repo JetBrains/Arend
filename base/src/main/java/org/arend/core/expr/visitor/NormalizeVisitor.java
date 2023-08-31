@@ -447,7 +447,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     if (definition.hasStrictParameters()) {
       List<Expression> normDefCalls = new ArrayList<>(defCallArgs.size());
       for (int i = 0; i < defCallArgs.size(); i++) {
-        normDefCalls.add(definition.isStrict(i) ? defCallArgs.get(i).accept(this, NormalizationMode.WHNF) : defCallArgs.get(i));
+        normDefCalls.add(definition.isStrict(i) ? defCallArgs.get(i).accept(this, NormalizationMode.ENF) : defCallArgs.get(i));
       }
       defCallArgs = normDefCalls;
     }
@@ -475,7 +475,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   private ExprSubstitution addArguments(ExprSubstitution substitution, List<? extends Expression> args, Definition definition) {
     DependentLink link = definition.getParameters();
     for (int i = 0; i < args.size(); i++) {
-      substitution.add(link, definition.isStrict(i) ? args.get(i).accept(this, NormalizationMode.WHNF) : args.get(i));
+      substitution.add(link, definition.isStrict(i) ? args.get(i).accept(this, NormalizationMode.ENF) : args.get(i));
       link = link.getNext();
     }
     return substitution;
@@ -541,7 +541,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           if (mode != NormalizationMode.RNF && resultExpr instanceof LetExpression let) {
             if (let.isStrict()) {
               for (HaveClause letClause : let.getClauses()) {
-                substitution.add(letClause, LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
+                substitution.add(letClause, LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution), NormalizationMode.ENF));
               }
             } else {
               for (HaveClause letClause : let.getClauses()) {
@@ -627,7 +627,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
           List<? extends Expression> args = funCall != null ? funCall.getDefCallArguments() : ((CaseExpression) resultExpr).getArguments();
           for (int j = args.size() - 1; j >= 0; j--) {
-            stack.push(resultExpr instanceof CaseExpression ? args.get(j).subst(substitution, levelSubstitution) : funCall.getDefinition().isStrict(j) ? args.get(j).subst(substitution, levelSubstitution).accept(this, NormalizationMode.WHNF) : SubstExpression.make(args.get(j), substitution, levelSubstitution));
+            stack.push(resultExpr instanceof CaseExpression ? args.get(j).subst(substitution, levelSubstitution) : funCall.getDefinition().isStrict(j) ? args.get(j).subst(substitution, levelSubstitution).accept(this, NormalizationMode.ENF) : SubstExpression.make(args.get(j), substitution, levelSubstitution));
           }
           resultExpr = SubstExpression.make(resultExpr, substitution, levelSubstitution);
           if (funCall != null) {

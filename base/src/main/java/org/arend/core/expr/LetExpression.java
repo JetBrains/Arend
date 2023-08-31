@@ -39,7 +39,11 @@ public class LetExpression extends Expression implements CoreLetExpression {
   }
 
   public static Expression normalizeClauseExpression(LetClausePattern pattern, Expression expression) {
-    expression = expression.normalize(NormalizationMode.WHNF);
+    return normalizeClauseExpression(pattern, expression, NormalizationMode.WHNF);
+  }
+
+  public static Expression normalizeClauseExpression(LetClausePattern pattern, Expression expression, NormalizationMode mode) {
+    expression = expression.normalize(mode);
     if (!pattern.isMatching()) {
       return expression;
     }
@@ -93,7 +97,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
 
     ExprSubstitution substitution = new ExprSubstitution();
     for (HaveClause clause : myClauses) {
-      substitution.add(clause, normalizeClauseExpression(clause.getPattern(), clause.getExpression().subst(substitution)));
+      substitution.add(clause, normalizeClauseExpression(clause.getPattern(), clause.getExpression().subst(substitution), NormalizationMode.ENF));
     }
     return myExpression.subst(substitution);
   }
