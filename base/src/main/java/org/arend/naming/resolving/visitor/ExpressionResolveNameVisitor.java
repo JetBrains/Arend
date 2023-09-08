@@ -35,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<Void> implements ExpressionResolver, ConcreteLevelExpressionVisitor<LevelVariable, Concrete.LevelExpression> {
   private final ReferableConverter myReferableConverter;
@@ -643,7 +644,17 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
       if (namePattern.type == null || referable instanceof LongUnresolvedReference) {
         List<Referable> resolvedRefs = new ArrayList<>();
-        Referable resolved = referable instanceof LongUnresolvedReference ? ((LongUnresolvedReference) referable).resolve(myParentScope, resolvedRefs) : referable instanceof UnresolvedReference ? ((UnresolvedReference) referable).tryResolve(myParentScope, resolvedRefs) : myParentScope.resolveName(referable.getRefName());
+
+        Supplier<Referable> c = () -> {
+          Referable r = myParentScope.resolveName(referable.getRefName());
+          resolvedRefs.add(r);
+          return r;
+        };
+
+        Referable resolved = referable instanceof LongUnresolvedReference ? ((LongUnresolvedReference) referable).resolve(myParentScope, resolvedRefs) :
+          referable instanceof UnresolvedReference ? ((UnresolvedReference) referable).tryResolve(myParentScope, resolvedRefs) :
+            c.get();
+
         Referable ref = resolved == null || resolved instanceof ErrorReference ? resolved : myReferableConverter.convert(RedirectingReferable.getOriginalReferable(resolved));
         if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind().isConstructor()) {
           if (pattern.getAsReferable() != null) {
