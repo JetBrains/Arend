@@ -18,5 +18,5 @@ tasks.withType<AntlrTask> {
 }
 
 dependencies {
-    antlr("org.antlr:antlr4:4.8")
+    antlr("org.antlr:antlr4:4.10")
 }

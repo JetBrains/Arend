@@ -9,9 +9,9 @@ var annotationsVersion: String by rootProject.ext
 var protobufVersion: String by rootProject.ext
 var antlrVersion: String by rootProject.ext
 
-annotationsVersion = "22.0.0"
-protobufVersion = "3.20.0"
-antlrVersion = "4.8"
+annotationsVersion = "24.0.1"
+protobufVersion = "3.24.0"
+antlrVersion = "4.10"
 
 allprojects {
     group = "org.arend"

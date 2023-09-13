@@ -1,5 +1,5 @@
 plugins {
-    id("com.google.protobuf") version "0.8.13"
+    id("com.google.protobuf") version "0.9.4"
 }
 
 val protobufVersion: String by rootProject.ext
@@ -15,9 +15,8 @@ idea {
     }
 }
 
-protobuf.protobuf.apply {
-    generatedFilesBaseDir = sourceDir.toString()
-    protoc(closureOf<com.google.protobuf.gradle.ExecutableLocator> {
+protobuf {
+    protoc {
         artifact = "com.google.protobuf:protoc:$protobufVersion"
-    })
+    }
 }
