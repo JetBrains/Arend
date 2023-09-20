@@ -2457,6 +2457,22 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                 prevLink = prevLink.getNext();
               }
               prevLink.setNext(EmptyDependentLink.getInstance());
+              prevLink = link;
+              while (prevLink.getNext().hasNext()) {
+                prevLink = prevLink.getNext();
+              }
+              if (prevLink instanceof UntypedDependentLink) {
+                TypedSingleDependentLink lastLink = new TypedSingleDependentLink(prevLink.isExplicit(), prevLink.getName(), actualLink.getType(), prevLink.isHidden());
+                if (prevLink == link) {
+                  link = lastLink;
+                } else {
+                  DependentLink prevPrevLink = link;
+                  while (prevPrevLink.getNext() != prevLink) {
+                    prevPrevLink = prevPrevLink.getNext();
+                  }
+                  prevPrevLink.setNext(lastLink);
+                }
+              }
               return new Pair<>(new TypecheckingResult(new LamExpression(sort, link, result.expression), new PiExpression(sort, link, result.type)), true);
             }
           }
