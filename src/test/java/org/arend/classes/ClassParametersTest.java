@@ -2,9 +2,13 @@ package org.arend.classes;
 
 import org.arend.Matchers;
 import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.ClassCallExpression;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
+
+import java.util.Objects;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.arend.Matchers.notInScope;
@@ -34,31 +38,34 @@ public class ClassParametersTest extends TypeCheckingTestCase {
 
   @Test
   public void doCoerce() {
-    typeCheckModule(
-      "\\class C (A : \\Set) {\n" +
-      "  | a : A\n" +
-      "}\n" +
-      "\\func f (c : C) : \\Set => c\n" +
-      "\\func g (n : f (\\new C { | A => Nat | a => 0 })) => suc n");
+    typeCheckModule("""
+      \\class C (A : \\Set) {
+        | a : A
+      }
+      \\func f (c : C) : \\Set => c
+      \\func g (n : f (\\new C { | A => Nat | a => 0 })) => suc n
+      """);
   }
 
   @Test
   public void coerceType() {
-    typeCheckModule(
-      "\\class C (A : \\Set) {\n" +
-      "  | a : A\n" +
-      "}\n" +
-      "\\func f (c : C { | A => Nat }) : c => 1\n" +
-      "\\func g : f (\\new C { | A => Nat | a => 0 }) = 1 => idp");
+    typeCheckModule("""
+      \\class C (A : \\Set) {
+        | a : A
+      }
+      \\func f (c : C { | A => Nat }) : c => 1
+      \\func g : f (\\new C { | A => Nat | a => 0 }) = 1 => idp
+      """);
   }
 
   @Test
   public void doNotCoerce() {
-    typeCheckModule(
-      "\\class C (A : \\Set) {\n" +
-      "  | a : A\n" +
-      "}\n" +
-      "\\func f (c : C) : Nat => c", 1);
+    typeCheckModule("""
+      \\class C (A : \\Set) {
+        | a : A
+      }
+      \\func f (c : C) : Nat => c
+      """, 1);
     assertThatErrorsAre(Matchers.typeMismatchError());
   }
 
@@ -71,44 +78,48 @@ public class ClassParametersTest extends TypeCheckingTestCase {
 
   @Test
   public void coerceExtendsImplicit() {
-    typeCheckModule(
-      "\\class C (A : \\Set)\n" +
-      "\\class D \\extends C { | a : A }\n" +
-      "\\func f (d : D) : \\Set => d\n" +
-      "\\func g (n : f (\\new D { | A => Nat | a => 0 })) => suc n");
+    typeCheckModule("""
+      \\class C (A : \\Set)
+      \\class D \\extends C { | a : A }
+      \\func f (d : D) : \\Set => d
+      \\func g (n : f (\\new D { | A => Nat | a => 0 })) => suc n
+      """);
   }
 
   @Test
   public void coerceExtendsMultiple() {
-    typeCheckModule(
-      "\\class C1 (A : Nat)\n" +
-      "\\class C2 (B : \\Set)\n" +
-      "\\class D \\extends C1, C2");
+    typeCheckModule("""
+      \\class C1 (A : Nat)
+      \\class C2 (B : \\Set)
+      \\class D \\extends C1, C2
+      """);
   }
 
   @Test
   public void coerceExtendsMultipleWithParameter() {
-    typeCheckModule(
-      "\\class C1 (n : Nat)\n" +
-      "\\class C2 (B : \\1-Type1)\n" +
-      "\\class D (m : Nat) \\extends C1, C2 { | B => \\Set0 | b : B }\n" +
-      "\\func f (d : D) : d.B => d.b\n" +
-      "\\func g (d : D) : Nat => d.n\n" +
-      "\\func h (d : D) : Nat => d.m\n" +
-      "\\func d => \\new D { | m => 0 | n => 1 | b => \\Prop }\n" +
-      "\\func test1 : g d = 1 => idp\n" +
-      "\\func test2 : h d = 0 => idp\n" +
-      "\\func test3 : 1 = d => idp\n");
+    typeCheckModule("""
+      \\class C1 (n : Nat)
+      \\class C2 (B : \\1-Type1)
+      \\class D (m : Nat) \\extends C1, C2 { | B => \\Set0 | b : B }
+      \\func f (d : D) : d.B => d.b
+      \\func g (d : D) : Nat => d.n
+      \\func h (d : D) : Nat => d.m
+      \\func d => \\new D { | m => 0 | n => 1 | b => \\Prop }
+      \\func test1 : g d = 1 => idp
+      \\func test2 : h d = 0 => idp
+      \\func test3 : 1 = d => idp
+      """);
   }
 
   @Test
   public void coerceExtendsMultipleWithParameter2() {
-    typeCheckModule(
-      "\\class C1 (n : Nat)\n" +
-      "\\class C2 (B : \\Set0)\n" +
-      "\\class D \\extends C2, C1\n" +
-      "\\func d => \\new D { | n => 0 | B => \\Prop }\n" +
-      "\\func test3 : 0 = d => idp");
+    typeCheckModule("""
+      \\class C1 (n : Nat)
+      \\class C2 (B : \\Set0)
+      \\class D \\extends C2, C1
+      \\func d => \\new D { | n => 0 | B => \\Prop }
+      \\func test3 : 0 = d => idp
+      """);
   }
 
 
@@ -162,60 +173,67 @@ public class ClassParametersTest extends TypeCheckingTestCase {
 
   @Test
   public void superParameters() {
-    typeCheckModule(
-      "\\class C { | x : Nat }\n" +
-      "\\class D (y : Nat -> Nat) \\extends C\n" +
-      "\\func f => D 1 (\\lam x => x)");
+    typeCheckModule("""
+      \\class C { | x : Nat }
+      \\class D (y : Nat -> Nat) \\extends C
+      \\func f => D 1 (\\lam x => x)
+      """);
   }
 
   @Test
   public void superParameters2() {
-    typeCheckModule(
-      "\\class C (x y : Nat)\n" +
-      "\\class D (z w : Nat) \\extends C\n" +
-      "\\func f => \\new D { | x => 0 | y => 1 | z => 2 | w => 3 }");
+    typeCheckModule("""
+      \\class C (x y : Nat)
+      \\class D (z w : Nat) \\extends C
+      \\func f => \\new D { | x => 0 | y => 1 | z => 2 | w => 3 }
+      """);
   }
 
   @Test
   public void superImplicitParameters() {
-    typeCheckModule(
-      "\\class C (x : Nat) {y : Nat} (p : y = 0)\n" +
-      "\\class D {z : Nat} (w : z = 1) \\extends C\n" +
-      "\\func f => \\new D 0 idp idp");
+    typeCheckModule("""
+      \\class C (x : Nat) {y : Nat} (p : y = 0)
+      \\class D {z : Nat} (w : z = 1) \\extends C
+      \\func f => \\new D 0 idp idp
+      """);
   }
 
   @Test
   public void superImplicitParameters2() {
-    typeCheckModule(
-      "\\class C (x : Nat) {y : Nat}\n" +
-      "\\class D {z : Nat} \\extends C\n" +
-      "\\func f => D 0\n" +
-      "\\func g => \\new D 0 { | y => 1 | z => 2 }");
+    typeCheckModule("""
+      \\class C (x : Nat) {y : Nat}
+      \\class D {z : Nat} \\extends C
+      \\func f => D 0
+      \\func g => \\new D 0 { | y => 1 | z => 2 }
+      """);
   }
 
   @Test
   public void classImplicitParameter() {
-    typeCheckModule(
-      "\\class C (X : \\Type) | x : X\n" +
-      "\\class D {A : C} (i : A)\n" +
-      "\\func f {A : C} (i : A) => \\new D i");
+    typeCheckModule("""
+      \\class C (X : \\Type) | x : X
+      \\class D {A : C} (i : A)
+      \\func f {A : C} (i : A) => \\new D i
+      """);
   }
 
   @Test
   public void testImplementedField() {
-    typeCheckModule(
-      "\\record R {x : Nat} (p : x = 0) | q : p = p\n" +
-      "\\record T {z : Nat} \\extends R { | x => z }\n" +
-      "\\func f => \\new T { | p => idp | q => idp | z => 0 }", 1);
+    typeCheckModule("""
+      \\record R {x : Nat} (p : x = 0) | q : p = p
+      \\record T {z : Nat} \\extends R { | x => z }
+      \\func f => \\new T { | p => idp | q => idp | z => 0 }
+      """, 1);
     assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
   public void testImplementedField2() {
-    typeCheckModule(
-      "\\record R {x : Nat} (p : x = 0) | q : p = p\n" +
-      "\\record T {z : Nat} \\extends R { | x => z }\n" +
-      "\\func f => \\new T { | z => 0 | p => idp | q => idp }");
+    typeCheckModule("""
+      \\record R {x : Nat} (p : x = 0) | q : p = p
+      \\record T {z : Nat} \\extends R { | x => z }
+      \\func f => \\new T { | z => 0 | p => idp | q => idp }
+      """);
   }
 
   @Test
@@ -232,117 +250,147 @@ public class ClassParametersTest extends TypeCheckingTestCase {
 
   @Test
   public void tailImplicitParameters() {
-    typeCheckModule(
-      "\\class C | nn : Nat\n" +
-      "\\instance cc : C | nn => 3\n" +
-      "\\record R {x : C}\n" +
-      "\\func f (r : R) : r.x.nn = 3 => idp");
+    typeCheckModule("""
+      \\class C | nn : Nat
+      \\instance cc : C | nn => 3
+      \\record R {x : C}
+      \\func f (r : R) : r.x.nn = 3 => idp
+      """);
   }
 
   @Test
   public void tailImplicitParametersArgs() {
-    typeCheckModule(
-      "\\class C | nn : Nat\n" +
-      "\\instance cc : C | nn => 3\n" +
-      "\\record R (n : Nat) {x : C}\n" +
-      "\\func f (r : R 0) : r.x.nn = 3 => idp");
+    typeCheckModule("""
+      \\class C | nn : Nat
+      \\instance cc : C | nn => 3
+      \\record R (n : Nat) {x : C}
+      \\func f (r : R 0) : r.x.nn = 3 => idp
+      """);
   }
 
   @Test
   public void tailImplicitParametersClassified() {
-    typeCheckModule(
-      "\\class C (X : \\Type) | xx : X\n" +
-      "\\instance cc : C Nat | xx => 3\n" +
-      "\\record R {x : C Nat}\n" +
-      "\\func f (r : R) : r.x.xx = 3 => idp");
+    typeCheckModule("""
+      \\class C (X : \\Type) | xx : X
+      \\instance cc : C Nat | xx => 3
+      \\record R {x : C Nat}
+      \\func f (r : R) : r.x.xx = 3 => idp
+      """);
   }
 
   @Test
   public void tailImplicitParametersClassifiedArgs() {
-    typeCheckModule(
-      "\\class C (X : \\Type) | xx : X\n" +
-      "\\instance cc : C Nat | xx => 3\n" +
-      "\\record R (n : Nat) {x : C Nat}\n" +
-      "\\func f (r : R 0) : r.x.xx = 3 => idp");
+    typeCheckModule("""
+      \\class C (X : \\Type) | xx : X
+      \\instance cc : C Nat | xx => 3
+      \\record R (n : Nat) {x : C Nat}
+      \\func f (r : R 0) : r.x.xx = 3 => idp
+      """);
   }
 
   @Test
   public void tailImplicitParametersExt() {
-    typeCheckModule(
-      "\\class C | nn : Nat\n" +
-      "\\record R {x : C}\n" +
-      "\\func f => R {}");
+    typeCheckModule("""
+      \\class C | nn : Nat
+      \\record R {x : C}
+      \\func f => R {}
+      """);
   }
 
   @Test
   public void tailImplicitParametersArgsExt() {
-    typeCheckModule(
-      "\\class C | nn : Nat\n" +
-      "\\record R (n : Nat) {x : C}\n" +
-      "\\func f => R 0 {}");
+    typeCheckModule("""
+      \\class C | nn : Nat
+      \\record R (n : Nat) {x : C}
+      \\func f => R 0 {}
+      """);
   }
 
   @Test
   public void tailImplicitParametersExtError() {
-    typeCheckModule(
-      "\\class C | nn : Nat\n" +
-      "\\record R {x : C}\n" +
-      "\\func f => R", 1);
+    typeCheckModule("""
+      \\class C | nn : Nat
+      \\record R {x : C}
+      \\func f => R
+      """, 1);
   }
 
   @Test
   public void tailImplicitParametersArgsExtError() {
-    typeCheckModule(
-      "\\class C | nn : Nat\n" +
-      "\\record R (n : Nat) {x : C}\n" +
-      "\\func f => R 0", 1);
+    typeCheckModule("""
+      \\class C | nn : Nat
+      \\record R (n : Nat) {x : C}
+      \\func f => R 0
+      """, 1);
   }
 
   @Test
   public void tailRecordImplicitParameters() {
-    typeCheckModule(
-      "\\record R (x : Nat)\n" +
-      "\\class C (x : Nat) {y : R}\n" +
-      "\\func f => C 0");
+    typeCheckModule("""
+      \\record R (x : Nat)
+      \\class C (x : Nat) {y : R}
+      \\func f => C 0
+      """);
   }
 
   @Test
   public void notTailImplicitParametersExtError() {
-    typeCheckModule(
-      "\\class C | nn : Nat\n" +
-      "\\record R {x : C} (y : Nat)\n" +
-      "\\func f => R {\\new C 0} { | y => 0}");
+    typeCheckModule("""
+      \\class C | nn : Nat
+      \\record R {x : C} (y : Nat)
+      \\func f => R {\\new C 0} { | y => 0}
+      """);
   }
 
   @Test
   public void lamTest() {
-    typeCheckModule(
-      "\\record R (x y : Nat)\n" +
-      "\\func f : Nat -> Nat -> \\Type => R\n" +
-      "\\func g : f 0 1 => \\new R");
+    typeCheckModule("""
+      \\record R (x y : Nat)
+      \\func f : Nat -> Nat -> \\Type => R
+      \\func g : f 0 1 => \\new R
+      """);
   }
 
   @Test
   public void lamTest2() {
-    typeCheckModule(
-      "\\record R (x y : Nat)\n" +
-      "\\func f : Nat -> \\Type => R 0\n" +
-      "\\func g : f 1 => \\new R");
+    typeCheckModule("""
+      \\record R (x y : Nat)
+      \\func f : Nat -> \\Type => R 0
+      \\func g : f 1 => \\new R
+      """);
   }
 
   @Test
   public void implicitParameter() {
-    typeCheckModule(
-      "\\class C (nn : Nat)\n" +
-      "\\record R {x : C} (y : Nat)\n" +
-      "\\func test => R {\\new C 3} 1");
+    typeCheckModule("""
+      \\class C (nn : Nat)
+      \\record R {x : C} (y : Nat)
+      \\func test => R {\\new C 3} 1
+      """);
   }
 
   @Test
   public void implicitParameterNew() {
-    typeCheckModule(
-      "\\class C (nn : Nat)\n" +
-      "\\record R {x : C} (y : Nat)\n" +
-      "\\func test => \\new R {\\new C 3} 1");
+    typeCheckModule("""
+      \\class C (nn : Nat)
+      \\record R {x : C} (y : Nat)
+      \\func test => \\new R {\\new C 3} 1
+      """);
+  }
+
+  // TODO: We should probably forbid such dependencies.
+  //       Currently, there is a workaround for this; see ClassCallExpression.java
+  @Test
+  public void classFieldParametersTest() {
+    typeCheckModule("""
+      \\record A
+      \\record B (n : Nat) \\extends A
+      \\record R (a : A)
+      \\record S (k : Nat) \\extends R {
+        \\override a : B k
+      }
+      \\func test => S
+      """);
+    ((ClassCallExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("test")).getBody())).getClassFieldParameters();
   }
 }

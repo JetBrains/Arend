@@ -321,24 +321,20 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
       }
 
       PiExpression piExpr = getDefinition().getFieldType(field, getLevels(field.getParentClass()));
-      Binding thisBindings = piExpr.getBinding();
-      Expression type = piExpr.getCodomain().accept(new SubstVisitor(new ExprSubstitution(thisBindings, newExpr), LevelSubstitution.EMPTY) {
+      Binding thisBinding = piExpr.getBinding();
+      Expression type = piExpr.getCodomain().accept(new SubstVisitor(new ExprSubstitution(thisBinding, newExpr), LevelSubstitution.EMPTY) {
         private Expression makeNewExpression(Expression arg, Expression type) {
           arg = arg.getUnderlyingExpression();
-          boolean ok = arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings;
-          if (!ok && arg instanceof NewExpression) {
-            NewExpression newExpr = (NewExpression) arg;
-            if (newExpr.getRenewExpression() != null && newExpr.getClassCall().getImplementedHere().isEmpty()) {
-              ReferenceExpression refExpr = newExpr.getRenewExpression().cast(ReferenceExpression.class);
-              if (refExpr != null && refExpr.getBinding() == thisBindings) {
-                ok = true;
-              }
+          boolean ok = arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBinding;
+          if (!ok && arg instanceof NewExpression newExpr && newExpr.getRenewExpression() != null && newExpr.getClassCall().getImplementedHere().isEmpty()) {
+            ReferenceExpression refExpr = newExpr.getRenewExpression().cast(ReferenceExpression.class);
+            if (refExpr != null && refExpr.getBinding() == thisBinding) {
+              ok = true;
             }
           }
           if (ok) {
             type = type.normalize(NormalizationMode.WHNF);
-            if (type instanceof ClassCallExpression && getDefinition().isSubClassOf(((ClassCallExpression) type).getDefinition())) {
-              ClassCallExpression classCall = (ClassCallExpression) type;
+            if (type instanceof ClassCallExpression classCall && getDefinition().isSubClassOf(classCall.getDefinition())) {
               Map<ClassField, Expression> subImplementations = new LinkedHashMap<>(classCall.getImplementedHere());
               for (ClassField field : classCall.getDefinition().getFields()) {
                 Expression impl = myImplementations.get(field);
@@ -381,14 +377,17 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
         public Expression visitFieldCall(FieldCallExpression expr, Void params) {
           if (expr.getDefinition().isProperty()) {
             Expression arg = expr.getArgument().getUnderlyingExpression();
-            if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings) {
+            if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBinding) {
               Expression impl = implementations.get(expr.getDefinition());
               if (impl != null) {
                 return impl;
               }
             }
           }
-          return super.visitFieldCall(expr, params);
+
+          // TODO: This is a workaround for ClassParametersTest.classFieldParametersTest
+          Expression arg = expr.getArgument().getUnderlyingExpression();
+          return arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBinding && !newExpr.getClassCall().isImplemented(expr.getDefinition()) ? expr : FieldCallExpression.make(expr.getDefinition(), expr.getArgument().accept(this, null));
         }
 
         @Override
