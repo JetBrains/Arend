@@ -1678,12 +1678,6 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private Boolean visitTuple(TupleExpression expr1, Expression expr2, boolean correctOrder) {
-    Expression type2 = expr2.getType();
-    if (type2 == null || !compare(correctOrder ? expr1.getSigmaType() : type2, correctOrder ? type2 : expr1.getSigmaType(), Type.OMEGA, false)) {
-      initResult(expr1, expr2, correctOrder);
-      return false;
-    }
-
     TupleExpression tuple2 = expr2.cast(TupleExpression.class);
     if (tuple2 != null) {
       if (!(correctOrder ? compareLists(expr1.getFields(), tuple2.getFields(), expr1.getSigmaType().getParameters(), null, new ExprSubstitution(), true) : compareLists(tuple2.getFields(), expr1.getFields(), tuple2.getSigmaType().getParameters(), null, new ExprSubstitution(), true))) {
