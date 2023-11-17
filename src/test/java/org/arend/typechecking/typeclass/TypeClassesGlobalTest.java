@@ -472,4 +472,18 @@ public class TypeClassesGlobalTest extends TypeCheckingTestCase {
       }
       """, 1);
   }
+
+  @Test
+  public void instanceVisibilityTest() {
+    typeCheckModule("""
+      \\class C (A : \\Type)
+        | f : A -> A
+      \\record R {
+        \\instance inst : C Nat
+          | f x => x
+      }
+      \\func test (x : Nat) => f x
+      """, 1);
+    assertThatErrorsAre(argInferenceError());
+  }
 }

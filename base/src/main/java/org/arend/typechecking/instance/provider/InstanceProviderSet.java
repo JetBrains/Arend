@@ -136,11 +136,10 @@ public class InstanceProviderSet {
       }
 
       LocatedReferable ref = predicate.recordInstances(groupRef);
+      processSubgroups(parentScope, predicate, subgroup.getDynamicSubgroups());
       predicate.used = true;
       predicate.instanceProvider = instanceProvider;
       predicate.test(size, ref);
-
-      processSubgroups(parentScope, predicate, subgroup.getDynamicSubgroups());
     }
   }
 
