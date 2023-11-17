@@ -58,9 +58,6 @@ public class LocalInstancePool implements InstancePool {
     if (result == null) {
       return null;
     }
-    if (expectedType == null) {
-      return new TypecheckingResult(result, null);
-    }
 
     Expression actualType = result.getType();
     if (actualType == null) {
@@ -68,6 +65,10 @@ public class LocalInstancePool implements InstancePool {
       myTypechecker.getErrorReporter().report(error);
       ErrorExpression errorExpr = new ErrorExpression(error);
       return new TypecheckingResult(errorExpr, errorExpr);
+    }
+
+    if (expectedType == null) {
+      return new TypecheckingResult(result, actualType);
     }
 
     if (!CompareVisitor.compare(myTypechecker.getEquations(), CMP.LE, actualType, expectedType, Type.OMEGA, sourceNode)) {
