@@ -3,7 +3,7 @@ package org.arend.typechecking.order;
 import java.util.*;
 import java.util.function.Consumer;
 
-public abstract class BellmanFord<T> {
+public abstract class TarjanSCC<T> {
   private static class DefState {
     int index, lowLink;
     boolean onStack;

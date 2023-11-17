@@ -1,17 +1,19 @@
 package org.arend.typechecking.error;
 
-import org.arend.core.definition.Definition;
+import org.arend.core.definition.ClassField;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.ext.reference.ArendRef;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
@@ -20,36 +22,30 @@ public class CycleError extends GeneralError {
   public final List<? extends GlobalReferable> cycle;
   public final Concrete.SourceNode cause;
   private final GlobalReferable myCauseReferable;
+  private final boolean myDoCycle;
 
-  private CycleError(List<? extends GlobalReferable> cycle, GlobalReferable causeReferable, Concrete.SourceNode cause) {
-    super(Level.ERROR, "Dependency cycle");
+  private CycleError(String message, List<? extends GlobalReferable> cycle, boolean doCycle, GlobalReferable causeReferable, Concrete.SourceNode cause) {
+    super(Level.ERROR, message);
     this.cycle = cycle;
     this.cause = cause;
+    myDoCycle = doCycle;
     myCauseReferable = causeReferable;
   }
 
-  public CycleError(List<? extends GlobalReferable> cycle, Concrete.SourceNode cause) {
-    this(cycle, null, cause);
+  public CycleError(String message, List<? extends GlobalReferable> cycle, boolean doCycle) {
+    this(message, cycle, doCycle, null, null);
   }
 
   public CycleError(List<? extends GlobalReferable> cycle) {
-    this(cycle, null, null);
+    this("Dependency cycle", cycle, true);
   }
 
-  public static CycleError fromConcrete(List<? extends Concrete.Definition> cycle) {
+  public static CycleError fieldDependency(List<? extends ClassField> cycle, Concrete.SourceNode cause) {
     List<GlobalReferable> refs = new ArrayList<>(cycle.size());
-    for (Concrete.Definition definition : cycle) {
-      refs.add(definition.getData());
+    for (ClassField field : cycle) {
+      refs.add(field.getReferable());
     }
-    return new CycleError(refs, null);
-  }
-
-  public static CycleError fromTypechecked(List<? extends Definition> cycle, Concrete.SourceNode cause) {
-    List<GlobalReferable> refs = new ArrayList<>(cycle.size());
-    for (Definition definition : cycle) {
-      refs.add(definition.getReferable());
-    }
-    return new CycleError(refs, cause);
+    return new CycleError("Field dependency cycle", refs, true, null, cause);
   }
 
   @Override
@@ -76,12 +72,32 @@ public class CycleError extends GeneralError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig src) {
+    Set<ModulePath> modules = new LinkedHashSet<>();
+    for (GlobalReferable referable : cycle) {
+      if (referable instanceof LocatedReferable) {
+        ModuleLocation location = ((LocatedReferable) referable).getLocation();
+        if (location != null) {
+          modules.add(location.getModulePath());
+        }
+      }
+    }
+
     List<LineDoc> docs = new ArrayList<>(cycle.size() + 1);
     for (GlobalReferable definition : cycle) {
       docs.add(refDoc(definition));
     }
-    docs.add(refDoc(cycle.get(0)));
-    return hSep(text(" - "), docs);
+    if (myDoCycle) {
+      docs.add(refDoc(cycle.get(0)));
+    }
+    Doc result = hSep(text(" - "), docs);
+    if (modules.size() > 1) {
+      List<LineDoc> modulesDocs = new ArrayList<>(modules.size());
+      for (ModulePath module : modules) {
+        modulesDocs.add(text(module.toString()));
+      }
+      result = vList(result, hList(text("Located in modules: "), hSep(text(", "), modulesDocs)));
+    }
+    return result;
   }
 
   @Override
@@ -91,7 +107,7 @@ public class CycleError extends GeneralError {
       consumer.accept((GlobalReferable) causeData, this);
     } else {
       for (GlobalReferable ref : cycle) {
-        consumer.accept(ref, new CycleError(cycle, ref, cause));
+        consumer.accept(ref, new CycleError(message, cycle, myDoCycle, ref, cause));
       }
     }
   }

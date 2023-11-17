@@ -28,14 +28,17 @@ import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
+import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.arend.term.prettyprint.PrettyPrinterConfigWithRenamer;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.doubleChecker.CoreModuleChecker;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
+import org.arend.typechecking.order.MapTarjanSCC;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.dependency.MetaDependencyCollector;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
@@ -46,7 +49,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,6 +57,11 @@ import java.util.*;
 import static org.arend.frontend.library.TimedLibraryManager.timeToString;
 
 public abstract class BaseCliFrontend {
+  private final static String SHOW_TIMES = "show-times";
+  private final static String SHOW_SIZES = "show-sizes";
+  private final static String SHOW_MODULES = "show-modules";
+  private final static String SHOW_MODULES_WITH_INSTANCES = "show-modules-with-instances";
+
   // Typechecking
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
   private final Map<ModulePath, GeneralError.Level> myModuleResults = new LinkedHashMap<>();
@@ -224,8 +231,10 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption(Option.builder("p").longOpt("print").hasArg().argName("target").desc("print a definition or a module").build());
       cmdOptions.addOption("t", "test", false, "run tests");
       cmdOptions.addOption("v", "version", false, "print language version");
-      cmdOptions.addOption(Option.builder().longOpt("show-times").build());
-      cmdOptions.addOption(Option.builder().longOpt("show-sizes").build());
+      cmdOptions.addOption(Option.builder().longOpt(SHOW_TIMES).build());
+      cmdOptions.addOption(Option.builder().longOpt(SHOW_SIZES).build());
+      cmdOptions.addOption(Option.builder().longOpt(SHOW_MODULES).build());
+      cmdOptions.addOption(Option.builder().longOpt(SHOW_MODULES_WITH_INSTANCES).build());
       addCommandOptions(cmdOptions);
       CommandLine cmdLine = new DefaultParser().parse(cmdOptions, args);
 
@@ -269,6 +278,44 @@ public abstract class BaseCliFrontend {
     return new Pair<>(modulePath, longName);
   }
 
+  private void showModules(Library library, boolean allModules) {
+    Map<ModulePath, List<ModulePath>> map = new HashMap<>();
+    for (ModulePath module : library.getLoadedModules()) {
+      Group group = library.getModuleGroup(module, false);
+      if (group != null) {
+        boolean withInstances = allModules;
+        List<ModulePath> dependencies = new ArrayList<>();
+        for (Statement statement : group.getStatements()) {
+          NamespaceCommand cmd = statement.getNamespaceCommand();
+          if (cmd != null && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+            dependencies.add(new ModulePath(cmd.getPath()));
+          }
+          if (!withInstances && !dependencies.isEmpty()) {
+            Group subgroup = statement.getGroup();
+            if (subgroup != null && subgroup.getReferable().getKind() == GlobalReferable.Kind.INSTANCE) {
+              withInstances = true;
+            }
+          }
+        }
+        if (withInstances) {
+          map.put(module, dependencies);
+        }
+      }
+    }
+
+    new MapTarjanSCC<>(map) {
+      @Override
+      protected void unitFound(ModulePath unit, boolean withLoops) {
+        System.out.println("[" + unit + "]");
+      }
+
+      @Override
+      protected void sccFound(List<ModulePath> scc) {
+        System.out.println(scc);
+      }
+    }.order();
+  }
+
   public CommandLine run(String[] args) {
     CommandLine cmdLine = parseArgs(args);
     if (cmdLine == null) {
@@ -293,11 +340,11 @@ public abstract class BaseCliFrontend {
       }
     }
 
-    if (cmdLine.hasOption("show-times")) {
+    if (cmdLine.hasOption(SHOW_TIMES)) {
       myTimes = new HashMap<>();
     }
 
-    if (cmdLine.hasOption("show-sizes")) {
+    if (cmdLine.hasOption(SHOW_SIZES)) {
       mySizes = new HashMap<>();
     }
 
@@ -569,6 +616,18 @@ public abstract class BaseCliFrontend {
         System.out.println(builder);
       }
 
+      if (cmdLine.hasOption(SHOW_MODULES)) {
+        System.out.println();
+        System.out.println("Modules cycles:");
+        showModules(library, true);
+      }
+
+      if (cmdLine.hasOption(SHOW_MODULES_WITH_INSTANCES)) {
+        System.out.println();
+        System.out.println("Modules with instances cycles:");
+        showModules(library, false);
+      }
+
       if (doubleCheck && numWithErrors == 0) {
         System.out.println();
         System.out.println("--- Checking " + library.getName() + " ---");
@@ -694,13 +753,10 @@ public abstract class BaseCliFrontend {
     if (result == null) {
       return ' ';
     }
-    switch (result) {
-      case GOAL:
-        return '\u25ef';
-      case ERROR:
-        return '\u2717';
-      default:
-        return '\u00b7';
-    }
+    return switch (result) {
+      case GOAL -> '◯';
+      case ERROR -> '✗';
+      default -> '·';
+    };
   }
 }

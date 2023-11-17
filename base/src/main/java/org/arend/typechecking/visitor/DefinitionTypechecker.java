@@ -2794,7 +2794,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     for (ClassField field : typedDef.getFields()) {
       List<ClassField> cycle = dfs.findCycle(field);
       if (cycle != null) {
-        errorReporter.report(CycleError.fromTypechecked(cycle, def));
+        errorReporter.report(CycleError.fieldDependency(cycle, def));
         checkImplementations = false;
         break;
       }
@@ -2952,7 +2952,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (result != null && !classFieldImpl.isDefault()) {
           List<ClassField> cycle = dfs.checkDependencies(field, FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
           if (cycle != null) {
-            errorReporter.report(CycleError.fromTypechecked(cycle, def));
+            errorReporter.report(CycleError.fieldDependency(cycle, def));
             checkImplementations = false;
           }
         }

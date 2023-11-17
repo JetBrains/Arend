@@ -1293,7 +1293,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private void checkImplementationCycle(FieldDFS dfs, ClassField field, Expression implementation, ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
     List<ClassField> cycle = dfs.checkDependencies(field, FieldsCollector.getFields(implementation, classCall.getThisBinding(), classCall.getDefinition().getFields()));
     if (cycle != null) {
-      errorReporter.report(CycleError.fromTypechecked(cycle, sourceNode));
+      errorReporter.report(CycleError.fieldDependency(cycle, sourceNode));
     }
     classCall.getImplementedHere().put(field, cycle == null ? implementation : new ErrorExpression());
   }

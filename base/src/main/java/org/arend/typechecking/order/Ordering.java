@@ -21,7 +21,7 @@ import org.arend.typechecking.visitor.CollectDefCallsVisitor;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
+public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
   private final InstanceProviderSet myInstanceProviderSet;
   private final ConcreteProvider myConcreteProvider;
   private OrderingListener myOrderingListener;
@@ -189,7 +189,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
       myOrderingListener.unitFound(unit, withLoops);
     } else {
       if (withLoops) {
-        myOrderingListener.cycleFound(Collections.singletonList(unit));
+        myOrderingListener.cycleFound(Collections.singletonList(unit), false);
       } else {
         myOrderingListener.headerFound(unit);
       }
@@ -199,7 +199,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
   @Override
   protected void sccFound(List<Concrete.ResolvableDefinition> scc) {
     if (myStage.ordinal() >= Stage.WITHOUT_BODIES.ordinal()) {
-      myOrderingListener.cycleFound(scc);
+      myOrderingListener.cycleFound(scc, false);
       return;
     }
     if (scc.isEmpty()) {
@@ -215,7 +215,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
     for (Concrete.ResolvableDefinition definition : scc) {
       if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind() == FunctionKind.INSTANCE) {
         if (myStage.ordinal() >= Stage.WITHOUT_INSTANCES.ordinal()) {
-          myOrderingListener.cycleFound(scc);
+          myOrderingListener.cycleFound(scc, false);
           return;
         }
         hasInstances = true;
@@ -223,7 +223,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
       }
       if (definition instanceof Concrete.UseDefinition && ((Concrete.UseDefinition) definition).getKind() != FunctionKind.FUNC_COCLAUSE) {
         if (myStage.ordinal() >= Stage.WITHOUT_USE.ordinal()) {
-          myOrderingListener.cycleFound(scc);
+          myOrderingListener.cycleFound(scc, false);
           return;
         }
         hasUse = true;
@@ -236,6 +236,50 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
     }
 
     if (hasInstances) {
+      Map<TCDefReferable, Concrete.FunctionDefinition> instanceMap = new HashMap<>();
+      for (Concrete.ResolvableDefinition definition : scc) {
+        if (definition instanceof Concrete.FunctionDefinition funDef && funDef.getKind() == FunctionKind.INSTANCE) {
+          instanceMap.put(definition.getData(), funDef);
+        }
+      }
+
+      TarjanSCC<TCDefReferable> tarjan = new TarjanSCC<>() {
+        @Override
+        protected boolean forDependencies(TCDefReferable unit, Consumer<TCDefReferable> consumer) {
+          boolean[] withLoops = new boolean[] { false };
+          InstanceProvider instanceProvider = myInstanceProviderSet.get(unit);
+          if (instanceProvider != null) {
+            instanceProvider.findInstance(instance -> {
+              if (instanceMap.containsKey(instance)) {
+                consumer.accept(instance);
+                if (unit.equals(instance)) {
+                  withLoops[0] = true;
+                }
+              }
+              return false;
+            });
+          }
+          return withLoops[0];
+        }
+
+        @Override
+        protected void sccFound(List<TCDefReferable> scc) {
+          List<Concrete.ResolvableDefinition> defs = new ArrayList<>(scc.size());
+          for (TCDefReferable ref : scc) {
+            Concrete.FunctionDefinition def = instanceMap.get(ref);
+            if (def != null) defs.add(def);
+          }
+          if (!defs.isEmpty()) {
+            myOrderingListener.cycleFound(defs, true);
+          }
+        }
+      };
+      for (Concrete.ResolvableDefinition definition : scc) {
+        if (definition instanceof Concrete.FunctionDefinition funDef && funDef.getKind() == FunctionKind.INSTANCE) {
+          tarjan.order(definition.getData());
+        }
+      }
+
       Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_INSTANCES);
       for (Concrete.ResolvableDefinition definition : scc) {
         ordering.order(definition);
@@ -263,7 +307,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
 
     for (Concrete.ResolvableDefinition definition : scc) {
       if (definition instanceof Concrete.ClassDefinition) {
-        myOrderingListener.cycleFound(scc);
+        myOrderingListener.cycleFound(scc, false);
         return;
       }
     }

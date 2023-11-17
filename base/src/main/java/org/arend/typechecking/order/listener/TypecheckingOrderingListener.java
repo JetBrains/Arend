@@ -285,8 +285,16 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   }
 
   @Override
-  public void cycleFound(List<Concrete.ResolvableDefinition> definitions) {
+  public void cycleFound(List<Concrete.ResolvableDefinition> definitions, boolean isInstance) {
     List<TCReferable> cycle = new ArrayList<>();
+    if (isInstance) {
+      for (Concrete.ResolvableDefinition definition : definitions) {
+        cycle.add(definition.getData());
+      }
+      myErrorReporter.report(new CycleError("Instance dependency cycle", cycle, false));
+      return;
+    }
+
     for (Concrete.ResolvableDefinition definition : definitions) {
       if (cycle.isEmpty() || cycle.get(cycle.size() - 1) != definition.getData()) {
         cycle.add(definition.getData());

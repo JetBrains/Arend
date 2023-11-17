@@ -87,7 +87,7 @@ public class CollectingOrderingListener implements OrderingListener {
   }
 
   private static class MyDefinitions implements Element {
-    enum Kind { CYCLE, PRE_BODIES, BODIES, USE }
+    enum Kind { CYCLE, INSTANCE_CYCLE, PRE_BODIES, BODIES, USE }
 
     final List<? extends Concrete.ResolvableDefinition> definitions;
     final Kind kind;
@@ -106,8 +106,12 @@ public class CollectingOrderingListener implements OrderingListener {
         listener.preBodiesFound((List<Concrete.ResolvableDefinition>) definitions);
       } else if (kind == Kind.BODIES) {
         listener.bodiesFound((List<Concrete.ResolvableDefinition>) definitions);
+      } else if (kind == Kind.CYCLE) {
+        listener.cycleFound((List<Concrete.ResolvableDefinition>) definitions, false);
+      } else if (kind == Kind.INSTANCE_CYCLE) {
+        listener.cycleFound((List<Concrete.ResolvableDefinition>) definitions, true);
       } else {
-        listener.cycleFound((List<Concrete.ResolvableDefinition>) definitions);
+        throw new IllegalStateException();
       }
     }
 
@@ -141,8 +145,8 @@ public class CollectingOrderingListener implements OrderingListener {
   }
 
   @Override
-  public void cycleFound(List<Concrete.ResolvableDefinition> definitions) {
-    myElements.add(new MyDefinitions(definitions, MyDefinitions.Kind.CYCLE));
+  public void cycleFound(List<Concrete.ResolvableDefinition> definitions, boolean isInstance) {
+    myElements.add(new MyDefinitions(definitions, isInstance ? MyDefinitions.Kind.INSTANCE_CYCLE : MyDefinitions.Kind.CYCLE));
   }
 
   @Override
