@@ -256,7 +256,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     boolean onlySolveVars = myOnlySolveVars;
-    if (myNormalCompare && !myOnlySolveVars && expr1.isBoxed() && expr2.isBoxed()) {
+    if (myNormalCompare && !myOnlySolveVars && expr1.isBoxed() && expr2.isBoxed() && (type != null || compare(expr1.getType(), expr2.getType(), Type.OMEGA, true))) {
       myOnlySolveVars = true;
     }
     if (useType && myNormalCompare && !myOnlySolveVars) {

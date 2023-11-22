@@ -80,4 +80,29 @@ public class StrictPropTest extends TypeCheckingTestCase {
       "\\data Empty\n" +
       "\\func test (x y : Empty) : x = y => idp");
   }
+
+  @Test
+  public void comparisonTest() {
+    typeCheckModule("""
+      \\func unique {A : \\Set} {a0 a a' : A} (p : a0 = a) (q : a0 = a') : (a,p) = {\\Sigma (a1 : A) (a0 = a1)} (a',q)
+        | idp, idp => idp
+      \\lemma lem {A : \\Set} (a0 : A) : \\Sigma (a : A) (a0 = a) \\level \\lam s t => unique s.2 t.2
+        => (a0,idp)
+      \\func test {A : \\Set} (a1 a2 : A) : (lem a1).1 = (lem a2).1
+        => idp
+      """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
+  }
+
+  @Test
+  public void comparisonTest2() {
+    typeCheckModule("""
+      \\func unique {A : \\Set} {a0 a a' : A} (p : a0 = a) (q : a0 = a') : (a,p) = {\\Sigma (a1 : A) (a0 = a1)} (a',q)
+        | idp, idp => idp
+      \\lemma lem {A : \\Set} (a0 x : A) : \\Sigma (a : A) (a0 = a) \\level \\lam s t => unique s.2 t.2
+        => (a0,idp)
+      \\func test {A : \\Set} (a a1 a2 : A) : (lem a a1).1 = (lem a a2).1
+        => idp
+      """);
+  }
 }
