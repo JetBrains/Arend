@@ -1840,7 +1840,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (type != null) {
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);
       if (classCall != null) {
-        Set<ClassField> fieldsCopy = new HashSet<>();
+        Set<ClassField> fieldsCopy = new LinkedHashSet<>();
         for (ClassField field : classCall.getDefinition().getFields()) {
           if (!classCall.isImplemented(field)) {
             fieldsCopy.add(field);
@@ -1852,7 +1852,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (fields == null) {
       fields = classCall1.getDefinition().getFields();
       if (classCall1.getDefinition() != classCall2.getDefinition()) {
-        fields = new HashSet<>(fields);
+        fields = new LinkedHashSet<>(fields);
         //noinspection SuspiciousMethodCalls
         fields.retainAll(classCall2.getDefinition().getFields());
       }
