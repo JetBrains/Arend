@@ -437,12 +437,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         if (length != null) {
           Map<ClassField, Expression> impls = new LinkedHashMap<>();
           ClassCallExpression resultClassCall = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES);
-          Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-          if (elementsType == null) {
-            elementsType = piExpr.getParameters().getNext().hasNext() ? new LamExpression(piExpr.getResultSort(), DependentLink.Helper.take(piExpr.getParameters(), 1), new PiExpression(piExpr.getResultSort(), piExpr.getParameters().getNext(), piExpr.getCodomain())) : new LamExpression(piExpr.getResultSort(), piExpr.getParameters(), piExpr.getCodomain());
-          } else {
-            elementsType = elementsType.subst(classCall.getThisBinding(), new ReferenceExpression(resultClassCall.getThisBinding()));
-          }
+          Expression elementsType = piExpr.getParameters().getNext().hasNext() ? new LamExpression(piExpr.getResultSort(), DependentLink.Helper.take(piExpr.getParameters(), 1), new PiExpression(piExpr.getResultSort(), piExpr.getParameters().getNext(), piExpr.getCodomain())) : new LamExpression(piExpr.getResultSort(), piExpr.getParameters(), piExpr.getCodomain());
           impls.put(Prelude.ARRAY_LENGTH, length);
           impls.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
           impls.put(Prelude.ARRAY_AT, result.expression);

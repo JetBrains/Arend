@@ -777,4 +777,10 @@ public class ArrayTest extends TypeCheckingTestCase {
     typeCheckDef("\\func array : Array Nat 3 (\\lam i => i) => (0, 1, 2)", 1);
     assertThatErrorsAre(Matchers.typeMismatchError());
   }
+
+  @Test
+  public void castTest() {
+    typeCheckModule("\\func test {n : Nat} {A B : \\Set} (e : Fin n -> A) (f : Array B -> B) => f e", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
+  }
 }
