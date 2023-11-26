@@ -26,7 +26,7 @@ import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.SingletonList;
-import org.arend.util.Wrapper;
+import org.arend.ext.util.Wrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
