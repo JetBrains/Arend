@@ -1,4 +1,4 @@
-package org.arend.util;
+package org.arend.ext.util;
 
 public class Wrapper<T> {
   public final T element;
