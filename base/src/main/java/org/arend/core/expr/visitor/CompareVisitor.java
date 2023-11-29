@@ -138,6 +138,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return new CompareVisitor(equations, CMP.EQ, sourceNode).compare(elimBody1, elimBody2, null);
   }
 
+  private static class BindingMapContainer {
+    Map<Binding, Binding> map;
+  }
+
   private Boolean compare(ElimBody elimBody1, ElimBody elimBody2, Expression type) {
     if (elimBody1 == elimBody2) {
       return true;
@@ -148,12 +152,16 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     for (int i = 0; i < elimBody1.getClauses().size(); i++) {
       ElimClause<Pattern> clause1 = elimBody1.getClauses().get(i);
       ElimClause<Pattern> clause2 = elimBody2.getClauses().get(i);
-      if (!compareParameters(clause1.getParameters(), clause2.getParameters())) {
+      BindingMapContainer prevBindings = new BindingMapContainer();
+      if (!compareParameters(clause1.getParameters(), clause2.getParameters(), prevBindings)) {
         return false;
       }
       boolean ok = clause1.getExpression() == null && clause2.getExpression() == null || clause1.getExpression() != null && clause2.getExpression() != null && compare(clause1.getExpression(), clause2.getExpression(), type, true);
       for (DependentLink link = clause2.getParameters(); link.hasNext(); link = link.getNext()) {
         mySubstitution.remove(link);
+      }
+      if (prevBindings.map != null) {
+        mySubstitution.putAll(prevBindings.map);
       }
       if (!ok) {
         return false;
@@ -1307,9 +1315,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (!classCall2.getDefinition().isCovariantField(field)) {
         myCMP = CMP.EQ;
       }
-      mySubstitution.put(classCall2.getThisBinding(), binding);
+      Binding prevBinding = mySubstitution.put(classCall2.getThisBinding(), binding);
       boolean ok = compare(correctOrder ? impl1 : impl2, correctOrder ? impl2 : impl1, field.getType(classCall2.getLevels(field.getParentClass())).applyExpression(new ReferenceExpression(binding)), true);
-      mySubstitution.remove(classCall2.getThisBinding());
+      if (prevBinding == null) {
+        mySubstitution.remove(classCall2.getThisBinding());
+      } else {
+        mySubstitution.put(classCall2.getThisBinding(), prevBinding);
+      }
       if (!ok) {
         return false;
       }
@@ -1526,8 +1538,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     Expression body1 = expr1.getLamParameters(params1);
     Expression body2 = expr2.getLamParameters(params2);
 
+    Map<Binding, Binding> prevBindings = null;
     for (int i = 0; i < params1.size() && i < params2.size(); i++) {
-      mySubstitution.put(correctOrder ? params2.get(i) : params1.get(i), correctOrder ? params1.get(i) : params2.get(i));
+      Binding key = correctOrder ? params2.get(i) : params1.get(i);
+      Binding prev = mySubstitution.put(key, correctOrder ? params1.get(i) : params2.get(i));
+      if (prev != null) {
+        if (prevBindings == null) prevBindings = new HashMap<>();
+        prevBindings.put(key, prev);
+      }
     }
 
     if (params1.size() < params2.size()) {
@@ -1545,6 +1563,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     Boolean result = compare(correctOrder ? body1 : body2, correctOrder ? body2 : body1, type, true);
     for (int i = 0; i < params1.size() && i < params2.size(); i++) {
       mySubstitution.remove(correctOrder ? params2.get(i) : params1.get(i));
+    }
+    if (prevBindings != null) {
+      mySubstitution.putAll(prevBindings);
     }
     if (!result) {
       LamExpression lamExpr2 = expr2.cast(LamExpression.class);
@@ -1596,12 +1617,17 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     SingleDependentLink link1 = expr1.getParameters(), link2 = piExpr2.getParameters();
+    Map<Binding, Binding> prevBindings = null;
     for (; link1.hasNext() && link2.hasNext(); link1 = link1.getNext(), link2 = link2.getNext()) {
       if (link1.isExplicit() != link2.isExplicit()) {
         initResult(expr1, expr2);
         return false;
       }
-      mySubstitution.put(link2, link1);
+      Binding prev = mySubstitution.put(link2, link1);
+      if (prev != null) {
+        if (prevBindings == null) prevBindings = new HashMap<>();
+        prevBindings.put(link2, prev);
+      }
     }
 
     myCMP = origCMP;
@@ -1619,10 +1645,17 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       mySubstitution.remove(link);
     }
     mySubstitution.remove(link2);
+    if (prevBindings != null) {
+      mySubstitution.putAll(prevBindings);
+    }
     return true;
   }
 
   public boolean compareParameters(DependentLink params1, DependentLink params2) {
+    return compareParameters(params1, params2, new BindingMapContainer());
+  }
+
+  private boolean compareParameters(DependentLink params1, DependentLink params2, BindingMapContainer prevBindings) {
     List<DependentLink> list1 = DependentLink.Helper.toList(params1);
     List<DependentLink> list2 = DependentLink.Helper.toList(params2);
 
@@ -1638,6 +1671,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         for (int j = 0; j < i; j++) {
           mySubstitution.remove(list2.get(j));
         }
+        if (prevBindings.map != null) {
+          mySubstitution.putAll(prevBindings.map);
+        }
         myCMP = origCMP;
         if (param1.isProperty() == param2.isProperty()) {
           if (initResult(param1.getTypeExpr(), param2.getTypeExpr())) {
@@ -1646,7 +1682,11 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         }
         return false;
       }
-      mySubstitution.put(param2, param1);
+      Binding prev = mySubstitution.put(param2, param1);
+      if (prev != null) {
+        if (prevBindings.map == null) prevBindings.map = new HashMap<>();
+        prevBindings.map.put(param2, prev);
+      }
       myCMP = origCMP;
     }
 
@@ -1724,7 +1764,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       initResult(expr1, expr2);
       return false;
     }
-    if (!compareParameters(expr1.getParameters(), sigma2.getParameters())) {
+    BindingMapContainer prevBindings = new BindingMapContainer();
+    if (!compareParameters(expr1.getParameters(), sigma2.getParameters(), prevBindings)) {
       if (myResult == null || myResult.index < 0) {
         initResult(expr1, expr2);
       } else {
@@ -1740,6 +1781,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
     for (DependentLink link = sigma2.getParameters(); link.hasNext(); link = link.getNext()) {
       mySubstitution.remove(link);
+    }
+    if (prevBindings.map != null) {
+      mySubstitution.putAll(prevBindings.map);
     }
     return true;
   }
@@ -1879,7 +1923,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           return false;
         }
       } else {
-        mySubstitution.put(classCall2.getThisBinding(), classCall1.getThisBinding());
+        Binding prevBinding = mySubstitution.put(classCall2.getThisBinding(), classCall1.getThisBinding());
         Expression impl1 = classCall1.getAbsImplementationHere(field);
         Expression impl2 = classCall2.getAbsImplementationHere(field);
         if (impl1 == null) {
@@ -1889,7 +1933,11 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           impl2 = Objects.requireNonNull(classCall2.getDefinition().getImplementation(field)).apply(expr2, LevelSubstitution.EMPTY);
         }
         boolean ok = compare(impl1, impl2, field.getType(classCall1.getLevels(field.getParentClass())).applyExpression(expr1), true);
-        mySubstitution.remove(classCall2.getThisBinding());
+        if (prevBinding == null) {
+          mySubstitution.remove(classCall2.getThisBinding());
+        } else {
+          mySubstitution.put(classCall2.getThisBinding(), prevBinding);
+        }
         if (!ok) {
           myResult = null;
           return false;
@@ -1988,7 +2036,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
 
-    if (!compareParameters(case1.getParameters(), case2.getParameters())) {
+    BindingMapContainer prevBindings = new BindingMapContainer();
+    if (!compareParameters(case1.getParameters(), case2.getParameters(), prevBindings)) {
       if (myResult == null || myResult.index < 0) {
         initResult(case1, case2);
       } else {
@@ -2017,6 +2066,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
     for (DependentLink link = case2.getParameters(); link.hasNext(); link = link.getNext()) {
       mySubstitution.remove(link);
+    }
+    if (prevBindings.map != null) {
+      mySubstitution.putAll(prevBindings.map);
     }
 
     if (!compareLists(case1.getArguments(), case2.getArguments(), case1.getParameters(), null, new ExprSubstitution())) {
