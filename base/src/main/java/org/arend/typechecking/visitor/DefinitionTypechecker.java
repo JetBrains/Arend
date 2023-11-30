@@ -2887,7 +2887,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       } else if (element instanceof Concrete.ClassFieldImpl classFieldImpl) {
         ClassField field = typechecker.referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
-        if (field == null) {
+        if (field == null || !typedDef.getFields().contains(field)) {
+          if (field != null) {
+            errorReporter.report(new IncorrectImplementationError(field, typedDef, classFieldImpl));
+          }
           classOk = false;
           continue;
         }
@@ -3242,7 +3245,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       if (typedDef.getParentClass() == parentClass || !parentClass.getFields().contains(typedDef)) {
-        errorReporter.report(new TypecheckingError("Overridden field must belong to a super class", def));
+        errorReporter.report(new IncorrectImplementationError(typedDef, parentClass, def));
         return null;
       }
     }
