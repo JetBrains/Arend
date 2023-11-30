@@ -216,14 +216,14 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
         arrayDataBuilder.setConstructor(myCallTargetIndexProvider.getDefIndex(funCall.getDefinition()));
         arrayDataBuilder.setLevels(writeLevels(funCall.getLevels(), funCall.getDefinition()));
         if (funCall.getDefinition() == Prelude.ARRAY_CONS) {
-          if (funCall.getDefCallArguments().size() >= 1 && funCall.getDefCallArguments().get(0) != null) {
+          if (!funCall.getDefCallArguments().isEmpty() && funCall.getDefCallArguments().get(0) != null) {
             arrayDataBuilder.setLength(funCall.getDefCallArguments().get(0).accept(this, null));
           }
           if (funCall.getDefCallArguments().size() >= 2 && funCall.getDefCallArguments().get(1) != null) {
             arrayDataBuilder.setElementsType(funCall.getDefCallArguments().get(1).accept(this, null));
           }
         } else {
-          if (funCall.getDefCallArguments().size() >= 1 && funCall.getDefCallArguments().get(0) != null) {
+          if (!funCall.getDefCallArguments().isEmpty() && funCall.getDefCallArguments().get(0) != null) {
             arrayDataBuilder.setElementsType(funCall.getDefCallArguments().get(0).accept(this, null));
           }
         }
@@ -566,7 +566,10 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
   @Override
   public ExpressionProtos.Expression visitBox(BoxExpression expr, Void params) {
-    return ExpressionProtos.Expression.newBuilder().setBox(ExpressionProtos.Expression.Box.newBuilder().setExpression(expr.getExpression().accept(this, null))).build();
+    return ExpressionProtos.Expression.newBuilder().setBox(ExpressionProtos.Expression.Box.newBuilder()
+      .setExpression(expr.getExpression().accept(this, null))
+      .setType(expr.getType().accept(this, null))
+    ).build();
   }
 
   @Override

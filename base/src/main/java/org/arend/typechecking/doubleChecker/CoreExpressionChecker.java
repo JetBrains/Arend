@@ -552,12 +552,12 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitBox(BoxExpression expr, Expression expectedType) {
-    Expression type = expr.getExpression().accept(this, expectedType);
-    Sort sort = type.getSortOfType();
+    Expression type = expr.getType().accept(this, Type.OMEGA);
+    Sort sort = type.toSort();
     if (sort == null || !sort.isProp()) {
       throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError("The type of a boxed expression doe not live in \\Prop", new UniverseExpression(Sort.PROP), type.getType(), mySourceNode), expr));
     }
-    return type;
+    return check(expectedType, expr.getType(), expr);
   }
 
   @Override

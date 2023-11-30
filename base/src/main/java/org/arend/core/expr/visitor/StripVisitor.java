@@ -366,6 +366,6 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitBox(BoxExpression expr, Void params) {
-    return BoxExpression.make(expr.getExpression().accept(this, null));
+    return BoxExpression.make(expr.getExpression().accept(this, null), expr.getType().accept(this, null));
   }
 }

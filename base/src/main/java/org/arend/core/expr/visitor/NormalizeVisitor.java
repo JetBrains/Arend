@@ -1128,6 +1128,6 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitBox(BoxExpression expr, NormalizationMode mode) {
-    return mode == NormalizationMode.NF ? BoxExpression.make(expr.getExpression().accept(this, NormalizationMode.NF)) : expr;
+    return mode == NormalizationMode.NF ? BoxExpression.make(expr.getExpression().accept(this, NormalizationMode.NF), expr.getType().accept(this, NormalizationMode.NF)) : expr;
   }
 }

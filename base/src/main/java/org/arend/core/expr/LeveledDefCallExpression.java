@@ -25,6 +25,7 @@ public abstract class LeveledDefCallExpression extends DefCallExpression {
     myLevels = levels;
   }
 
+  @Override
   public LevelSubstitution getLevelSubstitution() {
     return myLevels.makeSubstitution(getDefinition());
   }

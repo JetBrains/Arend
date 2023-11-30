@@ -300,6 +300,7 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
 
   @Override
   public Result visitBox(BoxExpression expr, Boolean good) {
-    return expr.getExpression().accept(this, good);
+    Result result = expr.getExpression().accept(this, good);
+    return result != Result.NONE ? result : expr.getType().accept(this, false);
   }
 }

@@ -2301,6 +2301,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
 
+    if (type == null && !compare(expr.getType(), other.getType(), Type.OMEGA, false)) {
+      return false;
+    }
+
     if (!(other instanceof BoxExpression)) return true;
     boolean onlySolveVars = myOnlySolveVars;
     myOnlySolveVars = true;

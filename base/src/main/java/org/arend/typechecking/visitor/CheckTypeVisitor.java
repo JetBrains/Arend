@@ -4115,6 +4115,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       errorReporter.report(sort != null ? new TypecheckingError("The type of the expression should live in \\Prop, but lives in " + sort, expr) : new TypeMismatchError("The type of the expression does not live in \\Prop", expectedTypeType, typeType, expr));
       return null;
     }
-    return new TypecheckingResult(BoxExpression.make(result.expression), result.type);
+    return new TypecheckingResult(BoxExpression.make(result.expression, result.type), result.type);
   }
 }

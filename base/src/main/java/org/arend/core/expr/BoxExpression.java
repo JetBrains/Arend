@@ -9,18 +9,30 @@ import org.jetbrains.annotations.NotNull;
 
 public class BoxExpression extends Expression implements CoreBoxExpression {
   private final Expression myExpression;
+  private final Expression myType;
 
-  private BoxExpression(Expression expression) {
+  private BoxExpression(Expression expression, Expression type) {
     myExpression = expression;
+    myType = type;
   }
 
-  public static BoxExpression make(Expression expression) {
-    return expression instanceof BoxExpression ? (BoxExpression) expression : new BoxExpression(expression);
+  public static BoxExpression make(Expression expression, Expression type) {
+    return expression instanceof BoxExpression ? (BoxExpression) expression : new BoxExpression(expression, type);
   }
 
   @Override
   public Expression getExpression() {
     return myExpression;
+  }
+
+  @Override
+  public Expression getType() {
+    return myType;
+  }
+
+  @Override
+  public @NotNull Expression computeType() {
+    return myType;
   }
 
   @Override

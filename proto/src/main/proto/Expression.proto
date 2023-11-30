@@ -132,6 +132,7 @@ message Expression {
     }
     message Box {
       Expression expression = 1;
+      Expression type = 2;
     }
     message TypeConstructor {
         int32 fun_ref = 1;

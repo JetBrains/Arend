@@ -480,6 +480,6 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitBox(BoxExpression expr, Void params) {
-    return expr.getExpression().accept(this, null);
+    return expr.getType();
   }
 }

@@ -164,6 +164,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
   @Override
   public Void visitBox(BoxExpression expr, P params) {
     expr.getExpression().accept(this, params);
+    expr.getType().accept(this, params);
     return null;
   }
 

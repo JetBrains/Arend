@@ -375,8 +375,12 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitBox(BoxExpression expr, Void params) {
-    Expression result = expr.getExpression().accept(this, null);
-    return result != null ? BoxExpression.make(result) : null;
+    Expression expression = expr.getExpression().accept(this, null);
+    if (expression == null) {
+      return null;
+    }
+    Expression type = expr.getType().accept(this, null);
+    return type != null ? BoxExpression.make(expression, type) : null;
   }
 
   @Override

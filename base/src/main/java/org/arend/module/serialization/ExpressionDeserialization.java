@@ -479,7 +479,7 @@ class ExpressionDeserialization {
   }
 
   private BoxExpression readBox(ExpressionProtos.Expression.Box proto) throws DeserializationException {
-    return BoxExpression.make(readExpr(proto.getExpression()));
+    return BoxExpression.make(readExpr(proto.getExpression()), readExpr(proto.getType()));
   }
 
   private Expression readTypeConstructor(ExpressionProtos.Expression.TypeConstructor proto) throws DeserializationException {

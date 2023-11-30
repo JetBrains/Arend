@@ -242,7 +242,7 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitBox(BoxExpression expr, P params) {
-    return expr.getExpression().accept(this, params);
+    return expr.getExpression().accept(this, params) || expr.getType().accept(this, params);
   }
 
   @Override
