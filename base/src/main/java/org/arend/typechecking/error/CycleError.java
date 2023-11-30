@@ -1,6 +1,5 @@
 package org.arend.typechecking.error;
 
-import org.arend.core.definition.ClassField;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -38,14 +37,6 @@ public class CycleError extends GeneralError {
 
   public CycleError(List<? extends GlobalReferable> cycle) {
     this("Dependency cycle", cycle, true);
-  }
-
-  public static CycleError fieldDependency(List<? extends ClassField> cycle, Concrete.SourceNode cause) {
-    List<GlobalReferable> refs = new ArrayList<>(cycle.size());
-    for (ClassField field : cycle) {
-      refs.add(field.getReferable());
-    }
-    return new CycleError("Field dependency cycle", refs, true, null, cause);
   }
 
   @Override

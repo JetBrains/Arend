@@ -57,7 +57,6 @@ import org.arend.typechecking.TypecheckingContext;
 import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.doubleChecker.CoreException;
 import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
-import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.ErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
 import org.arend.ext.error.ArgInferenceError;
@@ -1285,10 +1284,38 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return typecheckClassExt(classFieldImpls, expectedType, null, classCallExpr, pseudoImplemented, expr, useDefaults);
   }
 
-  private void checkImplementationCycle(FieldDFS dfs, ClassField field, Expression implementation, ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
-    List<ClassField> cycle = dfs.checkDependencies(field, FieldsCollector.getFields(implementation, classCall.getThisBinding(), classCall.getDefinition().getFields()));
+  private void checkImplementationCycle(FieldDFS dfs, ClassField field, Expression implementation, boolean isFunc, ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
+    Set<ClassField> fields = null;
+    if (isFunc) {
+      Expression body = implementation;
+      List<Binding> params = new ArrayList<>();
+      params.add(classCall.getThisBinding());
+      while (body instanceof LamExpression lam) {
+        for (SingleDependentLink param = lam.getParameters(); param.hasNext(); param = param.getNext()) {
+          params.add(param);
+        }
+        body = lam.getBody();
+      }
+      if (body instanceof FunCallExpression funCall && funCall.getDefCallArguments().size() == params.size()) {
+        boolean ok = true;
+        for (int i = 0; i < params.size(); i++) {
+          if (!(funCall.getDefCallArguments().get(i) instanceof ReferenceExpression refExpr && refExpr.getBinding() == params.get(i))) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) {
+          fields = FieldsCollector.getFields(funCall.getDefinition(), classCall.getThisBinding(), classCall.getDefinition().getFields());
+        }
+      }
+    }
+    if (fields == null) {
+      fields = FieldsCollector.getFields(implementation, classCall.getThisBinding(), classCall.getDefinition().getFields());
+    }
+
+    List<ClassField> cycle = dfs.checkDependencies(field, fields);
     if (cycle != null) {
-      errorReporter.report(CycleError.fieldDependency(cycle, sourceNode));
+      errorReporter.report(new FieldCycleError(cycle, sourceNode));
     }
     classCall.getImplementedHere().put(field, cycle == null ? implementation : new ErrorExpression());
   }
@@ -1322,6 +1349,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
     }
 
+    FieldDFS dfs = new FieldDFS(resultClassCall.getDefinition());
     if (renewExpr != null) {
       for (ClassField field : baseClass.getFields()) {
         if (!defined.contains(field) && !resultClassCall.isImplemented(field)) {
@@ -1344,10 +1372,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
       }
     } else if (useDefaults && !baseClass.getDefaults().isEmpty()) {
-      MapDFS<ClassField> dfs = new MapDFS<>(baseClass.getDefaultDependencies());
-      dfs.visit(defined);
-      dfs.visit(resultClassCall.getImplementedHere().keySet());
-      Set<ClassField> notDefault = dfs.getVisited();
+      MapDFS<ClassField> defaultDFS = new MapDFS<>(baseClass.getDefaultDependencies());
+      defaultDFS.visit(defined);
+      defaultDFS.visit(resultClassCall.getImplementedHere().keySet());
+      Set<ClassField> notDefault = defaultDFS.getVisited();
 
       Map<ClassField, AbsExpression> defaults = new HashMap<>();
       DFS<ClassField, Boolean> implDfs = new DFS<>() {
@@ -1377,7 +1405,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         implDfs.visit(field);
         AbsExpression defaultImpl = defaults.get(field);
         if (defaultImpl != null && !notDefault.contains(field)) {
-          resultClassCall.getImplementedHere().put(field, defaultImpl.apply(new ReferenceExpression(resultClassCall.getThisBinding()), resultClassCall.getLevelSubstitution()));
+          Pair<AbsExpression, Boolean> pair = baseClass.getDefaultPair(field);
+          checkImplementationCycle(dfs, field, defaultImpl.apply(new ReferenceExpression(resultClassCall.getThisBinding()), resultClassCall.getLevelSubstitution()), pair != null && pair.proj2, resultClassCall, expr);
         }
       }
     }
@@ -1393,7 +1422,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
       }
 
-      FieldDFS dfs = new FieldDFS(resultClassCall.getDefinition());
       Referable thisRef = addBinding(null, resultClassCall.getThisBinding());
       myClassCallBindings.add(resultClassCall.getThisBinding());
       try {
@@ -1414,7 +1442,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                   errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
                 }
               } else if (!resultClassCall.isImplemented(field)) {
-                checkImplementationCycle(dfs, field, implResult.expression, resultClassCall, pair.proj2.implementation);
+                checkImplementationCycle(dfs, field, implResult.expression, false, resultClassCall, pair.proj2.implementation);
               }
             } else if (pseudoImplemented != null) {
               pseudoImplemented.add(field);
@@ -1449,7 +1477,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                       }
                     } else {
                       if (!resultClassCall.isImplemented(field)) {
-                        checkImplementationCycle(dfs, field, impl, resultClassCall, pair.proj2.implementation);
+                        checkImplementationCycle(dfs, field, impl, false, resultClassCall, pair.proj2.implementation);
 
                         PiExpression overridden = baseClass.getOverriddenType(field);
                         if (overridden != null && classCall.getDefinition().getOverriddenType(field) != overridden) {

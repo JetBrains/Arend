@@ -3,6 +3,7 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.Body;
 import org.arend.core.expr.*;
@@ -41,6 +42,14 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
     Set<ClassField> result = new HashSet<>();
     if (!fields.isEmpty()) {
       new FieldsCollector(thisBinding, fields, functions, result).visitBody(body, null);
+    }
+    return result;
+  }
+
+  public static Set<ClassField> getFields(Definition definition, Binding thisBinding, Set<? extends ClassField> fields) {
+    Set<ClassField> result = new HashSet<>();
+    if (!fields.isEmpty()) {
+      definition.accept(new FieldsCollector(thisBinding, fields, Collections.emptyMap(), result), null);
     }
     return result;
   }

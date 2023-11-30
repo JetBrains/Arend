@@ -1,6 +1,7 @@
 package org.arend;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.definition.ClassField;
 import org.arend.core.expr.Expression;
 import org.arend.ext.error.*;
 import org.arend.naming.error.DuplicateNameError;
@@ -305,11 +306,20 @@ public class Matchers {
     return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-        if (error instanceof CycleError && (referables.isEmpty() || ((CycleError) error).cycle.equals(referables))) {
-          description.appendText("Cycle error: " + ((CycleError) error).cycle);
+        List<? extends GlobalReferable> cycle;
+        if (error instanceof CycleError) {
+          cycle = ((CycleError) error).cycle;
+        } else if (error instanceof FieldCycleError) {
+          cycle = ((FieldCycleError) error).cycle.stream().map(ClassField::getReferable).toList();
+        } else {
+          cycle = null;
+        }
+
+        if (cycle != null && (referables.isEmpty() || cycle.equals(referables))) {
+          description.appendText("Cycle error: " + cycle);
           return true;
         } else {
-          description.appendText(error instanceof CycleError ? "Cycle error: " + ((CycleError) error).cycle : "not a cycle error");
+          description.appendText(cycle != null ? "Cycle error: " + cycle : "not a cycle error");
           return false;
         }
       }

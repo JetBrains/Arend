@@ -41,7 +41,6 @@ import org.arend.typechecking.covariance.ParametersCovarianceChecker;
 import org.arend.typechecking.covariance.RecursiveDataChecker;
 import org.arend.typechecking.covariance.UniverseInParametersChecker;
 import org.arend.typechecking.covariance.UniverseKindChecker;
-import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.ErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
@@ -2794,7 +2793,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     for (ClassField field : typedDef.getFields()) {
       List<ClassField> cycle = dfs.findCycle(field);
       if (cycle != null) {
-        errorReporter.report(CycleError.fieldDependency(cycle, def));
+        errorReporter.report(new FieldCycleError(cycle, def));
         checkImplementations = false;
         break;
       }
@@ -2955,7 +2954,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (result != null && !classFieldImpl.isDefault()) {
           List<ClassField> cycle = dfs.checkDependencies(field, FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
           if (cycle != null) {
-            errorReporter.report(CycleError.fieldDependency(cycle, def));
+            errorReporter.report(new FieldCycleError(cycle, def));
             checkImplementations = false;
           }
         }
