@@ -1090,7 +1090,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         elements.add(element.accept(this, mode));
       }
     }
-    Expression tail = expr.getTail() == null ? null : expr.getTail().normalize(NormalizationMode.WHNF);
+    Expression tail = expr.getTail() == null ? null : expr.getTail().normalize(mode);
     if (tail instanceof ArrayExpression) {
       if (mode == NormalizationMode.WHNF) elements = new ArrayList<>(elements);
       elements.addAll(((ArrayExpression) tail).getElements());
