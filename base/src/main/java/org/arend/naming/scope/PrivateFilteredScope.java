@@ -6,6 +6,7 @@ import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.function.Predicate;
 
 public class PrivateFilteredScope extends DelegateScope {
@@ -19,6 +20,11 @@ public class PrivateFilteredScope extends DelegateScope {
   public PrivateFilteredScope(Scope parent) {
     super(parent);
     myDiscardPrivate = false;
+  }
+
+  @Override
+  public @NotNull Collection<? extends Referable> getElements(Referable.@Nullable RefKind kind) {
+    return myDiscardPrivate ? parent.getElements(kind).stream().filter(ref -> !(ref instanceof GlobalReferable) || ((GlobalReferable) ref).getAccessModifier() != AccessModifier.PRIVATE).toList() : parent.getElements(kind);
   }
 
   @Override
