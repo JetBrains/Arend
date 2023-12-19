@@ -81,7 +81,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         StringBuilder tailBuilder = new StringBuilder();
         boolean leftParamIsRecursive = explicitIndex == constructor.getRecursiveParameter();
         prec = visitBinOp(leftParamIsRecursive ? null : args.get(args.size() - 2).getExpression(), (Concrete.ReferenceExpression) expr.getFunction(), args.subList(0, args.size() - 2), leftParamIsRecursive ? args.get(args.size() - 1).getExpression() : null, prec, tailBuilder);
-        if (tailBuilder.length() != 0) {
+        if (!tailBuilder.isEmpty()) {
           if (tail == null) {
             tail = new ArrayList<>();
           }
@@ -234,7 +234,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           name = ref.textRepresentation();
         }
       }
-      if (!name.isEmpty() && name.charAt(0) == '-' && myBuilder.length() != 0 && myBuilder.charAt(myBuilder.length() - 1) == '{') {
+      if (!name.isEmpty() && name.charAt(0) == '-' && !myBuilder.isEmpty() && myBuilder.charAt(myBuilder.length() - 1) == '{') {
         myBuilder.append(' ');
       }
       myBuilder.append(name);
@@ -254,7 +254,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           } else {
             myBuilder.append(", ");
           }
-          level.accept(this, new Precedence(Expression.PREC));
+          if (level == null) {
+            myBuilder.append('_');
+          } else {
+            level.accept(this, new Precedence(Expression.PREC));
+          }
         }
         myBuilder.append(')');
       }
@@ -1109,7 +1113,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       @Override
       boolean printSpaceBefore() {
-        return def.getParameters().size() > 0;
+        return !def.getParameters().isEmpty();
       }
 
       @Override
@@ -1332,7 +1336,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   private void printClosingBrace() {
-    if (myBuilder.length() != 0 && myBuilder.charAt(myBuilder.length() - 1) == '-') {
+    if (!myBuilder.isEmpty() && myBuilder.charAt(myBuilder.length() - 1) == '-') {
       myBuilder.append(' ');
     }
     myBuilder.append('}');
@@ -1470,7 +1474,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       @Override
       boolean printSpaceBefore() {
-        return def.getParameters().size() > 0;
+        return !def.getParameters().isEmpty();
       }
 
       @Override
@@ -1552,7 +1556,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
     public void doPrettyPrint(PrettyPrintVisitor pp, List<? extends E> l, boolean disabled){
       if (disabled) {
-        if (l.size() > 0) {
+        if (!l.isEmpty()) {
           printListElement(pp, l.get(0));
         }
         if (l.size() > 1) {
@@ -1635,7 +1639,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
 
     boolean increaseIndent(List<String> rhs_strings) {
-      return !(rhs_strings.size() > 0 && spacesCount(rhs_strings.get(0)) > 0 || rhs_strings.size() > 1 && spacesCount(rhs_strings.get(1)) > 0);
+      return !(!rhs_strings.isEmpty() && spacesCount(rhs_strings.get(0)) > 0 || rhs_strings.size() > 1 && spacesCount(rhs_strings.get(1)) > 0);
     }
 
     public static int spacesCount(String s) {
