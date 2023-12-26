@@ -315,4 +315,69 @@ public class AccessModifiersTest extends NameResolverTestCase {
         \\func test => con1
         """);
   }
+
+  @Test
+  public void testDynamicPrivate() {
+    resolveNamesModule("""
+      \\record R {
+        \\private \\func foo => 0
+        \\func test => foo
+      }
+      """);
+  }
+
+  @Test
+  public void testDynamicPrivate2() {
+    resolveNamesModule("""
+      \\record R {
+        \\private \\func foo => 0
+      }
+      \\func test (r : R) => r.foo
+      """, 1);
+    assertThatErrorsAre(notInScope("foo"));
+  }
+
+  @Test
+  public void testDynamicProtected() {
+    resolveNamesModule("""
+      \\record R {
+        \\protected \\func foo => 0
+        \\func test => foo
+      }
+      """);
+  }
+
+  @Test
+  public void testDynamicProtected2() {
+    resolveNamesModule("""
+      \\record R {
+        \\protected \\func foo => 0
+      }
+      \\func test (r : R) => r.foo
+      """);
+  }
+
+  @Test
+  public void testDynamicPrivateOpen() {
+    resolveNamesModule("""
+      \\record R {
+        \\private \\func foo => 0
+      }
+      \\open R
+      \\func test (r : R) => foo {r}
+      """, 1);
+    assertThatErrorsAre(notInScope("foo"));
+  }
+
+  @Test
+  public void testDynamicProtectedOpen() {
+    resolveNamesModule("""
+      \\record R {
+        \\protected \\func foo => 0
+      }
+      \\open R
+      \\func test (r : R) => foo {r}
+      """, 1);
+    assertThatErrorsAre(notInScope("foo"));
+  }
 }

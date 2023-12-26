@@ -1,6 +1,7 @@
 package org.arend.naming.scope;
 
 import org.arend.naming.reference.*;
+import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,6 +47,9 @@ public class ClassFieldImplScope implements Scope {
       }
 
       for (LocatedReferable referable : classRef.getFieldReferables()) {
+        if (myExtent != Extent.WITH_SUPER_CLASSES && referable.getAccessModifier() == AccessModifier.PRIVATE) {
+          continue;
+        }
         if (pred.test(referable)) {
           return referable;
         }
@@ -59,6 +63,9 @@ public class ClassFieldImplScope implements Scope {
 
       if (extent == Extent.WITH_DYNAMIC) {
         for (GlobalReferable referable : classRef.getDynamicReferables()) {
+          if (referable.getAccessModifier() == AccessModifier.PRIVATE) {
+            continue;
+          }
           if (pred.test(referable)) {
             return referable;
           }
