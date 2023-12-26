@@ -119,8 +119,28 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     }
   }
 
+  private boolean isMinimalLevels(LeveledDefCallExpression defCall) {
+    Levels levels = defCall.getLevels();
+    if (levels.size() == 0) return true;
+    if (defCall.getDefinition().getLevelParameters() == null) {
+      return false;
+    }
+
+    List<? extends LevelVariable> params = defCall.getDefinition().getLevelParameters();
+    List<? extends Level> list = levels.toList();
+    if (list.size() > params.size()) {
+      return false;
+    }
+    for (int i = 0; i < list.size(); i++) {
+      if (!(list.get(i).isClosed() && list.get(i).getConstant() == params.get(i).getMinValue())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public Levels minimizeLevels(LeveledDefCallExpression defCall) {
-    if (!(defCall.getUniverseKind() == UniverseKind.NO_UNIVERSES && defCall.getDefinition() != Prelude.DIV_MOD && defCall.getDefinition() != Prelude.MOD && !(defCall instanceof ConCallExpression))) {
+    if (!(defCall.getUniverseKind() == UniverseKind.NO_UNIVERSES && defCall.getDefinition() != Prelude.DIV_MOD && defCall.getDefinition() != Prelude.MOD && !(defCall instanceof ConCallExpression)) || isMinimalLevels(defCall)) {
       return defCall.getLevels();
     }
     boolean ok = true;
@@ -206,6 +226,10 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   private Levels minimizeLevelsToSuperClass(ClassCallExpression classCall, ClassDefinition superClass) {
+    if (isMinimalLevels(classCall)) {
+      return classCall.getLevels(superClass);
+    }
+
     Levels argLevels = classCall.getLevels(superClass);
     if (argLevels != classCall.getLevels() && classCall.getUniverseKind() == UniverseKind.NO_UNIVERSES) {
       Map<ClassField, Expression> impls = new LinkedHashMap<>();
