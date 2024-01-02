@@ -11,6 +11,7 @@ import org.arend.extImpl.*;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
 import org.arend.module.error.ExceptionError;
+import org.arend.module.error.ModuleNotFoundError;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.converter.IdReferableConverter;
@@ -29,10 +30,7 @@ import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Represents a library which can load modules in the binary format (see {@link #getBinarySource})
@@ -194,7 +192,7 @@ public abstract class SourceLibrary extends BaseLibrary {
    * @return true if the library should be loaded despite errors, false otherwise.
    */
   protected boolean mustBeLoaded() {
-    return false;
+    return !isExternal();
   }
 
   protected void loadGeneratedModules() {}
@@ -278,37 +276,30 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
     loadGeneratedModules();
 
+    Set<ModulePath> loaded = Collections.emptySet();
     try {
-      SourceLoader sourceLoader = new SourceLoader(this, libraryManager, true);
+      SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
       if (hasRawSources()) {
-        for (ModulePath module : header.modules) {
-          sourceLoader.preloadRaw(module, false);
-        }
-        sourceLoader.loadRawSources();
-      }
-
-      if (!myFlags.contains(Flag.RECOMPILE) || isExternal()) {
-        DefinitionListener definitionListener = ListDefinitionListener.join(libraryManager.getDefinitionListener(), myExtension.getDefinitionListener());
-
-        for (ModulePath module : header.modules)
-          sourceLoader.preloadBinary(module, keyRegistry, definitionListener);
-
-        SourceLoader newSourceLoader = new SourceLoader(this, libraryManager, false);
-        newSourceLoader.initializeLoader(sourceLoader);
-        sourceLoader = newSourceLoader;
-
-        for (ModulePath module : header.modules) {
-          if (!sourceLoader.loadBinary(module, keyRegistry, definitionListener) && isExternal()) {
-            libraryManager.getLibraryErrorReporter().report(LibraryError.moduleLoading(module, getName()));
-            if (!mustBeLoaded()) {
-              libraryManager.afterLibraryLoading(this, false);
-              return false;
+        Set<ModulePath> loadedRaw = sourceLoader.loadRawSources(header.modules, false);
+        if (loadedRaw.size() < header.modules.size()) {
+          for (ModulePath module : header.modules) {
+            if (!loadedRaw.contains(module)) {
+              libraryManager.getLibraryErrorReporter().report(new ModuleNotFoundError(module));
             }
           }
         }
       }
+
+      if (!myFlags.contains(Flag.RECOMPILE) || isExternal()) {
+        DefinitionListener definitionListener = ListDefinitionListener.join(libraryManager.getDefinitionListener(), myExtension.getDefinitionListener());
+        loaded = sourceLoader.loadBinarySources(header.modules, keyRegistry, definitionListener);
+        if (loaded.size() < header.modules.size() && !mustBeLoaded()) {
+          libraryManager.afterLibraryLoading(this, -1, header.modules.size());
+          return false;
+        }
+      }
     } catch (Throwable e) {
-      libraryManager.afterLibraryLoading(this, false);
+      libraryManager.afterLibraryLoading(this, -1, header.modules.size());
       throw e;
     }
 
@@ -320,26 +311,13 @@ public abstract class SourceLibrary extends BaseLibrary {
       provider.disable();
     }
 
-    libraryManager.afterLibraryLoading(this, true);
+    libraryManager.afterLibraryLoading(this, loaded.size(), header.modules.size());
 
     return super.load(libraryManager, typechecking);
   }
 
   public boolean loadTests(LibraryManager libraryManager, Collection<? extends ModulePath> modules) {
-    if (modules.isEmpty()) {
-      return true;
-    }
-
-    SourceLoader sourceLoader = new SourceLoader(this, libraryManager, false);
-    for (ModulePath module : getLoadedModules()) {
-      sourceLoader.setModuleLoaded(module);
-    }
-    for (ModulePath module : modules) {
-      sourceLoader.preloadRaw(module, true);
-    }
-    sourceLoader.loadRawSources();
-
-    return true;
+    return new SourceLoader(this, libraryManager).loadRawSources(modules, true).size() == modules.size();
   }
 
   @Override

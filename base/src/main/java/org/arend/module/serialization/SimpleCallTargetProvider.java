@@ -1,10 +1,14 @@
 package org.arend.module.serialization;
 
 import org.arend.core.definition.Definition;
+import org.arend.ext.module.LongName;
 import org.arend.ext.serialization.DeserializationException;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SimpleCallTargetProvider implements CallTargetProvider {
@@ -29,7 +33,13 @@ public class SimpleCallTargetProvider implements CallTargetProvider {
     if (!(ref instanceof TCDefReferable)) {
       throw new DeserializationException("Not a definition");
     }
-    return ((TCDefReferable) ref).getTypechecked();
+    Definition def = ((TCDefReferable) ref).getTypechecked();
+    if (def == null) {
+      List<String> longName = new ArrayList<>();
+      ModuleLocation location = LocatedReferable.Helper.getLocation(ref, longName);
+      throw new DeserializationException("Definition " + location.getModulePath() + ":" + new LongName(longName) + " is not loaded");
+    }
+    return def;
   }
 
   @Override

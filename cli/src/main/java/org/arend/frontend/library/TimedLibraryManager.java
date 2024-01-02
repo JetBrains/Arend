@@ -1,6 +1,7 @@
 package org.arend.frontend.library;
 
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.util.StringUtils;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
@@ -37,9 +38,9 @@ public class TimedLibraryManager extends LibraryManager {
   }
 
   @Override
-  protected void afterLibraryLoading(@NotNull Library library, boolean successful) {
+  protected void afterLibraryLoading(@NotNull Library library, int loaded, int total) {
     long time = System.currentTimeMillis() - times.pop();
     System.err.flush();
-    System.out.println("[INFO] " + (successful ? "Loaded " : "Failed loading ") + "library " + library.getName() + (successful ? " (" + timeToString(time) + ")" : ""));
+    System.out.println("[INFO] " + (loaded >= 0 ? "Loaded " : "Failed loading ") + "library " + library.getName() + (loaded >= 0 ? " (" + timeToString(time) + ", " + loaded + "/" + StringUtils.number(total, "checked module") + ")" : ""));
   }
 }

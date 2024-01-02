@@ -84,8 +84,8 @@ public abstract class BaseCliFrontend {
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), mySystemErrErrorReporter, myDependencyCollector);
   private final LibraryManager myLibraryManager = new TimedLibraryManager(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE) {
     @Override
-    protected void afterLibraryLoading(@NotNull Library library, boolean successful) {
-      super.afterLibraryLoading(library, successful);
+    protected void afterLibraryLoading(@NotNull Library library, int loaded, int total) {
+      super.afterLibraryLoading(library, loaded, total);
       flushErrors();
 
       if (mySizes != null) {

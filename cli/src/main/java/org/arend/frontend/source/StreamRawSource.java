@@ -1,7 +1,6 @@
 package org.arend.frontend.source;
 
 import org.antlr.v4.runtime.*;
-import org.arend.error.CountingErrorReporter;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.frontend.ConcreteReferableProvider;
@@ -15,9 +14,7 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.source.Source;
 import org.arend.source.SourceLoader;
-import org.arend.term.NamespaceCommand;
 import org.arend.term.group.FileGroup;
-import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -52,66 +49,45 @@ public abstract class StreamRawSource implements Source {
   protected abstract InputStream getInputStream() throws IOException;
 
   @Override
-  public boolean preload(SourceLoader sourceLoader) {
-    SourceLibrary library = sourceLoader.getLibrary();
-    ModulePath modulePath = getModulePath();
-    ErrorReporter errorReporter = sourceLoader.getTypecheckingErrorReporter();
-    CountingErrorReporter countingErrorReporter = new CountingErrorReporter(errorReporter);
-
-    try {
-      var errorListener = new ReporterErrorListener(countingErrorReporter, modulePath);
-
-      ArendLexer lexer = new ArendLexer(CharStreams.fromStream(getInputStream()));
-      lexer.removeErrorListeners();
-      lexer.addErrorListener(errorListener);
-
-      ArendParser parser = new ArendParser(new CommonTokenStream(lexer));
-      parser.removeErrorListeners();
-      parser.addErrorListener(errorListener);
-
-      ArendParser.StatementsContext tree = parser.statements();
-      if (countingErrorReporter.getErrorsNumber() > 0) {
-        return false;
-      }
-
-      myGroup = new BuildVisitor(new ModuleLocation(library, myInTests ? ModuleLocation.LocationKind.TEST : ModuleLocation.LocationKind.SOURCE, modulePath), errorReporter).visitStatements(tree);
-      library.groupLoaded(modulePath, myGroup, true, myInTests);
-
-      for (Statement statement : myGroup.getStatements()) {
-        NamespaceCommand command = statement.getNamespaceCommand();
-        if (command != null && command.getKind() == NamespaceCommand.Kind.IMPORT) {
-          ModulePath module = new ModulePath(command.getPath());
-          if (library.containsModule(module) && !sourceLoader.preloadRaw(module, myInTests)) {
-            library.groupLoaded(modulePath, null, true, myInTests);
-            myGroup = null;
-            return false;
-          }
-        }
-      }
-
-      return true;
-    } catch (IOException e) {
-      errorReporter.report(new ExceptionError(e, "loading", modulePath));
-      library.groupLoaded(modulePath, null, true, myInTests);
-      return false;
-    }
-  }
-
-  @Override
-  public LoadResult load(SourceLoader sourceLoader) {
-    if (myGroup == null) {
-      return LoadResult.FAIL;
-    }
-
+  public @NotNull LoadResult load(SourceLoader sourceLoader) {
     if (myPass == 0) {
+      SourceLibrary library = sourceLoader.getLibrary();
+      ModulePath modulePath = getModulePath();
+      ErrorReporter errorReporter = sourceLoader.getTypecheckingErrorReporter();
+
+      try {
+        var errorListener = new ReporterErrorListener(errorReporter, modulePath);
+
+        ArendLexer lexer = new ArendLexer(CharStreams.fromStream(getInputStream()));
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(errorListener);
+
+        ArendParser parser = new ArendParser(new CommonTokenStream(lexer));
+        parser.removeErrorListeners();
+        parser.addErrorListener(errorListener);
+
+        ArendParser.StatementsContext tree = parser.statements();
+        myGroup = new BuildVisitor(new ModuleLocation(library, myInTests ? ModuleLocation.LocationKind.TEST : ModuleLocation.LocationKind.SOURCE, modulePath), errorReporter).visitStatements(tree);
+        library.groupLoaded(modulePath, myGroup, true, myInTests);
+
+        myPass = 1;
+        return LoadResult.CONTINUE;
+      } catch (IOException e) {
+        errorReporter.report(new ExceptionError(e, "loading", modulePath));
+        library.groupLoaded(modulePath, null, true, myInTests);
+        return LoadResult.FAIL;
+      }
+    }
+
+    if (myPass == 1) {
       myGroup.setModuleScopeProvider(sourceLoader.getModuleScopeProvider(myInTests));
-      myPass = 1;
+      myPass = 2;
       return LoadResult.CONTINUE;
     }
 
-    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, null, myPass == 1, sourceLoader.getTypecheckingErrorReporter(), null).resolveGroup(myGroup, myGroup.getGroupScope());
-    if (myPass == 1) {
-      myPass = 2;
+    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, null, myPass == 2, sourceLoader.getTypecheckingErrorReporter(), null).resolveGroup(myGroup, myGroup.getGroupScope());
+    if (myPass == 2) {
+      myPass = 3;
       return LoadResult.CONTINUE;
     }
     sourceLoader.getInstanceProviderSet().collectInstances(myGroup, CachingScope.make(ScopeFactory.parentScopeForGroup(myGroup, sourceLoader.getModuleScopeProvider(myInTests), true)), IdReferableConverter.INSTANCE);

@@ -36,30 +36,6 @@ public class ArgInferenceError extends TypecheckingError {
     return "Cannot infer an expression";
   }
 
-  public static String suffix(int n) {
-    if (n >= 10 && n < 20) {
-      return "th";
-    }
-    switch (n % 10) {
-      case 1:
-        return "st";
-      case 2:
-        return "nd";
-      case 3:
-        return "rd";
-      default:
-        return "th";
-    }
-  }
-
-  public static String ordinal(int n) {
-    return n + suffix(n);
-  }
-
-  public static String number(int n, String r) {
-    return n + " " + r + (n == 1 ? "" : "s");
-  }
-
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     return vList(

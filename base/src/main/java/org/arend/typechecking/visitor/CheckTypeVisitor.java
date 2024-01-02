@@ -42,6 +42,7 @@ import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
+import org.arend.ext.util.StringUtils;
 import org.arend.extImpl.*;
 import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.naming.reference.*;
@@ -3209,7 +3210,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     int j = 0;
     for (int i = 0; i < arguments.size(); i++, j++) {
       if (j >= notImplementedFields.size()) {
-        errorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), arguments.get(i).expression));
+        errorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + StringUtils.number(notImplementedFields.size(), "field")), arguments.get(i).expression));
         break;
       }
 

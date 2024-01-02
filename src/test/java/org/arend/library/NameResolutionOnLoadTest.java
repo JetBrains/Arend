@@ -3,7 +3,6 @@ package org.arend.library;
 import org.arend.ext.module.ModulePath;
 import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.scope.Scope;
-import org.arend.source.SourceLoader;
 import org.arend.term.concrete.Concrete;
 import org.junit.Test;
 
@@ -26,9 +25,8 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   @Test
   public void trivialResolution() {
     setupSources();
-    SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
-    assertTrue(sourceLoader.preloadRaw(new ModulePath("B"), false));
-    sourceLoader.loadRawSources();
+    assertTrue(library.load(libraryManager, typechecking));
+    assertTrue(errorList.isEmpty());
     Scope moduleB = library.getModuleScopeProvider().forModule(new ModulePath("B"));
 
     Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteLocatedReferable) get(moduleB, "b")).getDefinition()).getBody()).getTerm();
@@ -40,9 +38,8 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   @Test
   public void trivialResolutionThatLoads() {
     setupSources();
-    SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
-    assertTrue(sourceLoader.preloadRaw(new ModulePath("A"), false));
-    sourceLoader.loadRawSources();
+    assertTrue(library.load(libraryManager, typechecking));
+    assertTrue(errorList.isEmpty());
     Scope moduleA = library.getModuleScopeProvider().forModule(new ModulePath("A"));
 
     Scope moduleB = library.getModuleScopeProvider().forModule(new ModulePath("B"));
@@ -57,9 +54,8 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   @Test
   public void resolutionThatLoadsMultipleModules() {
     setupSources();
-    SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
-    assertTrue(sourceLoader.preloadRaw(new ModulePath("B", "C"), false));
-    sourceLoader.loadRawSources();
+    assertTrue(library.load(libraryManager, typechecking));
+    assertTrue(errorList.isEmpty());
     Scope moduleBC = library.getModuleScopeProvider().forModule(new ModulePath("B", "C"));
     Scope moduleBCE = library.getModuleScopeProvider().forModule(new ModulePath("B", "C", "E"));
     Scope moduleBCF = library.getModuleScopeProvider().forModule(new ModulePath("B", "C", "F"));
@@ -76,9 +72,8 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   @Test
   public void mutuallyRecursiveModules() {
     setupSources();
-    SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
-    assertTrue(sourceLoader.preloadRaw(new ModulePath("X"), false));
-    sourceLoader.loadRawSources();
+    assertTrue(library.load(libraryManager, typechecking));
+    assertTrue(errorList.isEmpty());
     Scope moduleX = library.getModuleScopeProvider().forModule(new ModulePath("X"));
     Scope moduleY = library.getModuleScopeProvider().forModule(new ModulePath("Y"));
 

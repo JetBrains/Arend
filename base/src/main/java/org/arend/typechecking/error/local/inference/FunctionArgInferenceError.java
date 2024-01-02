@@ -4,6 +4,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.ext.error.ArgInferenceError;
+import org.arend.ext.util.StringUtils;
 import org.arend.term.concrete.Concrete;
 
 public class FunctionArgInferenceError extends ArgInferenceError {
@@ -28,7 +29,7 @@ public class FunctionArgInferenceError extends ArgInferenceError {
   private static String message(Definition definition, DependentLink parameter, int index) {
     return parameter.getName() != null
       ? "Cannot infer parameter '" + parameter.getName() + "'" + message(definition)
-      : "Cannot infer the " + ordinal(index) + " parameter" + message(definition);
+      : "Cannot infer the " + StringUtils.ordinal(index) + " parameter" + message(definition);
   }
 
   private static String message(Definition definition) {

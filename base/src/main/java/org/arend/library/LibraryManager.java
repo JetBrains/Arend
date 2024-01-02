@@ -244,10 +244,11 @@ public class LibraryManager {
   /**
    * Invoked after a library is loaded.
    *
-   * @param library     the loaded library.
-   * @param successful  true if the library was successfully loaded, false otherwise.
+   * @param library         the loaded library.
+   * @param loadedModules   the number of successfully loaded binary modules, or -1 if the loading failed.
+   * @param totalModules    the total number of modules in the library.
    */
-  protected void afterLibraryLoading(Library library, boolean successful) {
+  protected void afterLibraryLoading(Library library, int loadedModules, int totalModules) {
 
   }
 

@@ -2,7 +2,6 @@ package org.arend.library;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.source.Source;
-import org.arend.source.SourceLoader;
 import org.arend.term.group.Group;
 import org.junit.Test;
 
@@ -25,16 +24,14 @@ public class LibraryLoadingTest extends LibraryTestCase {
     ModulePath modulePath = new ModulePath("A");
 
     library.addModule(modulePath, "\\func f => 0");
-    SourceLoader sourceLoader1 = new SourceLoader(library, libraryManager);
-    assertTrue(sourceLoader1.preloadRaw(modulePath, false));
-    sourceLoader1.loadRawSources();
+    assertTrue(library.load(libraryManager, typechecking));
+    assertTrue(errorList.isEmpty());
     Group result1 = library.getModuleGroup(modulePath);
     assertThat(result1, is(notNullValue()));
 
     library.addModule(modulePath, "\\func g => 0");
-    SourceLoader sourceLoader2 = new SourceLoader(library, libraryManager);
-    assertTrue(sourceLoader2.preloadRaw(modulePath, false));
-    sourceLoader2.loadRawSources();
+    assertTrue(library.load(libraryManager, typechecking));
+    assertTrue(errorList.isEmpty());
     Group result2 = library.getModuleGroup(modulePath);
     assertThat(result2, is(notNullValue()));
 
@@ -66,7 +63,7 @@ public class LibraryLoadingTest extends LibraryTestCase {
     ModulePath modulePath = new ModulePath("A");
     library.addModule(modulePath, "hello world");
     assertTrue(libraryManager.loadLibrary(library, null));
-    assertThat(library.getModuleGroup(modulePath), is(nullValue()));
+    assertThat(library.getModuleGroup(modulePath), is(notNullValue()));
     assertThat(errorList, is(not(empty())));
   }
 }

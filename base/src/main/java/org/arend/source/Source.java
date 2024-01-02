@@ -1,9 +1,12 @@
 package org.arend.source;
 
 import org.arend.ext.module.ModulePath;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Represents a persisted module.
@@ -20,23 +23,14 @@ public interface Source {
   ModulePath getModulePath();
 
   /**
-   * Loads the structure of the source and its dependencies.
-   *
-   * @param sourceLoader    the state of the loading process.
-   *
-   * @return true if all dependencies are available, false otherwise.
-   */
-  boolean preload(SourceLoader sourceLoader);
-
-  /**
-   * This method is called after all dependencies of the source were preloaded.
+   * Runs one pass of the loading process.
    *
    * @param sourceLoader    the state of the loading process.
    *
    * @return {@link LoadResult#CONTINUE} if this method must be called again,
    *         otherwise returns either {@link LoadResult#SUCCESS} or {@link LoadResult#FAIL} depending on the result.
    */
-  LoadResult load(SourceLoader sourceLoader);
+  @NotNull LoadResult load(SourceLoader sourceLoader);
 
   /**
    * Gets the timestamp for this source.
@@ -52,4 +46,11 @@ public interface Source {
    * @return true if the source can be loaded and/or persisted, false otherwise.
    */
   boolean isAvailable();
+
+  /**
+   * Returns the list of modules on which this source depends.
+   */
+  default @NotNull List<? extends ModulePath> getDependencies() {
+    return Collections.emptyList();
+  }
 }

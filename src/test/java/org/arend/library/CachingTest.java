@@ -16,16 +16,15 @@ import static org.arend.Matchers.typecheckingError;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class CachingTest extends LibraryTestCase {
   @Test
   public void statusSerialization() {
-    library.addModule(new ModulePath("A"),
-        "\\func a : \\Set0 => \\Prop\n" +
-        "\\func b1 : \\Set0 => \\Set0\n" +
-        "\\func b2 : \\Set0 => b1");
+    library.addModule(new ModulePath("A"), """
+      \\func a : \\Set0 => \\Prop
+      \\func b1 : \\Set0 => \\Set0
+      \\func b2 : \\Set0 => b1""");
     assertTrue(libraryManager.loadLibrary(library, null));
     ChildGroup aClass = library.getModuleGroup(new ModulePath("A"));
     assertThat(aClass, is(notNullValue()));
@@ -88,10 +87,10 @@ public class CachingTest extends LibraryTestCase {
 
   @Test
   public void errorInHeader() {
-    library.addModule(new ModulePath("A"),
-        "\\data D\n" +
-        "\\func a (d : D) \\with\n" +
-        "\\func b : \\Set0 => (\\lam x y => x) \\Prop a");
+    library.addModule(new ModulePath("A"), """
+      \\data D
+      \\func a (d : D) \\with
+      \\func b : \\Set0 => (\\lam x y => x) \\Prop a""");
     libraryManager.loadLibrary(library, null);
     ChildGroup aGroup = library.getModuleGroup(new ModulePath("A"));
     assertThat(aGroup, is(notNullValue()));
@@ -127,8 +126,9 @@ public class CachingTest extends LibraryTestCase {
     libraryManager.loadLibrary(library, null);
     typechecking.typecheckLibrary(library);
     library.persistUpdatedModules(errorReporter);
-    assertThat(getDef(library.getModuleScopeProvider().forModule(new ModulePath("a")), "f"), is(nullValue()));
     assertThat(getDef(library.getModuleScopeProvider().forModule(new ModulePath("A")), "D"), is(nullValue()));
+    assertThat(getDef(library.getModuleScopeProvider().forModule(new ModulePath("A")), "f"), is(notNullValue()));
+    assertEquals(1, loadedBinaryModules);
   }
 
   @Test
@@ -143,8 +143,9 @@ public class CachingTest extends LibraryTestCase {
     libraryManager.loadLibrary(library, null);
     typechecking.typecheckLibrary(library);
     library.persistUpdatedModules(errorReporter);
-    assertThat(getDef(library.getModuleScopeProvider().forModule(new ModulePath("a")), "D"), is(nullValue()));
+    assertThat(getDef(library.getModuleScopeProvider().forModule(new ModulePath("A")), "D"), is(nullValue()));
     assertThat(getDef(library.getModuleScopeProvider().forModule(new ModulePath("A")), "f").getTypechecked(), is(notNullValue()));
+    assertEquals(0, loadedBinaryModules);
   }
 
   @Test
@@ -165,7 +166,7 @@ public class CachingTest extends LibraryTestCase {
     assertThat(errorList, is(empty()));
   }
 
-  /* These tests does not make sense with the current implementation of libraries.
+  /* These tests do not make sense with the current implementation of libraries.
   @Test
   public void removeRawSource() {
     library.addModule(moduleName("A"), "\\func a : \\1-Type1 => \\Set0");

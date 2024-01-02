@@ -18,11 +18,11 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.util.StringUtils;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.UseTypechecking;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.CoreErrorWrapper;
-import org.arend.ext.error.ArgInferenceError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
 import org.arend.typechecking.visitor.BaseDefinitionTypechecker;
@@ -199,7 +199,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       int index = 0;
       for (DependentLink link = definition.getParameters(); link.hasNext(); link = link.getNext()) {
         if (definition.isCovariant(index) && !parameters.contains(link)) {
-          errorReporter.report(new TypecheckingError(ArgInferenceError.ordinal(index) + " parameter is not covariant", null));
+          errorReporter.report(new TypecheckingError(StringUtils.ordinal(index) + " parameter is not covariant", null));
           return false;
         }
         index++;

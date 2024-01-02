@@ -41,10 +41,16 @@ public abstract class ArendTestCase {
   protected final List<GeneralError> errorList = new ArrayList<>();
   protected final ListErrorReporter errorReporter = new ListErrorReporter(errorList);
   protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(new InstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, ref -> null);
+  protected int loadedBinaryModules;
 
   @Before
   public void loadPrelude() {
-    libraryManager = new LibraryManager((lib,name) -> { throw new IllegalStateException(); }, new InstanceProviderSet(), errorReporter, errorReporter, DefinitionRequester.INSTANCE, null);
+    libraryManager = new LibraryManager((lib,name) -> { throw new IllegalStateException(); }, new InstanceProviderSet(), errorReporter, errorReporter, DefinitionRequester.INSTANCE, null) {
+      @Override
+      protected void afterLibraryLoading(Library library, int loadedModules, int total) {
+        loadedBinaryModules = loadedModules;
+      }
+    };
     preludeLibrary = new PreludeFileLibrary(null);
     moduleScopeProvider = preludeLibrary.getModuleScopeProvider();
     libraryManager.loadLibrary(preludeLibrary, null);
@@ -76,7 +82,7 @@ public abstract class ArendTestCase {
     return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(Collection<? extends GeneralError> errors, Description description) {
-        if (errors.size() == 0) {
+        if (errors.isEmpty()) {
           description.appendText("there were no errors");
         } else {
           List<Doc> docs = new ArrayList<>(errors.size() + 1);

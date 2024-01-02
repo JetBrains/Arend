@@ -27,6 +27,8 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a source that loads a binary module from an {@link InputStream} and persists it to an {@link OutputStream}.
@@ -35,6 +37,8 @@ public abstract class StreamBinarySource implements PersistableBinarySource {
   private ModuleDeserialization myModuleDeserialization;
   private SerializableKeyRegistryImpl myKeyRegistry;
   private DefinitionListener myDefinitionListener;
+  private int myPass = 0;
+  private final List<ModulePath> myDependencies = new ArrayList<>();
 
   @Override
   public void setKeyRegistry(SerializableKeyRegistryImpl keyRegistry) {
@@ -67,90 +71,75 @@ public abstract class StreamBinarySource implements PersistableBinarySource {
   protected abstract OutputStream getOutputStream() throws IOException;
 
   @Override
-  public boolean preload(SourceLoader sourceLoader) {
-    SourceLibrary library = sourceLoader.getLibrary();
-    ModulePath modulePath = getModulePath();
-    ChildGroup group = null;
-    try (InputStream inputStream = getInputStream()) {
-      if (inputStream == null) {
-        return false;
-      }
-
-      CodedInputStream codedInputStream = CodedInputStream.newInstance(inputStream);
-      codedInputStream.setRecursionLimit(Integer.MAX_VALUE);
-      ModuleProtos.Module moduleProto = ModuleProtos.Module.parseFrom(codedInputStream);
-      boolean isComplete = moduleProto.getComplete();
-      if (!isComplete && !library.hasRawSources()) {
-        sourceLoader.getLibraryErrorReporter().report(new PartialModuleError(modulePath));
-        return false;
-      }
-
-      for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
-        ModulePath module = new ModulePath(moduleCallTargets.getNameList());
-        sourceLoader.markDependency(modulePath, module);
-        if (library.containsModule(module) && !sourceLoader.preloadBinary(module, myKeyRegistry, myDefinitionListener)) {
-          return false;
-        }
-      }
-
-      ReferableConverter referableConverter = sourceLoader.getReferableConverter();
-      myModuleDeserialization = new ModuleDeserialization(moduleProto, referableConverter, myKeyRegistry, myDefinitionListener, library instanceof PreludeLibrary);
-
-      if (!sourceLoader.isInPreviewBinariesMode()) {
-        if (referableConverter == null) {
-          group = myModuleDeserialization.readGroup(new ModuleLocation(library, ModuleLocation.LocationKind.SOURCE, modulePath));
-          library.groupLoaded(modulePath, group, false, false);
-        } else {
-          group = library.getModuleGroup(modulePath, false);
-          if (group == null) {
-            sourceLoader.getLibraryErrorReporter().report(LibraryError.moduleNotFound(modulePath, library.getName()));
-            library.groupLoaded(modulePath, null, false, false);
-            return false;
-          }
-          myModuleDeserialization.readDefinitions(group);
-        }
-      }
-
-      return true;
-    } catch (IOException | DeserializationException e) {
-      loadingFailed(sourceLoader, modulePath, group, e);
-      return false;
-    }
+  public @NotNull List<? extends ModulePath> getDependencies() {
+    return myDependencies;
   }
 
   @Override
-  public LoadResult load(SourceLoader sourceLoader) {
+  public @NotNull LoadResult load(SourceLoader sourceLoader) {
     SourceLibrary library = sourceLoader.getLibrary();
     ModulePath modulePath = getModulePath();
-    try {
-      for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleDeserialization.getModuleProto().getModuleCallTargetsList()) {
-        ModulePath module = new ModulePath(moduleCallTargets.getNameList());
-        if (library.containsModule(module) && !sourceLoader.fillInBinary(module)) {
-          ChildGroup group = library.getModuleGroup(modulePath, false);
-          if (group != null) {
-            library.resetGroup(group);
-          }
+
+    if (myPass == 0) {
+      try (InputStream inputStream = getInputStream()) {
+        if (inputStream == null) {
+          sourceLoader.getLibraryErrorReporter().report(LibraryError.moduleLoading(modulePath, library.getName()));
           return LoadResult.FAIL;
         }
-      }
 
+        CodedInputStream codedInputStream = CodedInputStream.newInstance(inputStream);
+        codedInputStream.setRecursionLimit(Integer.MAX_VALUE);
+        ModuleProtos.Module moduleProto = ModuleProtos.Module.parseFrom(codedInputStream);
+
+        for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
+          myDependencies.add(new ModulePath(moduleCallTargets.getNameList()));
+        }
+
+        boolean isComplete = moduleProto.getComplete();
+        if (!isComplete && !library.hasRawSources()) {
+          sourceLoader.getLibraryErrorReporter().report(new PartialModuleError(modulePath));
+          return LoadResult.FAIL;
+        }
+
+        ReferableConverter referableConverter = sourceLoader.getReferableConverter();
+        myModuleDeserialization = new ModuleDeserialization(moduleProto, referableConverter, myKeyRegistry, myDefinitionListener, library instanceof PreludeLibrary);
+
+        if (referableConverter == null) {
+          ChildGroup group = myModuleDeserialization.readGroup(new ModuleLocation(library, ModuleLocation.LocationKind.SOURCE, modulePath));
+          library.groupLoaded(modulePath, group, false, false);
+        } else {
+          ChildGroup group = library.getModuleGroup(modulePath, false);
+          if (group == null) {
+            sourceLoader.getLibraryErrorReporter().report(LibraryError.moduleNotFound(modulePath, library.getName()));
+            library.groupLoaded(modulePath, null, false, false);
+            return LoadResult.FAIL;
+          }
+          myModuleDeserialization.readDefinitions(group);
+        }
+
+        myPass = 1;
+        return LoadResult.CONTINUE;
+      } catch (IOException | DeserializationException e) {
+        loadingFailed(sourceLoader, modulePath, e);
+        return LoadResult.FAIL;
+      }
+    }
+
+    try {
       myModuleDeserialization.readModule(sourceLoader.getModuleScopeProvider(false), library.getDependencyListener());
       library.binaryLoaded(modulePath, myModuleDeserialization.getModuleProto().getComplete());
       myModuleDeserialization = null;
       return LoadResult.SUCCESS;
     } catch (DeserializationException e) {
-      loadingFailed(sourceLoader, modulePath, library.getModuleGroup(modulePath, false), e);
+      loadingFailed(sourceLoader, modulePath, e);
       return LoadResult.FAIL;
     }
   }
 
-  private void loadingFailed(SourceLoader sourceLoader, ModulePath modulePath, Group group, Exception e) {
+  private void loadingFailed(SourceLoader sourceLoader, ModulePath modulePath, Exception e) {
     sourceLoader.getLibraryErrorReporter().report(new DeserializationError(modulePath, e));
     if (!sourceLoader.getLibrary().hasRawSources()) {
       sourceLoader.getLibrary().groupLoaded(modulePath, null, false, false);
-    }
-    if (group != null) {
-      sourceLoader.getLibrary().resetGroup(group);
     }
   }
 

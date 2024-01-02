@@ -6,17 +6,16 @@ import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.library.LibraryManager;
 import org.arend.library.SourceLibrary;
-import org.arend.module.error.ModuleNotFoundError;
 import org.arend.module.scopeprovider.CachingModuleScopeProvider;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.Scope;
+import org.arend.term.group.Group;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
+import org.arend.typechecking.order.MapDFS;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
 
 /**
  * Contains all necessary information for source loading.
@@ -25,66 +24,13 @@ public final class SourceLoader {
   private final SourceLibrary myLibrary;
   private final ReferableConverter myReferableConverter;
   private final LibraryManager myLibraryManager;
-  private final Map<ModulePath, SourceType> myLoadedModules = new HashMap<>();
-  private final Map<ModulePath, BinarySource> myLoadingBinaryModules = new HashMap<>();
-  private final Map<ModulePath, Source> myLoadingRawModules = new HashMap<>();
   private ModuleScopeProvider myModuleScopeProvider;
   private ModuleScopeProvider myTestsModuleScopeProvider;
-  private final boolean myPreviewBinariesMode;
-  private final Map<ModulePath, HashSet<ModulePath>> myModuleDependencies = new HashMap<>();
 
-  private enum SourceType { RAW, BINARY, BINARY_FAIL }
-
-  public SourceLoader(SourceLibrary library, LibraryManager libraryManager, Boolean previewBinariesMode) {
+  public SourceLoader(SourceLibrary library, LibraryManager libraryManager) {
     myLibrary = library;
     myLibraryManager = libraryManager;
     myReferableConverter = myLibrary.getReferableConverter();
-    myPreviewBinariesMode = previewBinariesMode;
-  }
-
-  public SourceLoader(SourceLibrary library, LibraryManager libraryManager) {
-    this(library, libraryManager, false);
-  }
-
-  public boolean isInPreviewBinariesMode() {
-    return myPreviewBinariesMode;
-  }
-
-  public HashSet<ModulePath> getFailingBinaries() {
-    HashSet<ModulePath> diff = new HashSet<>();
-    for (Map.Entry<ModulePath, SourceType> entry : myLoadedModules.entrySet()) if (entry.getValue() == SourceType.BINARY_FAIL) diff.add(entry.getKey());
-
-    HashSet<ModulePath> result = new HashSet<>(diff);
-
-    while (!diff.isEmpty()) {
-      HashSet<ModulePath> newDiff = new HashSet<>();
-      for (ModulePath path : diff) {
-        HashSet<ModulePath> dependents = myModuleDependencies.get(path);
-        if (dependents != null) for (ModulePath dependent : dependents) if (!result.contains(dependent)) newDiff.add(dependent);
-      }
-      result.addAll(newDiff);
-      diff = newDiff;
-    }
-
-    return result;
-  }
-
-  public void initializeLoader(SourceLoader previewLoader) {
-    myModuleScopeProvider = previewLoader.myModuleScopeProvider;
-
-    for (ModulePath module : previewLoader.myLoadedModules.keySet())
-      if (previewLoader.myLoadedModules.get(module) != SourceType.BINARY_FAIL)
-        myLoadedModules.put(module, SourceType.RAW);
-
-    for (ModulePath module : previewLoader.getFailingBinaries())
-      myLoadedModules.put(module, SourceType.BINARY_FAIL);
-  }
-
-  public void markDependency(ModulePath dependent, ModulePath dependency) {
-    if (myPreviewBinariesMode) {
-      HashSet<ModulePath> dependents = myModuleDependencies.computeIfAbsent(dependency, k -> new HashSet<>());
-      dependents.add(dependent);
-    }
   }
 
   public SourceLibrary getLibrary() {
@@ -125,125 +71,91 @@ public final class SourceLoader {
     return myLibraryManager.getLibraryErrorReporter();
   }
 
-  public void setModuleLoaded(ModulePath modulePath) {
-    myLoadedModules.put(modulePath, SourceType.RAW);
-  }
-
-  /**
-   * Loads the structure of the source and its dependencies.
-   *
-   * @param modulePath  a module to load.
-   * @param inTests     true if the module located in the test directory, false otherwise.
-   * @return true if a binary source is available or if the raw source was successfully loaded, false otherwise.
-   */
-  public boolean preloadRaw(ModulePath modulePath, boolean inTests) {
-    if (myLoadedModules.containsKey(modulePath)) {
-      return true;
-    }
-    if (myLoadingRawModules.containsKey(modulePath)) {
-      return true;
+  private Set<ModulePath> loadSources(Collection<? extends ModulePath> modules, Function<ModulePath, Source> sourceMap) {
+    Set<ModulePath> failed = new HashSet<>();
+    Map<ModulePath, Source> sources = new LinkedHashMap<>();
+    for (ModulePath module : modules) {
+      Source source = sourceMap.apply(module);
+      if (source != null && source.isAvailable()) {
+        sources.put(module, source);
+      } else {
+        failed.add(module);
+      }
     }
 
-    Source rawSource = inTests ? myLibrary.getTestSource(modulePath) : myLibrary.getRawSource(modulePath);
-    boolean rawSourceIsAvailable = rawSource != null && rawSource.isAvailable();
+    Set<ModulePath> loaded = new HashSet<>();
+    while (!sources.isEmpty()) {
+      for (var it = sources.entrySet().iterator(); it.hasNext(); ) {
+        Map.Entry<ModulePath, Source> entry = it.next();
+        Source.LoadResult loadResult = entry.getValue().load(this);
+        if (loadResult != Source.LoadResult.CONTINUE) {
+          it.remove();
+          if (loadResult == Source.LoadResult.FAIL) {
+            failed.add(entry.getKey());
+          } else {
+            loaded.add(entry.getKey());
+          }
+        }
+      }
 
-    if (!rawSourceIsAvailable) {
-      getLibraryErrorReporter().report(new ModuleNotFoundError(modulePath));
-      return false;
+      if (!failed.isEmpty()) {
+        Map<ModulePath, List<ModulePath>> map = new HashMap<>();
+        for (Map.Entry<ModulePath, Source> entry : sources.entrySet()) {
+          for (ModulePath dependency : entry.getValue().getDependencies()) {
+            map.computeIfAbsent(dependency, k -> new ArrayList<>()).add(entry.getKey());
+          }
+        }
+        MapDFS<ModulePath> dfs = new MapDFS<>(map);
+        for (ModulePath module : failed) {
+          dfs.visit(module);
+        }
+        for (ModulePath module : dfs.getVisited()) {
+          loaded.remove(module);
+          sources.remove(module);
+          Group group = myLibrary.getModuleGroup(module, false);
+          if (group != null) {
+            myLibrary.resetGroup(group);
+          }
+        }
+        failed = new HashSet<>();
+      }
     }
 
-    myLoadedModules.put(modulePath, SourceType.RAW);
-    myLoadingRawModules.put(modulePath, rawSource);
-    if (!rawSource.preload(this)) {
-      myLoadingRawModules.remove(modulePath);
-      return false;
-    }
-
-    return true;
+    return loaded;
   }
 
   /**
    * Loads raw sources that were preloaded.
+   *
+   * @param modules     modules to load.
+   * @param inTests     true if the module located in the test directory, false otherwise.
+   * @return the set of loaded modules.
    */
-  public void loadRawSources() {
-    while (!myLoadingRawModules.isEmpty()) {
-      for (Iterator<Source> it = myLoadingRawModules.values().iterator(); it.hasNext(); ) {
-        Source source = it.next();
-        Source.LoadResult loadResult = source.load(this);
-        if (loadResult != Source.LoadResult.CONTINUE) {
-          it.remove();
+  public Set<ModulePath> loadRawSources(Collection<? extends ModulePath> modules, boolean inTests) {
+    return loadSources(modules, module -> inTests ? myLibrary.getTestSource(module) : myLibrary.getRawSource(module));
+  }
+
+  /**
+   * Loads binary modules.
+   *
+   * @param modules  modules to load.
+   * @return the set of loaded modules.
+   */
+  public Set<ModulePath> loadBinarySources(Collection<? extends ModulePath> modules, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
+    return loadSources(modules, module -> {
+      BinarySource binarySource = myLibrary.getBinarySource(module);
+      if (binarySource != null) {
+        binarySource.setKeyRegistry(keyRegistry);
+        binarySource.setDefinitionListener(definitionListener);
+
+        if (!myLibrary.isExternal() && myLibrary.hasRawSources()) {
+          Source rawSource = myLibrary.getRawSource(module);
+          if (rawSource != null && rawSource.isAvailable() && binarySource.getTimeStamp() < rawSource.getTimeStamp()) {
+            return null;
+          }
         }
       }
-    }
-  }
-
-  /**
-   * Loads a binary source.
-   *
-   * @param modulePath  a module to load.
-   * @return true if the source was successfully loaded, false otherwise.
-   */
-  public boolean loadBinary(ModulePath modulePath, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
-    return preloadBinary(modulePath, keyRegistry, definitionListener) && fillInBinary(modulePath);
-  }
-
-  boolean fillInBinary(ModulePath modulePath) {
-    BinarySource binarySource = myLoadingBinaryModules.remove(modulePath);
-    if (binarySource != null) {
-      Source.LoadResult result;
-      do {
-        result = binarySource.load(this);
-      } while (result == Source.LoadResult.CONTINUE);
-
-      if (result != Source.LoadResult.SUCCESS) {
-        myLoadedModules.put(modulePath, SourceType.BINARY_FAIL);
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Loads the structure of the source and its dependencies without filling in actual data.
-   *
-   * @param modulePath  a module to load.
-   * @return true if the source was successfully loaded, false otherwise.
-   */
-  public boolean preloadBinary(ModulePath modulePath, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
-    SourceType sourceType = myLoadedModules.get(modulePath);
-    if (sourceType == SourceType.BINARY || sourceType == SourceType.BINARY_FAIL) {
-      return sourceType == SourceType.BINARY;
-    }
-    if (myLibrary.hasRawSources() && sourceType != SourceType.RAW) {
-      return false;
-    }
-    if (myLoadingBinaryModules.containsKey(modulePath)) {
-      return true;
-    }
-
-    BinarySource binarySource = myLibrary.getBinarySource(modulePath);
-    if (binarySource == null || !binarySource.isAvailable()) {
-      return false;
-    }
-    binarySource.setKeyRegistry(keyRegistry);
-    binarySource.setDefinitionListener(definitionListener);
-
-    if (!myLibrary.isExternal() && myLibrary.hasRawSources()) {
-      Source rawSource = myLibrary.getRawSource(modulePath);
-      if (rawSource != null && rawSource.isAvailable() && binarySource.getTimeStamp() < rawSource.getTimeStamp()) {
-        return false;
-      }
-    }
-
-    myLoadedModules.put(modulePath, SourceType.BINARY);
-    myLoadingBinaryModules.put(modulePath, binarySource);
-    if (!binarySource.preload(this)) {
-      myLoadedModules.put(modulePath, SourceType.BINARY_FAIL);
-      myLoadingBinaryModules.remove(modulePath);
-      return false;
-    }
-
-    return true;
+      return binarySource;
+    });
   }
 }
