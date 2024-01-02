@@ -2,7 +2,7 @@ package org.arend.ext.util;
 
 public class StringUtils {
   public static String number(int n, String r) {
-    return n + " " + r + (n == 1 ? "" : "s");
+    return n + r + (n == 1 ? "" : "s");
   }
 
   public static String suffix(int n) {

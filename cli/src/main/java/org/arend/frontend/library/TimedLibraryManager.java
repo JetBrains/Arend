@@ -41,6 +41,6 @@ public class TimedLibraryManager extends LibraryManager {
   protected void afterLibraryLoading(@NotNull Library library, int loaded, int total) {
     long time = System.currentTimeMillis() - times.pop();
     System.err.flush();
-    System.out.println("[INFO] " + (loaded >= 0 ? "Loaded " : "Failed loading ") + "library " + library.getName() + (loaded >= 0 ? " (" + timeToString(time) + ", " + loaded + "/" + StringUtils.number(total, "checked module") + ")" : ""));
+    System.out.println("[INFO] " + (loaded >= 0 ? "Loaded " : "Failed loading ") + "library " + library.getName() + (loaded >= 0 ? " (" + timeToString(time) + ", " + StringUtils.number(loaded, "/" + total + " checked module") + ")" : ""));
   }
 }
