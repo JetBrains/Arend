@@ -170,9 +170,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
     }
     typecheckFunctionHeader(definition, def, localInstancePool);
-    if (myNewDef) {
-      myNewDef = typechecked == null;
-    }
     return typecheckFunctionBody(definition, def);
   }
 

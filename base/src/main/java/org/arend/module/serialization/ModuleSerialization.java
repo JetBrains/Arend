@@ -22,7 +22,7 @@ public class ModuleSerialization {
   private final Set<Integer> myCurrentDefinitions = new HashSet<>();
   private boolean myComplete;
 
-  static final int VERSION = 11;
+  static final int VERSION = 12;
 
   public ModuleSerialization(ErrorReporter errorReporter, DependencyListener dependencyListener) {
     myErrorReporter = errorReporter;
@@ -41,7 +41,7 @@ public class ModuleSerialization {
     // Now write the call target tree
     Map<ModulePath, Map<String, CallTargetTree>> moduleCallTargets = new HashMap<>();
     for (Map.Entry<TCReferable, Integer> entry : myCallTargetIndexProvider.getCallTargets()) {
-      if (myCurrentDefinitions.contains(entry.getValue()) || entry.getKey() instanceof TCDefReferable ref && !doSave(ref.getTypechecked())) {
+      if (myCurrentDefinitions.contains(entry.getValue())) {
         continue;
       }
 
@@ -75,10 +75,6 @@ public class ModuleSerialization {
     return out.build();
   }
 
-  private boolean doSave(Definition def) {
-    return def == null || def.status().withoutErrors();
-  }
-
   private ModuleProtos.Group writeGroup(Group group, ReferableConverter referableConverter) {
     ModuleProtos.Group.Builder builder = ModuleProtos.Group.newBuilder();
 
@@ -90,14 +86,13 @@ public class ModuleSerialization {
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
     Definition typechecked = tcReferable instanceof TCDefReferable ? ((TCDefReferable) tcReferable).getTypechecked() : null;
-    boolean save = typechecked != null && typechecked.status().withoutErrors() && typechecked.getGoals().isEmpty();
-    if (save && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
+    if (typechecked != null && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
       refBuilder.setIndex(index);
       myCurrentDefinitions.add(index);
     }
-    if (tcReferable != null && !save && tcReferable.getKind() != GlobalReferable.Kind.OTHER) {
+    if (tcReferable != null && (typechecked == null || !typechecked.status().noErrors()) && tcReferable.getKind() != GlobalReferable.Kind.OTHER) {
       myComplete = false;
     }
     builder.setReferable(refBuilder.build());

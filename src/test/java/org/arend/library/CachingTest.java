@@ -34,7 +34,9 @@ public class CachingTest extends LibraryTestCase {
     assertThat(errorList, hasSize(1));
     errorList.clear();
 
-    Definition.TypeCheckingStatus aStatus = getDef(aClass.getGroupScope(), "a").getTypechecked().status();
+    assertThat(getDef(aClass.getGroupScope(), "a").getTypechecked().status(), is(equalTo(Definition.TypeCheckingStatus.NO_ERRORS)));
+    assertThat(getDef(aClass.getGroupScope(), "b1").getTypechecked().status(), is(equalTo(Definition.TypeCheckingStatus.HAS_ERRORS)));
+    assertThat(getDef(aClass.getGroupScope(), "b2").getTypechecked().status(), is(equalTo(Definition.TypeCheckingStatus.NO_ERRORS)));
 
     libraryManager.unloadLibrary(library);
 
@@ -42,9 +44,9 @@ public class CachingTest extends LibraryTestCase {
     aClass = library.getModuleGroup(new ModulePath("A"));
     assertThat(aClass, is(notNullValue()));
 
-    assertThat(getDef(aClass.getGroupScope(), "a").getTypechecked().status(), is(equalTo(aStatus)));
-    assertThat(getDef(aClass.getGroupScope(), "b1").getTypechecked(), is(nullValue()));
-    assertThat(getDef(aClass.getGroupScope(), "b2").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aClass.getGroupScope(), "a").getTypechecked().status(), is(equalTo(Definition.TypeCheckingStatus.NO_ERRORS)));
+    assertThat(getDef(aClass.getGroupScope(), "b1").getTypechecked().status(), is(equalTo(Definition.TypeCheckingStatus.NEEDS_TYPE_CHECKING)));
+    assertThat(getDef(aClass.getGroupScope(), "b2").getTypechecked().status(), is(equalTo(Definition.TypeCheckingStatus.NO_ERRORS)));
   }
 
   @Test
@@ -109,9 +111,9 @@ public class CachingTest extends LibraryTestCase {
     aGroup = library.getModuleGroup(new ModulePath("A"));
     assertThat(aGroup, is(notNullValue()));
 
-    assertThat(getDef(aGroup.getGroupScope(), "D").getTypechecked(), is(notNullValue()));
-    assertThat(getDef(aGroup.getGroupScope(), "a").getTypechecked(), is(nullValue()));
-    assertThat(getDef(aGroup.getGroupScope(), "b").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aGroup.getGroupScope(), "D").getTypechecked().status(), is(equalTo(Definition.TypeCheckingStatus.NO_ERRORS)));
+    assertThat(getDef(aGroup.getGroupScope(), "a").getTypechecked().status(), is(equalTo(Definition.TypeCheckingStatus.NEEDS_TYPE_CHECKING)));
+    assertThat(getDef(aGroup.getGroupScope(), "b").getTypechecked().status(), is(equalTo(Definition.TypeCheckingStatus.NO_ERRORS)));
   }
 
   @Test

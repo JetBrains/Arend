@@ -55,6 +55,7 @@ public class DefinitionSerialization implements ArendSerializer {
     out.setPLevelsDerived(definition.arePLevelsDerived());
     out.setHLevelsDerived(definition.areHLevelsDerived());
     out.setIsStdLevels(definition.getLevelParameters() == null);
+    out.setNoErrors(definition.status().noErrors());
     if (definition.getLevelParameters() != null) {
       out.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
     }

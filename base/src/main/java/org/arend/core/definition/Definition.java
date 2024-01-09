@@ -268,10 +268,10 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   }
 
   public enum TypeCheckingStatus {
-    HAS_ERRORS, HAS_WARNINGS, DEP_ERRORS, DEP_WARNiNGS, NO_ERRORS, TYPE_CHECKING, NEEDS_TYPE_CHECKING;
+    HAS_ERRORS, HAS_WARNINGS, NO_ERRORS, TYPE_CHECKING, NEEDS_TYPE_CHECKING;
 
     public boolean isOK() {
-      return this.ordinal() >= DEP_WARNiNGS.ordinal();
+      return this.ordinal() >= NO_ERRORS.ordinal();
     }
 
     public boolean headerIsOK() {
@@ -282,20 +282,12 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
       return this == HAS_ERRORS;
     }
 
-    public boolean hasDepErrors() {
-      return this == HAS_ERRORS || this == DEP_ERRORS;
-    }
-
-    public boolean hasDepWarnings() {
-      return this.ordinal() <= DEP_WARNiNGS.ordinal();
-    }
-
     public boolean needsTypeChecking() {
       return this == NEEDS_TYPE_CHECKING || this == TYPE_CHECKING;
     }
 
-    public boolean withoutErrors() {
-      return !hasDepErrors();
+    public boolean noErrors() {
+      return this == NO_ERRORS;
     }
 
     public TypeCheckingStatus max(TypeCheckingStatus status) {

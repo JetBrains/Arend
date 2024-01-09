@@ -27,6 +27,7 @@ message Definition {
     bool is_std_levels = 14;
     repeated ParameterOriginalDef parameter_original_def = 15;
     repeated int32 axiom = 16;
+    bool no_errors = 17;
 
     message RefList {
         repeated int32 ref = 1;
