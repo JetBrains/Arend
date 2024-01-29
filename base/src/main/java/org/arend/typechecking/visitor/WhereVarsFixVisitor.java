@@ -48,27 +48,34 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         Map<TCDefReferable, Set<Referable>> refMap = new HashMap<>();
         for (ParameterReferable whereRef : whereVars.proj1) {
           wherePairs.add(new Pair<>(whereRef.getDefinition(), whereRef.getIndex()));
-          refMap.computeIfAbsent(whereRef.getDefinition(), k -> new HashSet<>()).add(WhereVarsFixVisitor.getReferable(definition, whereRef));
+          refMap.computeIfAbsent(whereRef.getDefinition(), k -> new HashSet<>()).add(getReferable(definition, whereRef));
         }
 
-        for (Map.Entry<TCDefReferable, Set<Referable>> entry : refMap.entrySet()) {
-          Concrete.ExternalParameters externalParams = definition.getExternalParameters().get(entry.getKey());
-          if (externalParams == null) continue;
+        record ParamData(TCDefReferable definition, Concrete.Parameter parameter, int index) {}
 
-          Map<Referable, Pair<Concrete.Parameter,Integer>> parameterMap = new HashMap<>();
-          int index = 0;
-          for (Concrete.Parameter parameter : externalParams.parameters) {
-            for (Referable referable : parameter.getReferableList()) {
-              if (referable != null) parameterMap.put(referable, new Pair<>(parameter, index));
-              index++;
+        loop:
+        for (Map.Entry<TCDefReferable, Set<Referable>> entry : refMap.entrySet()) {
+          Map<Referable, ParamData> parameterMap = new HashMap<>();
+          for (Map.Entry<TCDefReferable, Concrete.ExternalParameters> entry1 : definition.getExternalParameters().entrySet()) {
+            int index = 0;
+            for (Concrete.Parameter parameter : entry1.getValue().parameters) {
+              for (Referable referable : parameter.getReferableList()) {
+                if (referable != null) parameterMap.put(referable, new ParamData(entry1.getKey(), parameter, index));
+                index++;
+              }
             }
           }
 
           Set<Referable> found = entry.getValue();
+          for (Referable referable : found) {
+            if (!parameterMap.containsKey(referable)) {
+              continue loop;
+            }
+          }
           while (!found.isEmpty()) {
             Set<Referable> foundRefs = new HashSet<>();
             for (Referable referable : found) {
-              Concrete.Expression type = parameterMap.get(referable).proj1.getType();
+              Concrete.Expression type = parameterMap.get(referable).parameter.getType();
               if (type != null) {
                 type.accept(new FreeVariableCollectorConcrete(foundRefs), null);
               }
@@ -76,8 +83,11 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
 
             found.clear();
             for (Referable foundRef : foundRefs) {
-              var pair = parameterMap.get(foundRef);
-              if (pair != null && wherePairs.add(new Pair<>(entry.getKey(), pair.proj2))) {
+              while (foundRef instanceof ParameterReferable paramRef) {
+                foundRef = paramRef.getUnderlyingReferable();
+              }
+              ParamData paramData = parameterMap.get(foundRef);
+              if (paramData != null && wherePairs.add(new Pair<>(paramData.definition, paramData.index))) {
                 found.add(foundRef);
               }
             }
@@ -182,7 +192,8 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
     }
 
     for (Concrete.Definition definition : definitions) {
-      definition.accept(new WhereVarsFixVisitor(definition, selfArgsMap), null);
+      WhereVarsFixVisitor varsFixVisitor = new WhereVarsFixVisitor(definition, selfArgsMap);
+      definition.accept(varsFixVisitor, null);
       var pair = paramsMap.get(definition.getData());
       if (pair != null) {
         if (definition instanceof Concrete.ClassDefinition) {
@@ -199,6 +210,7 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
           }
           definition.accept(visitor, null);
         }
+        varsFixVisitor.visitParameters(pair.proj1, null);
         definition.addParameters(pair.proj1, pair.proj2);
         if (definition instanceof Concrete.CoClauseFunctionDefinition coClauseDef) {
           int n = coClauseDef.getNumberOfExternalParameters();
