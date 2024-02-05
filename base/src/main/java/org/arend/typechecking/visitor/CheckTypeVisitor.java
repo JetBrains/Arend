@@ -1333,19 +1333,24 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
       Definition definition = referableToDefinition(classFieldImpl.getImplementedField(), classFieldImpl);
       if (definition != null) {
-        implementations.add(new Pair<>(definition,classFieldImpl));
+        boolean ok = true;
         if (definition instanceof ClassField) {
           if (baseClass.getFields().contains(definition)) {
             defined.add((ClassField) definition);
           } else {
             errorReporter.report(new IncorrectImplementationError((ClassField) definition, baseClass, classFieldImpl));
+            ok = false;
           }
         } else if (definition instanceof ClassDefinition) {
           if (baseClass.isSubClassOf((ClassDefinition) definition)) {
             defined.addAll(((ClassDefinition) definition).getFields());
           } else {
             errorReporter.report(new IncorrectImplementationError((ClassDefinition) definition, baseClass, classFieldImpl));
+            ok = false;
           }
+        }
+        if (ok) {
+          implementations.add(new Pair<>(definition, classFieldImpl));
         }
       }
     }
