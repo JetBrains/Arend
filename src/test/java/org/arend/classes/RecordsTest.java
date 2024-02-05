@@ -44,61 +44,66 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void parentCallTypecheckingTest() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | c : Nat -> Nat -> Nat\n" +
-        "  | f : Nat -> Nat\n" +
-        "}\n" +
-        "\\func B => A {\n" +
-        "  | f => \\lam n => c n n\n" +
-        "}", 1);
+    typeCheckModule("""
+      \\class A {
+        | c : Nat -> Nat -> Nat
+        | f : Nat -> Nat
+      }
+      \\func B => A {
+        | f => \\lam n => c n n
+      }
+      """, 1);
   }
 
   @Test
   public void duplicateNameTestError() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | f : Nat\n" +
-        "}\n" +
-        "\\func B => A {\n" +
-        "  | f => 0\n" +
-        "  | f => 1\n" +
-        "}", 1);
+    typeCheckModule("""
+      \\class A {
+        | f : Nat
+      }
+      \\func B => A {
+        | f => 0
+        | f => 1
+      }
+      """, 1);
     assertThatErrorsAre(Matchers.fieldsImplementation(true, Collections.singletonList(get("f"))));
   }
 
   @Test
   public void overriddenFieldAccTest() {
-    typeCheckModule(
-        "\\class Point {\n" +
-        "  | x : Nat\n" +
-        "  | y : Nat\n" +
-        "}\n" +
-        "\\func diagonal => \\lam (d : Nat) => Point {\n" +
-        "  | x => d\n" +
-        "  | y => d\n" +
-        "}\n" +
-        "\\func test (p : diagonal 0) : p.x = 0 => idp");
+    typeCheckModule("""
+      \\class Point {
+        | x : Nat
+        | y : Nat
+      }
+      \\func diagonal => \\lam (d : Nat) => Point {
+        | x => d
+        | y => d
+      }
+      \\func test (p : diagonal 0) : p.x = 0 => idp
+      """);
   }
 
   @Test
   public void notImplementedTest() {
-    typeCheckModule(
-        "\\class Point {\n" +
-        "  | x : Nat\n" +
-        "  | y : Nat\n" +
-        "}\n" +
-        "\\func diagonal => Point { | y => 0 }");
+    typeCheckModule("""
+      \\class Point {
+        | x : Nat
+        | y : Nat
+      }
+      \\func diagonal => Point { | y => 0 }
+      """);
   }
 
   @Test
   public void notImplementedTestError() {
-    typeCheckModule(
-        "\\class Point {\n" +
-        "  | x : Nat\n" +
-        "  | y : x = x -> Nat\n" +
-        "}\n" +
-        "\\func diagonal => Point { | y => \\lam _ => 0 }");
+    typeCheckModule("""
+      \\class Point {
+        | x : Nat
+        | y : x = x -> Nat
+      }
+      \\func diagonal => Point { | y => \\lam _ => 0 }
+      """);
   }
 
   @Test
@@ -110,44 +115,47 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void newFunctionError() {
-    typeCheckModule(
-        "\\class Point {\n" +
-        "  | x : Nat\n" +
-        "  | y : Nat\n" +
-        "}\n" +
-        "\\func diagonal => Point { | x => 0 }\n" +
-        "\\func test => \\new diagonal", 1);
+    typeCheckModule("""
+      \\class Point {
+        | x : Nat
+        | y : Nat
+      }
+      \\func diagonal => Point { | x => 0 }
+      \\func test => \\new diagonal
+      """, 1);
   }
 
   @Test
   public void newTest() {
-    typeCheckModule(
-        "\\class Point {\n" +
-        "  | x : Nat\n" +
-        "  | y : Nat\n" +
-        "}\n" +
-        "\\func diagonal => \\lam (d : Nat) => Point {\n" +
-        "  | x => d\n" +
-        "  | y => d\n" +
-        "}\n" +
-        "\\func diagonal1 => \\new Point {\n" +
-        "  | x => 0\n" +
-        "  | y => 0\n" +
-        "}\n" +
-        "\\func test : diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new Point { | x => 0 | y => 0 })");
+    typeCheckModule("""
+      \\class Point {
+        | x : Nat
+        | y : Nat
+      }
+      \\func diagonal => \\lam (d : Nat) => Point {
+        | x => d
+        | y => d
+      }
+      \\func diagonal1 => \\new Point {
+        | x => 0
+        | y => 0
+      }
+      \\func test : diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new Point { | x => 0 | y => 0 })
+      """);
   }
 
   @Test
   public void mutualRecursionTypecheckingError() {
-    typeCheckModule(
-        "\\class Point {\n" +
-        "  | x : Nat\n" +
-        "  | y : Nat\n" +
-        "}\n" +
-        "\\func test => Point {\n" +
-        "  | x => y\n" +
-        "  | y => x\n" +
-        "}", 2);
+    typeCheckModule("""
+      \\class Point {
+        | x : Nat
+        | y : Nat
+      }
+      \\func test => Point {
+        | x => y
+        | y => x
+      }
+      """, 2);
   }
 
   @Test
@@ -197,87 +205,94 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldCallInClass() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  | x : Nat\n" +
-      "}\n" +
-      "\\class B {\n" +
-      "  | a : A\n" +
-      "  | y : a.x = a.x\n" +
-      "}");
+    typeCheckModule("""
+      \\class A {
+        | x : Nat
+      }
+      \\class B {
+        | a : A
+        | y : a.x = a.x
+      }
+      """);
   }
 
   @Test
   public void fieldCallInClass2() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  | x : Nat\n" +
-      "}\n" +
-      "\\class B {\n" +
-      "  | a : A\n" +
-      "  | y : a.x = a.x\n" +
-      "  | z : y = y\n" +
-      "}");
+    typeCheckModule("""
+      \\class A {
+        | x : Nat
+      }
+      \\class B {
+        | a : A
+        | y : a.x = a.x
+        | z : y = y
+      }
+      """);
   }
 
   @Test
   public void fieldCallInClass3() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  | x : Nat\n" +
-      "}\n" +
-      "\\class B {\n" +
-      "  | a : A\n" +
-      "  | y : path (\\lam _ => a.x) = path (\\lam _ => a.x)\n" +
-      "}");
+    typeCheckModule("""
+      \\class A {
+        | x : Nat
+      }
+      \\class B {
+        | a : A
+        | y : path (\\lam _ => a.x) = path (\\lam _ => a.x)
+      }
+      """);
   }
 
   @Test
   public void fieldCallWithArg0() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  | x : Nat\n" +
-      "}\n" +
-      "\\class B {\n" +
-      "  | a : A\n" +
-      "}\n" +
-      "\\func y (b : B) => b.a.x");
+    typeCheckModule("""
+      \\class A {
+        | x : Nat
+      }
+      \\class B {
+        | a : A
+      }
+      \\func y (b : B) => b.a.x
+      """);
   }
 
   @Test
   public void fieldCallWithArg1() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  | x : Nat\n" +
-      "}\n" +
-      "\\class B {\n" +
-      "  | a : A\n" +
-      "}\n" +
-      "\\func y (b : Nat -> B) => x {a {b 0}}");
+    typeCheckModule("""
+      \\class A {
+        | x : Nat
+      }
+      \\class B {
+        | a : A
+      }
+      \\func y (b : Nat -> B) => x {a {b 0}}
+      """);
   }
 
   @Test
   public void fieldCallWithArg2() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  | x : Nat\n" +
-      "}\n" +
-      "\\class B {\n" +
-      "  | a : Nat -> A\n" +
-      "}\n" +
-      "\\func y (b : B) => x {b.a 1}");
+    typeCheckModule("""
+      \\class A {
+        | x : Nat
+      }
+      \\class B {
+        | a : Nat -> A
+      }
+      \\func y (b : B) => x {b.a 1}
+      """);
   }
 
   @Test
   public void fieldCallWithArg3() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  | x : Nat\n" +
-      "}\n" +
-      "\\class B {\n" +
-      "  | a : Nat -> A\n" +
-      "}\n" +
-      "\\func y (b : Nat -> B) => x {a {b 0} 1}");
+    typeCheckModule("""
+      \\class A {
+        | x : Nat
+      }
+      \\class B {
+        | a : Nat -> A
+      }
+      \\func y (b : Nat -> B) => x {a {b 0} 1}
+      """);
   }
 
   @Test
@@ -296,11 +311,12 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recursiveFieldsError() {
-    typeCheckModule(
-      "\\class X {\n" +
-      "  | A : (B (\\lam _ => 0) -> Nat) -> \\Prop\n" +
-      "  | B : (A (\\lam _ => 0) -> Nat) -> \\Prop\n" +
-      "}", 1);
+    typeCheckModule("""
+      \\class X {
+        | A : (B (\\lam _ => 0) -> Nat) -> \\Prop
+        | B : (A (\\lam _ => 0) -> Nat) -> \\Prop
+      }
+      """, 1);
     assertThatErrorsAre(Matchers.error());
   }
 
@@ -313,12 +329,13 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void higherFunctionsTest() {
-    typeCheckModule(
-      "\\class C { | A : \\Set | a : A }\n" +
-      "\\func const (c : C) => \\new C { | A => c.A -> c.A | a => \\lam _ => c.a }\n" +
-      "\\func const' (c : C) : C { | A => c.A -> c.A } => \\new C { | A => c.A -> c.A | a => \\lam _ => c.a }\n" +
-      "\\func test' (f : (C -> C) -> Nat) => f const'\n" +
-      "\\func test (f : (\\Pi (c : C) -> C { | A => c.A -> c.A }) -> Nat) => f const");
+    typeCheckModule("""
+      \\class C { | A : \\Set | a : A }
+      \\func const (c : C) => \\new C { | A => c.A -> c.A | a => \\lam _ => c.a }
+      \\func const' (c : C) : C { | A => c.A -> c.A } => \\new C { | A => c.A -> c.A | a => \\lam _ => c.a }
+      \\func test' (f : (C -> C) -> Nat) => f const'
+      \\func test (f : (\\Pi (c : C) -> C { | A => c.A -> c.A }) -> Nat) => f const
+      """);
   }
 
   @Test
@@ -337,55 +354,60 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void swapTest() {
-    typeCheckModule(
-      "\\record Pair (A B : \\Type)\n" +
-      "  | fst : A\n" +
-      "  | snd : B\n" +
-      "\\func swap {A B : \\Type} (p : Pair A B) : Pair B A \\cowith\n" +
-      "  | fst => p.snd\n" +
-      "  | snd => p.fst\n" +
-      "\\func idpe {A : \\Type} (a : A) : a = a => idp\n" +
-      "\\func swap-inv1 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp\n" +
-      "\\func swap-inv2 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {_}\n" +
-      "\\func swap-inv3 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {p}\n" +
-      "\\func swap-inv4 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {\\new Pair A B p.fst p.snd}\n" +
-      "\\func swap-inv5 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe _\n" +
-      "\\func swap-inv6 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe p\n" +
-      "\\func swap-inv7 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe (\\new Pair A B p.fst p.snd)");
+    typeCheckModule("""
+      \\record Pair (A B : \\Type)
+        | fst : A
+        | snd : B
+      \\func swap {A B : \\Type} (p : Pair A B) : Pair B A \\cowith
+        | fst => p.snd
+        | snd => p.fst
+      \\func idpe {A : \\Type} (a : A) : a = a => idp
+      \\func swap-inv1 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp
+      \\func swap-inv2 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {_}
+      \\func swap-inv3 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {p}
+      \\func swap-inv4 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {\\new Pair A B p.fst p.snd}
+      \\func swap-inv5 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe _
+      \\func swap-inv6 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe p
+      \\func swap-inv7 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe (\\new Pair A B p.fst p.snd)
+      """);
   }
 
   @Test
   public void newSubClass() {
-    typeCheckModule(
-      "\\record A (n : Nat)\n" +
-      "\\record B \\extends A | n => 0\n" +
-      "\\data D (a : A) | ddd\n" +
-      "\\func b : D (\\new B) => ddd");
+    typeCheckModule("""
+      \\record A (n : Nat)
+      \\record B \\extends A | n => 0
+      \\data D (a : A) | ddd
+      \\func b : D (\\new B) => ddd
+      """);
     assertEquals(getDefinition("B"), ((NewExpression) ((DataCallExpression) ((FunctionDefinition) getDefinition("b")).getResultType()).getDefCallArguments().get(0)).getClassCall().getDefinition());
   }
 
   @Test
   public void resolveIncorrect() {
-    typeCheckModule(
-      "\\class C { | A : \\Set }\n" +
-      "\\class D { | B : \\Set }\n" +
-      "\\func f => \\new D { | A => \\Prop }", 1);
+    typeCheckModule("""
+      \\class C { | A : \\Set }
+      \\class D { | B : \\Set }
+      \\func f => \\new D { | A => \\Prop }
+      """, 2);
   }
 
   @Test
   public void resolveIncorrect2() {
-    typeCheckModule(
-      "\\class C { | A : \\Set }\n" +
-      "\\class D { | B : \\Set }\n" +
-      "\\class E \\extends D\n" +
-      "\\func f => \\new E { | C => \\new C \\Prop }", 1);
+    typeCheckModule("""
+      \\class C { | A : \\Set }
+      \\class D { | B : \\Set }
+      \\class E \\extends D
+      \\func f => \\new E { | C => \\new C \\Prop }
+      """, 2);
   }
 
   @Test
   public void resolveNotSuperImplement() {
-    typeCheckModule(
-      "\\class A { | x : Nat }\n" +
-      "\\class B { | y : Nat }\n" +
-      "\\class C \\extends B { | A => \\new A { | x => 0 } }", 1);
+    typeCheckModule("""
+      \\class A { | x : Nat }
+      \\class B { | y : Nat }
+      \\class C \\extends B { | A => \\new A { | x => 0 } }
+      """, 1);
   }
 }
