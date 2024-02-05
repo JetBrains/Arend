@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import java.util.Collections;
 
+import static org.arend.Matchers.argInferenceError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -51,7 +52,7 @@ public class VarsTest extends TypeCheckingTestCase {
       \\func foo (x : Nat) => bar Nat.+ x
         \\where
           \\func bar => x
-      \\func test : foo 3 = foo.bar 6 => idp
+      \\func test : foo 3 = foo.bar {6} => idp
       """);
   }
 
@@ -69,7 +70,7 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void invokeTest3() {
     typeCheckModule("""
-      \\func foo (x : Nat) : bar.baz 3 = (x,3) => idp
+      \\func foo (x : Nat) : bar.baz {x} {3} = (x,3) => idp
         \\where
           \\func bar (y : Nat) : baz = (x,y) => idp
             \\where
@@ -80,7 +81,7 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void invokeTest4() {
     typeCheckModule("""
-      \\func foo (x : Nat) : bar.baz 3 = (x,3) => idp
+      \\func foo (x : Nat) : bar.baz {x} {3} = (x,3) => idp
         \\where
           \\func bar (y : Nat) : baz = {\\Sigma Nat Nat} (_,y) => idp
             \\where
@@ -102,7 +103,7 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void invokeTest6() {
     typeCheckModule("""
-      \\func bar : foo.baz = (\\lam x => x) => idp
+      \\func bar : (\\lam {x} => x) = foo.baz => idp
         \\where
           \\func foo (x : Nat) : baz = x => idp
             \\where
@@ -113,7 +114,7 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void invokeTest7() {
     typeCheckModule("""
-      \\func foo (x : Nat) : bar.baz 3 = idp {_} {x,3} => idp
+      \\func foo (x : Nat) : bar.baz {x} {3} = idp {_} {x,3} => idp
         \\where
           \\func bar (y : Nat) : baz = idp {_} {x,y} => idp
             \\where
@@ -126,7 +127,7 @@ public class VarsTest extends TypeCheckingTestCase {
   @Test
   public void invokeTest8() {
     typeCheckModule("""
-      \\func foo (x : Nat) : bar.baz 3 = idp {_} {x,3} => idp
+      \\func foo (x : Nat) : bar.baz {x} {3} = idp {_} {x,3} => idp
         \\where
           \\func bar (y : Nat) : baz = idp {_} {x,y} => idp
             \\where
@@ -144,7 +145,7 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func baz => bar
           \\func bar => x
         }
-      \\func test : foo.baz 3 = foo.bar 3 => idp
+      \\func test : foo.baz {3} = foo.bar {3} => idp
       """);
   }
 
@@ -158,9 +159,9 @@ public class VarsTest extends TypeCheckingTestCase {
               \\func bak => x Nat.+ y
           \\func baz (z : Nat) => z
             \\where
-              \\func qux => bar.bak 5
+              \\func qux => bar.bak {x} {5}
         }
-      \\func test : foo.baz.qux 4 = 9 => idp
+      \\func test : foo.baz.qux {4} = 9 => idp
       """);
   }
 
@@ -172,7 +173,7 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func bar (y : Nat) : Nat
             | 0 => 0
             | suc y => x Nat.* y
-      \\func test : foo 3 = foo.bar 2 4 => idp
+      \\func test : foo 3 = foo.bar {2} 4 => idp
       """);
   }
 
@@ -184,7 +185,7 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func bar (n : Nat) : Nat
             | 0 => 0
             | suc n => bar n Nat.+ x
-      \\func test : (foo.bar 5 4, foo 3 100) = (20, 12) => idp
+      \\func test : (foo.bar {5} 4, foo 3 100) = (20, 12) => idp
       """);
   }
 
@@ -200,7 +201,7 @@ public class VarsTest extends TypeCheckingTestCase {
             | 0 => 0
             | suc n => bar n Nat.+ y
         }
-      \\func test : (foo.bar 5 7 1, foo.baz 5 7 1) = (5, 7) => idp
+      \\func test : (foo.bar {5} {7} 1, foo.baz {5} {7} 1) = (5, 7) => idp
       """);
   }
 
@@ -212,7 +213,7 @@ public class VarsTest extends TypeCheckingTestCase {
         | suc n => bar n Nat.+ foo m n
         \\where
           \\func bar (n : Nat) : Nat => m Nat.+ foo m n
-      \\func test : (foo 2 1, foo.bar 2 1) = (2,4) => idp
+      \\func test : (foo 2 1, foo.bar {2} 1) = (2,4) => idp
       """);
   }
 
@@ -226,7 +227,7 @@ public class VarsTest extends TypeCheckingTestCase {
               \\func baz => (x,y)
               \\func qux => (y,x)
             }
-      \\func test : (foo.bar.baz 1 2, foo.bar.qux 3 4) = ((1,2),(4,3)) => idp
+      \\func test : (foo.bar.baz {1} {2}, foo.bar.qux {3} {4}) = ((1,2),(4,3)) => idp
       """);
   }
 
@@ -242,7 +243,7 @@ public class VarsTest extends TypeCheckingTestCase {
               \\func baz => (x',y')
               \\func qux => (y',x')
             }
-      \\func test : (foo.bar.baz 1 2, foo.bar.qux 3 4) = ((1,2),(4,3)) => idp
+      \\func test : (foo.bar.baz {1} {2}, foo.bar.qux {3} {4}) = ((1,2),(4,3)) => idp
       """);
   }
 
@@ -254,7 +255,7 @@ public class VarsTest extends TypeCheckingTestCase {
           \\where
             \\func bar => x
       }
-      \\func test (r : R) : r.foo 7 = R.foo.bar {r} 7 => idp
+      \\func test (r : R) : r.foo 7 = R.foo.bar {r} {7} => idp
       """);
   }
 
@@ -427,7 +428,7 @@ public class VarsTest extends TypeCheckingTestCase {
       \\func foo {A : \\Type} (a : A) => a
         \\where
           \\func bar => a
-      \\func test : foo.bar {Nat} 5 = 5 => idp
+      \\func test : foo.bar {Nat} {5} = 5 => idp
       """);
   }
 
@@ -437,7 +438,7 @@ public class VarsTest extends TypeCheckingTestCase {
       \\func foo {A : \\Type} {a : A} (p : a = a) => a
         \\where
           \\func bar => p
-      \\func test : foo.bar {Nat} {5} idp = idp => idp
+      \\func test : foo.bar {Nat} {5} {idp} = idp => idp
       """);
   }
 
@@ -449,7 +450,7 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func bar => var
           \\func var => 4
         }
-      \\func test : foo.bar 4 = 4 => idp
+      \\func test : foo.bar {4} = 4 => idp
       """);
   }
 
@@ -472,7 +473,7 @@ public class VarsTest extends TypeCheckingTestCase {
       \\func foo (var : Nat) => test
         \\where
           \\func bar => var
-      \\func test : foo.bar 6 = 6 => idp
+      \\func test : foo.bar {6} = 6 => idp
       """);
   }
 
@@ -482,7 +483,7 @@ public class VarsTest extends TypeCheckingTestCase {
       \\lemma foo (var : Nat) (r : R) : var = var => r.f
         \\where
           \\record R (f : var = var)
-      \\func test : foo.R 3 => \\new foo.R { | f => idp {Nat} {3} }
+      \\func test : foo.R {3} => \\new foo.R { | f => idp {Nat} {3} }
       """);
   }
 
@@ -557,7 +558,7 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func bar => x Nat.+ y
           \\func baz => bar
         }
-      \\func test : foo.baz 2 3 = 5 => idp
+      \\func test : foo.baz {2} {3} = 5 => idp
       """);
     assertEquals(1, getConcreteFixed("foo.baz").getParameters().size());
     assertEquals(2, DependentLink.Helper.size(getDefinition("foo.baz").getParameters()));
@@ -580,7 +581,7 @@ public class VarsTest extends TypeCheckingTestCase {
       \\func foo (var : Nat) => 0
         \\where
           \\record R (f : var = var)
-      \\func test : foo.R 3 \\cowith
+      \\func test : foo.R {3} \\cowith
       """, 1);
     assertThatErrorsAre(Matchers.fieldsImplementation(false, Collections.singletonList(get("foo.R.f"))));
   }
@@ -732,6 +733,77 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func g (p : n = 0) => p
             \\where
               \\func h => p
+      """);
+  }
+
+  @Test
+  public void thisVarTest() {
+    typeCheckModule("""
+      \\record RRR {
+        | xxx : Nat
+        \\func foo {yyy : Nat} => 0
+          \\where {
+            \\func bar (z : Nat) : Nat \\elim z
+              | 0 => yyy
+              | suc z => bar z
+          }
+      }
+      """);
+  }
+
+  @Test
+  public void thisVarTest2() {
+    typeCheckModule("""
+      \\record RRR {
+        | xxx : Nat
+        \\func foo (yyy : Nat) => 0
+          \\where {
+            \\func bar (z : Nat) : Nat \\elim z
+              | 0 => yyy
+              | suc z => bar z
+          }
+      }
+      """);
+  }
+
+  @Test
+  public void thisVarTest3() {
+    typeCheckModule("""
+      \\record RRR {
+        | xxx : Nat
+        \\func foo {yyy : Nat} => 0
+          \\where {
+            \\func bar (z : Nat) : Nat \\elim z
+              | 0 => yyy
+              | suc z => bar {_} z
+          }
+      }
+      """, 2);
+    assertThatErrorsAre(argInferenceError(), argInferenceError());
+  }
+
+  @Test
+  public void thisVarTest4() {
+    typeCheckModule("""
+      \\record RRR {
+        | xxx : Nat
+        \\func foo (yyy : Nat) => 0
+          \\where {
+            \\func bar (z : Nat) : Nat \\elim z
+              | 0 => yyy
+              | suc z => bar {_} z
+          }
+      }
+      """, 2);
+    assertThatErrorsAre(argInferenceError(), argInferenceError());
+  }
+
+  @Test
+  public void appTest() {
+    typeCheckModule("""
+      \\func foo (xxx : \\Pi {n : Nat} -> n = n) => 0
+        \\where
+          \\func test => xxx {0}
       """);
   }
 }

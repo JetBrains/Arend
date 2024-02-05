@@ -12,10 +12,7 @@ import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.ext.error.LocalError;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   private Referable myThisParameter;
@@ -101,16 +98,6 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
     }
   }
 
-  private int getFirstArgumentIndex(Concrete.ReferenceExpression refExpr, List<Concrete.Argument> args) {
-    Referable ref = refExpr.getReferent();
-    if (ref instanceof TCDefReferable) {
-      Definition def = ((TCDefReferable) ref).getTypechecked();
-      int index = def == null ? 0 : def.getParametersOriginalDefinitions().size();
-      return index <= args.size() ? index : 0;
-    }
-    return 0;
-  }
-
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
     if (expr.getFunction() instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr.getFunction()).getReferent() instanceof MetaReferable) {
@@ -126,31 +113,11 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
           return expr;
         }
       }
-    } else if (expr.getFunction() instanceof Concrete.ReferenceExpression refExpr) {
-      int index = getFirstArgumentIndex(refExpr, expr.getArguments());
-      if (index >= expr.getArguments().size() || !expr.getArguments().get(index).isExplicit()) {
-        if (index < expr.getArguments().size() && expr.getArguments().get(index).expression instanceof Concrete.HoleExpression) {
-          Referable ref = refExpr.getReferent();
-          if (ref instanceof TCDefReferable) {
-            Definition def = ((TCDefReferable) ref).getTypechecked();
-            if (def != null && def.getEnclosingClass() != null && def.getEnclosingClass().getReferable() == myClassReferable) {
-              if (expr.getArguments().size() == 1) {
-                return expr.getFunction().accept(this, null);
-              } else {
-                expr.getArguments().remove(0);
-                return super.visitApp(expr, null);
-              }
-            }
-          }
-        }
-        for (Concrete.Argument argument : expr.getArguments()) {
-          argument.expression = argument.expression.accept(this, params);
-        }
-        if (index >= expr.getArguments().size()) {
-          return Concrete.AppExpression.make(expr.getData(), visitReference(refExpr, null), expr.getArguments());
-        }
-        return expr;
+    } else if (expr.getFunction() instanceof Concrete.ReferenceExpression && !expr.getArguments().get(0).isExplicit() && !(expr.getArguments().get(0) instanceof Concrete.GeneratedArgument)) {
+      for (Concrete.Argument argument : expr.getArguments()) {
+        argument.expression = argument.expression.accept(this, params);
       }
+      return expr;
     }
 
     return super.visitApp(expr, params);

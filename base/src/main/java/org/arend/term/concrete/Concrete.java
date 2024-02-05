@@ -384,6 +384,12 @@ public final class Concrete {
     }
   }
 
+  public static class GeneratedArgument extends Argument {
+    public GeneratedArgument(Expression expression) {
+      super(expression, false);
+    }
+  }
+
   public static class TypedExpression extends Expression implements ConcreteTypedExpression {
     public static final byte PREC = 0;
     public Expression expression;
@@ -2952,7 +2958,7 @@ public final class Concrete {
 
     public UnparsedConstructorPattern(@Nullable Object data, boolean isExplicit, @NotNull List<BinOpSequenceElem<Pattern>> patterns, @Nullable TypedReferable asReferable) {
       super(data, asReferable);
-      assert patterns.size() > 0;
+      assert !patterns.isEmpty();
       myUnparsedPatterns = List.copyOf(patterns);
       setExplicit(isExplicit);
     }
