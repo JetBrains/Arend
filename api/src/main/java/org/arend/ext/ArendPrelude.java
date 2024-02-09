@@ -29,7 +29,6 @@ public interface ArendPrelude {
   CoreDataDefinition getPath();
   CoreFunctionDefinition getEquality();
   ArendRef getPathConRef();
-  CoreFunctionDefinition getInProp();
   CoreFunctionDefinition getIdp();
   ArendRef getAtRef();
   CoreFunctionDefinition getIso();

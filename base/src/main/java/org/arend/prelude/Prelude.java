@@ -71,8 +71,6 @@ public class Prelude implements ArendPrelude {
   public static FunctionDefinition PATH_INFIX;
   public static Constructor PATH_CON;
 
-  public static FunctionDefinition IN_PROP;
-
   public static DConstructor IDP;
   public static FunctionDefinition AT;
   public static FunctionDefinition ISO;
@@ -198,10 +196,6 @@ public class Prelude implements ArendPrelude {
         FIN_FROM_NAT = (FunctionDefinition) definition;
         FIN_FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       }
-      case "inProp" -> {
-        IN_PROP = (FunctionDefinition) definition;
-        IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-      }
       case "divMod" -> {
         DIV_MOD = (FunctionDefinition) definition;
         DIV_MOD.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -269,7 +263,6 @@ public class Prelude implements ArendPrelude {
     consumer.accept(PATH);
     consumer.accept(PATH_CON);
     consumer.accept(PATH_INFIX);
-    consumer.accept(IN_PROP);
     consumer.accept(IDP);
     consumer.accept(AT);
     consumer.accept(COERCE);
@@ -426,11 +419,6 @@ public class Prelude implements ArendPrelude {
   @Override
   public ArendRef getPathConRef() {
     return PATH_CON.getRef();
-  }
-
-  @Override
-  public FunctionDefinition getInProp() {
-    return IN_PROP;
   }
 
   @Override
