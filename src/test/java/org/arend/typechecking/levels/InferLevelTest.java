@@ -40,10 +40,11 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void metaVarEquation() {
     // ?l <= ?l'
     // error: cannot infer ?l, ?l'
-    typeCheckModule(
-        "\\func A => \\Type\n" +
-        "\\func f (A : \\Type) => A\n" +
-        "\\func g => f A");
+    typeCheckModule("""
+      \\func A => \\Type
+      \\func f (A : \\Type) => A
+      \\func g => f A
+      """);
   }
 
   @Test
@@ -206,43 +207,47 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void parameters() {
-    typeCheckModule(
-      "\\func X => \\Type\n" +
-      "\\func f (A : X) => 0\n" +
-      "\\func g => f \\Set0"
+    typeCheckModule("""
+      \\func X => \\Type
+      \\func f (A : X) => 0
+      \\func g => f \\Set0
+      """
     );
   }
 
   @Test
   public void lhLessThanInf() {
-    typeCheckModule(
-      "\\func f (A : \\Type) (a a' : A) (p : a = a') => p\n" +
-      "\\func X : \\oo-Type => Nat\n" +
-      "\\func g : X = X => f \\Type X X idp");
+    typeCheckModule("""
+      \\func f (A : \\Type) (a a' : A) (p : a = a') => p
+      \\func X : \\oo-Type => Nat
+      \\func g : X = X => f \\Type X X idp
+      """);
   }
 
   @Test
   public void pLevelTest() {
-    typeCheckModule(
-      "\\func squeeze1 (i j : I) : I =>\n" +
-      "  coe (\\lam x => left = x) idp j @ i\n" +
-      "\\func squeeze (i j : I) =>\n" +
-      "  coe (\\lam i => Path (\\lam j => left = squeeze1 i j) idp (path (\\lam j => squeeze1 i j))) idp right @ i @ j\n" +
-      "\\func psqueeze {A : \\Type} {a a' : A} (p : a = a') (i : I) : a = p @ i =>\n" +
-      "  path (\\lam j => p @ squeeze i j)\n" +
-      "\\func Jl {A : \\Type} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type) (b : B a idp) {a' : A} (p : a = a') : B a' p =>\n" +
-      "  coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
-      "\\func foo (A : \\Type) (a0 a1 : A) (p : a0 = a1) =>\n" +
-      "  Jl (\\lam _ q => (idp {A} {a0} = idp {A} {a0}) = (q = q)) idp p");
+    typeCheckModule("""
+      \\func squeeze1 (i j : I) : I =>
+        coe (\\lam x => left = x) idp j @ i
+      \\func squeeze (i j : I) =>
+        coe (\\lam i => Path (\\lam j => left = squeeze1 i j) idp (path (\\lam j => squeeze1 i j))) idp right @ i @ j
+      \\func psqueeze {A : \\Type} {a a' : A} (p : a = a') (i : I) : a = p @ i =>
+        path (\\lam j => p @ squeeze i j)
+      \\func Jl {A : \\Type} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type) (b : B a idp) {a' : A} (p : a = a') : B a' p =>
+        coe (\\lam i => B (p @ i) (psqueeze p i)) b right
+      \\func foo (A : \\Type) (a0 a1 : A) (p : a0 = a1) =>
+        Jl (\\lam _ q => (idp {A} {a0} = idp {A} {a0}) = (q = q)) idp p
+      """);
   }
 
   @Test
   public void classLevelTest() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  | X : \\oo-Type\n" +
-      "}\n" +
-      "\\func f : A \\levels 0 _ => \\new A { | X => \\oo-Type0 }", 1);
+    typeCheckModule("""
+      \\class A {
+        | X : \\oo-Type
+      }
+      \\func f : A \\levels 0 _ => \\new A { | X => \\oo-Type0 }
+      """, 1);
   }
 
   @Test
@@ -254,35 +259,38 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void idTest() {
-    typeCheckModule(
-      "\\class Functor (F : \\Type -> \\Type)\n" +
-      "  | fmap {A B : \\Type} : (A -> B) -> F A -> F B\n" +
-      "\n" +
-      "\\data Maybe (A : \\Type) | nothing | just A\n" +
-      "\\func id' {A : \\Type} (a : A) => a\n" +
-      "\\func idTest : \\Type1 => id' (\\suc \\lp) (Functor Maybe)", 1);
+    typeCheckModule("""
+      \\class Functor (F : \\Type -> \\Type)
+        | fmap {A B : \\Type} : (A -> B) -> F A -> F B
+
+      \\data Maybe (A : \\Type) | nothing | just A
+      \\func id' {A : \\Type} (a : A) => a
+      \\func idTest : \\Type1 => id' (\\suc \\lp) (Functor Maybe)
+      """, 1);
   }
 
   @Test
   public void idTest2() {
-    typeCheckModule(
-      "\\class Functor (F : \\Type -> \\Type)\n" +
-      "  | fmap {A B : \\Type} : (A -> B) -> F A -> F B\n" +
-      "\n" +
-      "\\data Maybe (A : \\Type) | nothing | just A\n" +
-      "\\func id' {A : \\Type} (a : A) => a\n" +
-      "\\func idTest : \\Type1 => id' (\\suc (\\suc \\lp)) (Functor Maybe)");
+    typeCheckModule("""
+      \\class Functor (F : \\Type -> \\Type)
+        | fmap {A B : \\Type} : (A -> B) -> F A -> F B
+
+      \\data Maybe (A : \\Type) | nothing | just A
+      \\func id' {A : \\Type} (a : A) => a
+      \\func idTest : \\Type1 => id' (\\suc (\\suc \\lp)) (Functor Maybe)
+      """);
   }
 
   @Test
   public void idTest3() {
-    typeCheckModule(
-      "\\class Functor (F : \\Type -> \\Type)\n" +
-      "  | fmap {A B : \\Type} : (A -> B) -> F A -> F B\n" +
-      "\n" +
-      "\\data Maybe (A : \\Type) | nothing | just A\n" +
-      "\\func id' {A : \\Type} (a : A) => a\n" +
-      "\\func idTest => id' (\\suc (\\suc \\lp)) (Functor Maybe)");
+    typeCheckModule("""
+      \\class Functor (F : \\Type -> \\Type)
+        | fmap {A B : \\Type} : (A -> B) -> F A -> F B
+
+      \\data Maybe (A : \\Type) | nothing | just A
+      \\func id' {A : \\Type} (a : A) => a
+      \\func idTest => id' (\\suc (\\suc \\lp)) (Functor Maybe)
+      """);
   }
 
   @Test
@@ -294,10 +302,11 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void dataLevelsTest2() {
-    typeCheckModule(
-      "\\data D | con \\Type\n" +
-      "\\func fromD (d : D) : \\Type | con A => A\n" +
-      "\\func ddd : \\Type0 => fromD (con \\Type0)", 1);
+    typeCheckModule("""
+      \\data D | con \\Type
+      \\func fromD (d : D) : \\Type | con A => A
+      \\func ddd : \\Type0 => fromD (con \\Type0)
+      """, 1);
   }
 
   @Test
@@ -320,64 +329,63 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldTest() {
-    typeCheckModule(
-      "\\record R\n" +
-      "  | f : \\Type -> \\Type\n" +
-      "\\record S\n" +
-      "  | inst : R\n" +
-      "  | func (X : \\oo-Type) : f {inst} X", 1);
+    typeCheckModule("""
+      \\record R
+        | f : \\Type -> \\Type
+      \\record S
+        | inst : R
+        | func (X : \\oo-Type) : f {inst} X
+      """, 1);
   }
 
   @Test
   public void setTest() {
-    typeCheckModule(
-      "\\func func (f : \\Type -> \\Type) => 0\n" +
-      "\\data Maybe (A : \\Type) | nothing | just A\n" +
-      "\\func test => func \\lp \\lh (\\lam X => Maybe X)", 1);
+    typeCheckModule("""
+      \\func func (f : \\Type -> \\Type) => 0
+      \\data Maybe (A : \\Type) | nothing | just A
+      \\func test => func \\lp \\lh (\\lam X => Maybe X)
+      """, 1);
   }
 
   @Test
   public void funcTest() {
-    typeCheckModule(
-      "\\data Bool | true | false\n" +
-      "\\func T (b : Bool) : \\Type\n" +
-      "  | true => Nat\n" +
-      "  | false => \\Sigma", 1);
+    typeCheckModule("""
+      \\data Bool | true | false
+      \\func T (b : Bool) : \\Type
+        | true => Nat
+        | false => \\Sigma
+      """, 1);
   }
 
   @Test
   public void funcTest2() {
-    typeCheckModule(
-      "\\data Bool | true | false\n" +
-      "\\func T (b : Bool) : \\Set\n" +
-      "  | true => Nat\n" +
-      "  | false => \\Sigma\n" +
-      "\\func test (b : Bool) : \\Prop => T b", 1);
+    typeCheckModule("""
+      \\data Bool | true | false
+      \\func T (b : Bool) : \\Set
+        | true => Nat
+        | false => \\Sigma
+      \\func test (b : Bool) : \\Prop => T b
+      """, 1);
     assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
   public void pathTest() {
-    typeCheckModule(
-      "\\func eq {A : \\Type} (x y : A) => x = y\n" +
-      "\\func id {A : \\Prop} (a : A) => a\n" +
-      "\\func test {A : \\Set} {x y : A} (p : eq x y) => id p");
+    typeCheckModule("""
+      \\func eq {A : \\Type} (x y : A) => x = y
+      \\func id {A : \\Prop} (a : A) => a
+      \\func test {A : \\Set} {x y : A} (p : eq x y) => id p
+      """);
   }
 
   @Test
   public void pathTest2() {
-    typeCheckModule(
-      "\\data Test {A : \\Type} (x y : A)\n" +
-      "  | con (x = y)\n" +
-      "\\func test {A : \\Set} {x y : A} (t s : Test x y) : t = s \\elim t, s\n" +
-      "  | con p, con q => path (\\lam i => con (Path.inProp p q @ i))");
-  }
-
-  @Test
-  public void pathPropTest() {
-    typeCheckModule(
-      "\\lemma test {A B : \\Prop} (f : A -> B) (g : B -> A) : A = B\n" +
-      "  => path (iso f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
+    typeCheckModule("""
+      \\data Test {A : \\Type} (x y : A)
+        | con (x = y)
+      \\func test {A : \\Type} (As : \\Pi {a a' : A} (p q : a = a') -> p = q) {x y : A} (t s : Test x y) : t = s \\elim t, s
+        | con p, con q => path (\\lam i => con (As p q @ i))
+      """);
   }
 
   @Test
@@ -388,18 +396,20 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void recordTest() {
-    typeCheckModule(
-      "\\record R (A : \\Type) (a : A) (p : a = a)\n" +
-      "\\lemma test {A : \\Set} (a : A) : R A a \\cowith\n" +
-      "  | p => idp");
+    typeCheckModule("""
+      \\record R (A : \\Type) (a : A) (p : a = a)
+      \\lemma test {A : \\Set} (a : A) : R A a \\cowith
+        | p => idp
+      """);
   }
 
   @Test
   public void fieldLevelTest() {
-    typeCheckModule(
-      "\\record SomeSigma (A : \\Type) (J : \\Set)\n" +
-      "\\class SomeWrapper (X : SomeSigma Nat)\n" +
-      "\\func test (w : SomeWrapper) : \\Type => w.X.J");
+    typeCheckModule("""
+      \\record SomeSigma (A : \\Type) (J : \\Set)
+      \\class SomeWrapper (X : SomeSigma Nat)
+      \\func test (w : SomeWrapper) : \\Type => w.X.J
+      """);
   }
 
   @Ignore
@@ -423,42 +433,46 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void transitivityTest() {
-    typeCheckModule(
-      "\\class C (A : \\hType) (a : A)\n" +
-      "\\data Wrap (A : \\hType) | wrap A\n" +
-      "\\func foo {A : \\hType} (c : C (Wrap A)) => c.a\n" +
-      "\\func test {A : \\hType} (c : C (Wrap (\\suc \\lp) A)) => foo c");
+    typeCheckModule("""
+      \\class C (A : \\hType) (a : A)
+      \\data Wrap (A : \\hType) | wrap A
+      \\func foo {A : \\hType} (c : C (Wrap A)) => c.a
+      \\func test {A : \\hType} (c : C (Wrap (\\suc \\lp) A)) => foo c
+      """);
   }
 
   @Test
   public void transitivityTest2() {
-    typeCheckModule(
-      "\\class C {A : \\hType} (a : A)\n" +
-      "\\data Wrap (A : \\hType) | wrap A\n" +
-      "\\class D (B : \\hType) \\extends C\n" +
-      "  | A => Wrap B\n" +
-      "\\func foo (d : D) => d.a\n" +
-      "\\func test {B : \\hType} (d : D (\\suc \\lp) { | B => B }) => foo d");
+    typeCheckModule("""
+      \\class C {A : \\hType} (a : A)
+      \\data Wrap (A : \\hType) | wrap A
+      \\class D (B : \\hType) \\extends C
+        | A => Wrap B
+      \\func foo (d : D) => d.a
+      \\func test {B : \\hType} (d : D (\\suc \\lp) { | B => B }) => foo d
+      """);
   }
 
   @Test
   public void transitivityTest3() {
-    typeCheckModule(
-      "\\class C (A : \\hType) (a : A)\n" +
-      "\\data Wrap (A : \\hType) | wrap A\n" +
-      "\\func test1 {A : \\hType} (c : C (Wrap (\\suc \\lp) A)) : C (Wrap \\lp A) => c\n" +
-      "\\func test2 {A : \\hType} (c : C (Wrap \\lp A)) : C \\lp => c\n" +
-      "\\func test {A : \\hType} (c : C (Wrap (\\suc \\lp) A)) : C \\lp => c");
+    typeCheckModule("""
+      \\class C (A : \\hType) (a : A)
+      \\data Wrap (A : \\hType) | wrap A
+      \\func test1 {A : \\hType} (c : C (Wrap (\\suc \\lp) A)) : C (Wrap \\lp A) => c
+      \\func test2 {A : \\hType} (c : C (Wrap \\lp A)) : C \\lp => c
+      \\func test {A : \\hType} (c : C (Wrap (\\suc \\lp) A)) : C \\lp => c
+      """);
   }
 
   @Test
   public void transitivityTest4() {
-    typeCheckModule(
-      "\\class C {A : \\hType} (a : A)\n" +
-      "\\class D \\extends C\n" +
-      "  | A => Nat\n" +
-      "\\class E (B : \\hType) \\extends D\n" +
-      "\\func test1 (e : E (\\suc \\lp)) : D \\lp => e", 1);
+    typeCheckModule("""
+      \\class C {A : \\hType} (a : A)
+      \\class D \\extends C
+        | A => Nat
+      \\class E (B : \\hType) \\extends D
+      \\func test1 (e : E (\\suc \\lp)) : D \\lp => e
+      """, 1);
     assertThatErrorsAre(typeMismatchError());
   }
 }

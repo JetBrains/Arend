@@ -336,7 +336,9 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void revealing3() {
-    testRevealing("\\class A { | f {n : Nat} : n = 1 } \\func e (q : A) : q.f = idp => Path.inProp _ _",
+    testRevealing(
+      "\\class A { | f {n : Nat} : n = 1 }\n" +
+      "\\func e (q : A) (p : q.f = idp) : q.f = idp => p",
             (group) -> ((FunctionDefinition) getDefinition(group, "e")).getResultType(),
             "q.f {1} = idp",
             (result) -> result.cast(FunCallExpression.class).getDefCallArguments().get(1).cast(AppExpression.class).getFunction());

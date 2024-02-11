@@ -17,94 +17,103 @@ import static org.junit.Assert.*;
 public class ClassFieldPropertyTest extends TypeCheckingTestCase {
   @Test
   public void nonPropPropertyError() {
-    typeCheckModule(
-      "\\class C {\n" +
-      "  \\property p : Nat\n" +
-      "}", 1);
+    typeCheckModule("""
+      \\class C {
+        \\property p : Nat
+      }
+      """, 1);
     assertThatErrorsAre(typecheckingError(LevelMismatchError.class));
   }
 
   @Test
   public void propertyTest() {
-    typeCheckModule(
-      "\\class C {\n" +
-      "  \\property p : 0 = 0\n" +
-      "}");
+    typeCheckModule("""
+      \\class C {
+        \\property p : 0 = 0
+      }
+      """);
   }
 
   @Test
   public void propertyNewEvalTest() {
-    typeCheckModule(
-      "\\class C {\n" +
-      "  | p : 0 = 0\n" +
-      "}\n" +
-      "\\func foo (x : 0 = 0) : p {\\new C x} = x => idp", 1);
+    typeCheckModule("""
+      \\class C {
+        | p : 0 = 0
+      }
+      \\func foo (x : 0 = 0) : p {\\new C x} = x => idp
+      """, 1);
     assertThatErrorsAre(typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
   public void propertyFunctionEvalTest() {
-    typeCheckModule(
-      "\\class C {\n" +
-      "  | p : 0 = 0\n" +
-      "}\n" +
-      "\\lemma inst : C \\cowith | p => idp\n" +
-      "\\func foo : p {inst} = idp => idp", 1);
+    typeCheckModule("""
+      \\class C {
+        | p : 0 = 0
+      }
+      \\lemma inst : C \\cowith | p => idp
+      \\func foo : p {inst} = idp => idp
+      """, 1);
     assertThatErrorsAre(typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
   public void classesTest() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  | p : 0 = 0 -> 0 = 0 -> 0 = 0\n" +
-      "}\n" +
-      "\\class B \\extends A {\n" +
-      "  | p x y => x\n" +
-      "}\n" +
-      "\\class C \\extends A {\n" +
-      "  | p x y => y\n" +
-      "}\n" +
-      "\\class D \\extends B,C");
+    typeCheckModule("""
+      \\class A {
+        | p : 0 = 0 -> 0 = 0 -> 0 = 0
+      }
+      \\class B \\extends A {
+        | p x y => x
+      }
+      \\class C \\extends A {
+        | p x y => y
+      }
+      \\class D \\extends B,C
+      """);
   }
 
   @Test
   public void propertySetLevel() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  \\property f : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q)\n" +
-      "}", 1);
+    typeCheckModule("""
+      \\class A (X : \\Type) (Xs : \\Pi (x x' : X) (p q : x = x') -> p = q) {
+        \\property f : \\level X Xs
+      }
+      """, 1);
     assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
   public void propertyLevel() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  \\property f (A : \\Type) (p : \\Pi (x y : A) -> x = y) : \\level A p\n" +
-      "}");
+    typeCheckModule("""
+      \\class A {
+        \\property f (A : \\Type) (p : \\Pi (x y : A) -> x = y) : \\level A p
+      }
+      """);
     assertEquals(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR)), ((ClassDefinition) getDefinition("A")).getSort());
   }
 
   @Test
   public void propertyLevel2() {
-    typeCheckModule(
-      "\\class A {\n" +
-      "  | f (A : \\Type) : \\level ((\\Pi (x y : A) -> x = y) -> A) (\\lam (f g : (\\Pi (x y : A) -> x = y) -> A) => path (\\lam i (p : \\Pi (x y : A) -> x = y) => p (f p) (g p) @ i))\n" +
-      "}");
+    typeCheckModule("""
+      \\class A {
+        | f (A : \\Type) : \\level ((\\Pi (x y : A) -> x = y) -> A) (\\lam (f g : (\\Pi (x y : A) -> x = y) -> A) => path (\\lam i (p : \\Pi (x y : A) -> x = y) => p (f p) (g p) @ i))
+      }
+      """);
     assertTrue(((ClassField) getDefinition("A.f")).isProperty());
   }
 
   @Test
   public void fieldLevelTest() {
-    typeCheckModule(
-      "\\data S1 | base | loop : base = base\n" +
-      "\\record R {\n" +
-      "  \\field foo (A : \\Type) (a : A) (p : \\Pi (x y : A) -> x = y) (x : S1) : A\n" +
-      "    \\level \\lam a a' => path (\\lam i => p a a' @ i)\n" +
-      "}\n" +
-      "\\func test : R \\cowith\n" +
-      "  | foo A a _ (base) => a");
+    typeCheckModule("""
+      \\data S1 | base | loop : base = base
+      \\record R {
+        \\field foo (A : \\Type) (a : A) (p : \\Pi (x y : A) -> x = y) (x : S1) : A
+          \\level \\lam a a' => path (\\lam i => p a a' @ i)
+      }
+      \\func test : R \\cowith
+        | foo A a _ (base) => a
+      """);
     assertFalse(((ClassField) getDefinition("R.foo")).isProperty());
   }
 }

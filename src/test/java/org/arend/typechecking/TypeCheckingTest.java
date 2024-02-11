@@ -67,12 +67,13 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void testEither() {
-    typeCheckModule(
-        "\\data Either (A B : \\Type0) | inl A | inr B\n" +
-        "\\func fun {A B : \\Type0} (e : Either A B) : \\Set0 \\elim e\n" +
-        "  | inl _ => Nat\n" +
-        "  | inr _ => Nat\n" +
-        "\\func test : fun (inl {Nat} {Nat} 0) => 0");
+    typeCheckModule("""
+      \\data Either (A B : \\Type0) | inl A | inr B
+      \\func fun {A B : \\Type0} (e : Either A B) : \\Set0 \\elim e
+        | inl _ => Nat
+        | inr _ => Nat
+      \\func test : fun (inl {Nat} {Nat} 0) => 0
+      """);
   }
 
   @Test
@@ -107,19 +108,21 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void universeInference() {
-    typeCheckModule(
-        "\\func transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a)\n" +
-        "  => coe (\\lam i => B (p @ i)) b right\n" +
-        "\\func foo (A : \\1-Type0) (B : A -> \\Type0) (a a' : A) (p : a = a') => transport B p");
+    typeCheckModule("""
+      \\func transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a)
+        => coe (\\lam i => B (p @ i)) b right
+      \\func foo (A : \\1-Type0) (B : A -> \\Type0) (a a' : A) (p : a = a') => transport B p
+      """);
   }
 
   @Test
   public void definitionsWithErrors() {
-    resolveNamesModule(
-        "\\class C {\n" +
-        "  | A : X\n" +
-        "  | a : (\\lam (x : Nat) => Nat) A\n" +
-        "}", 1);
+    resolveNamesModule("""
+      \\class C {
+        | A : X
+        | a : (\\lam (x : Nat) => Nat) A
+      }
+      """, 1);
   }
 
   @Test
@@ -140,10 +143,11 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorExpectedTypeMismatch() {
-    typeCheckModule(
-        "\\data Foo\n" +
-        "\\data Bar Nat \\with | suc n => bar (n = n)\n" +
-        "\\func foo : Foo => bar (path (\\lam _ => zero))", 1);
+    typeCheckModule("""
+      \\data Foo
+      \\data Bar Nat \\with | suc n => bar (n = n)
+      \\func foo : Foo => bar (path (\\lam _ => zero))
+      """, 1);
   }
 
   @Test
@@ -182,11 +186,12 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void duplicateFieldName() {
-    resolveNamesModule(
-      "\\class A {\n" +
-      "  | x : Nat\n" +
-      "  | x : Nat\n" +
-      "}", 1);
+    resolveNamesModule("""
+      \\class A {
+        | x : Nat
+        | x : Nat
+      }
+      """, 1);
     assertThatErrorsAre(error());
   }
 
@@ -197,41 +202,9 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void isoProp() {
-    typeCheckModule(
-      "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) =>\n" +
-      "  path {\\lam _ => \\Prop} (iso f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
-    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
-  }
-
-  @Test
   public void isoSet2() {
     typeCheckModule("\\func setExt (A B : \\Set) (f : A -> B) (g : B -> A) (p : \\Pi (x : A) -> g (f x) = x) (q : \\Pi (y : B) -> f (g y) = y) : A = {\\Set} B => path (iso f g p q)");
     assertEquals(new UniverseExpression(Sort.SetOfLevel(new Level(LevelVariable.PVAR))), ((FunctionDefinition) getDefinition("setExt")).getResultType().cast(FunCallExpression.class).getDefCallArguments().get(0));
-  }
-
-  @Test
-  public void isoProp2() {
-    typeCheckModule(
-      "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) : A = {\\Prop} B =>\n" +
-      "  path (iso f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
-    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().cast(FunCallExpression.class).getDefCallArguments().get(0));
-  }
-
-  @Test
-  public void isoPropExplicit() {
-    typeCheckModule(
-      "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) =>\n" +
-      "  path {\\lam _ => \\Prop} (iso \\levels 0 -1 f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
-    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
-  }
-
-  @Test
-  public void isoPropExplicit2() {
-    typeCheckModule(
-      "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) : A = {\\Prop} B =>\n" +
-      "  path (iso \\levels 0 -1 f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
-    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().cast(FunCallExpression.class).getDefCallArguments().get(0));
   }
 
   @Test
@@ -276,12 +249,12 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void testGoalWithArgsUnderElim() {
-    typeCheckModule(
-            "\\data sample\n" +
-                    "  | cons (1 = 1)\n" +
-                    "\n" +
-                    "\\func insert-comm (x : sample) : Nat \\elim x\n" +
-                    "  | cons e => {?} e", 1);
+    typeCheckModule("""
+      \\data sample
+        | cons (1 = 1)
+      \\func insert-comm (x : sample) : Nat \\elim x
+        | cons e => {?} e
+      """, 1);
     GoalErrorExpression goal = Objects.requireNonNull(((ElimBody)
             Objects.requireNonNull(
                     Objects.requireNonNull((
@@ -293,16 +266,15 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void testGoalWithArgsUnderElimAndClass() {
-    typeCheckModule(
-            "\\class StrictPoset (E : \\Set) {\n" +
-                    "  | \\infix 4 < : E -> E -> \\Prop\n" +
-                    "}\n" +
-                    "\n" +
-                    "\\data Tri' {A : StrictPoset} (a a' : A)\n" +
-                    "  | less (a < a')\n" +
-                    "\n" +
-                    "\\func insert-comm {A : StrictPoset} (a a' : A) (x : Tri' a a')\n" +
-                    "  : Nat \\elim x | less a<a' => {?} a<a'", 1);
+    typeCheckModule("""
+      \\class StrictPoset (E : \\Set) {
+        | \\infix 4 < : E -> E -> \\Prop
+      }
+      \\data Tri' {A : StrictPoset} (a a' : A)
+        | less (a < a')
+      \\func insert-comm {A : StrictPoset} (a a' : A) (x : Tri' a a')
+        : Nat \\elim x | less a<a' => {?} a<a'
+      """, 1);
     GoalErrorExpression goal = Objects.requireNonNull(((ElimBody)
             Objects.requireNonNull(
                     Objects.requireNonNull((

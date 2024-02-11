@@ -33,73 +33,80 @@ public class LemmaTest extends TypeCheckingTestCase {
 
   @Test
   public void lemmaRecursive() {
-    typeCheckModule(
-      "\\lemma f (n : Nat) : 0 Nat.+ n = n\n" +
-      "  | 0 => idp\n" +
-      "  | suc n => path (\\lam i => suc (f n @ i))");
+    typeCheckModule("""
+      \\lemma f (n : Nat) : 0 Nat.+ n = n
+        | 0 => idp
+        | suc n => path (\\lam i => suc (f n @ i))
+      """);
   }
 
   @Test
   public void lemmaNotPropRecursive() {
-    typeCheckModule(
-      "\\lemma f (n : Nat) : Nat\n" +
-      "  | 0 => 0\n" +
-      "  | suc n => n", 1);
+    typeCheckModule("""
+      \\lemma f (n : Nat) : Nat
+        | 0 => 0
+        | suc n => n
+      """, 1);
     assertThatErrorsAre(typecheckingError(LevelMismatchError.class));
   }
 
   @Test
   public void lemmaCowith() {
-    typeCheckModule(
-      "\\class C (n m : Nat)\n" +
-      "\\lemma f : C \\cowith\n" +
-      "  | n => 0\n" +
-      "  | m => 1", 1);
+    typeCheckModule("""
+      \\class C (n m : Nat)
+      \\lemma f : C \\cowith
+        | n => 0
+        | m => 1
+      """, 1);
     assertThatErrorsAre(typecheckingError(LevelMismatchError.class));
   }
 
   @Test
   public void lemmaNew() {
-    typeCheckModule(
-      "\\class C (n m : Nat)\n" +
-      "\\lemma f => \\new C {\n" +
-      "  | n => 0\n" +
-      "  | m => 1\n" +
-      "}");
+    typeCheckModule("""
+      \\class C (n m : Nat)
+      \\lemma f => \\new C {
+        | n => 0
+        | m => 1
+      }
+      """);
   }
 
   @Test
   public void lemmaCowithFieldProp() {
-    typeCheckModule(
-      "\\class C (n : Nat) { \\field x : 0 = 0 }\n" +
-      "\\lemma f : C 0 \\cowith\n" +
-      "  | x => idp\n" +
-      "\\func g : f.x = idp => idp", 1);
+    typeCheckModule("""
+      \\class C (n : Nat) { \\field x : 0 = 0 }
+      \\lemma f : C 0 \\cowith
+        | x => idp
+      \\func g : f.x = idp => idp
+      """, 1);
     assertThatErrorsAre(typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
   public void lemmaLevel() {
-    typeCheckModule(
-      "\\data Empty\n" +
-      "\\data Bool | true | false\n" +
-      "\\func E (b : Bool) : \\Set0 | true => Empty | false => Empty\n" +
-      "\\func E-isProp (b : Bool) (x y : E b) : x = y \\elim b, x | true, () | false, ()\n" +
-      "\\lemma f (b : Bool) (x : E b) : \\level (E b) (E-isProp b) => x");
+    typeCheckModule("""
+      \\data Empty
+      \\data Bool | true | false
+      \\func E (b : Bool) : \\Set0 | true => Empty | false => Empty
+      \\func E-isProp (b : Bool) (x y : E b) : x = y \\elim b, x | true, () | false, ()
+      \\lemma f (b : Bool) (x : E b) : \\level (E b) (E-isProp b) => x
+      """);
   }
 
   @Test
   public void lemmaLevelError() {
-    typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q) => x", 2);
+    typeCheckModule("\\lemma f {X : \\Type} (Xs : \\Pi (x x' : X) (p q : x = x') -> p = q) (x : X) : \\level X Xs => x", 2);
     assertThatErrorsAre(typeMismatchError(), typecheckingError(LevelMismatchError.class));
   }
 
   @Test
   public void canBeLemmaTest() {
-    typeCheckModule(
-      "\\record R (x y : Nat) (p : x = x)\n" +
-      "\\func test : R { | x => 0 } \\cowith\n" +
-      "  | y => 1\n" +
-      "  | p => idp");
+    typeCheckModule("""
+      \\record R (x y : Nat) (p : x = x)
+      \\func test : R { | x => 0 } \\cowith
+        | y => 1
+        | p => idp
+      """);
   }
 }

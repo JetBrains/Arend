@@ -12,11 +12,6 @@ public class StrictPropTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void parametersTest() {
-    typeCheckDef("\\func f {A : \\Prop} (x y : A) : x = y => Path.inProp _ _");
-  }
-
-  @Test
   public void setError() {
     typeCheckDef("\\func f {A : \\Set0} (x y : A) : x = y => idp", 1);
   }
@@ -28,19 +23,9 @@ public class StrictPropTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void setPathTest() {
-    typeCheckDef("\\func f {A : \\Set} (x y : A) (p q : x = y) : p = q => Path.inProp _ _");
-  }
-
-  @Test
   public void setPiError() {
     typeCheckDef("\\func f {A : \\Set} (x y : A) : \\Pi (p q : = \\levels \\lp 0 x y) -> p = q => \\lam p q => idp", 1);
     assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
-  }
-
-  @Test
-  public void setPiTest() {
-    typeCheckDef("\\lemma f {A : \\Set} (x y : A) : \\Pi (p q : x = y) -> p = q => Path.inProp");
   }
 
   @Test
@@ -52,19 +37,21 @@ public class StrictPropTest extends TypeCheckingTestCase {
 
   @Test
   public void classUseLevelError() {
-    typeCheckModule(
-      "\\record B (X : \\Type) (p : \\Pi (x x' : X) -> x = x') (x0 : X)\n" +
-      " \\where \\use \\level levelProp {X : \\Type} {p : \\Pi (x x' : X) -> x = x'} (b b' : B X p) : b = b' => path (\\lam i => \\new B X p (p b.x0 b'.x0 @ i))\n" +
-      "\\func f {X : \\Type} {p : \\Pi (x x' : X) -> x = x'} (b b' : B X p) : b = {B X p} b' => idp", 1);
+    typeCheckModule("""
+      \\record B (X : \\Type) (p : \\Pi (x x' : X) -> x = x') (x0 : X)
+        \\where \\use \\level levelProp {X : \\Type} {p : \\Pi (x x' : X) -> x = x'} (b b' : B X p) : b = b' => path (\\lam i => \\new B X p (p b.x0 b'.x0 @ i))
+      \\func f {X : \\Type} {p : \\Pi (x x' : X) -> x = x'} (b b' : B X p) : b = {B X p} b' => idp
+      """, 1);
     assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
   public void classUseLevelTest() {
-    typeCheckModule(
-      "\\record B (X : \\Type) (p : \\Pi (x x' : X) -> x = x') (x0 : X)\n" +
-      " \\where \\use \\level levelProp {X : \\Type} {p : \\Pi (x x' : X) -> x = x'} (b b' : B X p) : b = b' => path (\\lam i => \\new B X p (p b.x0 b'.x0 @ i))\n" +
-      "\\func f {X : \\Type} {p : \\Pi (x x' : X) -> x = x'} (b b' : B X p) : b = {B X p} b' => Path.inProp b b'");
+    typeCheckModule("""
+      \\record B (X : \\Type) (p : \\Pi (x x' : X) -> x = x') (x0 : X)
+        \\where \\use \\level levelProp {X : \\Type} {p : \\Pi (x x' : X) -> x = x'} (b b' : B X p) : b = b' => path (\\lam i => \\new B X p (p b.x0 b'.x0 @ i))
+      \\func f {X : \\Type} {p : \\Pi (x x' : X) -> x = x'} (b b' : B X p) : \\Prop => b = {B X p} b'
+      """);
   }
 
   @Test
