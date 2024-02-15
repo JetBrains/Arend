@@ -32,7 +32,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   private final TCReferable myDefinition;
   private GeneralError.Level myErrorLevel;
 
-  private ConcreteBuilder(ReferableConverter referableConverter, ErrorReporter errorReporter, TCReferable definition) {
+  protected ConcreteBuilder(ReferableConverter referableConverter, ErrorReporter errorReporter, TCReferable definition) {
     myReferableConverter = referableConverter;
     myDefinition = definition;
     myErrorReporter = new LocalErrorReporter(myDefinition, errorReporter) {
