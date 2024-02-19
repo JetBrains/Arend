@@ -1479,13 +1479,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                   for (ClassField field : classDef.getNotImplementedFields()) {
                     Levels fieldLevels = classCall.getLevels(field.getParentClass());
                     Expression impl = FieldCallExpression.make(field, result.expression).normalize(NormalizationMode.WHNF);
-                    Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
-                    if (oldImpl != null) {
-                      if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, classCall.getDefinition().getFieldType(field, fieldLevels, result.expression), pair.proj2.implementation)) {
+                    boolean isImplemented = resultClassCall.isImplemented(field);
+                    if (isImplemented && !field.isProperty()) {
+                      if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, resultClassCall.getImplementation(field, new ReferenceExpression(resultClassCall.getThisBinding())), classCall.getDefinition().getFieldType(field, fieldLevels, result.expression), pair.proj2.implementation)) {
                         errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
                       }
                     } else {
-                      if (!resultClassCall.isImplemented(field)) {
+                      if (!isImplemented) {
                         checkImplementationCycle(dfs, field, impl, false, resultClassCall, pair.proj2.implementation);
 
                         PiExpression overridden = baseClass.getOverriddenType(field);

@@ -769,4 +769,42 @@ public class ImplementTest extends TypeCheckingTestCase {
       """, 1);
     assertThatErrorsAre(Matchers.typecheckingError(IncorrectImplementationError.class));
   }
+
+  @Test
+  public void subclassTest() {
+    typeCheckModule("""
+      \\record R (X : \\Set)
+      \\record S (Y : \\Set) \\extends R
+        | X => Y
+      \\func test : S \\cowith
+        | R => \\new R Nat
+        | Y => Nat
+      """, 1);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("R.X"))));
+  }
+
+  @Test
+  public void subclassTest2() {
+    typeCheckModule("""
+      \\record R (X : \\Set)
+      \\record S (Y : \\Set) \\extends R
+        | X => Y
+      \\func test : S \\cowith
+        | Y => Nat
+        | R => \\new R Nat
+      """);
+  }
+
+  @Test
+  public void subclassTest3() {
+    typeCheckModule("""
+      \\record R (X : \\Set)
+      \\record S (Y : \\Set) \\extends R
+        | X => Y
+      \\func test : S \\cowith
+        | Y => Int
+        | R => \\new R Nat
+      """, 1);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("R.X"))));
+  }
 }
