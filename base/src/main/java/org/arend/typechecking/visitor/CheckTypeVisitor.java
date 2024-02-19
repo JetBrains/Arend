@@ -51,7 +51,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
-import org.arend.typechecking.FieldDFS;
+import org.arend.typechecking.dfs.FieldDFS;
 import org.arend.typechecking.LevelContext;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.TypecheckingContext;
@@ -67,8 +67,8 @@ import org.arend.typechecking.implicitargs.StdImplicitArgsInference;
 import org.arend.typechecking.implicitargs.equations.*;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
-import org.arend.typechecking.order.DFS;
-import org.arend.typechecking.order.MapDFS;
+import org.arend.typechecking.dfs.DFS;
+import org.arend.typechecking.dfs.MapDFS;
 import org.arend.typechecking.patternmatching.*;
 import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TResult;
@@ -1244,7 +1244,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (ref instanceof TCDefReferable && ((TCDefReferable) ref).getTypechecked() instanceof ClassDefinition classDef) {
         withoutUniverses = classDef.getUniverseKind() != UniverseKind.WITH_UNIVERSES;
         if (withoutUniverses && classDef.getUniverseKind() != UniverseKind.NO_UNIVERSES) {
-          Set<ClassField> implemented = new HashSet<>(classDef.getImplementedFields());
+          Set<ClassField> implemented = new HashSet<>();
           for (Concrete.ClassFieldImpl classFieldImpl : expr.getStatements()) {
             Referable fieldRef = classFieldImpl.getImplementedField();
             if (fieldRef instanceof TCDefReferable) {
@@ -1256,7 +1256,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
               }
             }
           }
-          for (ClassField field : classDef.getFields()) {
+          for (ClassField field : classDef.getNotImplementedFields()) {
             if (field.getUniverseKind() != UniverseKind.NO_UNIVERSES && !implemented.contains(field)) {
               withoutUniverses = false;
               break;
@@ -1287,6 +1287,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private void checkImplementationCycle(FieldDFS dfs, ClassField field, Expression implementation, boolean isFunc, ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
     Set<ClassField> fields = null;
+    Set<ClassField> allFields = classCall.getDefinition().getAllFields();
     if (isFunc) {
       Expression body = implementation;
       List<Binding> params = new ArrayList<>();
@@ -1306,12 +1307,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           }
         }
         if (ok) {
-          fields = FieldsCollector.getFields(funCall.getDefinition(), classCall.getThisBinding(), classCall.getDefinition().getFields());
+          fields = FieldsCollector.getFields(funCall.getDefinition(), classCall.getThisBinding(), allFields);
         }
       }
     }
     if (fields == null) {
-      fields = FieldsCollector.getFields(implementation, classCall.getThisBinding(), classCall.getDefinition().getFields());
+      fields = FieldsCollector.getFields(implementation, classCall.getThisBinding(), allFields);
     }
 
     List<ClassField> cycle = dfs.checkDependencies(field, fields);
@@ -1334,16 +1335,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       Definition definition = referableToDefinition(classFieldImpl.getImplementedField(), classFieldImpl);
       if (definition != null) {
         boolean ok = true;
-        if (definition instanceof ClassField) {
-          if (baseClass.getFields().contains(definition)) {
-            defined.add((ClassField) definition);
+        if (definition instanceof ClassField classField) {
+          if (baseClass.containsField(classField)) {
+            defined.add(classField);
           } else {
-            errorReporter.report(new IncorrectImplementationError((ClassField) definition, baseClass, classFieldImpl));
+            errorReporter.report(new IncorrectImplementationError(classField, baseClass, classFieldImpl));
             ok = false;
           }
         } else if (definition instanceof ClassDefinition) {
           if (baseClass.isSubClassOf((ClassDefinition) definition)) {
-            defined.addAll(((ClassDefinition) definition).getFields());
+            defined.addAll(((ClassDefinition) definition).getNotImplementedFields());
+            defined.addAll(((ClassDefinition) definition).getImplementedFields());
           } else {
             errorReporter.report(new IncorrectImplementationError((ClassDefinition) definition, baseClass, classFieldImpl));
             ok = false;
@@ -1357,8 +1359,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     FieldDFS dfs = new FieldDFS(resultClassCall.getDefinition());
     if (renewExpr != null) {
-      for (ClassField field : baseClass.getFields()) {
-        if (!defined.contains(field) && !resultClassCall.isImplemented(field)) {
+      for (ClassField field : baseClass.getNotImplementedFields()) {
+        if (!defined.contains(field) && !resultClassCall.isImplementedHere(field)) {
           Set<ClassField> found = FindDefCallVisitor.findDefinitions(field.getType().getCodomain(), defined);
           if (!found.isEmpty()) {
             Concrete.SourceNode sourceNode = null;
@@ -1407,7 +1409,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
       };
 
-      for (ClassField field : baseClass.getFields()) {
+      for (ClassField field : baseClass.getNotImplementedFields()) {
         implDfs.visit(field);
         AbsExpression defaultImpl = defaults.get(field);
         if (defaultImpl != null && !notDefault.contains(field)) {
@@ -1423,7 +1425,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           if (pair.proj1 instanceof ClassField) {
             resultClassCall.getImplementedHere().remove(pair.proj1);
           } else if (pair.proj1 instanceof ClassDefinition) {
-            resultClassCall.getImplementedHere().keySet().removeAll(((ClassDefinition) pair.proj1).getFields());
+            resultClassCall.getImplementedHere().keySet().removeAll(((ClassDefinition) pair.proj1).getNotImplementedFields());
+            resultClassCall.getImplementedHere().keySet().removeAll(((ClassDefinition) pair.proj1).getImplementedFields());
           }
         }
       }
@@ -1473,7 +1476,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                     errorReporter.report(new TypeMismatchError(new ClassCallExpression(classDef, resultClassCall.getLevels(classDef)), classCall, pair.proj2.implementation));
                     return null;
                   }
-                  for (ClassField field : classDef.getFields()) {
+                  for (ClassField field : classDef.getNotImplementedFields()) {
                     Levels fieldLevels = classCall.getLevels(field.getParentClass());
                     Expression impl = FieldCallExpression.make(field, result.expression).normalize(NormalizationMode.WHNF);
                     Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
@@ -1732,8 +1735,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     } else {
       int missingArgs = 0;
       List<FieldReferable> fields = new ArrayList<>(notImplemented);
-      for (ClassField field : classCall.getDefinition().getFields()) {
-        if (!classCall.isImplemented(field) && !pseudoImplemented.contains(field)) {
+      for (ClassField field : classCall.getDefinition().getNotImplementedFields()) {
+        if (!classCall.isImplementedHere(field) && !pseudoImplemented.contains(field)) {
           if (field.getReferable().isRealParameterField()) {
             missingArgs++;
           } else {
@@ -2166,8 +2169,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       classCall.setSort(Sort.PROP);
     } else {
       Sort maxSort = hLevel == null ? Sort.PROP : new Sort(new Level(0), new Level(hLevel));
-      for (ClassField field : classDef.getFields()) {
-        if (classCall.isImplemented(field)) continue;
+      for (ClassField field : classDef.getNotImplementedFields()) {
+        if (classCall.isImplementedHere(field)) continue;
         Expression fieldType = classDef.getFieldType(field, classDef.castLevels(field.getParentClass(), idLevels), thisExpr).normalize(NormalizationMode.WHNF);
         if (!fieldType.isInstance(ErrorExpression.class)) {
           maxSort = maxSort.max(getSortOfType(fieldType, sourceNode));
@@ -3200,12 +3203,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     // Convert class call with arguments to class extension.
     List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>();
-    List<ClassField> notImplementedFields = new ArrayList<>();
-    for (ClassField field : classDef.getFields()) {
-      if (!classDef.isImplemented(field)) {
-        notImplementedFields.add(field);
-      }
-    }
+    List<ClassField> notImplementedFields = new ArrayList<>(classDef.getNotImplementedFields());
 
     int j = 0;
     for (int i = 0; i < arguments.size(); i++, j++) {

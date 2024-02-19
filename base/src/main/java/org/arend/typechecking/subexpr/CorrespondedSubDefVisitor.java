@@ -46,7 +46,7 @@ public class CorrespondedSubDefVisitor implements
           return visitCoclauses(((Concrete.ClassExtExpression) classExpr).getCoclauses().getCoclauseList(), coreBody, coreResultType);
         }
       }
-      return term != null && coreBody instanceof Expression ? term.accept(visitor, (Expression) coreBody) : null;
+      return coreBody instanceof Expression ? term.accept(visitor, (Expression) coreBody) : null;
     } else if (body instanceof Concrete.ElimFunctionBody && coreBody instanceof ElimBody) {
       // Assume they have the same order.
       return visitor.visitElimTree(body.getClauses(), ((ElimBody) coreBody).getClauses());
@@ -119,10 +119,9 @@ public class CorrespondedSubDefVisitor implements
     else return null;
     var desugared = def.getStage().ordinal() >= Concrete.Stage.DESUGARIZED.ordinal();
     for (Concrete.ClassElement concreteRaw : def.getElements())
-      if (concreteRaw instanceof Concrete.ClassField) {
-        var concrete = (Concrete.ClassField) concreteRaw;
+      if (concreteRaw instanceof Concrete.ClassField concrete) {
         TCFieldReferable referable = concrete.getData();
-        Optional<Expression> field = coreDef.getFields()
+        Optional<Expression> field = coreDef.getAllFields()
           .stream()
           .filter(classField -> classField.getReferable() == referable)
           .map(ClassField::getResultType)
@@ -138,10 +137,9 @@ public class CorrespondedSubDefVisitor implements
           ? visitor.visitPiImpl(parameters, concrete.getResultType(), (PiExpression) fieldExpr)
           : concrete.getResultType().accept(visitor, fieldExpr);
         if (accept != null) return accept;
-      } else if (concreteRaw instanceof Concrete.ClassFieldImpl) {
-        var concrete = (Concrete.ClassFieldImpl) concreteRaw;
+      } else if (concreteRaw instanceof Concrete.ClassFieldImpl concrete) {
         Referable implementedField = concrete.getImplementedField();
-        Optional<AbsExpression> field = coreDef.getFields()
+        Optional<AbsExpression> field = coreDef.getImplementedFields()
             .stream()
             .filter(o -> o.getReferable() == implementedField)
             .findFirst()

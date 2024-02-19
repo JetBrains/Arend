@@ -227,7 +227,7 @@ public class CorrespondedSubExprVisitor implements
     Map<ClassField, Expression> implementedHere = coreClassCall.getImplementedHere();
     Concrete.Argument argument = arguments.next();
     ClassDefinition definition = coreClassCall.getDefinition();
-    for (ClassField field : definition.getFields()) {
+    for (ClassField field : definition.getNotImplementedFields()) {
       if (definition.isImplemented(field)) continue;
       if (argument.isExplicit() == field.getReferable().isExplicitField()) {
         Expression implementation = implementedHere.get(field);
@@ -300,8 +300,7 @@ public class CorrespondedSubExprVisitor implements
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     Expression body = coreExpr;
     for (Concrete.Parameter parameter : expr.getParameters()) {
-      if (body instanceof LamExpression) {
-        var coreLamExpr = (LamExpression) body;
+      if (body instanceof LamExpression coreLamExpr) {
         Concrete.Expression type = parameter.getType();
         if (type != null) {
           var ty = type.accept(this, coreLamExpr.getParameters().getTypeExpr());

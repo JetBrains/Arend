@@ -134,7 +134,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
   public Expression getArrayLength() {
     Expression dataExpr = getDataExpression();
-    return dataExpr instanceof FunCallExpression funCall && funCall.getDefinition() == Prelude.ARRAY_CONS && funCall.getDefCallArguments().size() >= 1 ? funCall.getDefCallArguments().get(0) : null;
+    return dataExpr instanceof FunCallExpression funCall && funCall.getDefinition() == Prelude.ARRAY_CONS && !funCall.getDefCallArguments().isEmpty() ? funCall.getDefCallArguments().get(0) : null;
   }
 
   public Binding getArrayThisBinding() {
@@ -145,7 +145,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     Expression dataExpr = getDataExpression();
     if (!(dataExpr instanceof FunCallExpression funCall)) return null;
     Definition def = funCall.getDefinition();
-    return def == Prelude.EMPTY_ARRAY && funCall.getDefCallArguments().size() >= 1 ? funCall.getDefCallArguments().get(0) :
+    return def == Prelude.EMPTY_ARRAY && !funCall.getDefCallArguments().isEmpty() ? funCall.getDefCallArguments().get(0) :
            def == Prelude.ARRAY_CONS  && funCall.getDefCallArguments().size() >= 2 ? funCall.getDefCallArguments().get(1) : null;
   }
 
@@ -231,8 +231,8 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
     resultClassCall.copyImplementationsFrom(classCall);
     int i = 0;
-    for (ClassField field : classCall.getDefinition().getFields()) {
-      if (!classCall.isImplemented(field)) {
+    for (ClassField field : classCall.getDefinition().getNotImplementedFields()) {
+      if (!classCall.isImplementedHere(field)) {
         implementations.put(field, arguments.get(i++));
       }
     }
@@ -364,8 +364,8 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       return null;
     }
     List<Expression> arguments = new ArrayList<>();
-    for (ClassField field : ((ClassCallExpression) dataExpr).getDefinition().getFields()) {
-      if (!((ClassCallExpression) dataExpr).isImplemented(field)) {
+    for (ClassField field : ((ClassCallExpression) dataExpr).getDefinition().getNotImplementedFields()) {
+      if (!((ClassCallExpression) dataExpr).isImplementedHere(field)) {
         arguments.add(newExpr.getImplementation(field));
       }
     }

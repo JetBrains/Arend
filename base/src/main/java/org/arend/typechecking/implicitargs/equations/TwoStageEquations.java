@@ -691,8 +691,8 @@ public class TwoStageEquations implements Equations {
       UniverseKind universeKind = classDef.getUniverseKind();
       if (universeKind != UniverseKind.NO_UNIVERSES) {
         universeKind = UniverseKind.NO_UNIVERSES;
-        for (ClassField field : classDef.getFields()) {
-          if (field.getUniverseKind() == UniverseKind.NO_UNIVERSES || classDef.isImplemented(field)) {
+        for (ClassField field : classDef.getNotImplementedFields()) {
+          if (field.getUniverseKind() == UniverseKind.NO_UNIVERSES) {
             continue;
           }
           boolean implemented = false;
@@ -891,8 +891,8 @@ public class TwoStageEquations implements Equations {
             }
           } */
           // if (ok) {
-            for (ClassField field : actualClassCall.getDefinition().getFields()) {
-              if (!actualClassCall.isImplemented(field) && (expectedClassCall.isImplemented(field) || var.isFieldImplemented(field))) {
+            for (ClassField field : actualClassCall.getDefinition().getNotImplementedFields()) {
+              if (!actualClassCall.isImplementedHere(field) && (expectedClassCall.isImplemented(field) || var.isFieldImplemented(field))) {
                 result = new NewExpression(result, actualClassCall);
                 actualType = result.getType();
                 break;

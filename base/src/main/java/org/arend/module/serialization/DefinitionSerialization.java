@@ -151,7 +151,7 @@ public class DefinitionSerialization implements ArendSerializer {
       builder.addPersonalField(fBuilder.build());
     }
 
-    for (ClassField classField : definition.getFields()) {
+    for (ClassField classField : definition.getNotImplementedFields()) {
       builder.addFieldRef(myCallTargetIndexProvider.getDefIndex(classField));
     }
     for (Map.Entry<ClassField, AbsExpression> impl : definition.getImplemented()) {

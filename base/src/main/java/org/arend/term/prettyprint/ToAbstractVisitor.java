@@ -246,7 +246,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (isExplicit) {
         Concrete.Expression mappedExpression = myRenamer.getConcreteExpression(refExpr.getBinding());
         if (mappedExpression != null) {
-          arguments.add(new Concrete.Argument(mappedExpression, isExplicit));
+          arguments.add(new Concrete.Argument(mappedExpression, true));
           return;
         }
         arguments.add(new Concrete.Argument(new Concrete.ThisExpression(arg, null), true));
@@ -289,7 +289,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     List<Level> hLevels;
     if (defCall instanceof LeveledDefCallExpression) {
       List<? extends LevelVariable> params = def.getLevelParameters();
-      LevelSubstitution subst = ((LeveledDefCallExpression) defCall).getLevelSubstitution();
+      LevelSubstitution subst = defCall.getLevelSubstitution();
       if (params == null) {
         pLevels = Collections.singletonList((Level) subst.get(LevelVariable.PVAR));
         hLevels = Collections.singletonList((Level) subst.get(LevelVariable.HVAR));
@@ -482,7 +482,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     boolean canBeArgument = arguments != null;
     int verboseLevel = myConfig.getVerboseLevel(expr);
     int implicitCounter = 0;
-    for (ClassField field : expr.getDefinition().getFields()) {
+    for (ClassField field : expr.getDefinition().getNotImplementedFields()) {
       implicitCounter += field.getReferable().isExplicitField() ? 0 : 1;
       Expression implementation = expr.getAbsImplementationHere(field);
       if (implementation != null) {
@@ -493,7 +493,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
           statements.add(cImplStatement(field.getReferable(), genGoal ? generateHiddenGoal(implementation) : convertExpr(implementation)));
           canBeArgument = false;
         }
-      } else if (canBeArgument && !expr.getDefinition().isImplemented(field)) {
+      } else if (canBeArgument) {
         canBeArgument = false;
       }
     }

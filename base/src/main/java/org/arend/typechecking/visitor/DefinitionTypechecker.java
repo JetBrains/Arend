@@ -35,7 +35,7 @@ import org.arend.prelude.Prelude;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.*;
-import org.arend.typechecking.FieldDFS;
+import org.arend.typechecking.dfs.FieldDFS;
 import org.arend.typechecking.LevelContext;
 import org.arend.typechecking.covariance.ParametersCovarianceChecker;
 import org.arend.typechecking.covariance.RecursiveDataChecker;
@@ -47,8 +47,8 @@ import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.LevelEquationsSolver;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
-import org.arend.typechecking.order.DFS;
-import org.arend.typechecking.order.MapDFS;
+import org.arend.typechecking.dfs.DFS;
+import org.arend.typechecking.dfs.MapDFS;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.ExtElimClause;
@@ -746,18 +746,19 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
+  private static void addFieldInstances(ClassDefinition classDef, List<LocalInstance> instances) {
+    classDef.forFields(field -> addFieldInstance(field, classDef, instances, false));
+  }
+
   private void addEnclosingClassInstances(Concrete.Definition def, Binding thisParam, LocalInstancePool localInstancePool) {
-    Definition classDef = def.enclosingClass.getTypechecked();
-    if (!(classDef instanceof ClassDefinition)) {
+    Definition definition = def.enclosingClass.getTypechecked();
+    if (!(definition instanceof ClassDefinition classDef)) {
       return;
     }
 
     List<LocalInstance> instances = new ArrayList<>();
-    for (ClassField field : ((ClassDefinition) classDef).getFields()) {
-      addFieldInstance(field, (ClassDefinition) classDef, instances, false);
-    }
-
-    addLocalInstances(instances, thisParam, (ClassDefinition) classDef, false, localInstancePool);
+    addFieldInstances(classDef, instances);
+    addLocalInstances(instances, thisParam, classDef, false, localInstancePool);
   }
 
   private void checkNoStrictParameters(List<? extends Concrete.Parameter> parameters) {
@@ -1259,8 +1260,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         Definition implDef = ref instanceof TCDefReferable ? ((TCDefReferable) ref).getTypechecked() : null;
         if (implDef instanceof ClassField) {
           implemented.add((ClassField) implDef);
-        } else if (implDef instanceof ClassDefinition) {
-          implemented.addAll(((ClassDefinition) implDef).getFields());
+        } else if (implDef instanceof ClassDefinition classDef) {
+          implemented.addAll(classDef.getNotImplementedFields());
+          implemented.addAll(classDef.getImplementedFields());
         }
       }
 
@@ -1340,8 +1342,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private ExpressionPattern checkDConstructor(ClassCallExpression type, NewExpression expr, Set<DependentLink> usedVars, Concrete.SourceNode sourceNode) {
     List<ExpressionPattern> patterns = new ArrayList<>();
-    for (ClassField field : type.getDefinition().getFields()) {
-      if (!type.isImplemented(field)) {
+    for (ClassField field : type.getDefinition().getNotImplementedFields()) {
+      if (!type.isImplementedHere(field)) {
         ExpressionPattern pattern = checkDConstructor(expr.getImplementation(field), usedVars, sourceNode);
         if (pattern == null) {
           return null;
@@ -1372,8 +1374,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               Definition refDef = ((TCDefReferable) ref).getTypechecked();
               if (refDef instanceof ClassField) {
                 concreteImpl.add((ClassField) refDef);
-              } else if (refDef instanceof ClassDefinition) {
-                concreteImpl.addAll(((ClassDefinition) refDef).getFields());
+              } else if (refDef instanceof ClassDefinition classDef) {
+                concreteImpl.addAll(classDef.getNotImplementedFields());
+                concreteImpl.addAll(classDef.getImplementedFields());
               }
             }
           }
@@ -1782,12 +1785,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         ClassCallExpression newClassCall = new ClassCallExpression(typeClassCall.getDefinition(), typeClassCall.getLevels(), newImpls, typeClassCall.getSort(), typeClassCall.getUniverseKind());
         Expression newThisBinding = new ReferenceExpression(newClassCall.getThisBinding());
         boolean allImpl = true;
-        for (ClassField field : typeClassCall.getDefinition().getFields()) {
+        for (ClassField field : typeClassCall.getDefinition().getNotImplementedFields()) {
           if (!field.isProperty()) {
             Expression impl = typeClassCall.getAbsImplementationHere(field);
             if (impl != null) {
               newImpls.put(field, impl.subst(typeClassCall.getThisBinding(), newThisBinding));
-            } else if (!typeClassCall.getDefinition().isImplemented(field)) {
+            } else {
               allImpl = false;
             }
           }
@@ -1804,7 +1807,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               Map<ClassField, Expression> newBodyImpls = new LinkedHashMap<>();
               ClassCallExpression newBodyClassCall = new ClassCallExpression(bodyClassCall.getDefinition(), bodyClassCall.getLevels(), newBodyImpls, bodyClassCall.getSort(), bodyClassCall.getUniverseKind());
               Expression newBodyThisBinding = new ReferenceExpression(newBodyClassCall.getThisBinding());
-              for (ClassField field : bodyClassCall.getDefinition().getFields()) {
+              for (ClassField field : bodyClassCall.getDefinition().getNotImplementedFields()) {
                 if (field.isProperty()) {
                   Expression impl = bodyClassCall.getAbsImplementationHere(field);
                   if (impl != null) {
@@ -1939,7 +1942,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (fieldDef instanceof ClassField && useParent instanceof ClassDefinition classDef) {
         Map<ClassField, Expression> defaultImpl = new LinkedHashMap<>();
         ClassCallExpression thisType = new ClassCallExpression(classDef, classDef.makeIdLevels(), defaultImpl, classDef.getSort(), classDef.getUniverseKind());
-        for (ClassField field : classDef.getFields()) {
+        for (ClassField field : classDef.getNotImplementedFields()) {
           Pair<AbsExpression, Boolean> defaultPair = classDef.getDefaultPair(field);
           if (defaultPair != null && defaultPair.proj2) {
             defaultImpl.put(field, defaultPair.proj1.apply(new ReferenceExpression(thisType.getThisBinding()), LevelSubstitution.EMPTY));
@@ -2658,7 +2661,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       if (myNewDef) {
-        typedDef.addFields(superClass.getFields());
+        typedDef.addFields(superClass.getNotImplementedFields());
         typedDef.addSuperClass(superClass);
       }
     }
@@ -2784,10 +2787,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    Set<ClassField> allFields = typedDef.getAllFields();
+
     // Check for cycles in implementations from super classes
     boolean checkImplementations = true;
     FieldDFS dfs = new FieldDFS(typedDef);
-    for (ClassField field : typedDef.getFields()) {
+    for (ClassField field : allFields) {
       List<ClassField> cycle = dfs.findCycle(field);
       if (cycle != null) {
         errorReporter.report(new FieldCycleError(cycle, def));
@@ -2809,7 +2814,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      for (ClassField field : typedDef.getFields()) {
+      for (ClassField field : allFields) {
         ClassDefinition originalSuperClass = null;
         PiExpression type = null;
         for (ClassDefinition superClass : typedDef.getSuperClasses()) {
@@ -2843,9 +2848,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     List<LocalInstance> localInstances = new ArrayList<>();
-    for (ClassField field : typedDef.getFields()) {
-      addFieldInstance(field, typedDef, localInstances, false);
-    }
+    addFieldInstances(typedDef, localInstances);
 
     fixClassElements(typedDef, def, def.getElements());
 
@@ -2883,7 +2886,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       } else if (element instanceof Concrete.ClassFieldImpl classFieldImpl) {
         ClassField field = typechecker.referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
-        if (field == null || !typedDef.getFields().contains(field)) {
+        if (field == null || !typedDef.containsField(field)) {
           if (field != null) {
             errorReporter.report(new IncorrectImplementationError(field, typedDef, classFieldImpl));
           }
@@ -2949,7 +2952,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         typechecker.getContext().clear();
 
         if (result != null && !classFieldImpl.isDefault()) {
-          List<ClassField> cycle = dfs.checkDependencies(field, FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
+          List<ClassField> cycle = dfs.checkDependencies(field, FieldsCollector.getFields(result.expression, thisBinding, typedDef.getAllFields()));
           if (cycle != null) {
             errorReporter.report(new FieldCycleError(cycle, def));
             checkImplementations = false;
@@ -2959,7 +2962,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (myNewDef) {
           boolean ok = true;
           if (result != null && classFieldImpl.isDefault()) {
-            Set<ClassField> dependencies = FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields());
+            Set<ClassField> dependencies = FieldsCollector.getFields(result.expression, thisBinding, typedDef.getAllFields());
             if (dependencies.contains(field)) {
               errorReporter.report(new TypecheckingError("The implementation depends on the field itself", classFieldImpl));
               ok = false;
@@ -3020,9 +3023,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     // Set fields covariance
-    Set<ClassField> covariantFields = new HashSet<>(typedDef.getFields());
+    allFields = typedDef.getAllFields();
+    Set<ClassField> covariantFields = new HashSet<>(allFields);
     ParametersCovarianceChecker checker = new ParametersCovarianceChecker(covariantFields);
-    for (ClassField field : typedDef.getFields()) {
+    for (ClassField field : allFields) {
       checker.check(field.getType().getCodomain());
       if (covariantFields.isEmpty()) {
         break;
@@ -3098,7 +3102,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (!typedDef.getOverriddenFields().isEmpty()) {
         Set<ClassField> superFields = new LinkedHashSet<>();
         for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-          superFields.addAll(superClass.getFields());
+          superFields.addAll(superClass.getNotImplementedFields());
         }
         for (ClassField field : superFields) {
           if (field.isProperty() || typedDef.isImplemented(field) || typedDef.isOverridden(field)) {
@@ -3126,7 +3130,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       if (baseUniverseKind != UniverseKind.WITH_UNIVERSES) {
         UniverseInParametersChecker checker1 = new UniverseInParametersChecker(def.getRecursiveDefinitions());
-        for (ClassField field : typedDef.getFields()) {
+        for (ClassField field : allFields) {
           baseUniverseKind = baseUniverseKind.max(checker1.getUniverseKind(field.getResultTypeFor(typedDef)));
           if (baseUniverseKind == UniverseKind.WITH_UNIVERSES) {
             break;
@@ -3149,8 +3153,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
       if (universeKind != UniverseKind.WITH_UNIVERSES) {
-        for (ClassField field : typedDef.getFields()) {
-          if (field.getUniverseKind().ordinal() > universeKind.ordinal() && !typedDef.isImplemented(field)) {
+        for (ClassField field : typedDef.getNotImplementedFields()) {
+          if (field.getUniverseKind().ordinal() > universeKind.ordinal()) {
             universeKind = field.getUniverseKind();
             if (universeKind == UniverseKind.WITH_UNIVERSES) {
               break;
@@ -3240,7 +3244,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         return null;
       }
 
-      if (typedDef.getParentClass() == parentClass || !parentClass.getFields().contains(typedDef)) {
+      if (typedDef.getParentClass() == parentClass || !parentClass.containsField(typedDef)) {
         errorReporter.report(new IncorrectImplementationError(typedDef, parentClass, def));
         return null;
       }
@@ -3446,8 +3450,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   public static void setDefaultDependencies(Concrete.ClassDefinition concreteDef) {
-    Definition classDef = concreteDef.getData().getTypechecked();
-    if (!(classDef instanceof ClassDefinition)) return;
+    Definition definition = concreteDef.getData().getTypechecked();
+    if (!(definition instanceof ClassDefinition classDef)) return;
     Map<FunctionDefinition, ClassField> funcMap = new HashMap<>();
     for (Concrete.ClassElement element : concreteDef.getElements()) {
       if (element instanceof Concrete.CoClauseFunctionReference) {
@@ -3479,11 +3483,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         for (FunctionDefinition func : visitor.getFoundDefinitions()) {
           ClassField field2 = funcMap.get(func);
           if (field2 != null) {
-            ((ClassDefinition) classDef).addDefaultDependency(field2, entry.getValue());
+            classDef.addDefaultDependency(field2, entry.getValue());
           }
         }
       }
-      ((ClassDefinition) classDef).addDefaultImplDependencies(entry.getValue(), FieldsCollector.getFields(entry.getKey().getActualBody(), entry.getKey().getParameters(), ((ClassDefinition) classDef).getFields(), functions));
+      classDef.addDefaultImplDependencies(entry.getValue(), FieldsCollector.getFields(entry.getKey().getActualBody(), entry.getKey().getParameters(), classDef.getAllFields(), functions));
     }
   }
 

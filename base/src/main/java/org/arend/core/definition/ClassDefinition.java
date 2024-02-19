@@ -15,14 +15,16 @@ import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.ext.util.Pair;
+import org.arend.typechecking.dfs.ClassDFS;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class ClassDefinition extends TopLevelDefinition implements CoreClassDefinition {
   private final Set<ClassDefinition> mySuperClasses = new LinkedHashSet<>();
-  private final LinkedHashSet<ClassField> myFields = new LinkedHashSet<>();
+  private final LinkedHashSet<ClassField> myNotImplementedFields = new LinkedHashSet<>();
   private final List<ClassField> myPersonalFields = new ArrayList<>();
   private final Map<ClassField, AbsExpression> myImplemented = new HashMap<>();
   private final Map<ClassField, Pair<AbsExpression,Boolean>> myDefaults = new HashMap<>();
@@ -181,8 +183,8 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
     ReferenceExpression thisExpr = new ReferenceExpression(ExpressionFactory.parameter("this", new ClassCallExpression(this, levels, Collections.emptyMap(), mySort, getUniverseKind())));
     Sort sort = Sort.PROP;
 
-    for (ClassField field : myFields) {
-      if (myImplemented.containsKey(field) || implemented.containsKey(field)) {
+    for (ClassField field : myNotImplementedFields) {
+      if (implemented.containsKey(field)) {
         continue;
       }
 
@@ -254,14 +256,38 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
 
   @NotNull
   @Override
-  public Set<? extends ClassField> getFields() {
-    return myFields;
+  public Set<? extends ClassField> getNotImplementedFields() {
+    return myNotImplementedFields;
+  }
+
+  public Set<ClassField> getAllFields() {
+    LinkedHashSet<ClassField> fields = new LinkedHashSet<>();
+    fields.addAll(myNotImplementedFields);
+    fields.addAll(myImplemented.keySet());
+    return fields;
+  }
+
+  public void forFields(Consumer<ClassField> consumer) {
+    new ClassDFS() {
+      @Override
+      protected Void forDependencies(ClassDefinition classDef) {
+        super.forDependencies(classDef);
+        for (ClassField field : classDef.getPersonalFields()) {
+          consumer.accept(field);
+        }
+        return null;
+      }
+    }.visit(this);
   }
 
   @NotNull
   @Override
   public List<? extends ClassField> getPersonalFields() {
     return myPersonalFields;
+  }
+
+  public boolean containsField(ClassField field) {
+    return myNotImplementedFields.contains(field) || myImplemented.containsKey(field);
   }
 
   public boolean isCovariantField(ClassField field) {
@@ -277,11 +303,11 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
   }
 
   public int getNumberOfNotImplementedFields() {
-    return myFields.size() - myImplemented.size();
+    return myNotImplementedFields.size();
   }
 
   public void addField(ClassField field) {
-    myFields.add(field);
+    myNotImplementedFields.add(field);
   }
 
   public void addPersonalField(ClassField field) {
@@ -289,7 +315,7 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
   }
 
   public void addFields(Collection<? extends ClassField> fields) {
-    myFields.addAll(fields);
+    myNotImplementedFields.addAll(fields);
   }
 
   @Override
@@ -303,6 +329,8 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
     return myImplemented.entrySet();
   }
 
+  @NotNull
+  @Override
   public Set<? extends ClassField> getImplementedFields() {
     return myImplemented.keySet();
   }
@@ -313,6 +341,7 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
   }
 
   public AbsExpression implementField(ClassField field, AbsExpression impl) {
+    myNotImplementedFields.remove(field);
     return myImplemented.putIfAbsent(field, impl);
   }
 
@@ -408,16 +437,6 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
   }
 
   @Override
-  public CoreClassField findField(@NotNull String name) {
-    for (ClassField field : getFields()) {
-      if (field.getName().equals(name)) {
-        return field;
-      }
-    }
-    return null;
-  }
-
-  @Override
   public boolean isOverridden(@NotNull CoreClassField field) {
     return field instanceof ClassField && myOverridden.containsKey(field);
   }
@@ -482,7 +501,7 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
 
   public void clear() {
     mySuperClasses.clear();
-    myFields.clear();
+    myNotImplementedFields.clear();
     myPersonalFields.clear();
     myImplemented.clear();
     myOverridden.clear();

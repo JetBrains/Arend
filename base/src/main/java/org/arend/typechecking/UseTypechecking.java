@@ -17,7 +17,7 @@ import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.CoerceCycleError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
-import org.arend.typechecking.order.DFS;
+import org.arend.typechecking.dfs.DFS;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.ext.util.Pair;
 
@@ -30,11 +30,10 @@ public class UseTypechecking {
 
     for (Concrete.UseDefinition definition : definitions) {
       Definition typedDefinition = definition.getData().getTypechecked();
-      if (!(typedDefinition instanceof FunctionDefinition)) {
+      if (!(typedDefinition instanceof FunctionDefinition useDefinition)) {
         continue;
       }
 
-      FunctionDefinition useDefinition = (FunctionDefinition) typedDefinition;
       ErrorReporter localErrorReporter = new LocalErrorReporter(definition.getData(), errorReporter);
       if (definition.getKind() == FunctionKind.LEVEL && !useDefinition.getResultType().isError()) {
         Definition useParent = definition.getUseParent().getTypechecked();
@@ -249,8 +248,7 @@ public class UseTypechecking {
   }
 
   private static void registerParametersLevel(FunctionDefinition useDefinition, Definition useParent, ParametersLevel parametersLevel) {
-    if (useParent instanceof DataDefinition) {
-      DataDefinition dataDef = (DataDefinition) useParent;
+    if (useParent instanceof DataDefinition dataDef) {
       if (parametersLevel.parameters == null) {
         Sort newSort = parametersLevel.level == -1 ? Sort.PROP : new Sort(dataDef.getSort().getPLevel(), new Level(parametersLevel.level));
         if (!dataDef.getSort().isLessOrEquals(newSort)) {

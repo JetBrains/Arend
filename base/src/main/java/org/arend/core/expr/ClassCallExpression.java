@@ -100,7 +100,7 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
   public void fixOrderOfImplementations() {
     if (myImplementations.size() <= 1) return;
     Map<ClassField, Expression> newImpls = new LinkedHashMap<>();
-    for (ClassField field : getDefinition().getFields()) {
+    for (ClassField field : getDefinition().getNotImplementedFields()) {
       Expression impl = myImplementations.get(field);
       if (impl != null) {
         newImpls.put(field, impl);
@@ -125,8 +125,8 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
       return;
     }
 
-    for (ClassField field : getDefinition().getFields()) {
-      if (field.getUniverseKind().ordinal() > myUniverseKind.ordinal() && !isImplemented(field)) {
+    for (ClassField field : getDefinition().getNotImplementedFields()) {
+      if (field.getUniverseKind().ordinal() > myUniverseKind.ordinal() && !myImplementations.containsKey(field)) {
         myUniverseKind = field.getUniverseKind();
         if (myUniverseKind == UniverseKind.WITH_UNIVERSES) {
           return;
@@ -280,8 +280,8 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
 
   public List<ClassField> getNotImplementedFields() {
     List<ClassField> result = new ArrayList<>();
-    for (ClassField field : getDefinition().getFields()) {
-      if (!isImplemented(field)) {
+    for (ClassField field : getDefinition().getNotImplementedFields()) {
+      if (!myImplementations.containsKey(field)) {
         result.add(field);
       }
     }
@@ -309,14 +309,14 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
     NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
     newExpr.getClassCall().copyImplementationsFrom(this);
 
-    Collection<? extends ClassField> fields = getDefinition().getFields();
+    Set<? extends ClassField> fields = getDefinition().getNotImplementedFields();
     if (fields.isEmpty()) {
       return EmptyDependentLink.getInstance();
     }
 
     LinkList list = new LinkList();
     for (ClassField field : fields) {
-      if (isImplemented(field)) {
+      if (myImplementations.containsKey(field)) {
         continue;
       }
 
@@ -336,11 +336,11 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
             type = type.normalize(NormalizationMode.WHNF);
             if (type instanceof ClassCallExpression classCall && getDefinition().isSubClassOf(classCall.getDefinition())) {
               Map<ClassField, Expression> subImplementations = new LinkedHashMap<>(classCall.getImplementedHere());
-              for (ClassField field : classCall.getDefinition().getFields()) {
+              for (ClassField field : classCall.getDefinition().getNotImplementedFields()) {
                 Expression impl = myImplementations.get(field);
                 if (impl != null) {
                   subImplementations.put(field, impl);
-                } else if (!classCall.getDefinition().isImplemented(field)) {
+                } else {
                   impl = implementations.get(field);
                   if (impl != null) {
                     subImplementations.put(field, impl);

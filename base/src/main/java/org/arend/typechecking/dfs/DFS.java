@@ -1,4 +1,4 @@
-package org.arend.typechecking.order;
+package org.arend.typechecking.dfs;
 
 import java.util.Collection;
 import java.util.HashMap;

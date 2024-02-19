@@ -1152,7 +1152,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         oldDataArgs = defCall1.getDefCallArguments();
       } else {
         List<Expression> classArgs = new ArrayList<>();
-        for (ClassField field : classCall1.getDefinition().getFields()) {
+        for (ClassField field : classCall1.getDefinition().getNotImplementedFields()) {
           if (field.isProperty() || !field.getReferable().isParameterField()) {
             break;
           }
@@ -1160,9 +1160,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           if (implementation != null) {
             classArgs.add(implementation);
           } else {
-            if (!classCall1.getDefinition().isImplemented(field)) {
-              break;
-            }
+            break;
           }
         }
         if (args.size() > classArgs.size() || classCall1.getImplementedHere().size() > classArgs.size() && !(correctOrder && myCMP == CMP.LE || !correctOrder && myCMP == CMP.GE)) {
@@ -1219,21 +1217,19 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         codSort = classCall1.getSortOfType();
         ClassCallExpression classCall = new ClassCallExpression(classCall1.getDefinition(), classCall1.getLevels(), implementations, classCall1.getSort(), classCall1.getUniverseKind());
         int i = 0;
-        for (ClassField field : classCall1.getDefinition().getFields()) {
-          if (!classCall1.getDefinition().isImplemented(field)) {
-            if (i < oldDataArgs.size() - args.size()) {
-              implementations.put(field, classCall1.getImplementationHere(field, new ReferenceExpression(classCall.getThisBinding())));
-              i++;
-            } else {
-              PiExpression piType = classCall1.getDefinition().getFieldType(field, classCall1.getLevels(field.getParentClass()));
-              Expression type = piType.getCodomain();
-              TypedSingleDependentLink link = new TypedSingleDependentLink(field.getReferable().isExplicitField(), field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piType.getResultSort()));
-              params.add(link);
-              implementations.put(field, new ReferenceExpression(link));
-            }
-            if (implementations.size() == oldDataArgs.size()) {
-              break;
-            }
+        for (ClassField field : classCall1.getDefinition().getNotImplementedFields()) {
+          if (i < oldDataArgs.size() - args.size()) {
+            implementations.put(field, classCall1.getImplementationHere(field, new ReferenceExpression(classCall.getThisBinding())));
+            i++;
+          } else {
+            PiExpression piType = classCall1.getDefinition().getFieldType(field, classCall1.getLevels(field.getParentClass()));
+            Expression type = piType.getCodomain();
+            TypedSingleDependentLink link = new TypedSingleDependentLink(field.getReferable().isExplicitField(), field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piType.getResultSort()));
+            params.add(link);
+            implementations.put(field, new ReferenceExpression(link));
+          }
+          if (implementations.size() == oldDataArgs.size()) {
+            break;
           }
         }
         classCall.updateHasUniverses();
@@ -1288,7 +1284,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   private boolean checkSubclassImpl(ClassCallExpression classCall1, ClassCallExpression classCall2, boolean correctOrder) {
     CMP origCMP = myCMP;
-    for (ClassField field : classCall2.getDefinition().getFields()) {
+    for (ClassField field : classCall2.getDefinition().getNotImplementedFields()) {
       if (field.isProperty()) {
         continue;
       }
@@ -1349,7 +1345,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   private boolean checkClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP onSuccess, CMP onFailure) {
     boolean ok = true;
     for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
-      if (!entry.getKey().isProperty() && entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
+      if (!entry.getKey().isProperty() && entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().containsField(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
         if (!doesImplementationFit(entry.getValue().apply(new ReferenceExpression(classCall1.getThisBinding()), classCall1.getLevelSubstitution()), entry.getKey(), classCall1, classCall2)) {
           ok = false;
           break;
@@ -1358,7 +1354,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
     if (ok) {
       for (Map.Entry<ClassField, Expression> entry : classCall1.getImplementedHere().entrySet()) {
-        if (!entry.getKey().isProperty() && entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
+        if (!entry.getKey().isProperty() && entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().containsField(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
           if (!doesImplementationFit(entry.getValue(), entry.getKey(), classCall1, classCall2)) {
             ok = false;
             break;
@@ -1885,8 +1881,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);
       if (classCall != null) {
         Set<ClassField> fieldsCopy = new LinkedHashSet<>();
-        for (ClassField field : classCall.getDefinition().getFields()) {
-          if (!classCall.isImplemented(field)) {
+        for (ClassField field : classCall.getDefinition().getNotImplementedFields()) {
+          if (!classCall.isImplementedHere(field)) {
             fieldsCopy.add(field);
           }
         }
@@ -1894,11 +1890,21 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
     }
     if (fields == null) {
-      fields = classCall1.getDefinition().getFields();
-      if (classCall1.getDefinition() != classCall2.getDefinition()) {
-        fields = new LinkedHashSet<>(fields);
-        //noinspection SuspiciousMethodCalls
-        fields.retainAll(classCall2.getDefinition().getFields());
+      if (classCall1.getDefinition() == classCall2.getDefinition()) {
+        fields = classCall1.getDefinition().getAllFields();
+      } else {
+        Set<ClassField> fields1 = new LinkedHashSet<>();
+        for (ClassField field : classCall1.getDefinition().getNotImplementedFields()) {
+          if (classCall2.getDefinition().containsField(field)) {
+            fields1.add(field);
+          }
+        }
+        for (ClassField field : classCall1.getDefinition().getImplementedFields()) {
+          if (classCall2.getDefinition().containsField(field)) {
+            fields1.add(field);
+          }
+        }
+        fields = fields1;
       }
     }
 

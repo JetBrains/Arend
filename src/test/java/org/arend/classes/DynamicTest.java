@@ -505,7 +505,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     FunctionDefinition plus = (FunctionDefinition) getDefinition("+");
 
     ClassDefinition aClass = (ClassDefinition) getDefinition("A");
-    assertTrue(aClass.getFields().isEmpty());
+    assertTrue(aClass.getNotImplementedFields().isEmpty() && aClass.getImplemented().isEmpty());
     FunctionDefinition pFun = (FunctionDefinition) getDefinition("A.p");
     assertEquals(Nat(), pFun.getTypeWithParams(new ArrayList<>(), LevelPair.SET0));
     assertEquals(Zero(), pFun.getBody());
@@ -516,7 +516,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     assertEquals(FunCall(pFun, Levels.EMPTY), qFun.getBody());
 
     ClassDefinition bClass = (ClassDefinition) getDefinition("A.B");
-    assertTrue(bClass.getFields().isEmpty());
+    assertTrue(bClass.getNotImplementedFields().isEmpty() && bClass.getImplemented().isEmpty());
     FunctionDefinition fFun = (FunctionDefinition) getDefinition("A.B.f");
     assertEquals(Nat(), fFun.getTypeWithParams(new ArrayList<>(), LevelPair.SET0));
     assertEquals(FunCall(pFun, Levels.EMPTY), fFun.getBody());
@@ -527,7 +527,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     assertEquals(FunCall(plus, Levels.EMPTY, FunCall(fFun, Levels.EMPTY), FunCall(pFun, Levels.EMPTY)), gFun.getBody());
 
     ClassDefinition cClass = (ClassDefinition) getDefinition("A.C");
-    assertEquals(1, cClass.getFields().size());
+    assertEquals(1, cClass.getNotImplementedFields().size());
     ClassField cParent = ((ClassDefinition) getDefinition("A.C")).getPersonalFields().get(0);
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) getDefinition("A.C.h");

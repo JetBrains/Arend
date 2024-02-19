@@ -18,6 +18,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.util.Pair;
 import org.arend.ext.util.StringUtils;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.UseTypechecking;
@@ -78,7 +79,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       ClassCallExpression newClassCall = new ClassCallExpression(bodyClassCall.getDefinition(), typeClassCall.getLevels(), newImpls, Sort.PROP, UniverseKind.NO_UNIVERSES);
       Expression newThisBinding = new ReferenceExpression(newClassCall.getThisBinding());
       boolean ok = true;
-      for (ClassField field : typeClassCall.getDefinition().getFields()) {
+      for (ClassField field : typeClassCall.getDefinition().getNotImplementedFields()) {
         Expression typeImpl = typeClassCall.getAbsImplementationHere(field);
         Expression bodyImpl = bodyClassCall.getAbsImplementationHere(field);
         if (typeImpl != null && bodyImpl != null) {
@@ -87,6 +88,12 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         }
         if (typeImpl != null || bodyImpl != null) {
           newImpls.put(field, typeImpl != null ? typeImpl.subst(typeClassCall.getThisBinding(), newThisBinding) : bodyImpl.subst(bodyClassCall.getThisBinding(), newThisBinding));
+        }
+      }
+      for (ClassField field : typeClassCall.getDefinition().getImplementedFields()) {
+        Expression bodyImpl = bodyClassCall.getAbsImplementationHere(field);
+        if (bodyImpl != null) {
+          newImpls.put(field, bodyImpl.subst(bodyClassCall.getThisBinding(), newThisBinding));
         }
       }
       if (ok) {
@@ -303,9 +310,15 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
     if (!visitClass(definition, new HashSet<>(), new HashSet<>(), fields)) {
       return false;
     }
-    if (!fields.equals(new ArrayList<>(definition.getFields()))) {
-      errorReporter.report(new TypecheckingError("Class '" + definition.getName() + "' should have fields " + fields + ", but has fields " + definition.getFields(), null));
+    fields.removeAll(definition.getImplementedFields());
+    if (!fields.equals(new ArrayList<>(definition.getNotImplementedFields()))) {
+      errorReporter.report(new TypecheckingError("Class '" + definition.getName() + "' should have fields " + fields + ", but has fields " + definition.getNotImplementedFields(), null));
       return false;
+    }
+    for (Map.Entry<ClassField, Pair<AbsExpression, Boolean>> entry : definition.getDefaults()) {
+      if (definition.isImplemented(entry.getKey())) {
+        errorReporter.report(new TypecheckingError("Field '" + entry.getKey().getName() + "' is implemented and has a default implementation in class '" + definition.getName() + "'", null));
+      }
     }
 
     for (Map.Entry<ClassDefinition, Levels> entry : definition.getSuperLevels().entrySet()) {

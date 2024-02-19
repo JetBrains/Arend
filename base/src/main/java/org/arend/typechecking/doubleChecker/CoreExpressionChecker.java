@@ -238,8 +238,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
     Integer level = expr.getDefinition().getUseLevel(expr.getImplementedHere(), expr.getThisBinding(), true);
     if (level == null || level != -1) {
-      for (ClassField field : expr.getDefinition().getFields()) {
-        if (!expr.isImplemented(field)) {
+      for (ClassField field : expr.getDefinition().getNotImplementedFields()) {
+        if (!expr.isImplementedHere(field)) {
           Sort sort = expr.getDefinition().getFieldType(field, expr.getLevels(field.getParentClass()), thisExpr).normalize(NormalizationMode.WHNF).getSortOfType();
           if (sort == null) {
             throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the type of field '" + field.getName() + "'", mySourceNode), expr));
@@ -255,8 +255,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     if (expr.getUniverseKind().ordinal() < expr.getDefinition().getUniverseKind().ordinal()) {
-      for (ClassField field : expr.getDefinition().getFields()) {
-        if (expr.getUniverseKind().ordinal() < field.getUniverseKind().ordinal() && !expr.isImplemented(field)) {
+      for (ClassField field : expr.getDefinition().getNotImplementedFields()) {
+        if (expr.getUniverseKind().ordinal() < field.getUniverseKind().ordinal() && !expr.isImplementedHere(field)) {
           throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Field '" + field.getName() + "' has universes, but the class call does not have them", mySourceNode), expr));
         }
       }
@@ -517,8 +517,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     List<FieldReferable> fields = new ArrayList<>();
-    for (ClassField field : classCall.getDefinition().getFields()) {
-      if (!classCall.isImplemented(field)) {
+    for (ClassField field : classCall.getDefinition().getNotImplementedFields()) {
+      if (!classCall.isImplementedHere(field)) {
         fields.add(field.getReferable());
       }
     }

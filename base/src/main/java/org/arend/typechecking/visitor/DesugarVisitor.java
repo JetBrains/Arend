@@ -78,7 +78,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private void getFields(TCDefReferable ref, Set<TCDefReferable> result) {
     Definition def = ref.getTypechecked();
     if (def instanceof ClassDefinition) {
-      for (ClassField field : ((ClassDefinition) def).getFields()) {
+      for (ClassField field : ((ClassDefinition) def).getAllFields()) {
         result.add(field.getReferable());
       }
     }

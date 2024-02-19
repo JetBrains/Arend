@@ -46,7 +46,7 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
     }
 
     ClassCallExpression classCall = type.cast(ClassCallExpression.class);
-    if (classCall != null && !classCall.getDefinition().getFields().isEmpty()) {
+    if (classCall != null && !classCall.getDefinition().getNotImplementedFields().isEmpty()) {
       type = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels());
       binding.setType(type);
       result.myImplementedFields = new HashSet<>();

@@ -12,7 +12,7 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.term.group.Group;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
-import org.arend.typechecking.order.MapDFS;
+import org.arend.typechecking.dfs.MapDFS;
 
 import java.util.*;
 import java.util.function.Function;

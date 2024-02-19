@@ -991,7 +991,7 @@ public class ElimTypechecking {
               if (someExpr instanceof ClassCallExpression classCall) {
                 Map<ClassField, Expression> implementations = new LinkedHashMap<>();
                 DependentLink link = conParameters;
-                for (ClassField field : classCall.getDefinition().getFields()) {
+                for (ClassField field : classCall.getDefinition().getNotImplementedFields()) {
                   if (!classCall.isImplemented(field)) {
                     implementations.put(field, new ReferenceExpression(link));
                     link = link.getNext();

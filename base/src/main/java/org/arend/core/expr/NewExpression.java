@@ -32,10 +32,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
         myRenewExpression = newExpr.myRenewExpression;
         Map<ClassField, Expression> implementations = new LinkedHashMap<>();
         NewExpression myNewExpr = new NewExpression(newExpr, classCall);
-        for (ClassField field : classCall.getDefinition().getFields()) {
-          if (classCall.getDefinition().isImplemented(field)) {
-            continue;
-          }
+        for (ClassField field : classCall.getDefinition().getNotImplementedFields()) {
           Expression impl = classCall.getImplementationHere(field, myNewExpr);
           if (impl == null) {
             impl = newExpr.getImplementationHere(field);
@@ -116,10 +113,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
     }
 
     Map<ClassField, Expression> implementations = new LinkedHashMap<>();
-    for (ClassField field : myClassCall.getDefinition().getFields()) {
-      if (myClassCall.getDefinition().isImplemented(field)) {
-        continue;
-      }
+    for (ClassField field : myClassCall.getDefinition().getNotImplementedFields()) {
       Expression impl = field.isProperty() ? null : myClassCall.getImplementationHere(field, this);
       if (impl == null) {
         impl = FieldCallExpression.make(field, myRenewExpression, false);

@@ -1,4 +1,4 @@
-package org.arend.typechecking;
+package org.arend.typechecking.dfs;
 
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
@@ -42,9 +42,10 @@ public class FieldDFS {
     Set<ClassField> deps = references.computeIfAbsent(field, f -> {
       AbsExpression impl = classDef.getImplementation(field);
       PiExpression type = field.getType();
-      Set<ClassField> result = FieldsCollector.getFields(type.getCodomain(), type.getParameters(), classDef.getFields());
+      Set<ClassField> fields = classDef.getAllFields();
+      Set<ClassField> result = FieldsCollector.getFields(type.getCodomain(), type.getParameters(), fields);
       if (impl != null) {
-        FieldsCollector.getFields(impl.getExpression(), impl.getBinding(), classDef.getFields(), result);
+        FieldsCollector.getFields(impl.getExpression(), impl.getBinding(), fields, result);
       }
       return result;
     });

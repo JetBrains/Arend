@@ -22,14 +22,12 @@ public class ExpressionMatcher {
       return new TupleExpression(newArgs, (SigmaExpression) data);
     }
 
-    if (data instanceof FunCallExpression) {
-      FunCallExpression funCall = (FunCallExpression) data;
+    if (data instanceof FunCallExpression funCall) {
       newArgs.addAll(0, funCall.getDefCallArguments());
       return funCall.getDefinition() == Prelude.IDP ? expression : FunCallExpression.make(funCall.getDefinition(), funCall.getLevels(), newArgs);
     }
 
-    if (data instanceof ConCallExpression && ((ConCallExpression) data).getDefinition() != Prelude.SUC) {
-      ConCallExpression conCall = (ConCallExpression) data;
+    if (data instanceof ConCallExpression conCall && ((ConCallExpression) data).getDefinition() != Prelude.SUC) {
       return ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), newArgs);
     }
 
@@ -46,12 +44,15 @@ public class ExpressionMatcher {
 
     int i = 0;
     Map<ClassField, Expression> newImpls = new LinkedHashMap<>();
-    for (ClassField field : ((ClassCallExpression) data).getDefinition().getFields()) {
+    for (ClassField field : ((ClassCallExpression) data).getDefinition().getNotImplementedFields()) {
       if (((ClassCallExpression) data).isImplemented(field)) {
         newImpls.put(field, newExpr.getImplementation(field));
       } else {
         newImpls.put(field, newArgs.get(i++));
       }
+    }
+    for (ClassField field : ((ClassCallExpression) data).getDefinition().getImplementedFields()) {
+      newImpls.put(field, newExpr.getImplementation(field));
     }
 
     ClassCallExpression classCall = newExpr.getClassCall();
@@ -79,7 +80,7 @@ public class ExpressionMatcher {
     }
 
     expr = expr.normalize(NormalizationMode.WHNF);
-    if (!(pattern instanceof ConstructorExpressionPattern)) {
+    if (!(pattern instanceof ConstructorExpressionPattern conPattern)) {
       if (expr instanceof TupleExpression) {
         return matchExpressions(((TupleExpression) expr).getFields(), pattern.getSubPatterns(), false, result) != null ? expr : null;
       }
@@ -90,7 +91,6 @@ public class ExpressionMatcher {
       return expr;
     }
 
-    ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern;
     List<? extends Expression> args = conPattern.getMatchingExpressionArguments(expr, true);
     if (args == null) {
       Binding binding = new TypedBinding(Renamer.UNNAMED, expr.computeType());
@@ -137,10 +137,10 @@ public class ExpressionMatcher {
    * If the result is not null, then there exists a data call D such that the following conditions hold.
    * {@code constructor} has type D[subst], where subst is the substitution that
    * maps {@link MatchResult#binding} to {@link MatchResult#pattern} for each match result from {@code matchResults}.
-   *
+   * <p>
    * Also, D[subst'] is equal to {@code dataCall}, where subst' is the substitution that
    * maps {@link MatchResult#binding} to {@link MatchResult#expression} for each match result from {@code matchResults}.
-   *
+   * <p>
    * Returns {@code null} for constructors without patterns or if the result satisfying these conditions does not exist.
    * If {@code computeData} is {@code true}, returns either D or {@code null}.
    * Otherwise, returns either {@code dataCall} or {@code null}.

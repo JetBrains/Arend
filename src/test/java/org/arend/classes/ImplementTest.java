@@ -399,7 +399,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       }
       \\class D \\extends B, C
       """, 1);
-    assertThatErrorsAre(cycle(get("z"), get("y")));
+    assertThatErrorsAre(cycle(get("y"), get("z")));
   }
 
   @Test

@@ -9,8 +9,8 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.typechecking.error.local.ConstantSolveLevelEquationError;
 import org.arend.typechecking.error.local.SolveLevelEquationsError;
-import org.arend.typechecking.order.DFS;
-import org.arend.typechecking.order.MapDFS;
+import org.arend.typechecking.dfs.DFS;
+import org.arend.typechecking.dfs.MapDFS;
 import org.arend.ext.util.Pair;
 
 import java.util.*;
@@ -139,10 +139,9 @@ public class LevelEquationsSolver {
   }
 
   public boolean addPropEquationIfPossible(Level level) {
-    if (!(level.getVar() instanceof InferenceLevelVariable && !level.withMaxConstant() && level.getConstant() <= 0)) {
+    if (!(level.getVar() instanceof InferenceLevelVariable var && !level.withMaxConstant() && level.getConstant() <= 0)) {
       return false;
     }
-    InferenceLevelVariable var = (InferenceLevelVariable) level.getVar();
     Level oldLevel = myConstantUpperBounds.get(var);
     if (oldLevel != null && (oldLevel.isProp() || level.getConstant() < 0 && oldLevel.isClosed() && oldLevel.getConstant() == 0)) {
       return true;

@@ -49,8 +49,8 @@ public final class ClassConstructor extends SingleConstructor {
   public List<Expression> getMatchedArguments(Expression argument, boolean normalizing) {
     List<Expression> args = new ArrayList<>();
     NewExpression newExpr = argument.cast(NewExpression.class);
-    for (ClassField field : myClassDef.getFields()) {
-      if (!myClassDef.isImplemented(field) && !myImplementedFields.contains(field)) {
+    for (ClassField field : myClassDef.getNotImplementedFields()) {
+      if (!myImplementedFields.contains(field)) {
         Expression impl = newExpr == null || field.isProperty() ? null : newExpr.getImplementationHere(field);
         args.add(impl != null ? impl : FieldCallExpression.make(field, argument));
       }
@@ -63,20 +63,16 @@ public final class ClassConstructor extends SingleConstructor {
     if (this == other) {
       return true;
     }
-    if (!(other instanceof ClassConstructor)) {
-      return false;
-    }
 
-    ClassConstructor con = (ClassConstructor) other;
-    if (myClassDef != con.myClassDef || !myImplementedFields.equals(con.myImplementedFields)) {
+    if (!(other instanceof ClassConstructor con) || myClassDef != con.myClassDef || !myImplementedFields.equals(con.myImplementedFields)) {
       return false;
     }
 
     if (myClassDef.getUniverseKind() == UniverseKind.NO_UNIVERSES) {
       return true;
     }
-    for (ClassField field : myClassDef.getFields()) {
-      if (field.getUniverseKind() != UniverseKind.NO_UNIVERSES && !myClassDef.isImplemented(field) && !myImplementedFields.contains(field)) {
+    for (ClassField field : myClassDef.getNotImplementedFields()) {
+      if (field.getUniverseKind() != UniverseKind.NO_UNIVERSES && !myImplementedFields.contains(field)) {
         return myLevels.compare(con.myLevels, CMP.EQ, equations, sourceNode);
       }
     }

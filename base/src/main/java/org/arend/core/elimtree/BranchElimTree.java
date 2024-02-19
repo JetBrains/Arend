@@ -96,8 +96,7 @@ public class BranchElimTree extends ElimTree {
       }
     } else {
       argument = argument.getUnderlyingExpression();
-      if (argument instanceof ConCallExpression) {
-        ConCallExpression conCall = (ConCallExpression) argument;
+      if (argument instanceof ConCallExpression conCall) {
         ElimTree elimTree = myChildren.get(conCall.getDefinition());
         if (elimTree != null) {
           newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
@@ -106,8 +105,7 @@ public class BranchElimTree extends ElimTree {
         } else {
           return new ArrayList<>(arguments.subList(index, arguments.size()));
         }
-      } else if (argument instanceof IntegerExpression) {
-        IntegerExpression intExpr = (IntegerExpression) argument;
+      } else if (argument instanceof IntegerExpression intExpr) {
         boolean isZero = intExpr.isZero();
         ElimTree elimTree = myChildren.get(isZero ? Prelude.ZERO : Prelude.SUC);
         if (elimTree != null) {
@@ -119,8 +117,7 @@ public class BranchElimTree extends ElimTree {
         } else {
           return new ArrayList<>(arguments.subList(index, arguments.size()));
         }
-      } else if (argument instanceof ArrayExpression) {
-        ArrayExpression array = (ArrayExpression) argument;
+      } else if (argument instanceof ArrayExpression array) {
         ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true, true));
         if (elimTree != null) {
           newArguments = new ArrayList<>();
@@ -232,8 +229,7 @@ public class BranchElimTree extends ElimTree {
         return result;
       }
     } else if (singleConstructor instanceof TupleConstructor) {
-      if (argument instanceof TupleExpression) {
-        TupleExpression tuple = (TupleExpression) argument;
+      if (argument instanceof TupleExpression tuple) {
         List<Expression> args = new ArrayList<>();
         args.addAll(tuple.getFields());
         args.addAll(arguments.subList(index + 1, arguments.size()));
@@ -247,8 +243,8 @@ public class BranchElimTree extends ElimTree {
         ClassConstructor classCon = (ClassConstructor) singleConstructor;
         ClassCallExpression classCall = ((NewExpression) argument).getType();
         List<Expression> args = new ArrayList<>();
-        for (ClassField field : classCon.getClassDefinition().getFields()) {
-          if (!classCon.getClassDefinition().isImplemented(field) && !classCon.getImplementedFields().contains(field)) {
+        for (ClassField field : classCon.getClassDefinition().getNotImplementedFields()) {
+          if (!classCon.getImplementedFields().contains(field)) {
             if (field.isProperty()) {
               args.add(FieldCallExpression.make(field, argument));
             } else {
@@ -260,21 +256,18 @@ public class BranchElimTree extends ElimTree {
         List<Expression> newArgs = getSingleConstructorChild().normalizeArguments(args);
         Map<ClassField, Expression> implementations = new LinkedHashMap<>();
         int i = 0;
-        for (ClassField field : classCon.getClassDefinition().getFields()) {
-          if (!classCon.getClassDefinition().isImplemented(field)) {
-            if (classCon.getImplementedFields().contains(field)) {
-              implementations.put(field, classCall.getAbsImplementationHere(field));
-            } else {
-              implementations.put(field, newArgs.get(i++));
-            }
+        for (ClassField field : classCon.getClassDefinition().getNotImplementedFields()) {
+          if (classCon.getImplementedFields().contains(field)) {
+            implementations.put(field, classCall.getAbsImplementationHere(field));
+          } else {
+            implementations.put(field, newArgs.get(i++));
           }
         }
         result.add(new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getLevels(), implementations, classCall.getSort(), classCall.getUniverseKind())));
         result.addAll(newArgs.subList(i, newArgs.size()));
         return result;
       }
-    } else if (argument instanceof ConCallExpression) {
-      ConCallExpression conCall = (ConCallExpression) argument;
+    } else if (argument instanceof ConCallExpression conCall) {
       ElimTree elimTree = myChildren.get(conCall.getDefinition());
       if (elimTree != null) {
         List<Expression> args = new ArrayList<>();
@@ -285,8 +278,7 @@ public class BranchElimTree extends ElimTree {
         result.addAll(newArgs.subList(conCall.getDefCallArguments().size(), newArgs.size()));
         return result;
       }
-    } else if (argument instanceof IntegerExpression) {
-      IntegerExpression intExpr = (IntegerExpression) argument;
+    } else if (argument instanceof IntegerExpression intExpr) {
       boolean isZero = intExpr.isZero();
       ElimTree elimTree = myChildren.get(isZero ? Prelude.ZERO : Prelude.SUC);
       if (elimTree != null) {
@@ -298,8 +290,7 @@ public class BranchElimTree extends ElimTree {
         result.addAll(isZero ? newArgs : newArgs.subList(1, newArgs.size()));
         return result;
       }
-    } else if (argument instanceof ArrayExpression) {
-      ArrayExpression array = (ArrayExpression) argument;
+    } else if (argument instanceof ArrayExpression array) {
       ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true, true));
       if (elimTree != null) {
         List<Expression> args = new ArrayList<>();
