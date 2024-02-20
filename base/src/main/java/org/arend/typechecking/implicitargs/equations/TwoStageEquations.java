@@ -115,7 +115,7 @@ public class TwoStageEquations implements Equations {
 
     if (inf1 == null && inf2 == null) {
       // expr1 == field call
-      FieldCallExpression fieldCall1 = expr1.getFunction().cast(FieldCallExpression.class);
+      FieldCallExpression fieldCall1 = expr1.dropArguments().cast(FieldCallExpression.class);
       InferenceVariable variable = fieldCall1 == null ? null : fieldCall1.getArgument().getInferenceVariable();
       if (variable instanceof TypeClassInferenceVariable) {
         // expr1 == class field call
@@ -127,7 +127,7 @@ public class TwoStageEquations implements Equations {
 
       // expr2 == field call
       if (variable == null) {
-        FieldCallExpression fieldCall2 = expr2.getFunction().cast(FieldCallExpression.class);
+        FieldCallExpression fieldCall2 = expr2.dropArguments().cast(FieldCallExpression.class);
         variable = fieldCall2 == null ? null : fieldCall2.getArgument().getInferenceVariable();
         if (variable instanceof TypeClassInferenceVariable) {
           // expr2 == class field call

@@ -607,6 +607,11 @@ public abstract class Expression implements Body, CoreExpression {
     return app != null ? app.getFunction() : this;
   }
 
+  public Expression dropArguments() {
+    AppExpression app = cast(AppExpression.class);
+    return app != null ? app.dropArguments() : this;
+  }
+
   public Expression getArguments(List<Expression> args) {
     return this;
   }

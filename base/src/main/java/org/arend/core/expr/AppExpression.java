@@ -24,8 +24,7 @@ public class AppExpression extends Expression implements CoreAppExpression {
 
   public static Expression make(Expression function, Expression argument, boolean isExplicit) {
     function = function.getUnderlyingExpression();
-    if (function instanceof LamExpression) {
-      LamExpression lamExpr = (LamExpression) function;
+    if (function instanceof LamExpression lamExpr) {
       SingleDependentLink var = lamExpr.getParameters();
       SingleDependentLink next = var.getNext();
       return (next.hasNext() ? new LamExpression(lamExpr.getResultSort(), next, lamExpr.getBody()) : lamExpr.getBody()).subst(var, argument);
@@ -38,6 +37,11 @@ public class AppExpression extends Expression implements CoreAppExpression {
   @Override
   public Expression getFunction() {
     return myFunction;
+  }
+
+  @Override
+  public Expression dropArguments() {
+    return myFunction.dropArguments();
   }
 
   @NotNull
