@@ -11,8 +11,7 @@ import org.junit.Test;
 import java.util.Objects;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.arend.Matchers.notInScope;
-import static org.arend.Matchers.typeMismatchError;
+import static org.arend.Matchers.*;
 
 public class ClassParametersTest extends TypeCheckingTestCase {
   @Test
@@ -378,7 +377,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       """);
   }
 
-  // TODO: We should probably forbid such dependencies.
+  // TODO: We should probably forbid such dependencies or put overridden fields after the fields they depend on.
   //       Currently, there is a workaround for this; see ClassCallExpression.java
   @Test
   public void classFieldParametersTest() {
@@ -386,11 +385,22 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       \\record A
       \\record B (n : Nat) \\extends A
       \\record R (a : A)
-      \\record S (k : Nat) \\extends R {
+      \\record S \\extends R {
+        | k : Nat
         \\override a : B k
       }
       \\func test => S
       """);
     ((ClassCallExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("test")).getBody())).getClassFieldParameters();
+  }
+
+  @Test
+  public void superDependency() {
+    typeCheckModule("""
+      \\record A
+        | n : Nat
+      \\record B (p : n = n) \\extends A
+      """, 2);
+    assertThatErrorsAre(argInferenceError(), argInferenceError());
   }
 }

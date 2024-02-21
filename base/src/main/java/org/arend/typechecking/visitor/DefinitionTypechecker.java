@@ -2651,6 +2651,57 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     fixClassElements(typedDef, def, def.getElements());
 
+    // Set level fields
+    {
+      findLevelsParentsInClass(typedDef, def);
+      List<LevelVariable> levelParams = typecheckLevelParameters(def);
+      if (myNewDef) {
+        typedDef.setLevelParameters(levelParams);
+      }
+    }
+
+    List<LocalInstance> localInstances = new ArrayList<>();
+    boolean hasClassifyingField = false;
+    if (!def.isRecord() && !def.withoutClassifying()) {
+      if (def.getClassifyingField() != null) {
+        hasClassifyingField = true;
+      } else {
+        for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+          if (superClass.getClassifyingField() != null) {
+            hasClassifyingField = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // Typecheck class parameters
+    {
+      Concrete.Expression previousType = null;
+      ClassField previousField = null;
+      for (Concrete.ClassElement element : def.getElements()) {
+        if (element instanceof Concrete.ClassField field) {
+          if (!field.getData().isParameterField()) {
+            continue;
+          }
+          if (previousType == field.getResultType()) {
+            if (myNewDef && previousField != null) {
+              ClassField newField = addField(field.getData(), typedDef, previousField.getType(), previousField.getTypeLevel());
+              newField.setStatus(previousField.status());
+              newField.setUniverseKind(previousField.getUniverseKind());
+              newField.setNumberOfParameters(previousField.getNumberOfParameters());
+              if (field.isCoerce()) {
+                newField.setHideable(true);
+              }
+            }
+          } else {
+            previousType = field.getResultType();
+            previousField = typecheckClassField(field, typedDef, localInstances, hasClassifyingField, def);
+          }
+        }
+      }
+    }
+
     // Process super classes
     for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
       ClassDefinition superClass = typechecker.referableToDefinition(aSuperClass.getReferent(), ClassDefinition.class, "Expected a class", aSuperClass);
@@ -2661,18 +2712,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         errorReporter.report(new TypecheckingError("Array cannot be extended", aSuperClass));
         continue;
       }
-
       if (myNewDef) {
         typedDef.addSuperClass(superClass);
-      }
-    }
-
-    // Set level fields
-    {
-      findLevelsParentsInClass(typedDef, def);
-      List<LevelVariable> levelParams = typecheckLevelParameters(def);
-      if (myNewDef) {
-        typedDef.setLevelParameters(levelParams);
       }
     }
 
@@ -2756,48 +2797,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       if (myNewDef && !superLevels.isEmpty()) {
         typedDef.setSuperLevels(superLevels);
-      }
-    }
-
-    List<LocalInstance> localInstances = new ArrayList<>();
-    boolean hasClassifyingField = false;
-    if (!def.isRecord() && !def.withoutClassifying()) {
-      if (def.getClassifyingField() != null) {
-        hasClassifyingField = true;
-      } else {
-        for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-          if (superClass.getClassifyingField() != null) {
-            hasClassifyingField = true;
-            break;
-          }
-        }
-      }
-    }
-
-    // Typecheck class parameters
-    {
-      Concrete.Expression previousType = null;
-      ClassField previousField = null;
-      for (Concrete.ClassElement element : def.getElements()) {
-        if (element instanceof Concrete.ClassField field) {
-          if (!field.getData().isParameterField()) {
-            continue;
-          }
-          if (previousType == field.getResultType()) {
-            if (myNewDef && previousField != null) {
-              ClassField newField = addField(field.getData(), typedDef, previousField.getType(), previousField.getTypeLevel());
-              newField.setStatus(previousField.status());
-              newField.setUniverseKind(previousField.getUniverseKind());
-              newField.setNumberOfParameters(previousField.getNumberOfParameters());
-              if (field.isCoerce()) {
-                newField.setHideable(true);
-              }
-            }
-          } else {
-            previousType = field.getResultType();
-            previousField = typecheckClassField(field, typedDef, localInstances, hasClassifyingField, def);
-          }
-        }
       }
     }
 

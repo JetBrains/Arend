@@ -146,6 +146,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Void params) {
     Set<TCDefReferable> fields = new HashSet<>();
+    Set<TCDefReferable> myFields = new HashSet<>();
     for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
       if (superClass.getReferent() instanceof TCDefReferable) {
         getFields((TCDefReferable) superClass.getReferent(), fields);
@@ -157,6 +158,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       if (element instanceof Concrete.ClassField) {
         classFields.add((Concrete.ClassField) element);
         fields.add(((Concrete.ClassField) element).getData());
+        myFields.add(((Concrete.ClassField) element).getData());
       }
     }
 
@@ -177,23 +179,25 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
 
     // Check fields
     ClassFieldChecker classFieldChecker = new ClassFieldChecker(null, def.getRecursiveDefinitions(), def.getData(), superClasses, fields, futureFields, myErrorReporter);
+    ClassFieldChecker myClassFieldChecker = new ClassFieldChecker(null, def.getRecursiveDefinitions(), def.getData(), superClasses, myFields, futureFields, myErrorReporter);
     Concrete.Expression previousType = null;
     for (int i = 0; i < classFields.size(); i++) {
       Concrete.ClassField classField = classFields.get(i);
+      ClassFieldChecker checker = classField.getData().isParameterField() ? myClassFieldChecker : classFieldChecker;
       Concrete.Expression fieldType = classField.getResultType();
       Referable thisParameter = new HiddenLocalReferable("this");
-      classFieldChecker.setThisParameter(thisParameter);
+      checker.setThisParameter(thisParameter);
       if (fieldType == previousType && classField.getParameters().isEmpty()) {
         classField.getParameters().addAll(classFields.get(i - 1).getParameters());
         classField.setResultType(classFields.get(i - 1).getResultType());
         classField.setResultTypeLevel(classFields.get(i - 1).getResultTypeLevel());
       } else {
         previousType = classField.getParameters().isEmpty() ? fieldType : null;
-        classFieldChecker.visitParameters(classField.getParameters(), null);
+        checker.visitParameters(classField.getParameters(), null);
         classField.getParameters().add(0, new Concrete.TelescopeParameter(classField.getParameters().isEmpty() ? fieldType.getData() : classField.getParameters().get(0).getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(fieldType.getData(), def.getData()), false));
-        classField.setResultType(fieldType.accept(classFieldChecker, null));
+        classField.setResultType(fieldType.accept(checker, null));
         if (classField.getResultTypeLevel() != null) {
-          classField.setResultTypeLevel(classField.getResultTypeLevel().accept(classFieldChecker, null));
+          classField.setResultTypeLevel(classField.getResultTypeLevel().accept(checker, null));
         }
       }
       futureFields.remove(classField.getData());
