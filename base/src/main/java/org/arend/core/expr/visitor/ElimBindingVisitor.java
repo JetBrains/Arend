@@ -114,7 +114,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    Expression newExpr = acceptSelf(expr.getArgument(), false);
+    Expression newExpr = acceptSelf(expr.getArgument(), expr.getDefinition().isProperty());
     return newExpr == null ? null : FieldCallExpression.make(expr.getDefinition(), newExpr);
   }
 
@@ -446,7 +446,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
       }
       Expression newExpr;
       if (clause.getExpression() != null) {
-        newExpr = acceptSelf(clause.getExpression(), true);
+        newExpr = acceptSelf(clause.getExpression().subst(clauseSubst), true);
         if (newExpr == null) {
           return null;
         }
