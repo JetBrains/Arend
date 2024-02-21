@@ -7,12 +7,14 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.junit.Test;
 
+import java.util.Objects;
+
 import static org.arend.ExpressionFactory.ClassCall;
 import static org.arend.ExpressionFactory.Ref;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class EtaEquivalence extends TypeCheckingTestCase {
+public class EtaEquivalenceTest extends TypeCheckingTestCase {
   @Test
   public void classesCmp() {
     typeCheckModule(
@@ -55,7 +57,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void onlyDefCallsExpanded() {
     FunctionDefinition fun = (FunctionDefinition) typeCheckDef("\\func f (x : Nat -> Nat) => x");
-    assertFalse(((Expression) fun.getBody()).isInstance(LamExpression.class));
+    assertFalse(((Expression) Objects.requireNonNull(fun.getBody())).isInstance(LamExpression.class));
   }
 
   @Test
@@ -151,19 +153,21 @@ public class EtaEquivalence extends TypeCheckingTestCase {
 
   @Test
   public void typedComparison1() {
-    typeCheckModule(
-      "\\record C (n : Nat)\n" +
-      "\\record D (m : Nat) \\extends C\n" +
-      "\\func f (x : D 0 1) (y : D 0 2) : x = {C} y => idp");
+    typeCheckModule("""
+      \\record C (n : Nat)
+      \\record D (m : Nat) \\extends C
+      \\func f (x : D 1 0) (y : D 2 0) : x = {C} y => idp
+      """);
   }
 
   @Test
   public void typedComparison2() {
-    typeCheckModule(
-      "\\record C (n : Nat)\n" +
-      "\\record D (m : Nat) \\extends C\n" +
-      "\\func f (x : C) : \\new D { | C => x | m => 0 } = {C} x => idp\n" +
-      "\\func g (x : C) : x = {C} \\new D { | C => x | m => 0 } => idp");
+    typeCheckModule("""
+      \\record C (n : Nat)
+      \\record D (m : Nat) \\extends C
+      \\func f (x : C) : \\new D { | C => x | m => 0 } = {C} x => idp
+      \\func g (x : C) : x = {C} \\new D { | C => x | m => 0 } => idp
+      """);
   }
 
   @Test
@@ -178,14 +182,17 @@ public class EtaEquivalence extends TypeCheckingTestCase {
 
   @Test
   public void sigmaUnitTest2() {
-    typeCheckModule("\\data Unit | unit \n " +
-            "\\func f (x : \\Sigma Unit Nat) : x = (x.1, x.2) => idp");
+    typeCheckModule(
+      "\\data Unit | unit \n " +
+      "\\func f (x : \\Sigma Unit Nat) : x = (x.1, x.2) => idp");
   }
 
   @Test
   public void sigmaUnitTest3() {
-    typeCheckModule("\\data Unit | unit \n " +
-            "\\func x : \\Sigma Unit Nat => (unit, 0)" +
-            "\\func f : x = (x.1, x.2) => idp");
+    typeCheckModule("""
+      \\data Unit | unit
+      \\func x : \\Sigma Unit Nat => (unit, 0)
+      \\func f : x = (x.1, x.2) => idp
+      """);
   }
 }

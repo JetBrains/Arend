@@ -176,7 +176,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
     typeCheckModule("""
       \\class C { | x : Nat }
       \\class D (y : Nat -> Nat) \\extends C
-      \\func f => D 1 (\\lam x => x)
+      \\func f => D (\\lam x => x) 1
       """);
   }
 
@@ -192,8 +192,8 @@ public class ClassParametersTest extends TypeCheckingTestCase {
   @Test
   public void superImplicitParameters() {
     typeCheckModule("""
-      \\class C (x : Nat) {y : Nat} (p : y = 0)
-      \\class D {z : Nat} (w : z = 1) \\extends C
+      \\class C {z : Nat} (w : z = 1)
+      \\class D (x : Nat) {y : Nat} (p : y = 0) \\extends C
       \\func f => \\new D 0 idp idp
       """);
   }
@@ -201,8 +201,8 @@ public class ClassParametersTest extends TypeCheckingTestCase {
   @Test
   public void superImplicitParameters2() {
     typeCheckModule("""
-      \\class C (x : Nat) {y : Nat}
-      \\class D {z : Nat} \\extends C
+      \\class C {z : Nat}
+      \\class D (x : Nat) {y : Nat} \\extends C
       \\func f => D 0
       \\func g => \\new D 0 { | y => 1 | z => 2 }
       """);

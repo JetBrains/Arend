@@ -2649,6 +2649,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     boolean classOk = true;
 
+    fixClassElements(typedDef, def, def.getElements());
+
     // Process super classes
     for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
       ClassDefinition superClass = typechecker.referableToDefinition(aSuperClass.getReferent(), ClassDefinition.class, "Expected a class", aSuperClass);
@@ -2661,7 +2663,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       if (myNewDef) {
-        typedDef.addFields(superClass.getNotImplementedFields());
         typedDef.addSuperClass(superClass);
       }
     }
@@ -2758,21 +2759,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    Concrete.SourceNode alreadyImplementedSourceNode = null;
-    List<FieldReferable> alreadyImplementFields = new ArrayList<>();
-    for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
-      Definition superClassDef = aSuperClass.getReferent() instanceof TCDefReferable ? ((TCDefReferable) aSuperClass.getReferent()).getTypechecked() : null;
-      if (superClassDef instanceof ClassDefinition) {
-        for (Map.Entry<ClassField, AbsExpression> entry : ((ClassDefinition) superClassDef).getImplemented()) {
-          Levels levels = typedDef.getSuperLevels().get(superClassDef);
-          if (!implementField(entry.getKey(), entry.getValue().subst(new ExprSubstitution(), levels == null ? idLevels.makeSubstitution(superClassDef) : levels.makeSubstitution(superClassDef)), typedDef, alreadyImplementFields)) {
-            classOk = false;
-            alreadyImplementedSourceNode = aSuperClass;
-          }
-        }
-      }
-    }
-
+    List<LocalInstance> localInstances = new ArrayList<>();
     boolean hasClassifyingField = false;
     if (!def.isRecord() && !def.withoutClassifying()) {
       if (def.getClassifyingField() != null) {
@@ -2782,6 +2769,53 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (superClass.getClassifyingField() != null) {
             hasClassifyingField = true;
             break;
+          }
+        }
+      }
+    }
+
+    // Typecheck class parameters
+    {
+      Concrete.Expression previousType = null;
+      ClassField previousField = null;
+      for (Concrete.ClassElement element : def.getElements()) {
+        if (element instanceof Concrete.ClassField field) {
+          if (!field.getData().isParameterField()) {
+            continue;
+          }
+          if (previousType == field.getResultType()) {
+            if (myNewDef && previousField != null) {
+              ClassField newField = addField(field.getData(), typedDef, previousField.getType(), previousField.getTypeLevel());
+              newField.setStatus(previousField.status());
+              newField.setUniverseKind(previousField.getUniverseKind());
+              newField.setNumberOfParameters(previousField.getNumberOfParameters());
+              if (field.isCoerce()) {
+                newField.setHideable(true);
+              }
+            }
+          } else {
+            previousType = field.getResultType();
+            previousField = typecheckClassField(field, typedDef, localInstances, hasClassifyingField, def);
+          }
+        }
+      }
+    }
+
+    // Copy data from super classes
+    for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+      typedDef.addFields(superClass.getNotImplementedFields());
+    }
+
+    Concrete.SourceNode alreadyImplementedSourceNode = null;
+    List<FieldReferable> alreadyImplementFields = new ArrayList<>();
+    for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
+      Definition superClassDef = aSuperClass.getReferent() instanceof TCDefReferable ? ((TCDefReferable) aSuperClass.getReferent()).getTypechecked() : null;
+      if (superClassDef instanceof ClassDefinition superClass) {
+        for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
+          Levels levels = typedDef.getSuperLevels().get(superClass);
+          if (!implementField(entry.getKey(), entry.getValue().subst(new ExprSubstitution(), levels == null ? idLevels.makeSubstitution(superClass) : levels.makeSubstitution(superClass)), typedDef, alreadyImplementFields)) {
+            classOk = false;
+            alreadyImplementedSourceNode = aSuperClass;
           }
         }
       }
@@ -2847,42 +2881,19 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    List<LocalInstance> localInstances = new ArrayList<>();
-    addFieldInstances(typedDef, localInstances);
-
-    fixClassElements(typedDef, def, def.getElements());
+    for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+      addFieldInstances(superClass, localInstances);
+    }
 
     // Process fields and implementations
-    Concrete.Expression previousType = null;
-    ClassField previousField = null;
     Set<ClassField> implementedHere = new HashSet<>();
     for (Concrete.ClassElement element : def.getElements()) {
       if (element instanceof Concrete.CoClauseFunctionReference) {
         continue;
       }
       if (element instanceof Concrete.ClassField field) {
-        if (previousType == field.getResultType()) {
-          if (myNewDef && previousField != null) {
-            ClassField newField = addField(field.getData(), typedDef, previousField.getType(), previousField.getTypeLevel());
-            newField.setStatus(previousField.status());
-            newField.setUniverseKind(previousField.getUniverseKind());
-            newField.setNumberOfParameters(previousField.getNumberOfParameters());
-          }
-        } else {
-          previousType = field.getResultType();
-          previousField = typecheckClassField(field, typedDef, localInstances, hasClassifyingField);
-          if (previousField != null) {
-            UniverseKind universeKind = new UniverseKindChecker(def.getRecursiveDefinitions()).getUniverseKind(previousField.getType().getCodomain());
-            previousField.setUniverseKind(universeKind);
-            previousField.setNumberOfParameters(Concrete.getNumberOfParameters(field.getParameters()));
-          }
-
-          addFieldInstance(previousField != null ? previousField : (ClassField) field.getData().getTypechecked(), typedDef, localInstances, false);
-        }
-        if (field.isCoerce()) {
-          ClassField classField = (ClassField) field.getData().getTypechecked();
-          classField.setHideable(true);
-          typedDef.getCoerceData().addCoercingField(classField, errorReporter, field);
+        if (!field.getData().isParameterField()) {
+          typecheckClassField(field, typedDef, localInstances, hasClassifyingField, def);
         }
       } else if (element instanceof Concrete.ClassFieldImpl classFieldImpl) {
         ClassField field = typechecker.referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
@@ -2980,11 +2991,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
       } else if (element instanceof Concrete.OverriddenField) {
-        ClassField field = typecheckClassField((Concrete.OverriddenField) element, typedDef, localInstances, hasClassifyingField);
+        ClassField field = typecheckClassField((Concrete.OverriddenField) element, typedDef, localInstances, hasClassifyingField, def);
         if (field == null) {
           classOk = false;
-        } else if (myNewDef) {
-          addFieldInstance(field, typedDef, localInstances, true);
         }
       } else {
         throw new IllegalStateException();
@@ -3236,7 +3245,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return new Pair<>(link, resultType);
   }
 
-  private ClassField typecheckClassField(Concrete.BaseClassField def, ClassDefinition parentClass, List<LocalInstance> localInstances, boolean hasClassifyingField) {
+  private ClassField typecheckClassField(Concrete.BaseClassField def, ClassDefinition parentClass, List<LocalInstance> localInstances, boolean hasClassifyingField, Concrete.ClassDefinition classDef) {
     ClassField typedDef = null;
     if (def instanceof Concrete.OverriddenField) {
       typedDef = typechecker.referableToClassField(((Concrete.OverriddenField) def).getOverriddenField(), def);
@@ -3383,8 +3392,20 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    if (typedDef != null || def instanceof Concrete.ClassField) {
+      addFieldInstance(typedDef != null ? typedDef : (ClassField) ((Concrete.ClassField) def).getData().getTypechecked(), parentClass, localInstances, false);
+    }
     if (!newDef) {
       return null;
+    }
+
+    if (def instanceof Concrete.ClassField field) {
+      if (field.isCoerce()) {
+        typedDef.setHideable(true);
+        parentClass.getCoerceData().addCoercingField(typedDef, errorReporter, field);
+      }
+      typedDef.setUniverseKind(new UniverseKindChecker(classDef.getRecursiveDefinitions()).getUniverseKind(typedDef.getType().getCodomain()));
+      typedDef.setNumberOfParameters(Concrete.getNumberOfParameters(field.getParameters()));
     }
 
     if (isProperty && def instanceof Concrete.ClassField) {

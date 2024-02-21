@@ -132,6 +132,13 @@ public interface ClassReferable extends LocatedReferable {
 
       Set<FieldReferable> result = new LinkedHashSet<>();
 
+      Collection<? extends FieldReferable> fields = classDef.getFieldReferables();
+      for (FieldReferable field : fields) {
+        if (field.isParameterField()) {
+          result.add(field);
+        }
+      }
+
       for (ClassReferable superClass : classDef.getSuperClassReferences()) {
         Set<FieldReferable> superClassSet = getAllFields(superClass, visited, superClassesFields);
         superClassesFields.compute(superClass, (k,oldFields) -> {
@@ -145,7 +152,12 @@ public interface ClassReferable extends LocatedReferable {
         result.addAll(superClassSet);
       }
 
-      result.addAll(classDef.getFieldReferables());
+      for (FieldReferable field : fields) {
+        if (!field.isParameterField()) {
+          result.add(field);
+        }
+      }
+
       return result;
     }
   }

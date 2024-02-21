@@ -21,6 +21,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Matchers {
   public static Matcher<? super GeneralError> typecheckingError() {
@@ -302,15 +303,15 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> cycle(GlobalReferable... refs) {
-    List<GlobalReferable> referables = Arrays.asList(refs);
+    Set<GlobalReferable> referables = new HashSet<>(Arrays.asList(refs));
     return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-        List<? extends GlobalReferable> cycle;
+        Set<? extends GlobalReferable> cycle;
         if (error instanceof CycleError) {
-          cycle = ((CycleError) error).cycle;
+          cycle = new HashSet<>(((CycleError) error).cycle);
         } else if (error instanceof FieldCycleError) {
-          cycle = ((FieldCycleError) error).cycle.stream().map(ClassField::getReferable).toList();
+          cycle = ((FieldCycleError) error).cycle.stream().map(ClassField::getReferable).collect(Collectors.toSet());
         } else {
           cycle = null;
         }

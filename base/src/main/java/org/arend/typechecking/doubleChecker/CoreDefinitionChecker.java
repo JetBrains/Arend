@@ -286,7 +286,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
     return true;
   }
 
-  private boolean visitClass(ClassDefinition classDef, Set<ClassDefinition> stack, Set<ClassDefinition> visited, List<ClassField> fields) {
+  private boolean visitClass(ClassDefinition classDef, Set<ClassDefinition> stack, Set<ClassDefinition> visited, Collection<ClassField> fields) {
     if (!visited.add(classDef)) {
       return true;
     }
@@ -306,12 +306,12 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
   }
 
   private boolean check(ClassDefinition definition) {
-    List<ClassField> fields = new ArrayList<>();
+    Set<ClassField> fields = new HashSet<>();
     if (!visitClass(definition, new HashSet<>(), new HashSet<>(), fields)) {
       return false;
     }
     fields.removeAll(definition.getImplementedFields());
-    if (!fields.equals(new ArrayList<>(definition.getNotImplementedFields()))) {
+    if (!fields.equals(definition.getNotImplementedFields())) {
       errorReporter.report(new TypecheckingError("Class '" + definition.getName() + "' should have fields " + fields + ", but has fields " + definition.getNotImplementedFields(), null));
       return false;
     }

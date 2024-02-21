@@ -397,8 +397,8 @@ public class TypeClassesGlobalTest extends TypeCheckingTestCase {
     typeCheckModule("""
       \\class C (A : \\Type)
       \\class D (\\classifying B : \\Type) \\extends C | b : B
-      \\instance inst1 : D Int Nat | b => 1
-      \\instance inst2 : D Int (\\Sigma Nat Nat) | b => (2,2)
+      \\instance inst1 : D Nat Int | b => 1
+      \\instance inst2 : D (\\Sigma Nat Nat) Int | b => (2,2)
       \\func test1 : Nat => b
       \\func test2 : \\Sigma Nat Nat => b""");
     ClassDefinition classD = (ClassDefinition) getDefinition("D");
