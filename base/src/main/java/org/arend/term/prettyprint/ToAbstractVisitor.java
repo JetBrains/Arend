@@ -1057,7 +1057,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private Pair<Concrete.LevelParameters, Concrete.LevelParameters> visitLevelParameters(List<? extends LevelVariable> parameters, int n) {
-    return new Pair<>(visitLevelParameters(parameters.subList(0, n), true), visitLevelParameters(parameters.subList(n, parameters.size()), false));
+    return new Pair<>(parameters == null ? null : visitLevelParameters(parameters.subList(0, n), true), parameters == null ? null : visitLevelParameters(parameters.subList(n, parameters.size()), false));
   }
 
   private List<Concrete.FunctionClause> visitIntervalElim(DependentLink parameters, Body body) {
