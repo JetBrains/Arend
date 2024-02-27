@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Variable>> {
   private final DefinitionRenamer myDefinitionRenamer;
   private final Map<Binding, Set<Variable>> myFreeVariables = new HashMap<>();
+  private final Map<String, Variable> myRenamed = new HashMap<>();
 
   CollectFreeVariablesVisitor(DefinitionRenamer definitionRenamer) {
     myDefinitionRenamer = definitionRenamer;
@@ -128,10 +129,10 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
   public Void visitDefCall(DefCallExpression expr, Set<Variable> variables) {
     LongName longName = myDefinitionRenamer.renameDefinition(expr.getDefinition().getRef());
     if (longName != null) {
-      variables.add(new VariableImpl(longName.getFirstName()));
+      variables.add(myRenamed.computeIfAbsent(longName.getFirstName(), k -> new VariableImpl(longName.getFirstName())));
     } else {
       String alias = expr.getDefinition().getReferable().getAliasName();
-      variables.add(alias != null ? new VariableImpl(alias) : expr.getDefinition());
+      variables.add(alias != null ? myRenamed.computeIfAbsent(alias, k -> new VariableImpl(alias)) : expr.getDefinition());
     }
     return super.visitDefCall(expr, variables);
   }
