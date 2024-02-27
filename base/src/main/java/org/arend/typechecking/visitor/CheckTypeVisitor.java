@@ -2904,27 +2904,28 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private LetClausePattern typecheckLetClausePattern(Concrete.Pattern pattern, Expression expression, Expression type, Set<Binding> bindings) {
+  private LetClausePattern typecheckLetClausePattern(Concrete.Pattern pattern, TypecheckingResult tcResult, Set<Binding> bindings) {
     if (pattern instanceof Concrete.NamePattern) {
       Referable referable = ((Concrete.NamePattern) pattern).getRef();
       Concrete.Expression patternType = ((Concrete.NamePattern) pattern).type;
       if (patternType != null) {
         Type typeResult = checkType(((Concrete.NamePattern) pattern).type, Type.OMEGA);
-        if (typeResult != null && !type.isLessOrEquals(typeResult.getExpr(), myEquations, patternType)) {
-          errorReporter.report(new TypeMismatchError(typeResult.getExpr(), type, patternType));
+        if (typeResult != null && !tcResult.type.isLessOrEquals(typeResult.getExpr(), myEquations, patternType)) {
+          errorReporter.report(new TypeMismatchError(typeResult.getExpr(), tcResult.type, patternType));
         }
       }
 
       String name = referable == null ? null : referable.textRepresentation();
       if (referable != null) {
-        Binding binding = new TypedEvaluatingBinding(name, expression, type);
+        Binding binding = new TypedEvaluatingBinding(name, tcResult.expression, tcResult.type);
         bindings.add(binding);
         addBinding(referable, binding);
       }
       return new NameLetClausePattern(name);
     }
 
-    type = type.normalize(NormalizationMode.WHNF);
+    tcResult = TypeConstructorExpression.unfoldResult(tcResult);
+    Expression type = tcResult.type.normalize(NormalizationMode.WHNF);
     SigmaExpression sigma = type.cast(SigmaExpression.class);
     ClassCallExpression classCall = type.cast(ClassCallExpression.class);
     List<ClassField> notImplementedFields = classCall == null ? null : classCall.getNotImplementedFields();
@@ -2945,16 +2946,15 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         newType = link.getTypeExpr().subst(substitution);
       } else {
         ClassField field = notImplementedFields.get(i);
-        newType = classCall.getDefinition().getFieldType(field, classCall.getLevels(field.getParentClass()), expression);
+        newType = classCall.getDefinition().getFieldType(field, classCall.getLevels(field.getParentClass()), tcResult.expression);
       }
-      TypecheckingResult unfolded = TypeConstructorExpression.unfoldResult(new TypecheckingResult(link != null ? ProjExpression.make(expression, i, link.isProperty()) : FieldCallExpression.make(notImplementedFields.get(i), expression), newType));
-      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, unfolded.expression, unfolded.type, bindings);
+      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, new TypecheckingResult(link != null ? ProjExpression.make(tcResult.expression, i, link.isProperty()) : FieldCallExpression.make(notImplementedFields.get(i), tcResult.expression), newType), bindings);
       if (letClausePattern == null) {
         return null;
       }
       patterns.add(letClausePattern);
       if (link != null) {
-        substitution.add(link, ProjExpression.make(expression, i, link.isProperty()));
+        substitution.add(link, ProjExpression.make(tcResult.expression, i, link.isProperty()));
         link = link.getNext();
       }
     }
@@ -2982,7 +2982,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             }
           } else {
             addBinding(null, pair.proj1);
-            LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2, definedBindings);
+            LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new TypecheckingResult(new ReferenceExpression(pair.proj1), pair.proj2), definedBindings);
             if (pattern == null) {
               return null;
             }
