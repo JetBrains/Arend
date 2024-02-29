@@ -1055,7 +1055,7 @@ public class PatternTypechecking {
         for (int i = typeConstructorFunCalls.size() - 1; i >= 0; i--) {
           newConCall = TypeConstructorExpression.match(typeConstructorFunCalls.get(i), newConCall);
         }
-        typecheckAsPattern(pattern.getAsReferable(), newConCall, expr);
+        typecheckAsPattern(pattern.getAsReferable(), newConCall, expr.subst(varSubst));
         exprs.add(newConCall);
         paramsSubst.add(parameters, newConCall);
       }
