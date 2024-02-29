@@ -194,7 +194,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitGoal(Concrete.GoalExpression expr1, Concrete.Expression expr2) {
-    if (!(expr2 instanceof Concrete.GoalExpression goalExpr2)) return false;
+    if (!(expr2 instanceof Concrete.GoalExpression goalExpr2) || (expr1 instanceof Concrete.IncompleteExpression) != (expr2 instanceof Concrete.IncompleteExpression)) return false;
     if ((expr1.getName() == null) != (goalExpr2.getName() == null) || expr1.useGoalSolver != goalExpr2.useGoalSolver || (expr1.originalExpression == null) != (goalExpr2.originalExpression == null) || (expr1.expression == null) != (goalExpr2.expression == null)) return false;
     if (expr1.getName() != null && !expr1.getName().equals(goalExpr2.getName())) return false;
     if (expr1.expression != null && !expr1.expression.accept(this, goalExpr2.expression)) return false;
