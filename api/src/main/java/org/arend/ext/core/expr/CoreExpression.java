@@ -58,6 +58,11 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
   @Override @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);
 
   /**
+   * Normalizes and unfolds \type expressions.
+   */
+  @NotNull CoreExpression unfoldType();
+
+  /**
    * Unfolds all occurrences of given functions, fields, and variables in this expression.
    *
    * @param variables     a set of functions, fields, and variables to unfold.

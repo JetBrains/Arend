@@ -236,6 +236,11 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
+  public @NotNull Expression unfoldType() {
+    return TypeConstructorExpression.unfoldType(this);
+  }
+
+  @Override
   public @NotNull CoreExpression unfold(@NotNull Set<? extends Variable> functions, @Nullable Set<Variable> unfolded, boolean unfoldLet, boolean unfoldFields) {
     return functions.isEmpty() && !unfoldLet && !unfoldFields ? this : accept(new UnfoldVisitor(functions, unfolded, unfoldLet, unfoldFields ? UnfoldVisitor.UnfoldFields.ALL_FIELDS : UnfoldVisitor.UnfoldFields.ONLY_SPECIFIED), null);
   }
