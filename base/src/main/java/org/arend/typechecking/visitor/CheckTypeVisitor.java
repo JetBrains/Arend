@@ -126,7 +126,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     errorReporter.myStatus = errorReporter.myStatus.max(status);
   }
 
-  private CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder) {
+  protected CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder) {
     this.errorReporter = new MyErrorReporter(errorReporter);
     myEquations = new TwoStageEquations(this);
     myInstancePool = pool;
@@ -140,6 +140,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   public CheckTypeVisitor(ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
     this(new LinkedHashMap<>(), errorReporter, pool, arendExtension, null);
+  }
+
+  protected CheckTypeVisitor copy(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder) {
+    return new CheckTypeVisitor(localContext, errorReporter, pool, arendExtension, holder);
   }
 
   public ArendExtension getExtension() {
@@ -998,7 +1002,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           Type bindingType = binding.getType();
           if (bindingType != null) bindingType.subst(substVisitor);
         }
-        checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
+        checkTypeVisitor = copy(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
         checkTypeVisitor.setInstancePool(myInstancePool.copy(checkTypeVisitor));
         checkTypeVisitor.setLevelContext(myLevelContext);
       } else {
