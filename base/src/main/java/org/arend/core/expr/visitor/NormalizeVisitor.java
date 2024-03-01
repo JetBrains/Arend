@@ -746,7 +746,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         args = argument instanceof ConCallExpression
           ? ((ConCallExpression) argument).getDefCallArguments()
           : array != null
-            ? array.getConstructorArguments(!branchElimTree.withArrayElementsType(), !branchElimTree.withArrayLength())
+            ? array.getConstructorArguments(!branchElimTree.withArrayElementsType(), !branchElimTree.withArrayLength(), true)
             : argument instanceof PathExpression
               ? Collections.singletonList(((PathExpression) argument).getArgument())
               : key == Prelude.ZERO

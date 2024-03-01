@@ -74,7 +74,7 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
 
   private static BaseCallMatrix.R isLess(Expression expr1, ExpressionPattern pattern2) {
     if (pattern2 instanceof ConstructorExpressionPattern conPattern) {
-      List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, false);
+      List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, true);
       List<? extends ExpressionPattern> subPatterns = conPattern.getSubPatterns();
       for (ExpressionPattern arg : subPatterns) {
         if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;

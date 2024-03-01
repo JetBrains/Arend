@@ -284,7 +284,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       expression = expression.getUnderlyingExpression();
       if (function == Prelude.EMPTY_ARRAY) {
         if (expression instanceof ArrayExpression array && array.getElements().isEmpty() && array.getTail() == null) {
-          return array.getConstructorArguments(getArrayElementsType() == null, getArrayLength() == null);
+          return array.getConstructorArguments(getArrayElementsType() == null, getArrayLength() == null, normalize);
         }
         ClassCallExpression classCall = expression.getType().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
         if (classCall != null && classCall.getDefinition() == Prelude.DEP_ARRAY) {
@@ -300,7 +300,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       }
       if (function == Prelude.ARRAY_CONS) {
         if (expression instanceof ArrayExpression array && !array.getElements().isEmpty()) {
-          return array.getConstructorArguments(getArrayElementsType() == null, getArrayLength() == null);
+          return array.getConstructorArguments(getArrayElementsType() == null, getArrayLength() == null, normalize);
         }
         ClassCallExpression classCall = expression.getType().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
         if (classCall != null && classCall.getDefinition() == Prelude.DEP_ARRAY) {

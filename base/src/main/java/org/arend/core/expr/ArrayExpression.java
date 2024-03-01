@@ -13,6 +13,7 @@ import org.arend.core.subst.ListLevels;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.expr.CoreArrayExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
@@ -117,7 +118,7 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
     return result;
   }
 
-  public List<Expression> getConstructorArguments(boolean withElementsType, boolean withLength) {
+  public List<Expression> getConstructorArguments(boolean withElementsType, boolean withLength, boolean normalize) {
     if (myElements.isEmpty()) {
       return withElementsType ? Collections.singletonList(myElementsType) : Collections.emptyList();
     }
@@ -126,7 +127,16 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
     if (withLength) result.add(getLengthMinus1());
     if (withElementsType) result.add(myElementsType);
     result.add(myElements.get(0));
-    result.add(drop(1));
+    Expression tail = drop(1);
+    boolean useTail = tail instanceof ArrayExpression;
+    if (!useTail) {
+      Expression type = tail.getType();
+      type = normalize ? type.normalize(NormalizationMode.WHNF) : type.getUnderlyingExpression();
+      if (type instanceof ClassCallExpression classCall && classCall.isImplemented(Prelude.ARRAY_ELEMENTS_TYPE) && classCall.isImplemented(Prelude.ARRAY_LENGTH)) {
+        useTail = true;
+      }
+    }
+    result.add(useTail ? tail : new NewExpression(tail, new ClassCallExpression(Prelude.DEP_ARRAY, myLevels)));
     return result;
   }
 
