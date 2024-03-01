@@ -308,7 +308,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
           if (length != null) {
             if (length instanceof IntegerExpression && !((IntegerExpression) length).isZero() || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
               List<Expression> result = new ArrayList<>(4);
-              if (getArrayLength() == null) result.add(FieldCallExpression.make(Prelude.ARRAY_LENGTH, expression));
+              if (getArrayLength() == null) result.add(length instanceof IntegerExpression intExpr ? intExpr.pred() : ((ConCallExpression) length).getDefCallArguments().get(0));
               Expression elementsType = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expression);
               if (getArrayElementsType() == null) result.add(elementsType);
               result.add(AppExpression.make(FieldCallExpression.make(Prelude.ARRAY_AT, expression), new SmallIntegerExpression(0), true));
