@@ -15,12 +15,21 @@ import java.util.*;
 
 public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final Concrete.Definition myDefinition;
+  private final Set<Referable> myAddedParams;
   private final Map<TCDefReferable, List<Referable>> mySelfArgs;
   private final Map<ParameterReferable, Referable> myReferableMap = new HashMap<>();
 
   private WhereVarsFixVisitor(Concrete.Definition definition, Map<TCDefReferable, List<Referable>> selfArgs) {
     myDefinition = definition;
     mySelfArgs = selfArgs;
+    myAddedParams = new HashSet<>();
+    List<Referable> refs = selfArgs.get(definition.getData());
+    if (refs != null) {
+      myAddedParams.addAll(refs);
+    }
+    for (Concrete.Parameter parameter : definition.getParameters()) {
+      myAddedParams.addAll(parameter.getRefList());
+    }
   }
 
   private static int getReferableLevel(LocatedReferable referable) {
@@ -47,8 +56,10 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         Set<Pair<TCDefReferable, Integer>> wherePairs = new HashSet<>();
         Map<TCDefReferable, Set<Referable>> refMap = new HashMap<>();
         for (ParameterReferable whereRef : whereVars.proj1) {
-          wherePairs.add(new Pair<>(whereRef.getDefinition(), whereRef.getIndex()));
-          refMap.computeIfAbsent(whereRef.getDefinition(), k -> new HashSet<>()).add(getReferable(definition, whereRef));
+          if (definition.getExternalParameters().containsKey(whereRef.getDefinition())) {
+            wherePairs.add(new Pair<>(whereRef.getDefinition(), whereRef.getIndex()));
+            refMap.computeIfAbsent(whereRef.getDefinition(), k -> new HashSet<>()).add(getReferable(definition, whereRef));
+          }
         }
 
         record ParamData(TCDefReferable definition, Concrete.Parameter parameter, int index) {}
@@ -97,7 +108,7 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         int myLevel = getReferableLevel(definition.getData());
         for (Definition def : whereVars.proj2) {
           for (Pair<TCDefReferable, Integer> pair : def.getParametersOriginalDefinitions()) {
-            if (pair.proj1 != definition.getData() && !wherePairs.contains(pair) && getReferableLevel(pair.proj1) < myLevel && !(definition instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) definition).getUseParent() == pair.proj1)) {
+            if (definition.getExternalParameters().containsKey(pair.proj1) && pair.proj1 != definition.getData() && !wherePairs.contains(pair) && getReferableLevel(pair.proj1) < myLevel && !(definition instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) definition).getUseParent() == pair.proj1)) {
               wherePairs.add(pair);
             }
           }
@@ -136,7 +147,9 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         for (Concrete.Parameter param : newParams) {
           selfArgs.addAll(param.getReferableList());
         }
-        selfArgsMap.put(definition.getData(), selfArgs);
+        if (!selfArgs.isEmpty()) {
+          selfArgsMap.put(definition.getData(), selfArgs);
+        }
 
         if (!parametersOriginalDefinitions.isEmpty() && definition instanceof Concrete.BaseFunctionDefinition && !definition.getParameters().isEmpty()) {
           Concrete.FunctionBody body = ((Concrete.BaseFunctionDefinition) definition).getBody();
@@ -302,14 +315,19 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
           }
         }
         return Concrete.AppExpression.make(expr.getData(), expr, args);
-      } else {
+      } else if (!myAddedParams.isEmpty()) {
         List<Referable> selfArgs = mySelfArgs.get(ref);
         if (selfArgs != null) {
+          boolean found = false;
           List<Concrete.Argument> args = new ArrayList<>(selfArgs.size());
           for (Referable selfArg : selfArgs) {
-            args.add(new Concrete.GeneratedArgument(new Concrete.ReferenceExpression(expr.getData(), selfArg)));
+            boolean myHas = myAddedParams.contains(selfArg);
+            if (myHas) found = true;
+            args.add(new Concrete.GeneratedArgument(myHas ? new Concrete.ReferenceExpression(expr.getData(), selfArg) : new Concrete.HoleExpression(expr.getData())));
           }
-          return Concrete.AppExpression.make(expr.getData(), expr, args);
+          if (found) {
+            return Concrete.AppExpression.make(expr.getData(), expr, args);
+          }
         }
       }
     } else if (ref instanceof ParameterReferable) {

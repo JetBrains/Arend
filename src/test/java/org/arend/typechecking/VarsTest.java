@@ -203,6 +203,12 @@ public class VarsTest extends TypeCheckingTestCase {
         }
       \\func test : (foo.bar {5} {7} 1, foo.baz {5} {7} 1) = (5, 7) => idp
       """);
+    assertEquals(0, getDefinition("foo").getParametersOriginalDefinitions().size());
+    assertEquals(2, DependentLink.Helper.size(getDefinition("foo").getParameters()));
+    assertEquals(2, getDefinition("foo.bar").getParametersOriginalDefinitions().size());
+    assertEquals(3, DependentLink.Helper.size(getDefinition("foo.bar").getParameters()));
+    assertEquals(2, getDefinition("foo.baz").getParametersOriginalDefinitions().size());
+    assertEquals(3, DependentLink.Helper.size(getDefinition("foo.baz").getParameters()));
   }
 
   @Test
@@ -215,6 +221,42 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func bar (n : Nat) : Nat => m Nat.+ foo m n
       \\func test : (foo 2 1, foo.bar {2} 1) = (2,4) => idp
       """);
+    assertEquals(0, getDefinition("foo").getParametersOriginalDefinitions().size());
+    assertEquals(2, DependentLink.Helper.size(getDefinition("foo").getParameters()));
+    assertEquals(1, getDefinition("foo.bar").getParametersOriginalDefinitions().size());
+    assertEquals(2, DependentLink.Helper.size(getDefinition("foo.bar").getParameters()));
+  }
+
+  @Test
+  public void mutuallyRecursiveTest3() {
+    typeCheckModule("""
+      \\func foo (m n : Nat) => n
+        \\where
+          \\func bar (n : Nat) : Nat
+            | 0 => m
+            | suc n => baz n
+      \\func baz (n : Nat) : Nat => foo.bar {4} n
+      \\func test : (foo 2 1, foo.bar {2} 1, baz 7) = (1,4,4) => idp
+      """);
+    assertEquals(0, getDefinition("foo").getParametersOriginalDefinitions().size());
+    assertEquals(2, DependentLink.Helper.size(getDefinition("foo").getParameters()));
+    assertEquals(1, getDefinition("foo.bar").getParametersOriginalDefinitions().size());
+    assertEquals(2, DependentLink.Helper.size(getDefinition("foo.bar").getParameters()));
+    assertEquals(0, getDefinition("baz").getParametersOriginalDefinitions().size());
+    assertEquals(1, DependentLink.Helper.size(getDefinition("baz").getParameters()));
+  }
+
+  @Test
+  public void mutuallyRecursiveTest4() {
+    typeCheckModule("""
+      \\func foo (m n : Nat) => n
+        \\where
+          \\func bar (n : Nat) : Nat
+            | 0 => m
+            | suc n => baz n
+      \\func baz (n : Nat) : Nat => foo.bar n
+      """, 1);
+    assertThatErrorsAre(argInferenceError());
   }
 
   @Test
