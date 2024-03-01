@@ -33,13 +33,12 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void classExt() {
-    typeCheckModule(
-      """
-        \\func test1 => \\new Array Nat 1 (\\lam _ => 3)
-        \\func test2 : Array Nat \\cowith
-          | len => 3
-          | at _ => 1
-        """);
+    typeCheckModule("""
+      \\func test1 => \\new Array Nat 1 (\\lam _ => 3)
+      \\func test2 : Array Nat \\cowith
+        | len => 3
+        | at _ => 1
+      """);
     assertTrue(((ClassCallExpression) ((FunctionDefinition) getDefinition("test1")).getResultType()).isImplemented(Prelude.ARRAY_AT));
     assertEquals(Sort.PROP, ((FunctionDefinition) getDefinition("test1")).getResultType().getSortOfType());
     assertTrue(((ClassCallExpression) ((FunctionDefinition) getDefinition("test2")).getResultType()).isImplemented(Prelude.ARRAY_AT));
@@ -78,16 +77,15 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void indexTest() {
-    typeCheckModule(
-      """
-        \\open DArray(!!)
-        \\func array : Array Nat 2 => 14 :: 22 :: nil
-        \\lemma test1 : array.at 0 = 14 => idp
-        \\lemma test2 : array.at 1 = 22 => idp
-        \\lemma test3 : array !! 0 = 14 => idp
-        \\lemma test4 : array !! 1 = 22 => idp
-        \\func test5 {A : \\Type} (a : Array A) (i : Fin a.len) : a.at i = a !! i => idp
-        """);
+    typeCheckModule("""
+      \\open DArray(!!)
+      \\func array : Array Nat 2 => 14 :: 22 :: nil
+      \\lemma test1 : array.at 0 = 14 => idp
+      \\lemma test2 : array.at 1 = 22 => idp
+      \\lemma test3 : array !! 0 = 14 => idp
+      \\lemma test4 : array !! 1 = 22 => idp
+      \\func test5 {A : \\Type} (a : Array A) (i : Fin a.len) : a.at i = a !! i => idp
+      """);
   }
 
   @Test
@@ -98,12 +96,11 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void nilEtaTest() {
-    typeCheckModule(
-      """
-        \\lemma test1 (a b : Array Nat 0) : a = b => idp
-        \\func test2 (a : DArray { | len => 0 }) : a = nil => idp
-        \\func test3 (a : DArray { | len => 0 }) : nil = a => idp
-        """);
+    typeCheckModule("""
+      \\lemma test1 (a b : Array Nat 0) : a = b => idp
+      \\func test2 (a : DArray { | len => 0 }) : a = nil => idp
+      \\func test3 (a : DArray { | len => 0 }) : nil = a => idp
+      """);
   }
 
   @Test
@@ -146,18 +143,17 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void disjointConstructorsTest() {
-    typeCheckModule(
-      """
-        \\lemma test1 (p : 1 :: 2 :: nil = 1 :: 2 :: 3 :: nil) : 0 = 1
-        \\lemma test2 (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: nil) : 0 = 1
-        \\lemma test3 (a : Array Nat 3) (p : 1 :: 2 :: nil = 1 :: 2 :: 3 :: a) : 0 = 1
-        \\lemma test4 (a : Array Nat 3) (p : 1 :: 2 :: 3 :: a = 1 :: 2 :: nil) : 0 = 1
-        \\lemma test5 (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: 4 :: nil) : 0 = 1
-        \\lemma test6 (a : Array Nat 3) (p : 1 :: 2 :: 3 :: a = 1 :: 3 :: 3 :: nil) : 0 = 1
-        \\lemma test7 (a b : Array Nat 3) (p : 1 :: 2 :: 3 :: a = 1 :: 2 :: 4 :: b) : 0 = 1
-        \\lemma test8 (a : Array Nat 0) (p : 1 :: 2 :: a = 1 :: 2 :: 3 :: nil) : 0 = 1
-        \\lemma test9 (a : Array Nat 0) (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: a) : 0 = 1
-        """);
+    typeCheckModule("""
+      \\lemma test1 (p : 1 :: 2 :: nil = 1 :: 2 :: 3 :: nil) : 0 = 1
+      \\lemma test2 (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: nil) : 0 = 1
+      \\lemma test3 (a : Array Nat 3) (p : 1 :: 2 :: nil = 1 :: 2 :: 3 :: a) : 0 = 1
+      \\lemma test4 (a : Array Nat 3) (p : 1 :: 2 :: 3 :: a = 1 :: 2 :: nil) : 0 = 1
+      \\lemma test5 (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: 4 :: nil) : 0 = 1
+      \\lemma test6 (a : Array Nat 3) (p : 1 :: 2 :: 3 :: a = 1 :: 3 :: 3 :: nil) : 0 = 1
+      \\lemma test7 (a b : Array Nat 3) (p : 1 :: 2 :: 3 :: a = 1 :: 2 :: 4 :: b) : 0 = 1
+      \\lemma test8 (a : Array Nat 0) (p : 1 :: 2 :: a = 1 :: 2 :: 3 :: nil) : 0 = 1
+      \\lemma test9 (a : Array Nat 0) (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: a) : 0 = 1
+      """);
   }
 
   @Test
@@ -194,284 +190,269 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void patternMatchingTest() {
-    typeCheckModule(
-      """
-        \\open Array
-        \\func f (x : Array Nat 2) : Nat
-          | :: x (:: y nil) => x Nat.+ y
-        \\lemma test1 : f (3 :: 5 :: nil) = 8 => idp
-        \\lemma test2 : f (\\new Array Nat 2 (\\lam _ => 6)) = 12 => idp
-        """);
+    typeCheckModule("""
+      \\open Array
+      \\func f (x : Array Nat 2) : Nat
+        | :: x (:: y nil) => x Nat.+ y
+      \\lemma test1 : f (3 :: 5 :: nil) = 8 => idp
+      \\lemma test2 : f (\\new Array Nat 2 (\\lam _ => 6)) = 12 => idp
+      """);
   }
 
   @Test
   public void patternMatchingTest2() {
-    typeCheckModule(
-      """
-        \\open Array
-        \\func f (x : Array Nat) : Nat
-          | nil => 0
-          | :: x nil => x
-          | :: x (:: y _) => x Nat.+ y
-        \\lemma test1 : f (7 :: 12 :: 22 :: nil) = 19 => idp
-        \\lemma test2 : f (\\new Array Nat 5 (\\case __ \\with { | 0 => 41 | 1 => 56 | _ => 17 })) = 97 => idp
-        """);
+    typeCheckModule("""
+      \\open Array
+      \\func f (x : Array Nat) : Nat
+        | nil => 0
+        | :: x nil => x
+        | :: x (:: y _) => x Nat.+ y
+      \\lemma test1 : f (7 :: 12 :: 22 :: nil) = 19 => idp
+      \\lemma test2 : f (\\new Array Nat 5 (\\case __ \\with { | 0 => 41 | 1 => 56 | _ => 17 })) = 97 => idp
+      """);
   }
 
   @Test
   public void patternMatchingTest3() {
-    typeCheckModule(
-      """
-        \\open Array
-        \\func f {n : Nat} (x : Array Nat n) : Nat \\elim n, x
-          | 0, nil => 0
-          | suc n, :: x a => x Nat.+ f a
-        \\lemma test1 : f (7 :: 22 :: 46 :: nil) = 75 => idp
-        \\lemma test2 : f (\\new Array Nat 4 (\\lam _ => 5)) = 20 => idp
-        """);
+    typeCheckModule("""
+      \\open Array
+      \\func f {n : Nat} (x : Array Nat n) : Nat \\elim n, x
+        | 0, nil => 0
+        | suc n, :: x a => x Nat.+ f a
+      \\lemma test1 : f (7 :: 22 :: 46 :: nil) = 75 => idp
+      \\lemma test2 : f (\\new Array Nat 4 (\\lam _ => 5)) = 20 => idp
+      """);
   }
 
   @Test
   public void patternMatchingTest4() {
-    typeCheckModule(
-      """
-        \\open Array
-        \\func f {n : Nat} (x : Array Nat (suc (suc n))) : Nat
-          | :: x (:: y _) => x Nat.+ y
-        \\lemma test1 : f (3 :: 5 :: nil) = 8 => idp
-        \\lemma test2 : f (\\new Array Nat 2 (\\lam _ => 6)) = 12 => idp
-        """);
+    typeCheckModule("""
+      \\open Array
+      \\func f {n : Nat} (x : Array Nat (suc (suc n))) : Nat
+        | :: x (:: y _) => x Nat.+ y
+      \\lemma test1 : f (3 :: 5 :: nil) = 8 => idp
+      \\lemma test2 : f (\\new Array Nat 2 (\\lam _ => 6)) = 12 => idp
+      """);
   }
 
   @Test
   public void patternMatchingTest5() {
-    typeCheckModule(
-      """
-        \\func test {n : Nat} (l : Array Nat n) : l = l \\elim l
-          | nil => idp
-          | a :: l => idp
-        """, 1);
+    typeCheckModule("""
+      \\func test {n : Nat} (l : Array Nat n) : l = l \\elim l
+        | nil => idp
+        | a :: l => idp
+      """, 1);
     assertThatErrorsAre(Matchers.typecheckingError(ImpossibleEliminationError.class));
   }
 
   @Test
   public void patternMatchingTest6() {
-    typeCheckModule(
-      """
-        \\func test {n : Nat} (l : Array Nat n) : l = l \\elim n, l
-          | 0, nil => idp
-          | suc n, a :: l => idp
-        """);
+    typeCheckModule("""
+      \\func test {n : Nat} (l : Array Nat n) : l = l \\elim n, l
+        | 0, nil => idp
+        | suc n, a :: l => idp
+      """);
   }
 
   @Test
   public void patternMatchingTest7() {
-    typeCheckModule(
-      """
-        \\func test (l : Array Nat 0) : l = l
-          | nil => idp
-        """);
+    typeCheckModule("""
+      \\func test (l : Array Nat 0) : l = l
+        | nil => idp
+      """);
   }
 
   @Test
   public void patternMatchingTest8() {
-    typeCheckModule(
-      """
-        \\func test (l : Array Nat) : l = l
-          | nil => idp
-          | a :: l => idp
-        """);
+    typeCheckModule("""
+      \\func test (l : Array Nat) : l = l
+        | nil => idp
+        | a :: l => idp
+      """);
   }
 
   @Test
   public void patternMatchingTest9() {
-    typeCheckModule(
-      """
-        \\func test (l : Array) : Nat
-          | nil => 0
-          | a :: {n} l => n
-        """);
+    typeCheckModule("""
+      \\func test (l : Array) : Nat
+        | nil => 0
+        | a :: {n} l => n
+      """);
   }
 
   @Test
   public void patternMatchingTest10() {
-    typeCheckModule(
-      """
-        \\func test (l : Array) : Nat
-          | nil => 0
-          | a :: {n} nil => n
-          | a :: a' :: l => 1
-        """, 1);
+    typeCheckModule("""
+      \\func test (l : Array) : Nat
+        | nil => 0
+        | a :: {n} nil => n
+        | a :: a' :: l => 1
+      """, 1);
     assertThatErrorsAre(Matchers.typecheckingError(ImpossibleEliminationError.class));
   }
 
   @Test
   public void patternMatchingTest11() {
-    typeCheckModule(
-      """
-        \\func test (l : Array) : Nat
-          | nil => 0
-          | a :: {0} nil => 1
-          | a :: a' :: l => 2
-        """);
+    typeCheckModule("""
+      \\func test (l : Array) : Nat
+        | nil => 0
+        | a :: {0} nil => 1
+        | a :: a' :: l => 2
+      """);
   }
 
   @Test
   public void patternMatchingTest12() {
-    typeCheckModule(
-      """
-        \\func test (l : Array) : Nat
-          | nil => 0
-          | a :: nil => 1
-          | a :: {suc n} a' :: l => n
-        """);
+    typeCheckModule("""
+      \\func test (l : Array) : Nat
+        | nil => 0
+        | a :: nil => 1
+        | a :: {suc n} a' :: l => n
+      """);
   }
 
   @Test
   public void patternMatchingTest13() {
-    typeCheckModule(
-      """
-        \\func test (l : Array) : Nat
-          | nil => 0
-          | a :: nil => 1
-          | a :: {n} a' :: l => n
-        """, 1);
+    typeCheckModule("""
+      \\func test (l : Array) : Nat
+        | nil => 0
+        | a :: nil => 1
+        | a :: {n} a' :: l => n
+      """, 1);
     assertThatErrorsAre(Matchers.typecheckingError(ImpossibleEliminationError.class));
   }
 
   @Test
   public void patternMatchingTest14() {
-    typeCheckModule(
-      """
-        \\func test (l : Array) : Nat
-          | nil => 0
-          | a :: nil => 1
-          | a :: a' :: {n} l => n
-        """, 1);
+    typeCheckModule("""
+      \\func test (l : Array) : Nat
+        | nil => 0
+        | a :: nil => 1
+        | a :: a' :: {n} l => n
+      """, 1);
     assertThatErrorsAre(Matchers.typecheckingError(CertainTypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN));
   }
 
   @Test
   public void patternMatchingTest15() {
-    typeCheckModule(
-      """
-        \\func test (l : Array) : Nat
-          | nil => 0
-          | a :: {suc n} l => 1
-        """, 1);
+    typeCheckModule("""
+      \\func test (l : Array) : Nat
+        | nil => 0
+        | a :: {suc n} l => 1
+      """, 1);
     assertThatErrorsAre(Matchers.missingClauses(1));
   }
 
   @Test
   public void patternMatchingTest16() {
-    typeCheckModule(
-      """
-        \\func test (l : Array) : Nat
-          | nil => 0
-          | :: a => 1
-        """, 1);
+    typeCheckModule("""
+      \\func test (l : Array) : Nat
+        | nil => 0
+        | :: a => 1
+      """, 1);
     assertThatErrorsAre(Matchers.typecheckingError(NotEnoughPatternsError.class));
   }
 
   @Test
   public void patternMatchingTest17() {
-    typeCheckModule(
-      """
-        \\func test (l : Array) : Nat
-          | nil => 0
-          | a :: => 1
-        """, 1);
+    typeCheckModule("""
+      \\func test (l : Array) : Nat
+        | nil => 0
+        | a :: => 1
+      """, 1);
     assertThatErrorsAre(Matchers.typecheckingError(NotEnoughPatternsError.class));
   }
 
   @Test
   public void test() {
-    typeCheckModule(
-      """
-        \\func test => :: 0
-        """);
+    typeCheckModule("\\func test => :: 0");
   }
 
   @Test
   public void casePatternMatchingTest() {
-    typeCheckModule(
-      """
-        \\func test {n : Nat} (l : Array Nat n) : Nat
-          => \\case l \\with {
-               | nil => 0
-               | a :: _ => a
-             }
-        """);
+    typeCheckModule("""
+      \\func test {n : Nat} (l : Array Nat n) : Nat
+        => \\case l \\with {
+             | nil => 0
+             | a :: _ => a
+           }
+      """);
   }
 
   @Test
   public void casePatternMatchingTest2() {
-    typeCheckModule(
-      """
-        \\func test {n : Nat} (l : Array Nat n) : l = {Array Nat} l
-          => \\case l \\with {
-               | nil => idp
-               | a :: _ => idp
-             }
-        """);
+    typeCheckModule("""
+      \\func test {n : Nat} (l : Array Nat n) : l = {Array Nat} l
+        => \\case l \\with {
+             | nil => idp
+             | a :: _ => idp
+           }
+      """);
   }
 
   @Test
   public void casePatternMatchingTest3() {
-    typeCheckModule(
-      """
-        \\func test {n : Nat} (l : Array Nat n) : l = {Array Nat} l
-          => \\case \\elim l \\with {
-               | nil => idp
-               | a :: _ => idp
-             }
-        """);
+    typeCheckModule("""
+      \\func test {A : \\Set} {n : Nat} (l : Array A n) : Nat
+        => \\case \\elim l \\with {
+          | nil => 0
+          | a :: l => 1
+        }
+      """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(ImpossibleEliminationError.class));
   }
 
   @Test
   public void casePatternMatchingTest4() {
-    typeCheckModule(
-      """
-        \\func test {n : Nat} (l : Array Nat n) : l = {Array Nat n} l
-          => \\case l \\with {
-               | nil => idp {Array Nat n}
-               | a :: _ => idp {Array Nat n}
-             }
-        """);
+    typeCheckModule("""
+      \\func test {n : Nat} (l : Array Nat n) : l = {Array Nat n} l
+        => \\case l \\with {
+             | nil => idp {Array Nat n}
+             | a :: _ => idp {Array Nat n}
+           }
+      """);
   }
 
   @Test
   public void casePatternMatchingTest5() {
-    typeCheckModule(
-      """
-        \\func test {n : Nat} (l : Array Nat n) : l = {Array Nat n} l
-          => \\case \\elim l \\with {
-               | nil => idp {Array Nat 0} {nil}
-               | a :: {n} l => idp {Array Nat (suc n)} {a :: l}
-             }
-        """, 2);
-    assertThatErrorsAre(Matchers.typeMismatchError(), Matchers.typeMismatchError());
+    typeCheckModule("""
+      \\func test {A : \\Set} {n : Nat} (l : Array A n) : Nat
+        => \\case \\elim n, \\elim l \\with {
+          | 0, nil => 0
+          | suc n, a :: l => 1
+        }
+      """);
+  }
+
+  @Test
+  public void casePatternMatchingTest6() {
+    typeCheckModule("""
+      \\func test {A : \\Set} {n : Nat} (l : Array A n) : Nat
+        => \\case \\elim n, \\elim l : Array A n \\with {
+          | 0, nil => 0
+          | suc n, a :: l => 1
+        }
+      """);
   }
 
   @Test
   public void tuplePatternTest() {
-    typeCheckModule(
-      """
-        \\func test1 (x : DArray) : Fin x.len -> \\Type
-          | (_, A, _) => A
-        \\func test2 (x : DArray) : Nat
-          | (n, _, _) => n
-        \\func test2' {A : \\Type} (x : Array A) : Nat
-          | (n, _) => n
-        \\func test3 (x : DArray) : \\Pi (j : Fin x.len) -> x.A j
-          | (_, _, f) => f
-        \\func test3' {A : \\Type} (x : Array A) : Fin x.len -> A
-          | (_, f) => f
-        \\func test6 {n : Nat} (x : DArray { | len => n }) : Fin n -> \\Type
-          | (A, _) => A
-        \\func test7 {n : Nat} (x : DArray { | len => n }) : \\Pi (j : Fin n) -> x.A j
-          | (_, f) => f
-        """);
+    typeCheckModule("""
+      \\func test1 (x : DArray) : Fin x.len -> \\Type
+        | (_, A, _) => A
+      \\func test2 (x : DArray) : Nat
+        | (n, _, _) => n
+      \\func test2' {A : \\Type} (x : Array A) : Nat
+        | (n, _) => n
+      \\func test3 (x : DArray) : \\Pi (j : Fin x.len) -> x.A j
+        | (_, _, f) => f
+      \\func test3' {A : \\Type} (x : Array A) : Fin x.len -> A
+        | (_, f) => f
+      \\func test6 {n : Nat} (x : DArray { | len => n }) : Fin n -> \\Type
+        | (A, _) => A
+      \\func test7 {n : Nat} (x : DArray { | len => n }) : \\Pi (j : Fin n) -> x.A j
+        | (_, f) => f
+      """);
   }
 
   @Test
@@ -482,35 +463,32 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void extractType() {
-    typeCheckModule(
-      """
-        \\func f (x : DArray) : Fin x.len -> \\Type
-          | nil {A} => A
-          | :: {_} {A} _ _ => A
-        \\func test : f (1 :: nil) = (\\lam _ => Nat) => idp
-        """);
+    typeCheckModule("""
+      \\func f (x : DArray) : Fin x.len -> \\Type
+        | nil {A} => A
+        | :: {_} {A} _ _ => A
+      \\func test : f (1 :: nil) = (\\lam _ => Nat) => idp
+      """);
   }
 
   @Test
   public void extractType2() {
-    typeCheckModule(
-      """
-        \\func f (n : Nat) (x : DArray {n}) : Fin x.len -> \\Type
-          | 0, nil {A} => A
-          | suc _, :: {A} _ _ => A
-        \\func test : f 1 (1 :: nil) = (\\lam _ => Nat) => idp
-        """);
+    typeCheckModule("""
+      \\func f (n : Nat) (x : DArray {n}) : Fin x.len -> \\Type
+        | 0, nil {A} => A
+        | suc _, :: {A} _ _ => A
+      \\func test : f 1 (1 :: nil) = (\\lam _ => Nat) => idp
+      """);
   }
 
   @Test
   public void extractType3() {
-    typeCheckModule(
-      """
-        \\func f (n : Nat) (x : DArray {n}) : Fin n -> \\Type
-          | 0, nil {A} => A
-          | suc _, :: {A} _ _ => A
-        \\func test : f 1 (1 :: nil) = (\\lam _ => Nat) => idp
-        """);
+    typeCheckModule("""
+      \\func f (n : Nat) (x : DArray {n}) : Fin n -> \\Type
+        | 0, nil {A} => A
+        | suc _, :: {A} _ _ => A
+      \\func test : f 1 (1 :: nil) = (\\lam _ => Nat) => idp
+      """);
   }
 
   @Test
@@ -548,24 +526,22 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void inferTypeTest() {
-    typeCheckModule(
-      """
-        \\func test1 : Fin 2 -> Fin 7 => DArray.at {3 :: 5 :: nil}
-        \\func test2 : Fin 2 -> Fin 7 => (3 :: 5 :: nil) DArray.!!
-        \\func test3 : Fin 2 -> Fin 7 => 3 :: 5 :: nil
-        """);
+    typeCheckModule("""
+      \\func test1 : Fin 2 -> Fin 7 => DArray.at {3 :: 5 :: nil}
+      \\func test2 : Fin 2 -> Fin 7 => (3 :: 5 :: nil) DArray.!!
+      \\func test3 : Fin 2 -> Fin 7 => 3 :: 5 :: nil
+      """);
   }
 
   @Test
   public void coerceTest2() {
-    typeCheckModule(
-      """
-        \\func test1 (P : Array Nat -> \\Type) (x : Array Nat) (p : P x) : P x => p
-        \\func test2 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (x DArray.!!)) : P x => p
-        \\func test3 (P : Array Nat -> \\Type) (x : Array Nat) (p : P x.at) : P x => p
-        \\func test4 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x DArray.!! i)) : P x => p
-        \\func test5 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x.at i)) : P x => p
-        """);
+    typeCheckModule("""
+      \\func test1 (P : Array Nat -> \\Type) (x : Array Nat) (p : P x) : P x => p
+      \\func test2 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (x DArray.!!)) : P x => p
+      \\func test3 (P : Array Nat -> \\Type) (x : Array Nat) (p : P x.at) : P x => p
+      \\func test4 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x DArray.!! i)) : P x => p
+      \\func test5 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x.at i)) : P x => p
+      """);
   }
 
   @Test
@@ -575,53 +551,48 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void doublePatternMatching() {
-    typeCheckDef(
-      """
-        \\func test (n : Nat) (l l' : Array Nat n) : Nat
-          | 0, nil, nil => 0
-          | suc n, :: a l, :: a' l' => 1
-        """);
+    typeCheckDef("""
+      \\func test (n : Nat) (l l' : Array Nat n) : Nat
+        | 0, nil, nil => 0
+        | suc n, :: a l, :: a' l' => 1
+      """);
   }
 
   @Test
   public void fixedLength() {
-    typeCheckModule(
-      """
-        \\func f {n : Nat} (l : DArray { | len => suc n }) : l.A 0 \\elim l
-          | :: a _ => a
-        \\func test : f (1 :: {_} {\\lam _ => Nat} 2 :: nil) = 1 => idp
-        """);
+    typeCheckModule("""
+      \\func f {n : Nat} (l : DArray { | len => suc n }) : l.A 0 \\elim l
+        | :: a _ => a
+      \\func test : f (1 :: {_} {\\lam _ => Nat} 2 :: nil) = 1 => idp
+      """);
   }
 
   @Test
   public void fixedLength2() {
-    typeCheckModule(
-      """
-        \\func f (l : DArray { | len => 0 }) : Nat \\elim l
-          | nil => 1
-        \\func test : f (nil {\\lam _ => Nat}) = 1 => idp
-        """);
+    typeCheckModule("""
+      \\func f (l : DArray { | len => 0 }) : Nat \\elim l
+        | nil => 1
+      \\func test : f (nil {\\lam _ => Nat}) = 1 => idp
+      """);
   }
 
   @Test
   public void fixedLength3() {
-    typeCheckModule(
-      """
-        \\func f (l : Array Nat 0) : Nat \\elim l
-          | nil => 1
-        \\func test : f nil = 1 => idp
-        """);
+    typeCheckModule("""
+      \\func f (l : Array Nat 0) : Nat \\elim l
+        | nil => 1
+      \\func test : f nil = 1 => idp
+      """);
   }
 
   @Test
   public void fixedLength4() {
-    typeCheckModule(
-      """
-        \\func f {n : Nat} (l : DArray { | len => n }) : Nat \\elim n, l
-          | 0, nil => 0
-          | suc _, :: _ _ => 1
-        \\func test : f (3 :: nil) = 1 => idp
-        """);
+    typeCheckModule("""
+      \\func f {n : Nat} (l : DArray { | len => n }) : Nat \\elim n, l
+        | 0, nil => 0
+        | suc _, :: _ _ => 1
+      \\func test : f (3 :: nil) = 1 => idp
+      """);
   }
 
   @Test
@@ -671,27 +642,24 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void dataPatternMatchingTest() {
-    typeCheckModule(
-      """
-        \\data D {A : \\Type} (l : Array A) \\elim l
-          | x :: x' :: l => con (x = x')
-        \\func test {A : \\Type} {l : Array A} (d : D l) : Nat \\elim l, d
-          | x :: x' :: l, con p => 0
-        """);
+    typeCheckModule("""
+      \\data D {A : \\Type} (l : Array A) \\elim l
+        | x :: x' :: l => con (x = x')
+      \\func test {A : \\Type} {l : Array A} (d : D l) : Nat \\elim l, d
+        | x :: x' :: l, con p => 0
+      """);
   }
 
   @Test
   public void impossibleEliminationTest() {
-    typeCheckModule(
-      """
-        \\data D {A : \\Type} (l : Array A) \\elim l
-          | :: x xs => con1 (D xs)
-          | :: x (:: x' l) => con2 (x = x')
-        \\func test {A : \\Type} {l : Array A} (d : D l) : Nat \\elim l, d
-          | x :: xs, con1 d => 0
-          | x :: (x' :: xs), con2 p => 1
-        """
-    );
+    typeCheckModule("""
+      \\data D {A : \\Type} (l : Array A) \\elim l
+        | :: x xs => con1 (D xs)
+        | :: x (:: x' l) => con2 (x = x')
+      \\func test {A : \\Type} {l : Array A} (d : D l) : Nat \\elim l, d
+        | x :: xs, con1 d => 0
+        | x :: (x' :: xs), con2 p => 1
+      """);
   }
 
   @Test

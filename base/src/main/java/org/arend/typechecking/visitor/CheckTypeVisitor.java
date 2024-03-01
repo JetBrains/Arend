@@ -3908,7 +3908,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
               break;
             }
           }
-          if (hasConstructors) {
+          if (hasConstructors && !caseArg.isElim) {
             Expression normType = exprResult.type.normalize(NormalizationMode.WHNF);
             if (normType instanceof ClassCallExpression classCall && classCall.getDefinition() == Prelude.DEP_ARRAY && classCall.isImplementedHere(Prelude.ARRAY_LENGTH)) {
               boolean ok = true;
