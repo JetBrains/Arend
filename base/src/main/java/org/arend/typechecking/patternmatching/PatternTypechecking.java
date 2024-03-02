@@ -669,10 +669,12 @@ public class PatternTypechecking {
             }
 
             int num = 0;
+            boolean both = false;
             for (DependentLink paramLink = myLinkList.getFirst(); paramLink.hasNext(); paramLink = paramLink.getNext()) {
               if (refExpr1 != null && refExpr1.getBinding() == paramLink) {
                 if (num == 2) {
                   num = 1;
+                  both = true;
                   break;
                 } else {
                   num = 1;
@@ -681,6 +683,7 @@ public class PatternTypechecking {
               if (refExpr2 != null && refExpr2.getBinding() == paramLink) {
                 if (num == 1) {
                   num = 2;
+                  both = true;
                   break;
                 } else {
                   num = 2;
@@ -691,6 +694,22 @@ public class PatternTypechecking {
               myErrorReporter.report(new IdpPatternError(IdpPatternError.noParameter(), dataCall, conPattern));
               return null;
             }
+
+            Expression normType = type.normalize(NormalizationMode.WHNF);
+            if (!(normType instanceof DataCallExpression)) {
+              if (!CompareVisitor.compare(myVisitor.getEquations(), CMP.EQ, normType, (num == 1 ? refExpr1 : refExpr2).getType(), Type.OMEGA, conPattern)) {
+                boolean ok = false;
+                if (both) {
+                  num = 3 - num;
+                  ok = CompareVisitor.compare(myVisitor.getEquations(), CMP.EQ, normType, (num == 1 ? refExpr1 : refExpr2).getType(), Type.OMEGA, conPattern);
+                }
+                if (!ok) {
+                  myErrorReporter.report(new IdpPatternError(IdpPatternError.typeMismatch(), dataCall, conPattern));
+                  return null;
+                }
+              }
+            }
+
             Binding substVar = num == 1 ? refExpr1.getBinding() : refExpr2.getBinding();
             Expression otherExpr = ElimBindingVisitor.elimBinding(num == 1 ? expr2 : expr1, substVar);
             if (otherExpr == null) {

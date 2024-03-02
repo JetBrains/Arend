@@ -1,6 +1,8 @@
 package org.arend.typechecking.patternmatching;
 
+import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.IdpPatternError;
 import org.junit.Test;
 
 public class IdpTest extends TypeCheckingTestCase {
@@ -315,5 +317,70 @@ public class IdpTest extends TypeCheckingTestCase {
       \\func test {A : \\Type} {x y : A} (d : D x y) : \\Sigma (a : A) (D a a) \\elim d
         | con idp \\as d => (x,d)
       """);
+  }
+
+  @Test
+  public void recordTest() {
+    typeCheckModule("""
+      \\record R (n m : Nat)
+      \\func test {A : \\Set} {n : Nat} (r : R n) (r' : R n) (p : r = {R} r') : Nat \\elim p
+        | idp => 0
+      """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(IdpPatternError.class));
+  }
+
+  @Test
+  public void recordTest2() {
+    typeCheckModule("""
+      \\record R (n m : Nat)
+      \\func test {A : \\Set} {n : Nat} (r : R) (r' : R n) (p : r = {R} r') : Nat \\elim p
+        | idp => 0
+      """);
+  }
+
+  @Test
+  public void recordTest3() {
+    typeCheckModule("""
+      \\record R (n m : Nat)
+      \\func test {A : \\Set} {n : Nat} (r : R n) (r' : R) (p : r = {R} r') : Nat \\elim p
+        | idp => 0
+      """);
+  }
+
+  @Test
+  public void recordTest4() {
+    typeCheckModule("""
+      \\record R (n m : Nat)
+      \\func test {A : \\Set} {n : Nat} (r' : R) (r : R n) (p : r = {R} r') : Nat \\elim p
+        | idp => 0
+      """);
+  }
+
+  @Test
+  public void recordTest5() {
+    typeCheckModule("""
+      \\record R (n m : Nat)
+      \\func test {A : \\Set} {n : Nat} (r' : R n) (r : R) (p : r = {R} r') : Nat \\elim p
+        | idp => 0
+      """);
+  }
+
+  @Test
+  public void recordTest6() {
+    typeCheckModule("""
+      \\record R (n m : Nat)
+      \\func test {A : \\Set} {n : Nat} (r : R) (r' : Nat -> R n) (p : r = {R} r' 0) : Nat \\elim p
+        | idp => 0
+      """);
+  }
+
+  @Test
+  public void recordTest7() {
+    typeCheckModule("""
+      \\record R (n m : Nat)
+      \\func test {A : \\Set} {n : Nat} (r : R n) (r' : Nat -> R) (p : r = {R} r' 0) : Nat \\elim p
+        | idp => 0
+      """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(IdpPatternError.class));
   }
 }

@@ -12,10 +12,7 @@ import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.local.CertainTypecheckingError;
-import org.arend.typechecking.error.local.ImpossibleEliminationError;
-import org.arend.typechecking.error.local.NotEnoughPatternsError;
-import org.arend.typechecking.error.local.NotEqualExpressionsError;
+import org.arend.typechecking.error.local.*;
 import org.arend.util.SingletonList;
 import org.junit.Test;
 
@@ -433,6 +430,15 @@ public class ArrayTest extends TypeCheckingTestCase {
           | suc n, a :: l => 1
         }
       """);
+  }
+
+  @Test
+  public void idpPatternMatchingTest() {
+    typeCheckModule("""
+      \\func test {A : \\Set} {n n' : Nat} (l : Array A n) (l' : Array A n') (p : l = l') : Nat \\elim p
+        | idp => 0
+      """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError(IdpPatternError.class));
   }
 
   @Test
