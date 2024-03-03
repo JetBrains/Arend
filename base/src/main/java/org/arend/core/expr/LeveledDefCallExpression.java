@@ -34,7 +34,7 @@ public abstract class LeveledDefCallExpression extends DefCallExpression {
     myLevels = myLevels.subst(substitution);
   }
 
-  public Levels minimizeLevels() {
+  public Levels getMinimizedLevels() {
     return GetTypeVisitor.MIN_INSTANCE.minimizeLevels(this);
   }
 }

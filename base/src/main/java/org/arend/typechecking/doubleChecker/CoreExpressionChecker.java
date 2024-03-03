@@ -108,7 +108,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     ExprSubstitution substitution = new ExprSubstitution();
     List<? extends Expression> args = expr.getDefCallArguments();
     checkList(args, expr.getDefinition().getParameters(), substitution, expr.getLevelSubstitution());
-    var resultType = expr.getDefinition().getResultType().subst(substitution, expr.minimizeLevels().makeSubstitution(expr.getDefinition()));
+    var resultType = expr.getDefinition().getResultType().subst(substitution, expr.getMinimizedLevels().makeSubstitution(expr.getDefinition()));
     if (expr.getDefinition() == Prelude.MOD || expr.getDefinition() == Prelude.DIV_MOD) {
       Expression arg2 = args.get(1);
       IntegerExpression integer = arg2.cast(IntegerExpression.class);

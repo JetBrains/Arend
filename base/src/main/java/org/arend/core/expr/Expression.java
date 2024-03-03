@@ -155,6 +155,11 @@ public abstract class Expression implements Body, CoreExpression {
     return computeTyped(false);
   }
 
+  @Override
+  public @NotNull Expression minimizeLevels() {
+    return this;
+  }
+
   public boolean findBinding(Variable binding) {
     return accept(new FindBindingVisitor(Collections.singleton(binding)), null);
   }

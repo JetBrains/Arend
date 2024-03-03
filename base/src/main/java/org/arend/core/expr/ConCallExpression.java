@@ -75,6 +75,11 @@ public class ConCallExpression extends LeveledDefCallExpression implements CoreC
   }
 
   @Override
+  public @NotNull Expression minimizeLevels() {
+    return new ConCallExpression(getDefinition(), getMinimizedLevels(), myDataTypeArguments, myArguments);
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitConCall(this, params);
   }

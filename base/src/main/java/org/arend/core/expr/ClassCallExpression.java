@@ -499,6 +499,11 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
   }
 
   @Override
+  public @NotNull Expression minimizeLevels() {
+    return new ClassCallExpression(getDefinition(), getMinimizedLevels(), myImplementations, mySort, myUniverseKind);
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitClassCall(this, params);
   }

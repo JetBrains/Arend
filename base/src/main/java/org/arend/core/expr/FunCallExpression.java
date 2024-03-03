@@ -36,9 +36,7 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
   }
 
   public static Expression make(FunctionDefinition definition, Levels levels, List<Expression> arguments) {
-    if ((definition == Prelude.PLUS || definition == Prelude.MUL || definition == Prelude.MINUS || definition == Prelude.DIV || definition == Prelude.MOD || definition == Prelude.DIV_MOD) && arguments.size() == 2 && arguments.get(0) instanceof IntegerExpression && arguments.get(1) instanceof IntegerExpression) {
-      IntegerExpression expr1 = (IntegerExpression) arguments.get(0);
-      IntegerExpression expr2 = (IntegerExpression) arguments.get(1);
+    if ((definition == Prelude.PLUS || definition == Prelude.MUL || definition == Prelude.MINUS || definition == Prelude.DIV || definition == Prelude.MOD || definition == Prelude.DIV_MOD) && arguments.size() == 2 && arguments.get(0) instanceof IntegerExpression expr1 && arguments.get(1) instanceof IntegerExpression expr2) {
       return definition == Prelude.PLUS ? expr1.plus(expr2)
         : definition == Prelude.MUL ? expr1.mul(expr2)
         : definition == Prelude.MINUS ? expr1.minus(expr2)
@@ -95,6 +93,11 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
   @Override
   public boolean isBoxed() {
     return getDefinition().getKind() == CoreFunctionDefinition.Kind.LEMMA;
+  }
+
+  @Override
+  public @NotNull Expression minimizeLevels() {
+    return new FunCallExpression(getDefinition(), getMinimizedLevels(), myArguments);
   }
 
   @Override

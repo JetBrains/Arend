@@ -53,6 +53,11 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
   @NotNull TypedExpression computeTyped();
 
   /**
+   * @return an equivalent expression with minimized levels
+   */
+  @NotNull CoreExpression minimizeLevels();
+
+  /**
    * Normalizes expression.
    */
   @Override @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);

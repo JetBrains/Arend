@@ -54,6 +54,11 @@ public class DataCallExpression extends LeveledDefCallExpression implements Type
   }
 
   @Override
+  public @NotNull Expression minimizeLevels() {
+    return new DataCallExpression(getDefinition(), getMinimizedLevels(), myArguments);
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitDataCall(this, params);
   }
