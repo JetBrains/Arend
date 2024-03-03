@@ -336,8 +336,10 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
             type = type.normalize(NormalizationMode.WHNF);
             if (type instanceof ClassCallExpression classCall && getDefinition().isSubClassOf(classCall.getDefinition())) {
               Map<ClassField, Expression> subImplementations = new LinkedHashMap<>(classCall.getImplementedHere());
+              ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), getLevels(((ClassCallExpression) type).getDefinition()), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
+              Expression resultRef = new ReferenceExpression(resultClassCall.myThisBinding);
               for (ClassField field : classCall.getDefinition().getNotImplementedFields()) {
-                Expression impl = myImplementations.get(field);
+                Expression impl = getImplementation(field, resultRef);
                 if (impl != null) {
                   subImplementations.put(field, impl);
                 } else {
@@ -347,7 +349,7 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
                   }
                 }
               }
-              return new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), getLevels(((ClassCallExpression) type).getDefinition()), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
+              return new NewExpression(null, resultClassCall);
             }
           }
           return null;
