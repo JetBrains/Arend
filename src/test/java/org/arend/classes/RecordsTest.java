@@ -5,11 +5,16 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.DataCallExpression;
+import org.arend.core.expr.Expression;
 import org.arend.core.expr.NewExpression;
+import org.arend.core.expr.type.Type;
+import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
+import org.arend.ext.core.ops.CMP;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -18,6 +23,7 @@ import java.util.Collections;
 
 import static org.arend.ExpressionFactory.Universe;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class RecordsTest extends TypeCheckingTestCase {
   @Test
@@ -409,5 +415,18 @@ public class RecordsTest extends TypeCheckingTestCase {
       \\class B { | y : Nat }
       \\class C \\extends B { | A => \\new A { | x => 0 } }
       """, 1);
+  }
+
+  @Test
+  public void comparisonTest() {
+    typeCheckModule("""
+      \\record R (n m : Nat)
+      \\func test1 => R
+      \\func test2 (n : Nat) => R n
+      """);
+    Expression expr1 = (Expression) ((FunctionDefinition) getDefinition("test1")).getBody();
+    Expression expr2 = (Expression) ((FunctionDefinition) getDefinition("test2")).getBody();
+    assertFalse(CompareVisitor.compare(DummyEquations.getInstance(), CMP.EQ, expr1, expr2, Type.OMEGA, null));
+    assertFalse(CompareVisitor.compare(DummyEquations.getInstance(), CMP.EQ, expr2, expr1, Type.OMEGA, null));
   }
 }

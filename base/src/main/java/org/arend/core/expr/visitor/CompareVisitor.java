@@ -1431,8 +1431,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
 
-    for (ClassField field : classCall2.getImplementedHere().keySet()) {
-      if (!field.isProperty() && !expr1.isImplemented(field)) {
+    for (ClassField field : expr1.getImplementedHere().keySet()) {
+      if (!field.isProperty() && !classCall2.isImplemented(field)) {
         initResult(expr1, expr2);
         return false;
       }
