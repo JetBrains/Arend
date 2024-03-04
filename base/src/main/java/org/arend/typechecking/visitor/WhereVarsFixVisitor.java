@@ -71,7 +71,11 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
             int index = 0;
             for (Concrete.Parameter parameter : entry1.getValue().parameters) {
               for (Referable referable : parameter.getReferableList()) {
-                if (referable != null) parameterMap.put(referable, new ParamData(entry1.getKey(), parameter, index));
+                if (referable != null) {
+                  ParamData data = new ParamData(entry1.getKey(), parameter, index);
+                  parameterMap.put(referable, data);
+                  parameterMap.put(referable.getUnderlyingReferable(), data);
+                }
                 index++;
               }
             }
