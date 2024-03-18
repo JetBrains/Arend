@@ -58,6 +58,11 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
   }
 
   @Override
+  public Boolean visitLam(LamExpression expression, Void param) {
+    return expression.getBody().accept(this, null);
+  }
+
+  @Override
   public Boolean visitApp(AppExpression expression, Void param) {
     int apps = 0;
     Expression expr = expression;
