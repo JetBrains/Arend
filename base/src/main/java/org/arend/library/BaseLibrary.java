@@ -68,6 +68,9 @@ public abstract class BaseLibrary implements Library {
     for (Group subgroup : group.getDynamicSubgroups()) {
       resetGroup(subgroup);
     }
+    for (Group.InternalReferable referable : group.getInternalReferables()) {
+      resetDefinition(referable.getReferable());
+    }
   }
 
   public void resetDefinition(LocatedReferable referable) {
