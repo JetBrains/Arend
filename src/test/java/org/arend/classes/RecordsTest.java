@@ -429,4 +429,14 @@ public class RecordsTest extends TypeCheckingTestCase {
     assertFalse(CompareVisitor.compare(DummyEquations.getInstance(), CMP.EQ, expr1, expr2, Type.OMEGA, null));
     assertFalse(CompareVisitor.compare(DummyEquations.getInstance(), CMP.EQ, expr2, expr1, Type.OMEGA, null));
   }
+
+  @Test
+  public void lemmaCowithTest() {
+    typeCheckModule("""
+      \\record R (x : Nat) (p : x = x)
+      \\func S (n : Nat) => R n
+      \\lemma test : S 0 \\cowith
+      """, 1);
+    assertThatErrorsAre(Matchers.fieldsImplementation(false, Collections.singletonList(get("R.p"))));
+  }
 }

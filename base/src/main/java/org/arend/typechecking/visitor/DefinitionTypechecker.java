@@ -1235,7 +1235,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     Concrete.Expression resultType = def.getResultType();
     if (typedDef.isSFunc() || kind == FunctionKind.CONS) {
       TypecheckingResult typeResult = typechecker.finalCheckExpr(resultType, Type.OMEGA);
-      if (typeResult == null || !(typeResult.expression instanceof ClassCallExpression type)) {
+      if (typeResult == null) return null;
+      ClassCallExpression type = typeResult.expression.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+      if (type == null) {
+        errorReporter.report(new TypeMismatchError(DocFactory.text("a classCall"), typeResult.expression, def.getResultType()));
         return null;
       }
       Set<ClassField> pseudoImplemented = new HashSet<>();
