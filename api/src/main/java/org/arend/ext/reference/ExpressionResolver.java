@@ -11,6 +11,11 @@ import java.util.Set;
 
 public interface ExpressionResolver {
   /**
+   * Resolves the specified short name.
+   */
+  @Nullable ArendRef resolveName(@NotNull String name);
+
+  /**
    * Resolves names in the given expression.
    */
   @NotNull ConcreteExpression resolve(@NotNull ConcreteExpression expression);
@@ -39,6 +44,16 @@ public interface ExpressionResolver {
    * This method should be invoked if the reference is not resolved as a declaration, but should be treated as such.
    */
   void registerDeclaration(@NotNull ArendRef ref);
+
+  /**
+   * @return the original reference of a redirecting one.
+   */
+  @NotNull ArendRef getOriginalRef(@NotNull ArendRef ref);
+
+  /**
+   * Checks if {@code ref} is unresolved.
+   */
+  boolean isUnresolved(@NotNull ArendRef ref);
 
   /**
    * Checks if {@code ref} is unresolved and contains more than 1 name separated by dots.

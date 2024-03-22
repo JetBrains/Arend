@@ -72,6 +72,12 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
+  public @Nullable ArendRef resolveName(@NotNull String name) {
+    Referable result = tryResolve(new NamedUnresolvedReference(null, name), myScope, null);
+    return result != null && !(result instanceof NamedUnresolvedReference) ? convertReferable(result, null, false) : null;
+  }
+
+  @Override
   public @NotNull ConcreteExpression resolve(@NotNull ConcreteExpression expression) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
@@ -138,6 +144,19 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (myResolverListener != null) {
       myResolverListener.bindingResolved((Referable) ref);
     }
+  }
+
+  @Override
+  public @NotNull ArendRef getOriginalRef(@NotNull ArendRef ref) {
+    while (ref instanceof RedirectingReferable) {
+      ref = ((RedirectingReferable) ref).getOriginalReferable();
+    }
+    return ref;
+  }
+
+  @Override
+  public boolean isUnresolved(@NotNull ArendRef ref) {
+    return ref instanceof UnresolvedReference;
   }
 
   @Override
@@ -230,7 +249,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
   }
 
-  private Referable convertChecked(Referable origRef, Object data) {
+  private Referable convertChecked(Referable origRef, Object data, boolean reportError) {
     if (origRef instanceof ErrorReference) {
       return origRef;
     }
@@ -238,13 +257,17 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (ref != null) {
       return ref;
     }
-    NameResolverError error = new NameResolverError("Invalid reference", data);
-    myErrorReporter.report(error);
-    return new ErrorReference(error, origRef.getRefName());
+    if (reportError) {
+      NameResolverError error = new NameResolverError("Invalid reference", data);
+      myErrorReporter.report(error);
+      return new ErrorReference(error, origRef.getRefName());
+    } else {
+      return null;
+    }
   }
 
-  Referable convertReferable(Referable referable, Object data) {
-    Referable origRef = referable instanceof RedirectingReferable ? ((RedirectingReferable) referable).getOriginalReferable() : referable;
+  private Referable convertReferable(Referable referable, Object data, boolean reportError) {
+    Referable origRef = referable;
     while (origRef instanceof RedirectingReferable) {
       origRef = ((RedirectingReferable) origRef).getOriginalReferable();
     }
@@ -256,12 +279,16 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return referable;
     }
 
-    origRef = convertChecked(origRef, data);
+    origRef = convertChecked(origRef, data, reportError);
     if (referable instanceof RedirectingReferable) {
       return new RedirectingReferableImpl(origRef, ((RedirectingReferable) referable).getPrecedence(), referable.textRepresentation());
     } else {
       return origRef;
     }
+  }
+
+  Referable convertReferable(Referable referable, Object data) {
+    return convertReferable(referable, data, true);
   }
 
   private void convertExpr(Concrete.ReferenceExpression expr) {
@@ -814,7 +841,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     Referable origReferable = ((Concrete.ConstructorPattern) pattern).getConstructor();
     if (origReferable instanceof UnresolvedReference) {
       List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
-      Referable referable = convertChecked(resolve(origReferable, myParentScope, false, resolvedList, Referable.RefKind.EXPR), ((UnresolvedReference) origReferable).getData());
+      Referable referable = convertChecked(resolve(origReferable, myParentScope, false, resolvedList, Referable.RefKind.EXPR), ((UnresolvedReference) origReferable).getData(), true);
       if (referable instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) referable).getError());
       } else if (referable instanceof GlobalReferable && !((GlobalReferable) referable).getKind().isConstructor()) {
@@ -902,7 +929,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       if (field instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) field).getError());
       } else if (field instanceof GlobalReferable && !(field instanceof TCDefReferable)) {
-        field = convertChecked(field, ((UnresolvedReference) oldField).getData());
+        field = convertChecked(field, ((UnresolvedReference) oldField).getData(), true);
       }
       if (element instanceof Concrete.CoClauseElement) {
         ((Concrete.CoClauseElement) element).setImplementedField(field);
