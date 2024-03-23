@@ -37,6 +37,7 @@ import org.arend.ext.variable.Variable;
 import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.ReferableRenamer;
+import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
@@ -340,8 +341,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (letResult != null) return letResult;
 
     Expression argument = expr.getArgument();
-    if (argument instanceof ReferenceExpression && ((ReferenceExpression) argument).getBinding().isHidden()) {
-      if (((ReferenceExpression) argument).getBinding() instanceof ClassCallExpression.ClassCallBinding && hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
+    if (argument instanceof ReferenceExpression refExpr && (refExpr.getBinding().isHidden() || Renamer.getValidName(refExpr.getBinding().getName(), null) == null)) {
+      if (refExpr.getBinding() instanceof ClassCallExpression.ClassCallBinding && hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
         return Concrete.AppExpression.make(null, makeReference(expr), new Concrete.ThisExpression(expr, null), false);
       } else {
         return makeReference(expr);
