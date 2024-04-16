@@ -1,5 +1,9 @@
 package org.arend.core.context;
 
+import org.arend.core.context.binding.Binding;
+import org.arend.naming.reference.Referable;
+import org.arend.term.prettyprint.LocalExpressionPrettifier;
+
 import java.util.*;
 
 public class Utils {
@@ -26,6 +30,29 @@ public class Utils {
     @Override
     public void close() {
       mySet.retainAll(myOriginalSet);
+    }
+  }
+
+  public static class RefContextSaver implements AutoCloseable {
+    private final Map<Referable, Binding> myMap;
+    private final LocalExpressionPrettifier myPrettifier;
+    private final Set<Referable> myOriginalSet;
+
+    public RefContextSaver(Map<Referable, Binding> map, LocalExpressionPrettifier prettifier) {
+      myMap = map;
+      myPrettifier = prettifier;
+      myOriginalSet = new HashSet<>(map.keySet());
+    }
+
+    @Override
+    public void close() {
+      for (Iterator<Map.Entry<Referable, Binding>> iterator = myMap.entrySet().iterator(); iterator.hasNext(); ) {
+        Map.Entry<Referable, Binding> entry = iterator.next();
+        if (!myOriginalSet.contains(entry.getKey())) {
+          myPrettifier.removeBinding(entry.getValue());
+          iterator.remove();
+        }
+      }
     }
   }
 

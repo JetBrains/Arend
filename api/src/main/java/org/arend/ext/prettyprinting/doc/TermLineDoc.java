@@ -1,19 +1,26 @@
 package org.arend.ext.prettyprinting.doc;
 
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterConfigImpl;
 
 public class TermLineDoc extends LineDoc {
+  private final ExpressionPrettifier prettifier;
   private final PrettyPrinterConfig ppConfig;
   private final CoreExpression term;
   private String text;
 
-  TermLineDoc(CoreExpression term, PrettyPrinterConfig ppConfig) {
+  TermLineDoc(CoreExpression term, ExpressionPrettifier prettifier, PrettyPrinterConfig ppConfig) {
     this.term = term;
+    this.prettifier = prettifier;
     PrettyPrinterConfigImpl config = new PrettyPrinterConfigImpl(ppConfig);
     config.isSingleLine = true;
     this.ppConfig = config;
+  }
+
+  public ExpressionPrettifier getPrettifier() {
+    return prettifier;
   }
 
   public CoreExpression getTerm() {
@@ -23,7 +30,7 @@ public class TermLineDoc extends LineDoc {
   public String getText() {
     if (text == null) {
       StringBuilder builder = new StringBuilder();
-      term.prettyPrint(builder, ppConfig);
+      term.prettyPrint(builder, prettifier, ppConfig);
       text = builder.toString();
     }
     return text;

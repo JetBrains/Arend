@@ -3,6 +3,7 @@ package org.arend.ext.prettyprinting.doc;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.ArendRef;
@@ -58,12 +59,20 @@ public class DocFactory {
     return new VListDoc(docs);
   }
 
+  public static TermDoc termDoc(UncheckedExpression expression, ExpressionPrettifier prettifier, PrettyPrinterConfig ppConfig) {
+    return new TermDoc(expression, prettifier, ppConfig);
+  }
+
   public static TermDoc termDoc(UncheckedExpression expression, PrettyPrinterConfig ppConfig) {
-    return new TermDoc(expression, ppConfig);
+    return new TermDoc(expression, null, ppConfig);
+  }
+
+  public static TermLineDoc termLine(CoreExpression expression, ExpressionPrettifier prettifier, PrettyPrinterConfig ppConfig) {
+    return new TermLineDoc(expression, prettifier, ppConfig);
   }
 
   public static TermLineDoc termLine(CoreExpression expression, PrettyPrinterConfig ppConfig) {
-    return new TermLineDoc(expression, ppConfig);
+    return new TermLineDoc(expression, null, ppConfig);
   }
 
   public static PatternDoc pattern(CorePattern pattern, PrettyPrinterConfig ppConfig) {

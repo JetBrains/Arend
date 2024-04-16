@@ -621,7 +621,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       Binding refLeft = refExprLeft == null ? null : refExprLeft.getBinding();
       Binding refRight = refExprRight == null ? null : refExprRight.getBinding();
       if (refLeft == null && refRight == null) {
-        throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(IdpPatternError.noVariable(), (DataCallExpression) type, mySourceNode), errorExpr));
+        throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(null, IdpPatternError.noVariable(), (DataCallExpression) type, mySourceNode), errorExpr));
       }
 
       Binding var = null;
@@ -633,11 +633,11 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         }
       }
       if (var == null) {
-        throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(IdpPatternError.noParameter(), (DataCallExpression) type, mySourceNode), errorExpr));
+        throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(null, IdpPatternError.noParameter(), (DataCallExpression) type, mySourceNode), errorExpr));
       }
       Expression otherExpr = ElimBindingVisitor.elimBinding(var == refLeft ? right : left, var);
       if (otherExpr == null) {
-        throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(IdpPatternError.variable(var.getName()), (DataCallExpression) type, mySourceNode), errorExpr));
+        throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(null, IdpPatternError.variable(var.getName()), (DataCallExpression) type, mySourceNode), errorExpr));
       }
 
       Set<Binding> freeVars = FreeVariablesCollector.getFreeVariables(otherExpr);
@@ -651,7 +651,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
           banVar = binding;
         }
         if (banVar != null && binding.getTypeExpr().findBinding(var)) {
-          throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(IdpPatternError.subst(var.getName(), binding.getName(), banVar.getName()), null, mySourceNode), errorExpr));
+          throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(null, IdpPatternError.subst(var.getName(), binding.getName(), banVar.getName()), null, mySourceNode), errorExpr));
         }
       }
 

@@ -42,7 +42,7 @@ public class TypeClassInferenceVariable extends InferenceVariable {
 
   @Override
   public LocalError getErrorInfer(Expression... candidates) {
-    return candidates.length == 0 ? new RecursiveInstanceInferenceError(myClassDef.getReferable(), myClassifyingExpression, getSourceNode(), myRecursiveInstanceHoleExpression) : new RecursiveInstanceInferenceError(myClassDef.getReferable(), getSourceNode(), myRecursiveInstanceHoleExpression, candidates);
+    return candidates.length == 0 ? new RecursiveInstanceInferenceError(myClassDef.getReferable(), myClassifyingExpression, getSourceNode(), myRecursiveInstanceHoleExpression) : new RecursiveInstanceInferenceError(null, myClassDef.getReferable(), getSourceNode(), myRecursiveInstanceHoleExpression, candidates);
   }
 
   @Override

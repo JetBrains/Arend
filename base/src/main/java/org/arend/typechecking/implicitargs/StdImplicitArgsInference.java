@@ -107,7 +107,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
               }
               Expression instance;
               if (instanceResult == null) {
-                ArgInferenceError error = new RecursiveInstanceInferenceError(classDef.getReferable(), expr, holeExpr, new Expression[0]);
+                ArgInferenceError error = new RecursiveInstanceInferenceError(myVisitor.getExpressionPrettifier(), classDef.getReferable(), expr, holeExpr, new Expression[0]);
                 myVisitor.getErrorReporter().report(error);
                 instance = new ErrorExpression(error);
               } else {
@@ -234,7 +234,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     if (!param.hasNext()) {
       TypecheckingResult result1 = result.toResult(myVisitor);
       if (!result1.type.reportIfError(myVisitor.getErrorReporter(), fun)) {
-        myVisitor.getErrorReporter().report(new NotPiType(argResult.expression, result1.type, fun));
+        myVisitor.getErrorReporter().report(new NotPiType(myVisitor.getExpressionPrettifier(), argResult.expression, result1.type, fun));
       }
       return null;
     }
@@ -244,8 +244,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       return null;
     }
 
-    if (result instanceof DefCallResult && !isExplicit && ((DefCallResult) result).getDefinition() instanceof ClassField) {
-      DefCallResult defCallResult = (DefCallResult) result;
+    if (result instanceof DefCallResult defCallResult && !isExplicit && ((DefCallResult) result).getDefinition() instanceof ClassField) {
       ClassField field = (ClassField) defCallResult.getDefinition();
       ClassCallExpression classCall = argResult.type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
       PiExpression piType = null;
@@ -510,7 +509,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (refExpr.getReferent() == Prelude.ZERO.getRef()) {
           result = new TypecheckingResult(new SmallIntegerExpression(0), Fin(Suc(argResult.expression)));
           if (expr.getArguments().size() > 1) {
-            myVisitor.getErrorReporter().report(new NotPiType(argResult.expression, result.getType(), fun));
+            myVisitor.getErrorReporter().report(new NotPiType(myVisitor.getExpressionPrettifier(), argResult.expression, result.getType(), fun));
             return null;
           }
           return result;
@@ -528,7 +527,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
         result = new TypecheckingResult(Suc(arg2Result.expression), Fin(Suc(argResult.expression)));
         if (expr.getArguments().size() > 2) {
-          myVisitor.getErrorReporter().report(new NotPiType(arg2Result.expression, result.getType(), fun));
+          myVisitor.getErrorReporter().report(new NotPiType(myVisitor.getExpressionPrettifier(), arg2Result.expression, result.getType(), fun));
           return null;
         }
         return result;
@@ -567,36 +566,33 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       return null;
     }
 
-    if (result instanceof DefCallResult && expr.getArguments().get(0).isExplicit() && expectedType != null) {
-      DefCallResult defCallResult = (DefCallResult) result;
-      if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
-        DataCallExpression dataCall = TypeConstructorExpression.unfoldType(expectedType).cast(DataCallExpression.class);
-        if (dataCall != null) {
-          if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
-            myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));
+    if (result instanceof DefCallResult defCallResult && expr.getArguments().get(0).isExplicit() && expectedType != null && defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
+      DataCallExpression dataCall = TypeConstructorExpression.unfoldType(expectedType).cast(DataCallExpression.class);
+      if (dataCall != null) {
+        if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
+          myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));
+          return null;
+        }
+
+        List<? extends Expression> args = dataCall.getDefCallArguments();
+        List<Expression> args1 = new ArrayList<>(args.size());
+        args1.addAll(defCallResult.getArguments());
+        args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
+        args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
+        if (args1 != null) {
+          boolean ok = dataCall.getLevels().compare(defCallResult.getLevels(), CMP.LE, myVisitor.getEquations(), fun);
+
+          if (ok && !defCallResult.getArguments().isEmpty()) {
+            ok = new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compareLists(defCallResult.getArguments(), dataCall.getDefCallArguments().subList(0, defCallResult.getArguments().size()), dataCall.getDefinition().getParameters(), dataCall.getDefinition(), new ExprSubstitution());
+          }
+
+          if (!ok) {
+            myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, DataCallExpression.make(dataCall.getDefinition(), defCallResult.getLevels(), args1), fun));
             return null;
           }
 
-          List<? extends Expression> args = dataCall.getDefCallArguments();
-          List<Expression> args1 = new ArrayList<>(args.size());
-          args1.addAll(defCallResult.getArguments());
-          args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
-          args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
-          if (args1 != null) {
-            boolean ok = dataCall.getLevels().compare(defCallResult.getLevels(), CMP.LE, myVisitor.getEquations(), fun);
-
-            if (ok && !defCallResult.getArguments().isEmpty()) {
-              ok = new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compareLists(defCallResult.getArguments(), dataCall.getDefCallArguments().subList(0, defCallResult.getArguments().size()), dataCall.getDefinition().getParameters(), dataCall.getDefinition(), new ExprSubstitution());
-            }
-
-            if (!ok) {
-              myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, DataCallExpression.make(dataCall.getDefinition(), defCallResult.getLevels(), args1), fun));
-              return null;
-            }
-
-            if (!args1.isEmpty()) {
-              result = ((DefCallResult) result).applyExpressions(args1);
-            }
+          if (!args1.isEmpty()) {
+            result = ((DefCallResult) result).applyExpressions(args1);
           }
         }
       }

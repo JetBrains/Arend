@@ -3,6 +3,7 @@ package org.arend.typechecking.error.local;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.typechecking.GoalSolver;
@@ -26,14 +27,15 @@ public class GoalError extends GoalDataHolder {
 
   private List<Condition> myConditions = Collections.emptyList();
 
-  public GoalError(TypecheckingContext typecheckingContext,
+  public GoalError(ExpressionPrettifier prettifier,
+                   TypecheckingContext typecheckingContext,
                    Map<Binding, Expression> bindingTypes,
                    Expression expectedType,
                    Concrete.Expression result,
                    List<GeneralError> errors,
                    GoalSolver goalSolver,
                    Concrete.GoalExpression expression) {
-    super(Level.GOAL, "Goal" + (expression.getName() == null ? "" : " " + expression.getName()), expression,
+    super(prettifier, Level.GOAL, "Goal" + (expression.getName() == null ? "" : " " + expression.getName()), expression,
             typecheckingContext, bindingTypes, expectedType);
     this.result = result;
     this.errors = errors;

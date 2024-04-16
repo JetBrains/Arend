@@ -144,14 +144,14 @@ public class DefCallResult implements TResult {
     ExprSubstitution subst = new ExprSubstitution();
     if (myArguments.size() >= 2) {
       if (!CompareVisitor.compare(visitor.getEquations(), CMP.EQ, leftExpr, myArguments.get(1), AppExpression.make(myArguments.get(0), ExpressionFactory.Left(), true), sourceNode)) {
-        visitor.getErrorReporter().report(new PathEndpointMismatchError(true, myArguments.get(1), leftExpr, sourceNode));
+        visitor.getErrorReporter().report(new PathEndpointMismatchError(visitor.getExpressionPrettifier(), true, myArguments.get(1), leftExpr, sourceNode));
       }
     } else {
       subst.add(myParameters.get(0), leftExpr);
     }
     if (myArguments.size() >= 3) {
       if (!CompareVisitor.compare(visitor.getEquations(), CMP.EQ, rightExpr, myArguments.get(2), AppExpression.make(myArguments.get(0), ExpressionFactory.Right(), true), sourceNode)) {
-        visitor.getErrorReporter().report(new PathEndpointMismatchError(false, myArguments.get(2), rightExpr, sourceNode));
+        visitor.getErrorReporter().report(new PathEndpointMismatchError(visitor.getExpressionPrettifier(), false, myArguments.get(2), rightExpr, sourceNode));
       }
     } else {
       subst.add(myParameters.get(myParameters.size() - 2), rightExpr);

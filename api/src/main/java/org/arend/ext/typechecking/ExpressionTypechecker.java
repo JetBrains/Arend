@@ -24,6 +24,7 @@ import org.arend.ext.core.ops.SubstitutionPair;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.instance.InstanceSearchParameters;
 import org.arend.ext.instance.SubclassSearchParameters;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.userData.UserDataHolder;
 import org.arend.ext.util.Pair;
@@ -48,6 +49,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * Returns the free binding corresponding to the given reference.
    */
   @Nullable CoreBinding getFreeBinding(@NotNull ArendRef ref);
+
+  /**
+   * Returns the merged local and global prettifier.
+   */
+  @Nullable ExpressionPrettifier getExpressionPrettifier();
 
   /**
    * All errors that occur during invocation of a meta definition should be reported through the reporter returned by this method.

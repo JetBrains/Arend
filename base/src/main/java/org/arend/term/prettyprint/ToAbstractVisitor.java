@@ -25,10 +25,13 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.Levels;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.module.LongName;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
@@ -44,6 +47,7 @@ import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.typechecking.visitor.VoidConcreteVisitor;
 import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -54,8 +58,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private final DefinitionRenamer myDefinitionRenamer;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
   private final ReferableRenamer myRenamer;
+  private final ExpressionPrettifier myPrettifier;
+  private final ExpressionPrettifier myDefaultPrettifier = new ExpressionPrettifier() {
+    @Override
+    public @Nullable ConcreteExpression prettify(@NotNull CoreExpression expression, @NotNull ExpressionPrettifier defaultPrettifier) {
+      if (!(expression instanceof Expression)) {
+        return null;
+      }
+      return ((Expression) expression).accept(ToAbstractVisitor.this, null);
+    }
+  };
 
-  ToAbstractVisitor(PrettyPrinterConfig config, DefinitionRenamer definitionRenamer, CollectFreeVariablesVisitor collector, ReferableRenamer renamer) {
+  ToAbstractVisitor(ExpressionPrettifier prettifier, PrettyPrinterConfig config, DefinitionRenamer definitionRenamer, CollectFreeVariablesVisitor collector, ReferableRenamer renamer) {
+    myPrettifier = prettifier;
     myConfig = config;
     myDefinitionRenamer = definitionRenamer;
     myFreeVariablesCollector = collector;
@@ -66,11 +81,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return convert(expression, config, new ReferableRenamer());
   }
 
-  public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config, @NotNull ReferableRenamer renamer) {
-    return convert(expression, null, null, config, renamer);
+  public static Concrete.Expression convert(Expression expression, ExpressionPrettifier prettifier, PrettyPrinterConfig config) {
+    return convert(expression, prettifier, config, new ReferableRenamer());
   }
 
-  public static Concrete.Expression convert(Expression expression, Expression subexpr, Levels levels, PrettyPrinterConfig config, @NotNull ReferableRenamer renamer) {
+  public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config, @NotNull ReferableRenamer renamer) {
+    return convert(expression, null, null, null, config, renamer);
+  }
+
+  public static Concrete.Expression convert(Expression expression, ExpressionPrettifier prettifier, PrettyPrinterConfig config, @NotNull ReferableRenamer renamer) {
+    return convert(expression, null, null, prettifier, config, renamer);
+  }
+
+  public static Concrete.Expression convert(Expression expression, Expression subexpr, Levels levels, ExpressionPrettifier prettifier, PrettyPrinterConfig config, @NotNull ReferableRenamer renamer) {
     DefinitionRenamer definitionRenamer = config.getDefinitionRenamer();
     if (definitionRenamer == null) {
       definitionRenamer = new ConflictDefinitionRenamer();
@@ -85,7 +108,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       expression = expression.normalize(mode);
     }
     expression.accept(collector, variables);
-    ToAbstractVisitor visitor = subexpr == null ? new ToAbstractVisitor(config, definitionRenamer, collector, renamer) : new ToAbstractWithSubexprVisitor(config, definitionRenamer, collector, renamer, subexpr, levels);
+    ToAbstractVisitor visitor = subexpr == null ? new ToAbstractVisitor(prettifier, config, definitionRenamer, collector, renamer) : new ToAbstractWithSubexprVisitor(prettifier, config, definitionRenamer, collector, renamer, subexpr, levels);
     renamer.generateFreshNames(variables);
     return visitor.convertExpr(expression);
   }
@@ -99,7 +122,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     Set<Variable> variables = new HashSet<>();
     collector.visitParameters(params, variables);
     ReferableRenamer renamer = new ReferableRenamer();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(config, definitionRenamer, collector, renamer);
+    ToAbstractVisitor visitor = new ToAbstractVisitor(null, config, definitionRenamer, collector, renamer);
     renamer.generateFreshNames(variables);
     List<Concrete.TypeParameter> result = new ArrayList<>();
     visitor.visitDependentLink(params, result, true, true);
@@ -107,7 +130,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   public static Concrete.LevelExpression convert(Level level) {
-    return new ToAbstractVisitor(new PrettyPrinterConfig() {
+    return new ToAbstractVisitor(null, new PrettyPrinterConfig() {
         @NotNull
         @Override
         public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
@@ -128,12 +151,18 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     Set<Variable> variables = new HashSet<>();
     definition.accept(collector, variables);
     ReferableRenamer renamer = new ReferableRenamer();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(config, definitionRenamer, collector, renamer);
+    ToAbstractVisitor visitor = new ToAbstractVisitor(null, config, definitionRenamer, collector, renamer);
     renamer.generateFreshNames(variables);
     return definition.accept(visitor, null);
   }
 
   Concrete.Expression convertExpr(Expression expr) {
+    if (myPrettifier != null) {
+      ConcreteExpression result = myPrettifier.prettify(expr, myDefaultPrettifier);
+      if (result instanceof Concrete.Expression) {
+        return (Concrete.Expression) result;
+      }
+    }
     return expr.accept(this, null);
   }
 

@@ -11,6 +11,7 @@ import org.arend.core.subst.UnfoldVisitor;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.expr.*;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -92,10 +93,15 @@ public abstract class Expression implements Body, CoreExpression {
 
   @Override
   public void prettyPrint(StringBuilder builder, PrettyPrinterConfig config) {
+    prettyPrint(builder, null, config);
+  }
+
+  @Override
+  public void prettyPrint(@NotNull StringBuilder builder, ExpressionPrettifier prettifier, @NotNull PrettyPrinterConfig config) {
     if (config.getNormalizationMode() != null) {
       FixLevelParameters.fix(this); // Expressions created in errors might have not fixed levels, so we fix them here
     }
-    ToAbstractVisitor.convert(this, config).accept(new PrettyPrintVisitor(builder, 0, !config.isSingleLine()), new Precedence(Concrete.Expression.PREC));
+    ToAbstractVisitor.convert(this, prettifier, config).accept(new PrettyPrintVisitor(builder, 0, !config.isSingleLine()), new Precedence(Concrete.Expression.PREC));
   }
 
   @Override
@@ -137,7 +143,7 @@ public abstract class Expression implements Body, CoreExpression {
   @Override
   public @NotNull Expression computeType(boolean minimal) {
     Expression type = getType(minimal);
-    return type != null ? type : new ErrorExpression(new TypeComputationError(null, this, null));
+    return type != null ? type : new ErrorExpression(new TypeComputationError(null, null, this, null));
   }
 
   @Override

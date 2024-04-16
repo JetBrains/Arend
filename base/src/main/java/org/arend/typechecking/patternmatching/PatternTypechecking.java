@@ -142,7 +142,7 @@ public class PatternTypechecking {
 
   private boolean typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, Expression expectedType, List<ExtElimClause> resultClauses, FunctionDefinition definition) {
     assert myVisitor != null;
-    try (var ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
+    try (var ignored = new Utils.RefContextSaver(myVisitor.getContext(), myVisitor.getLocalExpressionPrettifier())) {
       // Typecheck patterns
       myPathPatterns.clear();
       ExprSubstitution substitution = new ExprSubstitution();
@@ -664,7 +664,7 @@ public class PatternTypechecking {
             ReferenceExpression refExpr1 = expr1.cast(ReferenceExpression.class);
             ReferenceExpression refExpr2 = expr2.cast(ReferenceExpression.class);
             if (refExpr1 == null && refExpr2 == null) {
-              myErrorReporter.report(new IdpPatternError(IdpPatternError.noVariable(), dataCall, conPattern));
+              myErrorReporter.report(new IdpPatternError(myVisitor == null ? null : myVisitor.getExpressionPrettifier(), IdpPatternError.noVariable(), dataCall, conPattern));
               return null;
             }
 
@@ -691,7 +691,7 @@ public class PatternTypechecking {
               }
             }
             if (num == 0) {
-              myErrorReporter.report(new IdpPatternError(IdpPatternError.noParameter(), dataCall, conPattern));
+              myErrorReporter.report(new IdpPatternError(myVisitor == null ? null : myVisitor.getExpressionPrettifier(), IdpPatternError.noParameter(), dataCall, conPattern));
               return null;
             }
 
@@ -704,7 +704,7 @@ public class PatternTypechecking {
                   ok = CompareVisitor.compare(myVisitor.getEquations(), CMP.EQ, normType, (num == 1 ? refExpr1 : refExpr2).getType(), Type.OMEGA, conPattern);
                 }
                 if (!ok) {
-                  myErrorReporter.report(new IdpPatternError(IdpPatternError.typeMismatch(), dataCall, conPattern));
+                  myErrorReporter.report(new IdpPatternError(myVisitor == null ? null : myVisitor.getExpressionPrettifier(), IdpPatternError.typeMismatch(), dataCall, conPattern));
                   return null;
                 }
               }
@@ -713,7 +713,7 @@ public class PatternTypechecking {
             Binding substVar = num == 1 ? refExpr1.getBinding() : refExpr2.getBinding();
             Expression otherExpr = ElimBindingVisitor.elimBinding(num == 1 ? expr2 : expr1, substVar);
             if (otherExpr == null) {
-              myErrorReporter.report(new IdpPatternError(IdpPatternError.variable(substVar.getName()), dataCall, conPattern));
+              myErrorReporter.report(new IdpPatternError(myVisitor == null ? null : myVisitor.getExpressionPrettifier(), IdpPatternError.variable(substVar.getName()), dataCall, conPattern));
               return null;
             }
             Expression otherExpr2 = ElimBindingVisitor.elimBinding(num == 1 ? dataCall.getDefCallArguments().get(1) : dataCall.getDefCallArguments().get(2), substVar);
@@ -748,7 +748,7 @@ public class PatternTypechecking {
                 continue;
               }
               if (banVar != null && paramLink.getTypeExpr().findBinding(substVar)) {
-                myErrorReporter.report(new IdpPatternError(IdpPatternError.subst(substVar.getName(), paramLink.getName(), banVar.getName()), null, conPattern));
+                myErrorReporter.report(new IdpPatternError(myVisitor == null ? null : myVisitor.getExpressionPrettifier(), IdpPatternError.subst(substVar.getName(), paramLink.getName(), banVar.getName()), null, conPattern));
                 return null;
               }
               assert paramLink != null;

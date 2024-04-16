@@ -39,7 +39,7 @@ public class ExpressionInferenceVariable extends InferenceVariable {
 
   @Override
   public LocalError getErrorInfer(Expression... candidates) {
-    return new ArgInferenceError(ArgInferenceError.expression(), getSourceNode(), candidates);
+    return new ArgInferenceError(null, ArgInferenceError.expression(), getSourceNode(), candidates);
   }
 
   @Override

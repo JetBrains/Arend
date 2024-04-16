@@ -8,6 +8,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.variable.Variable;
 import org.jetbrains.annotations.NotNull;
@@ -115,5 +116,10 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
   @Override
   public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
     myExpression.prettyPrint(builder, ppConfig);
+  }
+
+  @Override
+  public void prettyPrint(@NotNull StringBuilder builder, @Nullable ExpressionPrettifier prettifier, @NotNull PrettyPrinterConfig ppConfig) {
+    myExpression.prettyPrint(builder, prettifier, ppConfig);
   }
 }

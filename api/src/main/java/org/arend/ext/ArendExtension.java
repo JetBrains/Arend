@@ -2,6 +2,7 @@ package org.arend.ext;
 
 import org.arend.ext.concrete.ConcreteFactory;
 import org.arend.ext.dependency.ArendDependencyProvider;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.serialization.SerializableKeyRegistry;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.LevelProver;
@@ -66,7 +67,6 @@ public interface ArendExtension {
   /**
    * This method is invoked last and can be used to initialize the extension.
    * It should store all the definition that will be used in the extension.
-   *
    * This method can be invoked multiple times if one of the definitions is updated.
    *
    * @param dependencyProvider  provides the access to definitions defined in the library; can be used only inside this method.
@@ -101,6 +101,10 @@ public interface ArendExtension {
    * A literal checker is used to interpret string and numerical literals.
    */
   default @Nullable LiteralTypechecker getLiteralTypechecker() {
+    return null;
+  }
+
+  default @Nullable ExpressionPrettifier getExpressionPrettifier() {
     return null;
   }
 }

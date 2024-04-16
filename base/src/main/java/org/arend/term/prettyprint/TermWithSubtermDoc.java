@@ -2,6 +2,7 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.Levels;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.TermDoc;
 import org.arend.ext.reference.Precedence;
@@ -15,8 +16,8 @@ public class TermWithSubtermDoc extends TermDoc {
   private int myBegin;
   private int myEnd;
 
-  public TermWithSubtermDoc(Expression term, Expression subterm, Levels levels, PrettyPrinterConfig ppConfig) {
-    super(term, ppConfig);
+  public TermWithSubtermDoc(Expression term, Expression subterm, Levels levels, ExpressionPrettifier prettifier, PrettyPrinterConfig ppConfig) {
+    super(term, prettifier, ppConfig);
     this.mySubterm = subterm;
     this.myLevels = levels;
   }
@@ -50,7 +51,7 @@ public class TermWithSubtermDoc extends TermDoc {
       FixLevelParameters.fix(term); // Expressions created in errors might have not fixed levels, so we fix them here
     }
     PrettyPrintWithSubexprVisitor visitor = new PrettyPrintWithSubexprVisitor(builder, 0, !ppConfig.isSingleLine());
-    ToAbstractVisitor.convert(term, mySubterm, myLevels, ppConfig, new ReferableRenamer()).accept(visitor, new Precedence(Concrete.Expression.PREC));
+    ToAbstractVisitor.convert(term, mySubterm, myLevels, getPrettifier(), ppConfig, new ReferableRenamer()).accept(visitor, new Precedence(Concrete.Expression.PREC));
     String result = builder.toString();
     int firstIndex = result.indexOf(PrettyPrintWithSubexprVisitor.MAGIC);
     int lastIndex = result.indexOf(PrettyPrintWithSubexprVisitor.MAGIC, firstIndex + 1);

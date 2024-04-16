@@ -201,7 +201,7 @@ public class TwoStageEquations implements Equations {
         }
         Sort codSort = Sort.generateInferVars(this, false, sourceNode);
 
-        try (var ignore = new Utils.SetContextSaver<>(myVisitor.getContext())) {
+        try (var ignore = new Utils.RefContextSaver(myVisitor.getContext(), myVisitor.getLocalExpressionPrettifier())) {
           for (PiExpression pi : pis) {
             for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
               myVisitor.addBinding(null, link);
@@ -304,7 +304,7 @@ public class TwoStageEquations implements Equations {
   @Override
   public boolean solve(Expression expr1, Expression expr2, Expression type, CMP cmp, Concrete.SourceNode sourceNode) {
     if (!CompareVisitor.compare(this, cmp, expr1, expr2, type, sourceNode)) {
-      myVisitor.getErrorReporter().report(new SolveEquationError(expr1, expr2, sourceNode));
+      myVisitor.getErrorReporter().report(new SolveEquationError(myVisitor.getExpressionPrettifier(), expr1, expr2, sourceNode));
       return false;
     } else {
       return true;
@@ -368,7 +368,7 @@ public class TwoStageEquations implements Equations {
       }
     }
     if (!myEquations.isEmpty()) {
-      myVisitor.getErrorReporter().report(new SolveEquationsError(new ArrayList<>(myEquations), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveEquationsError(myVisitor.getExpressionPrettifier(), new ArrayList<>(myEquations), sourceNode));
     }
 
     myEquations.clear();
@@ -409,7 +409,7 @@ public class TwoStageEquations implements Equations {
         Expression arg1 = ((DataCallExpression) equation.expr1).getDefCallArguments().get(0);
         Expression arg2 = ((DataCallExpression) equation.expr2).getDefCallArguments().get(0);
         if (!CompareVisitor.compare(this, CMP.EQ, arg1, arg2, Nat(), equation.sourceNode)) {
-          myVisitor.getErrorReporter().report(new SolveEquationsError(Collections.singletonList(new Equation(arg1, arg2, Nat(), CMP.EQ, equation.sourceNode)), equation.sourceNode));
+          myVisitor.getErrorReporter().report(new SolveEquationsError(myVisitor.getExpressionPrettifier(), Collections.singletonList(new Equation(arg1, arg2, Nat(), CMP.EQ, equation.sourceNode)), equation.sourceNode));
         }
       }
     }
@@ -540,7 +540,7 @@ public class TwoStageEquations implements Equations {
     for (Equation equation : classCallEquations) {
       if (!CompareVisitor.compare(this, equation.cmp, equation.expr1, equation.expr2, equation.type, equation.sourceNode)) {
         allOK = false;
-        myVisitor.getErrorReporter().report(new SolveEquationsError(Collections.singletonList(equation), equation.sourceNode));
+        myVisitor.getErrorReporter().report(new SolveEquationsError(myVisitor.getExpressionPrettifier(), Collections.singletonList(equation), equation.sourceNode));
       }
     }
 
@@ -582,7 +582,7 @@ public class TwoStageEquations implements Equations {
     for (ClassCallExpression bound : bounds) {
       equations.add(cmp == CMP.GE ? new Equation(infRefExpr, bound, Type.OMEGA, CMP.LE, var.getSourceNode()) : new Equation(bound, infRefExpr, Type.OMEGA, CMP.LE, var.getSourceNode()));
     }
-    myVisitor.getErrorReporter().report(new SolveEquationsError(equations, var.getSourceNode()));
+    myVisitor.getErrorReporter().report(new SolveEquationsError(myVisitor.getExpressionPrettifier(), equations, var.getSourceNode()));
   }
 
   private static class Wrapper {
@@ -909,7 +909,7 @@ public class TwoStageEquations implements Equations {
     if (/* ok && */ new CompareVisitor(this, CMP.LE, var.getSourceNode()).normalizedCompare(actualType, expectedType, Type.OMEGA, false)) {
       if (var.isSolved()) {
         if (!new CompareVisitor(this, CMP.EQ, var.getSourceNode()).compare(var.getSolution(), result, expectedType, true)) {
-          myVisitor.getErrorReporter().report(new SolveEquationError(var.getSolution(), result, var.getSourceNode()));
+          myVisitor.getErrorReporter().report(new SolveEquationError(myVisitor.getExpressionPrettifier(), var.getSolution(), result, var.getSourceNode()));
         }
       } else {
         var.solve(myVisitor, OfTypeExpression.make(result, actualType, expectedType));

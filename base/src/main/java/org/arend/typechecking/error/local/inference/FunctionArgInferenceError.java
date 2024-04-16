@@ -13,7 +13,7 @@ public class FunctionArgInferenceError extends ArgInferenceError {
   public final int index;
 
   public FunctionArgInferenceError(Definition definition, DependentLink parameter, int index, Concrete.SourceNode cause, Expression[] candidates) {
-    super(message(definition, parameter, index), cause, candidates);
+    super(null, message(definition, parameter, index), cause, candidates);
     this.definition = definition;
     this.parameter = parameter;
     this.index = index;

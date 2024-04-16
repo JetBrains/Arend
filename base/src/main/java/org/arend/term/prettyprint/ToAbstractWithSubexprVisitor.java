@@ -4,6 +4,7 @@ import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.naming.renamer.ReferableRenamer;
@@ -16,8 +17,8 @@ public class ToAbstractWithSubexprVisitor extends ToAbstractVisitor {
 
   public static class Marker {}
 
-  ToAbstractWithSubexprVisitor(PrettyPrinterConfig config, DefinitionRenamer definitionRenamer, CollectFreeVariablesVisitor collector, ReferableRenamer renamer, Expression subexpr, Levels levels) {
-    super(config, definitionRenamer, collector, renamer);
+  ToAbstractWithSubexprVisitor(ExpressionPrettifier prettifier, PrettyPrinterConfig config, DefinitionRenamer definitionRenamer, CollectFreeVariablesVisitor collector, ReferableRenamer renamer, Expression subexpr, Levels levels) {
+    super(prettifier, config, definitionRenamer, collector, renamer);
     mySubexpr = subexpr;
     myLevels = levels;
   }

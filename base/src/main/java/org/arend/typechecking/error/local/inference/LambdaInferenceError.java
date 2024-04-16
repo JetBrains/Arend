@@ -14,7 +14,7 @@ public class LambdaInferenceError extends ArgInferenceError {
   public final boolean isLevel;
 
   public LambdaInferenceError(Referable parameter, boolean isLevel, Concrete.SourceNode cause, Expression[] candidates) {
-    super("", cause, candidates);
+    super(null, "", cause, candidates);
     this.parameter = parameter;
     this.isLevel = isLevel;
   }

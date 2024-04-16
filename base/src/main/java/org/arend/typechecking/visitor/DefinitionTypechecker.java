@@ -557,7 +557,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
           Type paramType = param.getType();
           if (thisRef != null && paramType.getExpr().findBinding(thisRef)) {
-            errorReporter.report(new TypeFromFieldError(TypeFromFieldError.parameter(), paramType.getExpr(), parameter));
+            errorReporter.report(new TypeFromFieldError(typechecker.getExpressionPrettifier(), TypeFromFieldError.parameter(), paramType.getExpr(), parameter));
           } else {
             paramResult = paramType.subst(new SubstVisitor(substitution, typedDef.makeIdLevels().makeSubstitution(implementedField.getParentClass())));
           }
@@ -569,7 +569,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               errorReporter.report(new TypecheckingError("Expected a typed parameter", parameter));
             }
           } else {
-            errorReporter.report(new FieldTypeParameterError(fieldType.getCodomain(), parameter));
+            errorReporter.report(new FieldTypeParameterError(typechecker.getExpressionPrettifier(), fieldType.getCodomain(), parameter));
             resultType = new ErrorExpression();
           }
         }
@@ -649,7 +649,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
           if (!(resultType instanceof PiExpression piExpr)) {
             if (!resultType.reportIfError(errorReporter, parameter)) {
-              errorReporter.report(new FieldTypeParameterError(fieldType, parameter));
+              errorReporter.report(new FieldTypeParameterError(typechecker.getExpressionPrettifier(), fieldType, parameter));
               resultType = new ErrorExpression();
             }
             break;
@@ -1183,7 +1183,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (pair != null && pair.proj2 != null && cResultType == null && implementedField != null) {
         expectedType = pair.proj2;
         if (expectedType.findBinding(implementedField.getType().getParameters())) {
-          errorReporter.report(new TypeFromFieldError(TypeFromFieldError.resultType(), expectedType, def));
+          errorReporter.report(new TypeFromFieldError(typechecker.getExpressionPrettifier(), TypeFromFieldError.resultType(), expectedType, def));
           expectedType = null;
         }
       }
@@ -1554,7 +1554,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       LevelProver prover = extension == null ? null : extension.getLevelProver();
       Definition useParent = def.getUseParent() == null ? null : def.getUseParent().getTypechecked();
       if (prover != null && useParent instanceof CallableDefinition callableUseParent && (!typedDef.getParameters().hasNext() || DependentLink.Helper.size(typedDef.getParameters()) == DependentLink.Helper.size(useParent.getParameters()))) {
-        try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
+        try (var ignored = new Utils.RefContextSaver(typechecker.getContext(), typechecker.getLocalExpressionPrettifier())) {
           boolean ok = true;
           if (typedDef.getParameters().hasNext()) {
             ExprSubstitution substitution = new ExprSubstitution();
@@ -2393,7 +2393,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     LinkList list = new LinkList();
     boolean ok;
 
-    try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
+    try (var ignored = new Utils.RefContextSaver(typechecker.getContext(), typechecker.getLocalExpressionPrettifier())) {
       if (constructor != null) {
         def.getData().setTypechecked(constructor);
         dataDefinition.addConstructor(constructor);
@@ -2481,7 +2481,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (elimParams != null) {
-      try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
+      try (var ignored = new Utils.RefContextSaver(typechecker.getContext(), typechecker.getLocalExpressionPrettifier())) {
         Expression expectedType = constructorType != null ? constructorType : oldConstructor.getDataTypeExpression(oldConstructor.makeIdLevels());
         CountingErrorReporter countingErrorReporter = new CountingErrorReporter(PathEndpointMismatchError.class, errorReporter);
         List<DependentLink> finalElimParams = elimParams;
@@ -3264,7 +3264,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     boolean isProperty = false;
     boolean ok;
     PiExpression piType;
-    try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
+    try (var ignored = new Utils.RefContextSaver(typechecker.getContext(), typechecker.getLocalExpressionPrettifier())) {
       Concrete.Expression codomain;
       Levels idLevels = parentClass.makeIdLevels();
       TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, idLevels), true);

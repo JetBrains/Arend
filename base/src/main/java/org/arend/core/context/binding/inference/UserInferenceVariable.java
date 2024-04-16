@@ -24,7 +24,7 @@ public class UserInferenceVariable extends InferenceVariable {
 
   @Override
   public LocalError getErrorInfer(Expression... candidates) {
-    return new ArgInferenceError("Cannot infer variable '" + getName() + "'", getSourceNode(), candidates);
+    return new ArgInferenceError(null, "Cannot infer variable '" + getName() + "'", getSourceNode(), candidates);
   }
 
   @Override

@@ -2,6 +2,7 @@ package org.arend.typechecking.error.local;
 
 import org.arend.core.expr.DataCallExpression;
 import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.prettifier.ExpressionPrettifier;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.term.concrete.Concrete;
@@ -10,10 +11,12 @@ import org.jetbrains.annotations.NotNull;
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class IdpPatternError extends TypecheckingError {
+  private final ExpressionPrettifier myPrettifier;
   public final DataCallExpression expectedType;
 
-  public IdpPatternError(String message, DataCallExpression expectedType, @NotNull Concrete.SourceNode cause) {
+  public IdpPatternError(ExpressionPrettifier prettifier, String message, DataCallExpression expectedType, @NotNull Concrete.SourceNode cause) {
     super(message, cause);
+    myPrettifier = prettifier;
     this.expectedType = expectedType;
   }
 
@@ -39,7 +42,7 @@ public class IdpPatternError extends TypecheckingError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
-    return expectedType == null ? nullDoc() : hang(text("Expected type:"), termDoc(expectedType, ppConfig));
+    return expectedType == null ? nullDoc() : hang(text("Expected type:"), termDoc(expectedType, myPrettifier, ppConfig));
   }
 
   @Override

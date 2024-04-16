@@ -39,6 +39,8 @@ import org.arend.ext.core.ops.SubstitutionPair;
 import org.arend.ext.error.*;
 import org.arend.ext.instance.InstanceSearchParameters;
 import org.arend.ext.instance.SubclassSearchParameters;
+import org.arend.ext.prettifier.ExpressionPrettifier;
+import org.arend.ext.prettifier.MergingExpressionPrettifier;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
@@ -51,6 +53,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
+import org.arend.term.prettyprint.LocalExpressionPrettifier;
 import org.arend.typechecking.dfs.FieldDFS;
 import org.arend.typechecking.LevelContext;
 import org.arend.typechecking.TypecheckerState;
@@ -90,6 +93,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private GlobalInstancePool myInstancePool;
   private final ImplicitArgsInference myArgsInference;
   protected Map<Referable, Binding> context;
+  private LocalExpressionPrettifier myLocalPrettifier;
   private MyErrorReporter errorReporter;
   private final List<ClassCallExpression.ClassCallBinding> myClassCallBindings = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasBeforeSolver = new ArrayList<>();
@@ -101,7 +105,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
   private boolean myAllowDeferredMetas = true;
 
-  private record DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceVariable inferenceVar, MyErrorReporter errorReporter) {}
+  private record DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, LocalExpressionPrettifier localPrettifier, ContextDataImpl contextData, InferenceVariable inferenceVar, MyErrorReporter errorReporter) {}
 
   public static class MyErrorReporter implements ErrorReporter {
     private final CountingErrorReporter myErrorReporter;
@@ -126,12 +130,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     errorReporter.myStatus = errorReporter.myStatus.max(status);
   }
 
-  protected CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder) {
+  protected CheckTypeVisitor(Map<Referable, Binding> localContext, LocalExpressionPrettifier localPrettifier, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder) {
     this.errorReporter = new MyErrorReporter(errorReporter);
     myEquations = new TwoStageEquations(this);
     myInstancePool = pool;
     myArgsInference = new StdImplicitArgsInference(this);
     context = localContext;
+    myLocalPrettifier = localPrettifier;
     myArendExtension = arendExtension;
     if (holder != null) {
       setUserData(holder);
@@ -139,11 +144,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public CheckTypeVisitor(ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
-    this(new LinkedHashMap<>(), errorReporter, pool, arendExtension, null);
+    this(new LinkedHashMap<>(), new LocalExpressionPrettifier(), errorReporter, pool, arendExtension, null);
   }
 
-  protected CheckTypeVisitor copy(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder) {
-    return new CheckTypeVisitor(localContext, errorReporter, pool, arendExtension, holder);
+  protected CheckTypeVisitor copy(Map<Referable, Binding> localContext, LocalExpressionPrettifier localPrettifier, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder) {
+    return new CheckTypeVisitor(localContext, localPrettifier, errorReporter, pool, arendExtension, holder);
   }
 
   public ArendExtension getExtension() {
@@ -151,7 +156,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TypecheckingContext saveTypecheckingContext() {
-    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool, myArendExtension, copyUserData(), myLevelContext);
+    return new TypecheckingContext(new LinkedHashMap<>(context), new LocalExpressionPrettifier(myLocalPrettifier), myInstancePool, myArendExtension, copyUserData(), myLevelContext);
   }
 
   public Definition getDefinition() {
@@ -167,7 +172,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, typecheckingContext.localPrettifier, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder);
     visitor.setInstancePool(typecheckingContext.instancePool.copy(visitor));
     visitor.setLevelContext(typecheckingContext.levelContext);
     return visitor;
@@ -181,6 +186,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   public void addBindings(Map<Referable, Binding> bindings) {
     context.putAll(bindings);
+  }
+
+  private void removeBinding(Referable ref) {
+    Binding binding = context.remove(ref);
+    if (binding != null) {
+      myLocalPrettifier.removeBinding(binding);
+    }
   }
 
   public GlobalInstancePool getInstancePool() {
@@ -210,6 +222,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   public void copyContextFrom(Map<? extends Referable, ? extends Binding> context) {
     this.context = new LinkedHashMap<>(context);
+    myLocalPrettifier.clear();
   }
 
   public Set<Binding> getAllBindings() {
@@ -249,6 +262,20 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       throw new IllegalArgumentException();
     }
     return context.get(ref);
+  }
+
+  public LocalExpressionPrettifier getLocalExpressionPrettifier() {
+    return myLocalPrettifier;
+  }
+
+  @Override
+  public @Nullable ExpressionPrettifier getExpressionPrettifier() {
+    ExpressionPrettifier result = new LocalExpressionPrettifier(myLocalPrettifier);
+    ExpressionPrettifier prettifier = myArendExtension == null ? null : myArendExtension.getExpressionPrettifier();
+    if (prettifier != null) {
+      result = new MergingExpressionPrettifier(Arrays.asList(result, prettifier));
+    }
+    return result;
   }
 
   @NotNull
@@ -358,7 +385,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         Expression idpArg = idp.getDefCallArguments().get(1).getUnderlyingExpression();
         boolean isNotEqualError = idpArg instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) idpArg).getVariable() != null;
         if (!(visitor.compare(idpArg, left, type, true) && visitor.compare(idpArg, right, type, true))) {
-          errorReporter.report(isNotEqualError ? new NotEqualExpressionsError(left, right, expr) : new TypeMismatchError(equality, result.type, expr));
+          errorReporter.report(isNotEqualError ? new NotEqualExpressionsError(getExpressionPrettifier(), left, right, expr) : new TypeMismatchError(equality, result.type, expr));
           return null;
         }
         if (left instanceof ArrayExpression) {
@@ -677,7 +704,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
       patterns1.add((Concrete.Pattern) pattern);
     }
-    try (var ignored = new Utils.SetContextSaver<>(context)) {
+    try (var ignored = new Utils.RefContextSaver(context, myLocalPrettifier)) {
       PatternTypechecking.Result result = new PatternTypechecking(PatternTypechecking.Mode.CASE, this, false, null, Collections.emptyList()).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), new ExprSubstitution(), marker);
       //noinspection unchecked
       return result == null ? null : (List<CoreExpressionPattern>) (List<?>) result.getPatterns();
@@ -737,7 +764,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       throw new IllegalArgumentException();
     }
 
-    try (var ignored = new Utils.SetContextSaver<>(context)) {
+    try (var ignored = new Utils.RefContextSaver(context, myLocalPrettifier)) {
       return visitLam(lamExpr.getParameters(), lamExpr, new ListParametersProvider((DependentLink) parameters));
     }
   }
@@ -997,18 +1024,20 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       CheckTypeVisitor checkTypeVisitor;
       MyErrorReporter originalErrorReporter = errorReporter;
       Map<Referable, Binding> originalContext = context;
+      LocalExpressionPrettifier originalLocalPrettifier = myLocalPrettifier;
       if (afterLevels) {
         for (Binding binding : deferredMeta.context.values()) {
           Type bindingType = binding.getType();
           if (bindingType != null) bindingType.subst(substVisitor);
         }
-        checkTypeVisitor = copy(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
+        checkTypeVisitor = copy(deferredMeta.context, deferredMeta.localPrettifier, deferredMeta.errorReporter, null, myArendExtension, this);
         checkTypeVisitor.setInstancePool(myInstancePool.copy(checkTypeVisitor));
         checkTypeVisitor.setLevelContext(myLevelContext);
       } else {
         checkTypeVisitor = this;
         errorReporter = deferredMeta.errorReporter;
         context = deferredMeta.context;
+        myLocalPrettifier = deferredMeta.localPrettifier;
       }
 
       int numberOfErrors = checkTypeVisitor.getNumberOfErrors();
@@ -1024,6 +1053,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
       errorReporter = originalErrorReporter;
       context = originalContext;
+      myLocalPrettifier = originalLocalPrettifier;
       if (result == null && checkTypeVisitor.getNumberOfErrors() == numberOfErrors) {
         deferredMeta.errorReporter.report(new TypecheckingError(refExpr == null ? "Cannot check deferred expression" : "Meta '" + refExpr.getReferent().getRefName() + "' failed", marker));
       }
@@ -1514,7 +1544,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       } finally {
         myClassCallBindings.remove(myClassCallBindings.size() - 1);
       }
-      context.remove(thisRef);
+      removeBinding(thisRef);
     }
 
     resultClassCall.fixOrderOfImplementations();
@@ -1549,7 +1579,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (classDef.getClassifyingField() == null) {
         TypecheckingResult instance = myInstancePool.findInstance(null, type, new SubclassSearchParameters(classDef), implBody, holeExpr, myDefinition);
         if (instance == null) {
-          ArgInferenceError error = new RecursiveInstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
+          ArgInferenceError error = new RecursiveInstanceInferenceError(getExpressionPrettifier(), classDef.getReferable(), implBody, holeExpr, new Expression[0]);
           errorReporter.report(error);
           result = new TypecheckingResult(new ErrorExpression(error), type);
         } else {
@@ -2030,7 +2060,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
       return new TypecheckingResult(InferenceReferenceExpression.make(myArgsInference.newInferenceVariable(expectedType, expr), getEquations()), expectedType);
     } else {
-      errorReporter.report(new ArgInferenceError(expression(), expr, new Expression[0]));
+      errorReporter.report(new ArgInferenceError(getExpressionPrettifier(), expression(), expr, new Expression[0]));
       return null;
     }
   }
@@ -2255,7 +2285,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private DependentLink visitParameters(Collection<? extends ConcreteParameter> parameters, Expression expectedType, List<Sort> resultSorts) {
     LinkList list = new LinkList();
 
-    try (var ignored = new Utils.SetContextSaver<>(context)) {
+    try (var ignored = new Utils.RefContextSaver(context, myLocalPrettifier)) {
       for (ConcreteParameter parameter : parameters) {
         if (!(parameter instanceof Concrete.TypeParameter)) {
           throw new IllegalArgumentException();
@@ -2532,7 +2562,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public TypecheckingResult visitLam(Concrete.LamExpression expr, Expression expectedType) {
-    try (var ignored = new Utils.SetContextSaver<>(context)) {
+    try (var ignored = new Utils.RefContextSaver(context, myLocalPrettifier)) {
       if (expectedType == null) {
         return visitLam(expr.getParameters(), expr, NULL_PARAMETERS_PROVIDER);
       }
@@ -2567,7 +2597,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     List<SingleDependentLink> list = new ArrayList<>();
     List<Sort> sorts = new ArrayList<>(expr.getParameters().size());
 
-    try (var ignored = new Utils.SetContextSaver<>(context)) {
+    try (var ignored = new Utils.RefContextSaver(context, myLocalPrettifier)) {
       for (Concrete.TypeParameter arg : expr.getParameters()) {
         if (arg.isProperty()) {
           errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.PROPERTY_IGNORED, arg));
@@ -2615,7 +2645,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private DependentLink visitSigmaParameters(Collection<? extends Concrete.TypeParameter> parameters, Expression expectedType, List<Sort> resultSorts) {
     LinkList list = new LinkList();
 
-    try (var ignored = new Utils.SetContextSaver<>(context)) {
+    try (var ignored = new Utils.RefContextSaver(context, myLocalPrettifier)) {
       for (Concrete.TypeParameter parameter : parameters) {
         if (!visitSigmaParameter(parameter, expectedType, resultSorts, list)) {
           return null;
@@ -2884,7 +2914,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private Pair<HaveClause,Expression> typecheckLetClause(Concrete.LetClause clause, boolean isHave) {
-    try (var ignore = new Utils.SetContextSaver<>(context)) {
+    try (var ignore = new Utils.RefContextSaver(context, myLocalPrettifier)) {
       TypecheckingResult result = typecheckLetClause(clause.getParameters(), clause, true);
       if (result == null) {
         return null;
@@ -2908,7 +2938,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private LetClausePattern typecheckLetClausePattern(Concrete.Pattern pattern, TypecheckingResult tcResult, Set<Binding> bindings) {
+  private Pair<LetClausePattern, LocalExpressionPrettifier.Accessor> typecheckLetClausePattern(Concrete.Pattern pattern, TypecheckingResult tcResult, Set<Binding> bindings) {
     if (pattern instanceof Concrete.NamePattern) {
       Referable referable = ((Concrete.NamePattern) pattern).getRef();
       Concrete.Expression patternType = ((Concrete.NamePattern) pattern).type;
@@ -2925,7 +2955,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         bindings.add(binding);
         addBinding(referable, binding);
       }
-      return new NameLetClausePattern(name);
+      return new Pair<>(new NameLetClausePattern(name), referable == null ? null : new LocalExpressionPrettifier.Accessor(referable, null, null));
     }
 
     tcResult = TypeConstructorExpression.unfoldResult(tcResult);
@@ -2942,33 +2972,41 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     List<LetClausePattern> patterns = new ArrayList<>();
     DependentLink link = sigma == null ? null : sigma.getParameters();
     ExprSubstitution substitution = new ExprSubstitution();
+    LocalExpressionPrettifier.Accessor accessor = new LocalExpressionPrettifier.Accessor(null, sigma != null ? new ArrayList<>() : null, sigma == null ? new HashMap<>() : null);
     for (int i = 0; i < numberOfPatterns; i++) {
       assert link != null || notImplementedFields != null;
       Concrete.Pattern subPattern = pattern.getPatterns().get(i);
       Expression newType;
+      ClassField field;
       if (link != null) {
+        field = null;
         newType = link.getTypeExpr().subst(substitution);
       } else {
-        ClassField field = notImplementedFields.get(i);
+        field = notImplementedFields.get(i);
         newType = classCall.getDefinition().getFieldType(field, classCall.getLevels(field.getParentClass()), tcResult.expression);
       }
-      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, new TypecheckingResult(link != null ? ProjExpression.make(tcResult.expression, i, link.isProperty()) : FieldCallExpression.make(notImplementedFields.get(i), tcResult.expression), newType), bindings);
-      if (letClausePattern == null) {
+      Pair<LetClausePattern, LocalExpressionPrettifier.Accessor> pair = typecheckLetClausePattern(subPattern, new TypecheckingResult(link != null ? ProjExpression.make(tcResult.expression, i, link.isProperty()) : FieldCallExpression.make(notImplementedFields.get(i), tcResult.expression), newType), bindings);
+      if (pair == null) {
         return null;
       }
-      patterns.add(letClausePattern);
+      patterns.add(pair.proj1);
+      if (field == null) {
+        accessor.addProjAccessor(pair.proj2);
+      } else {
+        accessor.addFieldAccessor(field, pair.proj2);
+      }
       if (link != null) {
         substitution.add(link, ProjExpression.make(tcResult.expression, i, link.isProperty()));
         link = link.getNext();
       }
     }
 
-    return sigma == null ? new RecordLetClausePattern(notImplementedFields, patterns) : new TupleLetClausePattern(patterns);
+    return new Pair<>(sigma == null ? new RecordLetClausePattern(notImplementedFields, patterns) : new TupleLetClausePattern(patterns), accessor);
   }
 
   @Override
   public TypecheckingResult visitLet(Concrete.LetExpression expr, Expression expectedType) {
-    try (var ignored = new Utils.SetContextSaver<>(context)) {
+    try (var ignored = new Utils.RefContextSaver(context, myLocalPrettifier)) {
       try (var ignored1 = new Utils.ContextSaver(myInstancePool == null ? Collections.emptyList() : myInstancePool.getLocalInstances())) {
         List<? extends Concrete.LetClause> abstractClauses = expr.getClauses();
         List<HaveClause> clauses = new ArrayList<>(abstractClauses.size());
@@ -2986,11 +3024,15 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             }
           } else {
             addBinding(null, pair.proj1);
-            LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new TypecheckingResult(new ReferenceExpression(pair.proj1), pair.proj2), definedBindings);
-            if (pattern == null) {
+            Pair<LetClausePattern, LocalExpressionPrettifier.Accessor> patternPair = typecheckLetClausePattern(clause.getPattern(), new TypecheckingResult(new ReferenceExpression(pair.proj1), pair.proj2), definedBindings);
+            if (patternPair == null) {
               return null;
             }
-            pair.proj1.setPattern(pattern);
+            pair.proj1.setPattern(patternPair.proj1);
+            myLocalPrettifier.addBinding(pair.proj1, patternPair.proj2);
+            if (pair.proj1.getExpression() instanceof ReferenceExpression refExpr) {
+              myLocalPrettifier.addBinding(refExpr.getBinding(), patternPair.proj2);
+            }
           }
           clauses.add(pair.proj1);
 
@@ -3081,7 +3123,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.Expression) marker, contextData.getArguments(), contextData.getCoclauses(), contextData.getClauses(), expectedType, contextData.getUserData());
     InferenceVariable inferenceVar = new MetaInferenceVariable(marker instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) marker).getReferent().getRefName() : "deferred", expectedType, (Concrete.Expression) marker, getAllBindings());
-    (afterLevels ? myDeferredMetasAfterLevels : myDeferredMetasBeforeSolver).add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceVar, errorReporter));
+    (afterLevels ? myDeferredMetasAfterLevels : myDeferredMetasBeforeSolver).add(new DeferredMeta(meta, new LinkedHashMap<>(context), new LocalExpressionPrettifier(myLocalPrettifier), contextDataImpl, inferenceVar, errorReporter));
     return new TypecheckingResult(new InferenceReferenceExpression(inferenceVar), expectedType);
   }
 
@@ -3102,7 +3144,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     result.type = result.expression.getType();
     if (result.type == null) {
-      TypecheckingError error = new TypeComputationError(referable, result.expression, sourceNode);
+      TypecheckingError error = new TypeComputationError(getExpressionPrettifier(), referable, result.expression, sourceNode);
       errorReporter.report(error);
       result.type = new ErrorExpression(error);
     }
@@ -3544,7 +3586,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
               }
             }
             for (var entry : removed) {
-              context.remove(entry.getKey());
+              removeBinding(entry.getKey());
               context.put(new VeryFakeLocalReferable(entry.getValue().getName()), entry.getValue());
             }
           }
@@ -3564,7 +3606,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             }
             if (removed != null) {
               for (var entry : removed) {
-                context.remove(entry.getKey());
+                removeBinding(entry.getKey());
                 context.put(new VeryFakeLocalReferable(entry.getValue().getName()), entry.getValue());
               }
             }
@@ -3717,7 +3759,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       throw new IllegalArgumentException();
     }
 
-    GoalError error = new GoalError(saveTypecheckingContext(), getBindingTypes(), expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
+    GoalError error = new GoalError(getExpressionPrettifier(), saveTypecheckingContext(), getBindingTypes(), expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
     errorReporter.report(error);
     Expression result = new GoalErrorExpression(goalResult == null || goalResult.typedExpression == null ? null : (Expression) goalResult.typedExpression.getExpression(), error);
     return new TypecheckingResult(result, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : result);
@@ -3885,7 +3927,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     Map<Referable, Binding> origElimBindings = new HashMap<>();
     ExprSubstitution elimSubst = new ExprSubstitution();
     Set<Binding> allowedBindings = new HashSet<>();
-    try (var ignored = new Utils.SetContextSaver<>(context)) {
+    try (var ignored = new Utils.RefContextSaver(context, myLocalPrettifier)) {
       for (int i = 0; i < caseArgs.size(); i++) {
         Concrete.CaseArgument caseArg = caseArgs.get(i);
         Type argType = null;
@@ -3994,7 +4036,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     List<Referable> addedRefs = new ArrayList<>();
     for (Map.Entry<Referable, Binding> entry : origElimBindings.entrySet()) {
-      context.remove(entry.getKey());
+      removeBinding(entry.getKey());
       VeryFakeLocalReferable ref = new VeryFakeLocalReferable(entry.getValue().getName());
       context.put(ref, entry.getValue());
       addedRefs.add(ref);
@@ -4033,7 +4075,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       clauses = patternTypechecking.typecheckClauses(expr.getClauses(), list.getFirst(), resultExpr);
     } finally {
       for (Referable ref : addedRefs) {
-        context.remove(ref);
+        removeBinding(ref);
       }
       context.putAll(origElimBindings);
     }
