@@ -694,22 +694,29 @@ public abstract class Expression implements Body, CoreExpression {
     return stuck instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) stuck).getVariable() != null ? ((InferenceReferenceExpression) stuck).getVariable() : null;
   }
 
-  public InferenceVariable getInferenceVariable() {
+  public InferenceVariable getInferenceVariable(boolean allowSubst) {
     Expression expr = this;
     while (true) {
-      expr = expr.cast(InferenceReferenceExpression.class);
-      if (expr == null) {
+      expr = expr.getUnderlyingExpression();
+      if (allowSubst && expr instanceof SubstExpression substExpr) {
+        expr = substExpr.getExpression().getUnderlyingExpression();
+      }
+      if (!(expr instanceof InferenceReferenceExpression refExpr)) {
         return null;
       }
-      InferenceVariable var = ((InferenceReferenceExpression) expr).getVariable();
+      InferenceVariable var = refExpr.getVariable();
       if (var != null) {
         return var;
       }
-      expr = ((InferenceReferenceExpression) expr).getSubstExpression();
+      expr = refExpr.getSubstExpression();
       if (expr == null) {
         return null;
       }
     }
+  }
+
+  public InferenceVariable getInferenceVariable() {
+    return getInferenceVariable(false);
   }
 
   @Override

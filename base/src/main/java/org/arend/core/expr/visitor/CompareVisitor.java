@@ -253,8 +253,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
     }
 
-    InferenceVariable stuckVar1 = expr1.getInferenceVariable();
-    InferenceVariable stuckVar2 = expr2.getInferenceVariable();
+    InferenceVariable stuckVar1 = expr1.getInferenceVariable(true);
+    InferenceVariable stuckVar2 = expr2.getInferenceVariable(true);
     if (stuckVar1 != null || stuckVar2 != null) {
       if (!(myNormalCompare && myEquations.addEquation(expr1, substitute(expr2), type, myCMP, stuckVar1 != null ? stuckVar1.getSourceNode() : stuckVar2.getSourceNode(), stuckVar1, stuckVar2))) {
         initResult(expr1, expr2);
