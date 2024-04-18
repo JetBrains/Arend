@@ -212,6 +212,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   private boolean initResult(Expression expr1, Expression expr2) {
     if (myNormalCompare && myResult == null) {
+      expr1 = expr1.copyStrict();
+      expr2 = expr2.copyStrict();
       myResult = new Result(expr1, expr2, expr1, expr2);
     }
     return myResult != null;
@@ -223,6 +225,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   private void initResult(Expression expr1, Expression expr2, Levels levels1, Levels levels2) {
     if (myNormalCompare && myResult == null) {
+      expr1 = expr1.copyStrict();
+      expr2 = expr2.copyStrict();
       myResult = new Result(expr1, expr2, expr1, expr2, levels1, levels2);
     }
   }
@@ -687,42 +691,45 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   @Override
   public Boolean visitFunCall(FunCallExpression expr1, Expression expr2, Expression type) {
     if (expr1.getDefinition() == Prelude.ARRAY_INDEX) {
-      boolean ok;
       if (expr2 instanceof FunCallExpression && ((FunCallExpression) expr2).getDefinition() == Prelude.ARRAY_INDEX) {
-        ok = visitDefCall(expr1, expr2) || compareConstArray(expr1, expr2, type, true) || compareConstArray((FunCallExpression) expr2, expr1, type, false);
-      } else {
-        ok = compareConstArray(expr1, expr2, type, true);
-      }
-      if (!ok) {
-        initResult(expr1, expr2);
-      }
-      return ok;
-    } else {
-      if (!visitDefCall(expr1, expr2)) {
-        if (myResult == null) {
-          initResult(expr1, expr2);
-        } else {
-          if (myResult.index >= 0 && myResult.index < expr1.getDefCallArguments().size()) {
-            List<Expression> args = new ArrayList<>(expr1.getDefCallArguments());
-            args.set(myResult.index, myResult.wholeExpr1);
-            myResult.wholeExpr1 = FunCallExpression.make(expr1.getDefinition(), expr1.getLevels(), args);
-          } else {
-            myResult.wholeExpr1 = expr1;
-          }
-          FunCallExpression funCall2 = expr2.cast(FunCallExpression.class);
-          if (funCall2 != null && myResult.index >= 0 && myResult.index < funCall2.getDefCallArguments().size()) {
-            List<Expression> args = new ArrayList<>(funCall2.getDefCallArguments());
-            args.set(myResult.index, myResult.wholeExpr2);
-            myResult.wholeExpr2 = FunCallExpression.make(funCall2.getDefinition(), funCall2.getLevels(), args);
-          } else {
-            myResult.wholeExpr2 = expr2;
-          }
-          myResult.index = -1;
+        if (visitDefCall(expr1, expr2) || compareConstArray(expr1, expr2, type, true) || compareConstArray((FunCallExpression) expr2, expr1, type, false)) {
+          return true;
         }
-        return false;
+      } else {
+        boolean ok = compareConstArray(expr1, expr2, type, true);
+        if (!ok) {
+          initResult(expr1, expr2);
+        }
+        return ok;
       }
-      return true;
+    } else {
+      if (visitDefCall(expr1, expr2)) {
+        return true;
+      }
     }
+
+    if (myResult == null) {
+      initResult(expr1, expr2);
+    } else {
+      if (myResult.index >= 0 && myResult.index < expr1.getDefCallArguments().size()) {
+        List<Expression> args = new ArrayList<>(expr1.getDefCallArguments());
+        args.set(myResult.index, myResult.wholeExpr1);
+        myResult.wholeExpr1 = FunCallExpression.make(expr1.getDefinition(), expr1.getLevels(), args);
+      } else {
+        myResult.wholeExpr1 = expr1;
+      }
+      FunCallExpression funCall2 = expr2.cast(FunCallExpression.class);
+      if (funCall2 != null && myResult.index >= 0 && myResult.index < funCall2.getDefCallArguments().size()) {
+        List<Expression> args = new ArrayList<>(funCall2.getDefCallArguments());
+        args.set(myResult.index, myResult.wholeExpr2);
+        myResult.wholeExpr2 = FunCallExpression.make(funCall2.getDefinition(), funCall2.getLevels(), args);
+      } else {
+        myResult.wholeExpr2 = expr2;
+      }
+      myResult.index = -1;
+    }
+
+    return false;
   }
 
   private void restoreConCalls(List<Pair<ConCallExpression, ConCallExpression>> stack) {
@@ -1945,7 +1952,28 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           mySubstitution.put(classCall2.getThisBinding(), prevBinding);
         }
         if (!ok) {
-          myResult = null;
+          if (expr1 instanceof NewExpression && expr2 instanceof NewExpression) {
+            if (myResult == null) {
+              initResult(expr1, expr2);
+            } else {
+              if (classCall1.isImplementedHere(field)) {
+                Map<ClassField, Expression> impls = new LinkedHashMap<>(classCall1.getImplementedHere());
+                impls.put(field, myResult.wholeExpr1);
+                myResult.wholeExpr1 = new NewExpression(null, new ClassCallExpression(classCall1.getDefinition(), classCall1.getLevels(), impls, classCall1.getSort(), classCall1.getUniverseKind()));
+              } else {
+                myResult.wholeExpr1 = expr1;
+              }
+              if (classCall2.isImplementedHere(field)) {
+                Map<ClassField, Expression> impls = new LinkedHashMap<>(classCall2.getImplementedHere());
+                impls.put(field, myResult.wholeExpr2);
+                myResult.wholeExpr2 = new NewExpression(null, new ClassCallExpression(classCall2.getDefinition(), classCall2.getLevels(), impls, classCall2.getSort(), classCall2.getUniverseKind()));
+              } else {
+                myResult.wholeExpr2 = expr2;
+              }
+            }
+          } else {
+            myResult = null;
+          }
           return false;
         }
       }

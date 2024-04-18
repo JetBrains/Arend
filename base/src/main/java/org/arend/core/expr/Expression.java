@@ -208,6 +208,46 @@ public abstract class Expression implements Body, CoreExpression {
     return accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), null);
   }
 
+  public Expression copyStrict() {
+    return accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY) {
+      @Override
+      public Expression visitReference(ReferenceExpression expr, Void params) {
+        Expression result = super.visitReference(expr, params);
+        return result == expr ? new ReferenceExpression(expr.getBinding()) : result;
+      }
+
+      @Override
+      public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+        Expression result = super.visitInferenceReference(expr, params);
+        return result == expr ? new InferenceReferenceExpression(expr.getVariable(), expr.getSubstExpression()) : result;
+      }
+
+      @Override
+      public Expression visitUniverse(UniverseExpression expr, Void params) {
+        Expression result = super.visitUniverse(expr, params);
+        return result == expr ? new UniverseExpression(expr.getSort()) : result;
+      }
+
+      @Override
+      public Expression visitError(ErrorExpression expr, Void params) {
+        Expression result = super.visitError(expr, params);
+        return result == expr ? new ErrorExpression(expr.getExpression(), expr.getGoalName(), expr.useExpression()) : result;
+      }
+
+      @Override
+      public Expression visitInteger(IntegerExpression expr, Void params) {
+        Expression result = super.visitInteger(expr, params);
+        return result != expr ? result : expr instanceof SmallIntegerExpression ? new SmallIntegerExpression(expr.getSmallInteger()) : new BigIntegerExpression(expr.getBigInteger());
+      }
+
+      @Override
+      public Expression visitString(StringExpression expr, Void params) {
+        Expression result = super.visitString(expr, params);
+        return result == expr ? new StringExpression(expr.getString()) : result;
+      }
+    }, null);
+  }
+
   public final Expression subst(Binding binding, Expression substExpr) {
     if (substExpr instanceof ReferenceExpression && ((ReferenceExpression) substExpr).getBinding() == binding) {
       return this;
