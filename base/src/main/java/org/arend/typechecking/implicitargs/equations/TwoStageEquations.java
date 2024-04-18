@@ -44,7 +44,7 @@ public class TwoStageEquations implements Equations {
   private final List<LevelEquation<LevelVariable>> myLevelEquations = new ArrayList<>();
   private final List<InferenceLevelVariable> myLevelVariables = new ArrayList<>();
   private final CheckTypeVisitor myVisitor;
-  private final List<InferenceVariable> myProps = new ArrayList<>();
+  private Set<InferenceVariable> myProps = new LinkedHashSet<>();
   private final List<Pair<InferenceLevelVariable, InferenceLevelVariable>> myBoundVariables = new ArrayList<>();
   private final Map<InferenceVariable, Expression> myNotSolvableFromEquationsVars = new HashMap<>();
 
@@ -391,7 +391,9 @@ public class TwoStageEquations implements Equations {
   @Override
   public void solveEquations() {
     while (!myProps.isEmpty()) {
-      InferenceVariable var = myProps.remove(myProps.size() - 1);
+      Iterator<InferenceVariable> it = myProps.iterator();
+      InferenceVariable var = it.next();
+      it.remove();
       if (!var.isSolved()) {
         solve(var, new UniverseExpression(Sort.PROP), false, false, false, true);
       }
@@ -442,7 +444,7 @@ public class TwoStageEquations implements Equations {
     state.equations = new ArrayList<>(myEquations);
     state.numberOfLevelVariables = myLevelVariables.size();
     state.numberOfLevelEquations = myLevelEquations.size();
-    state.numberOfProps = myProps.size();
+    state.propVars = new LinkedHashSet<>(myProps);
     state.numberOfBoundVars = myBoundVariables.size();
     state.notSolvableFromEquationsVars = new HashSet<>(myNotSolvableFromEquationsVars.keySet());
   }
@@ -456,8 +458,8 @@ public class TwoStageEquations implements Equations {
     if (myLevelEquations.size() > state.numberOfLevelEquations) {
       myLevelEquations.subList(state.numberOfLevelEquations, myLevelEquations.size()).clear();
     }
-    if (myProps.size() > state.numberOfProps) {
-      myProps.subList(state.numberOfProps, myProps.size()).clear();
+    if (myProps.size() > state.propVars.size()) {
+      myProps = new LinkedHashSet<>(state.propVars);
     }
     if (myBoundVariables.size() > state.numberOfBoundVars) {
       myBoundVariables.subList(state.numberOfBoundVars, myBoundVariables.size()).clear();

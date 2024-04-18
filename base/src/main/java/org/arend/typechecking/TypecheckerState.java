@@ -19,7 +19,7 @@ public class TypecheckerState {
   public List<Equation> equations;
   public int numberOfLevelVariables;
   public int numberOfLevelEquations;
-  public int numberOfProps;
+  public Set<InferenceVariable> propVars;
   public int numberOfBoundVars;
   public final ListErrorReporter listErrorReporter;
   public Set<InferenceVariable> notSolvableFromEquationsVars;
