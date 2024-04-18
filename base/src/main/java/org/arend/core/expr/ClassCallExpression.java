@@ -387,9 +387,14 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
             }
           }
 
-          // TODO: This is a workaround for ClassParametersTest.classFieldParametersTest
           Expression arg = expr.getArgument().getUnderlyingExpression();
-          return arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBinding && !newExpr.getClassCall().isImplemented(expr.getDefinition()) ? expr : FieldCallExpression.make(expr.getDefinition(), expr.getArgument().accept(this, null));
+          if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBinding) {
+            Expression fieldImpl = newExpr.getClassCall().myImplementations.get(field);
+            if (fieldImpl != null) {
+              return expr.subst(myThisBinding, newExpr).accept(this, null);
+            }
+          }
+          return super.visitFieldCall(expr, null);
         }
 
         @Override

@@ -3386,8 +3386,25 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           ok = false;
         }
       }
-      if (newDef) {
-        overrideField(typedDef, ok ? piType : new PiExpression(piType.getResultSort(), piType.getParameters(), new ErrorExpression()), parentClass, def);
+      if (ok) {
+        Set<ClassField> allowedFields = new HashSet<>();
+        for (ClassField field : parentClass.getNotImplementedFields()) {
+          if (field == typedDef) {
+            break;
+          }
+          allowedFields.add(field);
+        }
+        if (piType.accept(new SearchVisitor<Void>() {
+          @Override
+          protected CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
+            return expression.getDefinition() instanceof ClassField field && parentClass.isSubClassOf(field.getParentClass()) && !allowedFields.contains(field) && !parentClass.isImplemented(field) ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
+          }
+        }, null)) {
+          ok = false;
+        }
+      }
+      if (newDef && ok) {
+        overrideField(typedDef, piType, parentClass, def);
       }
       if (!ok) {
         return null;
