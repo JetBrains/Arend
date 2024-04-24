@@ -52,7 +52,12 @@ public class SubstExpression extends Expression {
       return new SubstExpression(infRefExpr, newSubst, ((SubstExpression) expression).getLevelSubstitution().subst(levelSubstitution));
     }
 
-    return new SubstExpression(expression, new ExprSubstitution(substitution), levelSubstitution);
+    if (expression instanceof InferenceReferenceExpression infRefExpr) {
+      Expression expr = infRefExpr.getSubstExpression();
+      return expr == null ? new SubstExpression(expression, new ExprSubstitution(substitution), levelSubstitution) : expr.subst(substitution, levelSubstitution);
+    }
+
+    return expression.subst(substitution, levelSubstitution);
   }
 
   public Expression getExpression() {
@@ -81,9 +86,8 @@ public class SubstExpression extends Expression {
   }
 
   public Expression eval() {
-    if (myExpression instanceof LetExpression) {
+    if (myExpression instanceof LetExpression let) {
       ExprSubstitution substitution = new ExprSubstitution(mySubstitution);
-      LetExpression let = (LetExpression) myExpression;
       if (let.isStrict()) {
         for (HaveClause letClause : let.getClauses()) {
           substitution.add(letClause, LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
