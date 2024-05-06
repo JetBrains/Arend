@@ -1,8 +1,12 @@
 package org.arend.naming;
 
+import org.arend.Matchers;
+import org.arend.term.group.AccessModifier;
 import org.junit.Test;
 
 import static org.arend.Matchers.notInScope;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class AccessModifiersTest extends NameResolverTestCase {
   @Test
@@ -379,5 +383,45 @@ public class AccessModifiersTest extends NameResolverTestCase {
       \\func test (r : R) => foo {r}
       """, 1);
     assertThatErrorsAre(notInScope("foo"));
+  }
+
+  @Test
+  public void testConstructor() {
+    resolveNamesModule("""
+      \\private \\data D
+        | cons
+      """);
+    assertEquals(AccessModifier.PRIVATE, get("D.cons").getAccessModifier());
+  }
+
+  @Test
+  public void testConstructor2() {
+    lastGroup = parseModule("""
+      \\private \\data D
+        | \\private cons
+      """, 1);
+    resolveNamesModule(lastGroup, 1);
+    assertEquals(AccessModifier.PRIVATE, get("D.cons").getAccessModifier());
+    assertThatErrorsAre(Matchers.warning());
+  }
+
+  @Test
+  public void testField() {
+    resolveNamesModule("""
+      \\private \\record R
+        | field : Nat
+      """);
+    assertNull(get("R.field"));
+  }
+
+  @Test
+  public void testField2() {
+    lastGroup = parseModule("""
+      \\private \\data R
+        | \\private field : Nat
+      """, 1);
+    resolveNamesModule(lastGroup, 1);
+    assertEquals(AccessModifier.PRIVATE, get("R.field").getAccessModifier());
+    assertThatErrorsAre(Matchers.warning());
   }
 }
