@@ -5,7 +5,6 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -22,115 +21,123 @@ import static org.junit.Assert.assertTrue;
 public class ExtensionsTest extends TypeCheckingTestCase {
   @Test
   public void fields() {
-    typeCheckModule(
-        "\\class C {\n" +
-        "  | A : \\Set0\n" +
-        "  | a : A\n" +
-        "}\n" +
-        "\\class B \\extends C {\n" +
-        "  | a' : A\n" +
-        "  | p : a = a'\n" +
-        "}\n" +
-        "\\func f (b : B) : \\Sigma (x : b.A) (x = b.a') => (b.a, b.p)");
+    typeCheckModule("""
+      \\class C {
+        | A : \\Set0
+        | a : A
+      }
+      \\class B \\extends C {
+        | a' : A
+        | p : a = a'
+      }
+      \\func f (b : B) : \\Sigma (x : b.A) (x = b.a') => (b.a, b.p)
+      """);
   }
 
   @Test
   public void newTest() {
-    typeCheckModule(
-        "\\class C {\n" +
-        "  | A : \\Set0\n" +
-        "  | a : A\n" +
-        "}\n" +
-        "\\class B \\extends C {\n" +
-        "  | a' : A\n" +
-        "  | p : a = a'\n" +
-        "}\n" +
-        "\\func f => \\new B { | A => Nat | a => 0 | a' => 0 | p => idp }");
+    typeCheckModule("""
+      \\class C {
+        | A : \\Set0
+        | a : A
+      }
+      \\class B \\extends C {
+        | a' : A
+        | p : a = a'
+      }
+      \\func f => \\new B { | A => Nat | a => 0 | a' => 0 | p => idp }
+      """);
   }
 
   @Test
   public void newError() {
-    typeCheckModule(
-        "\\class C {\n" +
-        "  | A : \\Set0\n" +
-        "  | a : A\n" +
-        "}\n" +
-        "\\class B \\extends C {\n" +
-        "  | a' : A\n" +
-        "}\n" +
-        "\\func f => \\new B { | A => Nat | a' => 0 }", 1);
+    typeCheckModule("""
+      \\class C {
+        | A : \\Set0
+        | a : A
+      }
+      \\class B \\extends C {
+        | a' : A
+      }
+      \\func f => \\new B { | A => Nat | a' => 0 }
+      """, 1);
   }
 
   @Test
   public void fieldEval() {
-    typeCheckModule(
-        "\\class C {\n" +
-        "  | A : \\Set0\n" +
-        "  | a : A\n" +
-        "}\n" +
-        "\\class B \\extends C {\n" +
-        "  | a' : A\n" +
-        "}\n" +
-        "\\func f : \\Sigma (1 = 1) (0 = 0) =>\n" +
-        "  \\let b : B => \\new B { | A => Nat | a => 1 | a' => 0 }\n" +
-        "  \\in  (path (\\lam _ => b.a), path (\\lam _ => b.a'))");
+    typeCheckModule("""
+      \\class C {
+        | A : \\Set0
+        | a : A
+      }
+      \\class B \\extends C {
+        | a' : A
+      }
+      \\func f : \\Sigma (1 = 1) (0 = 0) =>
+        \\let b : B => \\new B { | A => Nat | a => 1 | a' => 0 }
+        \\in  (path (\\lam _ => b.a), path (\\lam _ => b.a'))
+      """);
   }
 
   @Test
   public void coercion() {
-    typeCheckModule(
-        "\\class C {\n" +
-        "  | A : \\Set0\n" +
-        "  | a : A\n" +
-        "}\n" +
-        "\\class B \\extends C {\n" +
-        "  | a' : A\n" +
-        "}\n" +
-        "\\func f (a : C) => a.a\n" +
-        "\\func g : 3 = 3 => path (\\lam _ => f (\\new B { | A => Nat | a' => 2 | a => 3 }))\n" +
-        "\\func h (b : B { | A => Nat | a => 5 }) : 5 = 5 => path (\\lam _ => b.a)");
+    typeCheckModule("""
+      \\class C {
+        | A : \\Set0
+        | a : A
+      }
+      \\class B \\extends C {
+        | a' : A
+      }
+      \\func f (a : C) => a.a
+      \\func g : 3 = 3 => path (\\lam _ => f (\\new B { | A => Nat | a' => 2 | a => 3 }))
+      \\func h (b : B { | A => Nat | a => 5 }) : 5 = 5 => path (\\lam _ => b.a)
+      """);
   }
 
   @Test
   public void multiple() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | S : \\Set0\n" +
-        "}\n" +
-        "\\class B \\extends A {\n" +
-        "  | b : S\n" +
-        "}\n" +
-        "\\class C \\extends A {\n" +
-        "  | c : S\n" +
-        "}\n" +
-        "\\class D \\extends B, C {\n" +
-        "  | p : b = c\n" +
-        "}\n" +
-        "\\lemma f (d : D { | S => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
-        "\\func g => \\new D { | S => Nat | b => 3 | c => 3 | p => idp }");
+    typeCheckModule("""
+      \\class A {
+        | S : \\Set0
+      }
+      \\class B \\extends A {
+        | b : S
+      }
+      \\class C \\extends A {
+        | c : S
+      }
+      \\class D \\extends B, C {
+        | p : b = c
+      }
+      \\lemma f (d : D { | S => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p
+      \\func g => \\new D { | S => Nat | b => 3 | c => 3 | p => idp }
+      """);
   }
 
   @Test
   public void multipleInheritanceSingleImplementation() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | a : Nat\n" +
-        "}\n" +
-        "\\class Z \\extends A { | a => 0 }\n" +
-        "\\class B \\extends Z\n" +
-        "\\class C \\extends Z\n" +
-        "\\class D \\extends B, C\n");
+    typeCheckModule("""
+      \\class A {
+        | a : Nat
+      }
+      \\class Z \\extends A { | a => 0 }
+      \\class B \\extends Z
+      \\class C \\extends Z
+      \\class D \\extends B, C
+      """);
   }
 
   @Test
   public void multipleInheritanceEqualImplementations() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | a : Nat\n" +
-        "}\n" +
-        "\\class B \\extends A { | a => 0 }\n" +
-        "\\class C \\extends A { | a => 0 }\n" +
-        "\\class D \\extends B, C\n");
+    typeCheckModule("""
+      \\class A {
+        | a : Nat
+      }
+      \\class B \\extends A { | a => 0 }
+      \\class C \\extends A { | a => 0 }
+      \\class D \\extends B, C
+      """);
   }
 
   @Test
@@ -140,12 +147,13 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void universe() {
-    typeCheckModule(
-        "\\class C {\n" +
-        "  | A : \\Set0\n" +
-        "  | a : A\n" +
-        "}\n" +
-        "\\class B \\extends C");
+    typeCheckModule("""
+      \\class C {
+        | A : \\Set0
+        | a : A
+      }
+      \\class B \\extends C
+      """);
     assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition("C")).getSort());
     assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition("B")).getSort());
   }
@@ -166,10 +174,11 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void newEmbeddedExtension() {
-    typeCheckModule(
-      "\\class A { | n : Nat -> Nat | k : Nat }\n" +
-      "\\class B { | m : Nat | a : A }\n" +
-      "\\func f => \\new B { | m => 0 | a => \\new A { | n => \\lam x => x | k => 1 } }");
+    typeCheckModule("""
+      \\class A { | n : Nat -> Nat | k : Nat }
+      \\class B { | m : Nat | a : A }
+      \\func f => \\new B { | m => 0 | a => \\new A { | n => \\lam x => x | k => 1 } }
+      """);
     Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), funCall);
@@ -188,11 +197,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void deeplyEmbeddedExtension() {
-    typeCheckModule(
-      "\\class A { | n : Nat -> Nat | k : Nat }\n" +
-      "\\class B { | m : Nat | a : A }\n" +
-      "\\class C { | l : Nat | b : B }\n" +
-      "\\func f => \\new C { | l => 2 | b { | m => 1 | a { | n => \\lam x => x | k => 0 } } }");
+    typeCheckModule("""
+      \\class A { | n : Nat -> Nat | k : Nat }
+      \\class B { | m : Nat | a : A }
+      \\class C { | l : Nat | b : B }
+      \\func f => \\new C { | l => 2 | b { | m => 1 | a { | n => \\lam x => x | k => 0 } } }
+      """);
     Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
     Expression fieldCallL = FieldCallExpression.make((ClassField) getDefinition("C.l"), funCall);
@@ -219,10 +229,11 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void embeddedExtension() {
-    typeCheckModule(
-      "\\class A { | n : Nat -> Nat | k : Nat }\n" +
-      "\\class B { | m : Nat | a : A }\n" +
-      "\\class C \\extends B { | m => 0 | a { | n => \\lam x => x | k => 1 } }");
+    typeCheckModule("""
+      \\class A { | n : Nat -> Nat | k : Nat }
+      \\class B { | m : Nat | a : A }
+      \\class C \\extends B { | m => 0 | a { | n => \\lam x => x | k => 1 } }
+      """);
     NewExpression newExpr = new NewExpression(null, new ClassCallExpression((ClassDefinition) getDefinition("C"), Levels.EMPTY));
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), newExpr);
@@ -239,10 +250,11 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void anonymousEmbeddedExtension() {
-    typeCheckModule(
-      "\\class A { | n : Nat -> Nat | k : Nat }\n" +
-      "\\class B { | m : Nat | a : A }\n" +
-      "\\func f => \\new B { | m => 0 | a { | n => \\lam x => x | k => 1 } }");
+    typeCheckModule("""
+      \\class A { | n : Nat -> Nat | k : Nat }
+      \\class B { | m : Nat | a : A }
+      \\func f => \\new B { | m => 0 | a { | n => \\lam x => x | k => 1 } }
+      """);
     Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), funCall);
@@ -261,10 +273,11 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void instanceEmbeddedExtension() {
-    typeCheckModule(
-      "\\class A { | n : Nat -> Nat | k : Nat }\n" +
-      "\\class B { | m : Nat | a : A }\n" +
-      "\\instance f : B | m => 0 | a { | n => \\lam x => x | k => 1 }");
+    typeCheckModule("""
+      \\class A { | n : Nat -> Nat | k : Nat }
+      \\class B { | m : Nat | a : A }
+      \\instance f : B | m => 0 | a { | n => \\lam x => x | k => 1 }
+      """);
     Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), funCall);
@@ -283,80 +296,89 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void expectedTypeExtension() {
-    typeCheckModule(
-      "\\record A (x : Nat) (y : x = x)\n" +
-      "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A) : A => \\new B { | A => a }", 1);
+    typeCheckModule("""
+      \\record A (x : Nat) (y : x = x)
+      \\record B \\extends A | x => 0
+      \\func f (a : A) : A => \\new B { | A => a }
+      """, 1);
     assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
   @Test
   public void expectedTypeExtension2() {
-    typeCheckModule(
-      "\\record A (x : Nat) (y : x = x)\n" +
-      "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A 0) : A => \\new B { | A => a }");
+    typeCheckModule("""
+      \\record A (x : Nat) (y : x = x)
+      \\record B \\extends A | x => 0
+      \\func f (a : A 0) : A => \\new B { | A => a }
+      """);
   }
 
   @Test
   public void expectedTypeExtension3() {
-    typeCheckModule(
-      "\\record A (x : Nat) (y : x = x)\n" +
-      "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A 1) : A => \\new B { | A => a }", 1);
+    typeCheckModule("""
+      \\record A (x : Nat) (y : x = x)
+      \\record B \\extends A | x => 0
+      \\func f (a : A 1) : A => \\new B { | A => a }
+      """, 1);
     assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
   @Test
   public void expectedTypeExtension4() {
-    typeCheckModule(
-      "\\record A (x : Nat) (y : x = x)\n" +
-      "\\record B \\extends A | x => 0\n" +
-      "\\lemma f (a : A) : A 0 => \\new B { | A => a }", 1);
+    typeCheckModule("""
+      \\record A (x : Nat) (y : x = x)
+      \\record B \\extends A | x => 0
+      \\lemma f (a : A) : A 0 => \\new B { | A => a }
+      """, 1);
     assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
   @Test
   public void expectedTypeExtension5() {
-    typeCheckModule(
-      "\\record A (x : Nat) (y : x = x)\n" +
-      "\\record B \\extends A | x => 0\n" +
-      "\\lemma f (a : A 0) : A 0 => \\new B { | A => a }");
+    typeCheckModule("""
+      \\record A (x : Nat) (y : x = x)
+      \\record B \\extends A | x => 0
+      \\lemma f (a : A 0) : A 0 => \\new B { | A => a }
+      """);
   }
 
   @Test
   public void expectedTypeExtension6() {
-    typeCheckModule(
-      "\\record A (x : Nat) (y : x = x)\n" +
-      "\\record B \\extends A | x => 0\n" +
-      "\\lemma f (a : A 1) : A 0 => \\new B { | A => a }", 1);
+    typeCheckModule("""
+      \\record A (x : Nat) (y : x = x)
+      \\record B \\extends A | x => 0
+      \\lemma f (a : A 1) : A 0 => \\new B { | A => a }
+      """, 1);
     assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
   @Test
   public void expectedTypeExtension7() {
-    typeCheckModule(
-      "\\record A (x : Nat) (y : x = x)\n" +
-      "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A 1) : A 1 => \\new B { | A => a }", 2);
+    typeCheckModule("""
+      \\record A (x : Nat) (y : x = x)
+      \\record B \\extends A | x => 0
+      \\func f (a : A 1) : A 1 => \\new B { | A => a }
+      """, 2);
     assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))), typeMismatchError());
   }
 
   @Test
   public void expectedTypeExtension8() {
-    typeCheckModule(
-      "\\record A (x y : Nat)\n" +
-      "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A 1) : A 0 => \\new B { | A => a }", 1);
+    typeCheckModule("""
+      \\record A (x y : Nat)
+      \\record B \\extends A | x => 0
+      \\func f (a : A 1) : A 0 => \\new B { | A => a }
+      """, 1);
     assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
   @Test
   public void expectedTypeExtension9() {
-    typeCheckModule(
-      "\\record A (x y : Nat)\n" +
-      "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A 1) : A 1 => \\new B { | A => a }", 2);
+    typeCheckModule("""
+      \\record A (x y : Nat)
+      \\record B \\extends A | x => 0
+      \\func f (a : A 1) : A 1 => \\new B { | A => a }
+      """, 2);
     assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))), typeMismatchError());
   }
 
@@ -397,39 +419,64 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void extensionParameterError() {
-    typeCheckModule(
-      "\\class C\n" +
-      "\\func f {c : C} => 0\n" +
-      "\\class D (X : \\Type) \\extends C\n" +
-      "  | g : f = f", 2);
+    typeCheckModule("""
+      \\class C
+      \\func f {c : C} => 0
+      \\class D (X : \\Type) \\extends C
+        | g : f = f
+      """, 2);
   }
 
   @Test
   public void extensionParameterTest() {
-    typeCheckModule(
-      "\\class C\n" +
-      "\\func f {c : C} => 0\n" +
-      "\\class D \\noclassifying (X : \\Type) \\extends C\n" +
-      "  | g : f = f\n" +
-      "");
+    typeCheckModule("""
+      \\class C
+      \\func f {c : C} => 0
+      \\class D \\noclassifying (X : \\Type) \\extends C
+        | g : f = f
+      """);
   }
 
   @Test
   public void extensionParameterError2() {
-    typeCheckModule(
-      "\\class C (X : \\Type)\n" +
-      "\\class D \\extends C\n" +
-      "  | x : X\n" +
-      "\\func test (d : D) => x", 1);
+    typeCheckModule("""
+      \\class C (X : \\Type)
+      \\class D \\extends C
+        | x : X
+      \\func test (d : D) => x
+      """, 1);
   }
 
   @Test
   public void extensionParameterTest2() {
-    typeCheckModule(
-      "\\class C (X : \\Type)\n" +
-      "  | x : X\n" +
-      "\\class D \\noclassifying \\extends C\n" +
-      "  | y : X\n" +
-      "\\func test (d : D) => d.x = {d.X} y");
+    typeCheckModule("""
+      \\class C (X : \\Type)
+        | x : X
+      \\class D \\noclassifying \\extends C
+        | y : X
+      \\func test (d : D) => d.x = {d.X} y
+      """);
+  }
+
+  @Test
+  public void recursionTest() {
+    typeCheckModule("""
+      \\record B
+      \\record R \\extends S
+        \\where
+          \\record S \\extends B
+      """);
+  }
+
+  @Test
+  public void recursionTest2() {
+    typeCheckModule("""
+      \\record B
+      \\record E \\extends R
+        \\where
+          \\record R \\extends S
+            \\where
+              \\record S \\extends B
+      """);
   }
 }
