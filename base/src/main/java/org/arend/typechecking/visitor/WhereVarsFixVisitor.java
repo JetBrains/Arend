@@ -155,17 +155,6 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
           selfArgsMap.put(definition.getData(), selfArgs);
         }
 
-        if (!parametersOriginalDefinitions.isEmpty() && definition instanceof Concrete.BaseFunctionDefinition && !definition.getParameters().isEmpty()) {
-          Concrete.FunctionBody body = ((Concrete.BaseFunctionDefinition) definition).getBody();
-          if (body instanceof Concrete.ElimFunctionBody && body.getEliminatedReferences().isEmpty()) {
-            for (Concrete.Parameter parameter : definition.getParameters()) {
-              for (Referable referable : parameter.getReferableList()) {
-                ((Concrete.ElimFunctionBody) body).getEliminatedReferences().add(new Concrete.ReferenceExpression(definition.getData(), referable));
-              }
-            }
-          }
-        }
-
         Set<Referable> levelRefs = new HashSet<>();
         for (Concrete.Parameter param : newParams) {
           if (param.getType() != null) {
@@ -227,6 +216,22 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         }
         varsFixVisitor.visitParameters(pair.proj1, null);
         definition.addParameters(pair.proj1, pair.proj2);
+
+        if (definition instanceof Concrete.BaseFunctionDefinition) {
+          Concrete.FunctionBody body = ((Concrete.BaseFunctionDefinition) definition).getBody();
+          if (body instanceof Concrete.ElimFunctionBody && body.getEliminatedReferences().isEmpty()) {
+            for (Concrete.FunctionClause clause : body.getClauses()) {
+              addParametersToClause(pair.proj1, clause);
+            }
+          }
+        }
+
+        if (definition instanceof Concrete.DataDefinition dataDef && dataDef.getEliminatedReferences() != null && dataDef.getEliminatedReferences().isEmpty()) {
+          for (Concrete.ConstructorClause clause : dataDef.getConstructorClauses()) {
+            addParametersToClause(pair.proj1, clause);
+          }
+        }
+
         if (definition instanceof Concrete.CoClauseFunctionDefinition coClauseDef) {
           int n = coClauseDef.getNumberOfExternalParameters();
           for (Concrete.Parameter parameter : pair.proj1) {
@@ -237,6 +242,16 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         }
       }
     }
+  }
+
+  private static void addParametersToClause(List<Concrete.Parameter> newParameters, Concrete.Clause clause) {
+    List<Concrete.Pattern> newPatterns = new ArrayList<>();
+    for (Concrete.Parameter parameter : newParameters) {
+      for (Referable referable : parameter.getReferableList()) {
+        newPatterns.add(new Concrete.NamePattern(clause.getData(), false, referable, null));
+      }
+    }
+    clause.getPatterns().addAll(0, newPatterns);
   }
 
   private static void checkLevels(Set<TCDefReferable> defs, Concrete.LevelParameters parameters, ErrorReporter errorReporter, String kind, Concrete.SourceNode sourceNode) {

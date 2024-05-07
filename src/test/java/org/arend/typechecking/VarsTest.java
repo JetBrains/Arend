@@ -848,4 +848,36 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func test => xxx {0}
       """);
   }
+
+  @Test
+  public void dataElimScopeTest() {
+    typeCheckModule("""
+      \\func f {X : \\Type} => X \\where {
+        \\data D (n : Nat) \\with
+          | 0 => cons X
+      }
+      """);
+  }
+
+  @Test
+  public void funcElimScopeTest() {
+    typeCheckModule("""
+      \\func f {m : Nat} => m \\where {
+        \\func g (n : Nat) : Nat \\with
+          | 0 => m
+          | suc n => n
+      }
+      """);
+  }
+
+  @Test
+  public void funcElimScopeTest2() {
+    typeCheckModule("""
+      \\func f {m : Nat} => m \\where {
+        \\func g {n : Nat} : Nat \\with
+          | {0} => m
+          | {suc n} => n
+      }
+      """);
+  }
 }
