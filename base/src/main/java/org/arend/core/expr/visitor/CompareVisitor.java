@@ -211,7 +211,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private boolean initResult(Expression expr1, Expression expr2) {
-    if (myNormalCompare && myResult == null) {
+    if (myNormalCompare && myResult == null && !myOnlySolveVars) {
       expr1 = expr1.copyStrict();
       expr2 = expr2.copyStrict();
       myResult = new Result(expr1, expr2, expr1, expr2);
