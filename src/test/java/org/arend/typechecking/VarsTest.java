@@ -880,4 +880,32 @@ public class VarsTest extends TypeCheckingTestCase {
       }
       """);
   }
+
+  @Test
+  public void coclauseElimScopeTest() {
+    typeCheckModule("""
+      \\record R (x : Nat) (field : Nat -> Nat)
+      \\func f (m : Nat) => m \\where {
+        \\func g : R m \\cowith
+          | field (n : Nat) : Nat \\with {
+            | 0 => 0
+            | suc n => n
+          }
+      }
+      """);
+  }
+
+  @Test
+  public void coclauseElimScopeTest2() {
+    typeCheckModule("""
+      \\record R (x : Nat) (field : Nat -> Nat)
+      \\func f (m : Nat) => m \\where {
+        \\func g : R m \\cowith
+          | field (n : Nat) : Nat \\with {
+            | 0 => m
+            | suc n => n
+          }
+      }
+      """);
+  }
 }

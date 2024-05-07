@@ -1212,13 +1212,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private Pair<Expression,ClassCallExpression> typecheckCoClauses(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, FunctionKind kind, List<Concrete.CoClauseElement> elements) {
-    List<Concrete.Argument> arguments = new ArrayList<>();
-    for (Concrete.Parameter parameter : def.getParameters()) {
-      for (Referable referable : parameter.getReferableList()) {
-        arguments.add(new Concrete.Argument(new Concrete.ReferenceExpression(def.getData(), referable), false));
-      }
-    }
-
     List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>(elements.size());
     for (Concrete.CoClauseElement element : elements) {
       if (element instanceof Concrete.ClassFieldImpl) {
@@ -1226,9 +1219,24 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       } else {
         throw new IllegalStateException();
       }
-      if (element instanceof Concrete.CoClauseFunctionReference && !def.getParameters().isEmpty()) {
-        Concrete.Expression oldImpl = ((Concrete.CoClauseFunctionReference) element).implementation;
-        ((Concrete.CoClauseFunctionReference) element).implementation = Concrete.AppExpression.make(oldImpl.getData(), oldImpl, arguments);
+      if (element instanceof Concrete.CoClauseFunctionReference coClauseRef && !def.getParameters().isEmpty()) {
+        Set<Pair<TCDefReferable,Integer>> allowedExternalParameters = new HashSet<>();
+        if (coClauseRef.functionReference.getTypechecked() instanceof TopLevelDefinition topLevel) {
+          allowedExternalParameters.addAll(topLevel.getParametersOriginalDefinitions());
+        }
+
+        List<Concrete.Argument> arguments = new ArrayList<>();
+        int index = 0;
+        for (Concrete.Parameter parameter : def.getParameters()) {
+          for (Referable referable : parameter.getReferableList()) {
+            var externalVars = typedDef.getParametersOriginalDefinitions();
+            if (index >= externalVars.size() || allowedExternalParameters.contains(externalVars.get(index))) {
+              arguments.add(new Concrete.Argument(new Concrete.ReferenceExpression(def.getData(), referable), false));
+            }
+            index++;
+          }
+        }
+        coClauseRef.implementation = Concrete.AppExpression.make(coClauseRef.implementation.getData(), coClauseRef.implementation, arguments);
       }
     }
 
