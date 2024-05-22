@@ -3011,7 +3011,17 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+      Set<ClassField> added = new HashSet<>();
+      for (Map.Entry<ClassField, Pair<AbsExpression, Boolean>> entry : superClass.getDefaults()) {
+        Levels levels = typedDef.getSuperLevels().get(superClass);
+        if (typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue().proj1.subst(new ExprSubstitution(), levels == null ? idLevels.makeSubstitution(superClass) : levels.makeSubstitution(superClass)), entry.getValue().proj2)) {
+          added.add(entry.getKey());
+        }
+      }
       for (Map.Entry<ClassField, Set<ClassField>> entry : superClass.getDefaultDependencies().entrySet()) {
+        if (!added.contains(entry.getKey())) {
+          continue;
+        }
         Set<ClassField> dependencies = entry.getValue();
         if (!typedDef.getDefaults().isEmpty()) {
           Set<ClassField> newDependencies = new HashSet<>();
@@ -3026,12 +3036,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
         typedDef.addDefaultDependencies(entry.getKey(), dependencies);
       }
-      for (Map.Entry<ClassField, Pair<AbsExpression, Boolean>> entry : superClass.getDefaults()) {
-        Levels levels = typedDef.getSuperLevels().get(superClass);
-        typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue().proj1.subst(new ExprSubstitution(), levels == null ? idLevels.makeSubstitution(superClass) : levels.makeSubstitution(superClass)), entry.getValue().proj2);
-      }
       for (Map.Entry<ClassField, Set<ClassField>> entry : superClass.getDefaultImplDependencies().entrySet()) {
-        typedDef.addDefaultImplDependencies(entry.getKey(), entry.getValue());
+        if (added.contains(entry.getKey())) {
+          typedDef.addDefaultImplDependencies(entry.getKey(), entry.getValue());
+        }
       }
     }
 

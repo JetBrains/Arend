@@ -363,9 +363,8 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
     return pair == null ? null : pair.proj1;
   }
 
-  public AbsExpression addDefaultIfAbsent(ClassField field, AbsExpression impl, boolean isFunc) {
-    Pair<AbsExpression, Boolean> pair = myDefaults.putIfAbsent(field, new Pair<>(impl, isFunc));
-    return pair == null ? null : pair.proj1;
+  public boolean addDefaultIfAbsent(ClassField field, AbsExpression impl, boolean isFunc) {
+    return myDefaults.putIfAbsent(field, new Pair<>(impl, isFunc)) == null;
   }
 
   public Map<ClassField, Set<ClassField>> getDefaultDependencies() {

@@ -1,6 +1,7 @@
 package org.arend.classes;
 
 import org.arend.Matchers;
+import org.arend.core.definition.ClassDefinition;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.FieldCycleError;
 import org.arend.typechecking.error.local.NotEqualExpressionsError;
@@ -8,6 +9,8 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
 
 public class DefaultImplTest extends TypeCheckingTestCase {
   @Test
@@ -377,5 +380,20 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       \\func test : C \\cowith
       """, 1);
     assertThatErrorsAre(Matchers.typecheckingError(FieldCycleError.class));
+  }
+
+  @Test
+  public void superDependencies() {
+    typeCheckModule("""
+      \\record B (b : Nat)
+      \\record R (r : Nat) \\extends B {
+        \\default b => r
+      }
+      \\record S (s : Nat) \\extends B {
+        \\default b => s
+      }
+      \\record T \\extends R, S
+      """);
+    assertEquals(1, ((ClassDefinition) getDefinition("T")).getDefaultImplDependencies().values().iterator().next().size());
   }
 }
