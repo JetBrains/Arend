@@ -57,6 +57,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   private boolean compareLevels(List<Concrete.LevelExpression> levels1, List<Concrete.LevelExpression> levels2) {
     if (levels1 == null) return levels2 == null;
+    if (levels2 == null) return false;
     if (levels1.size() != levels2.size()) return false;
     for (int i = 0; i < levels1.size(); i++) {
       if (!compareLevel(levels1.get(i), levels2.get(i))) return false;
