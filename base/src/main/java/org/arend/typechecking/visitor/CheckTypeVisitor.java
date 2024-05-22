@@ -662,19 +662,21 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public @Nullable TypecheckingResult replaceType(@NotNull TypedExpression typedExpression, @NotNull CoreExpression newType, @Nullable ConcreteSourceNode marker) {
+  public @Nullable TypecheckingResult replaceType(@NotNull TypedExpression typedExpression, @NotNull CoreExpression newType, @Nullable ConcreteSourceNode marker, boolean unfoldType) {
     if (!(newType instanceof Expression && marker instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
     TypecheckingResult result = TypecheckingResult.fromChecked(typedExpression);
     Expression expr = result.expression;
     Expression type = result.type.normalize(NormalizationMode.WHNF);
-    while (type instanceof FunCallExpression && ((FunCallExpression) type).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
-      FunctionDefinition func = ((FunCallExpression) type).getDefinition();
-      Expression evalType = ((FunCallExpression) type).evaluate();
-      if (evalType == null) break;
-      expr = TypeDestructorExpression.make(func, expr);
-      type = evalType.normalize(NormalizationMode.WHNF);
+    if (unfoldType) {
+      while (type instanceof FunCallExpression && ((FunCallExpression) type).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+        FunctionDefinition func = ((FunCallExpression) type).getDefinition();
+        Expression evalType = ((FunCallExpression) type).evaluate();
+        if (evalType == null) break;
+        expr = TypeDestructorExpression.make(func, expr);
+        type = evalType.normalize(NormalizationMode.WHNF);
+      }
     }
     return type.isError() ? new TypecheckingResult(expr, type) : CompareVisitor.compare(myEquations, CMP.LE, type, (Expression) newType, Type.OMEGA, (Concrete.SourceNode) marker) ? new TypecheckingResult(expr, (Expression) newType) : null;
   }
