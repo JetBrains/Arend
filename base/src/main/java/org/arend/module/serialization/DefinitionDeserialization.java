@@ -158,8 +158,8 @@ public class DefinitionDeserialization implements ArendDeserializer {
     for (Map.Entry<Integer, DefinitionProtos.Definition.RefList> entry : classProto.getDefaultImplDependenciesMap().entrySet()) {
       classDef.addDefaultImplDependencies(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readDefinitions(entry.getValue().getRefList(), ClassField.class));
     }
-    for (Map.Entry<Integer, ExpressionProtos.Expression.Pi> entry : classProto.getOverriddenFieldMap().entrySet()) {
-      classDef.overrideField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), checkFieldType(defDeserializer.readPi(entry.getValue()), classDef));
+    for (var entry : classProto.getOverriddenFieldMap().entrySet()) {
+      classDef.overrideField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), checkFieldType(defDeserializer.readPi(entry.getValue().getType()), classDef), myCallTargetProvider.getCallTarget(entry.getValue().getOriginalClass(), ClassDefinition.class));
     }
     for (Integer fieldRef : classProto.getCovariantFieldList()) {
       classDef.addCovariantField(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));

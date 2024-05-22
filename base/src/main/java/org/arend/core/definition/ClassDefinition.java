@@ -30,7 +30,7 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
   private final Map<ClassField, Pair<AbsExpression,Boolean>> myDefaults = new HashMap<>();
   private final Map<ClassField, Set<ClassField>> myDefaultDependencies = new HashMap<>();
   private final Map<ClassField, Set<ClassField>> myDefaultImplDependencies = new HashMap<>();
-  private final Map<ClassField, PiExpression> myOverridden = new HashMap<>();
+  private final Map<ClassField, Pair<PiExpression,ClassDefinition>> myOverridden = new HashMap<>();
   private final Set<ClassField> myCovariantFields = new HashSet<>();
   private ClassField myCoercingField;
   private Sort mySort = Sort.PROP;
@@ -353,8 +353,10 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
     return myDefaults.get(field);
   }
 
-  public AbsExpression getDefault(@NotNull ClassField field) {
-    Pair<AbsExpression, Boolean> pair = myDefaults.get(field);
+  @Nullable
+  @Override
+  public AbsExpression getDefault(@NotNull CoreClassField field) {
+    Pair<AbsExpression, Boolean> pair = field instanceof ClassField ? myDefaults.get(field) : null;
     return pair == null ? null : pair.proj1;
   }
 
@@ -398,30 +400,35 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
 
   @NotNull
   @Override
-  public Set<Map.Entry<ClassField, PiExpression>> getOverriddenFields() {
+  public Set<Map.Entry<ClassField, Pair<PiExpression, ClassDefinition>>> getOverriddenFields() {
     return myOverridden.entrySet();
   }
 
+  @Nullable
+  @Override
+  public ClassDefinition getOverriddenOriginalClass(@NotNull CoreClassField field) {
+    var pair = field instanceof ClassField ? myOverridden.get(field) : null;
+    return pair == null ? null : pair.proj2;
+  }
+
   public PiExpression getOverriddenType(ClassField field, Levels levels) {
-    PiExpression type = myOverridden.get(field);
-    return type == null ? null : (PiExpression) new SubstVisitor(new ExprSubstitution(), castLevels(field.getParentClass(), levels).makeSubstitution(field)).visitPi(type, null);
+    Pair<PiExpression, ClassDefinition> pair = myOverridden.get(field);
+    return pair == null ? null : (PiExpression) new SubstVisitor(new ExprSubstitution(), castLevels(field.getParentClass(), levels).makeSubstitution(field)).visitPi(pair.proj1, null);
   }
 
   public PiExpression getFieldType(ClassField field) {
-    PiExpression type = myOverridden.get(field);
-    return type == null ? field.getType() : type;
+    Pair<PiExpression, ClassDefinition> pair = myOverridden.get(field);
+    return pair == null ? field.getType() : pair.proj1;
   }
 
   public PiExpression getFieldType(ClassField field, Levels levels) {
-    PiExpression type = myOverridden.get(field);
-    return type == null ? field.getType(levels) : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels.makeSubstitution(field)).visitPi(type, null);
+    Pair<PiExpression, ClassDefinition> pair = myOverridden.get(field);
+    return pair == null ? field.getType(levels) : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels.makeSubstitution(field)).visitPi(pair.proj1, null);
   }
 
   public Expression getFieldType(ClassField field, LevelSubstitution levels, Expression thisExpr) {
-    PiExpression type = myOverridden.get(field);
-    if (type == null) {
-      type = field.getType();
-    }
+    Pair<PiExpression, ClassDefinition> pair = myOverridden.get(field);
+    PiExpression type = pair == null ? field.getType() : pair.proj1;
     return type.getCodomain().subst(new ExprSubstitution(type.getParameters(), thisExpr), levels);
   }
 
@@ -432,7 +439,12 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
   @Nullable
   @Override
   public PiExpression getOverriddenType(@NotNull CoreClassField field) {
-    return field instanceof ClassField ? myOverridden.get(field) : null;
+    if (field instanceof ClassField) {
+      var pair = myOverridden.get(field);
+      return pair == null ? null : pair.proj1;
+    } else {
+      return null;
+    }
   }
 
   @Override
@@ -440,8 +452,8 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
     return field instanceof ClassField && myOverridden.containsKey(field);
   }
 
-  public PiExpression overrideField(ClassField field, PiExpression type) {
-    return myOverridden.put(field, type);
+  public void overrideField(ClassField field, PiExpression type, ClassDefinition originalClass) {
+    myOverridden.put(field, new Pair<>(type, originalClass));
   }
 
   public Set<? extends ClassField> getGoodThisFields() {

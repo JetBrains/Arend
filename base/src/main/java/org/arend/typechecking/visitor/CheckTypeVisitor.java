@@ -29,6 +29,7 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.context.CoreParameterBuilder;
+import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.*;
 import org.arend.ext.core.level.CoreSort;
@@ -1358,11 +1359,31 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     classCall.getImplementedHere().put(field, cycle == null ? implementation : new ErrorExpression());
   }
 
+  private void copyImplementationsFrom(ClassCallExpression to, ClassCallExpression from, Concrete.SourceNode sourceNode) {
+    if (from.getImplementedHere().isEmpty()) {
+      return;
+    }
+
+    ReferenceExpression thisExpr = new ReferenceExpression(to.getThisBinding());
+    for (Map.Entry<ClassField, Expression> entry : from.getImplementedHere().entrySet()) {
+      if (to.getDefinition() != from.getDefinition()) {
+        ClassDefinition toOriginalClass = to.getDefinition().getOverriddenOriginalClass(entry.getKey());
+        if (toOriginalClass != null && toOriginalClass != from.getDefinition().getOverriddenOriginalClass(entry.getKey())) {
+          Expression fieldType = to.getDefinition().getFieldType(entry.getKey(), to.getLevels(entry.getKey().getParentClass()), new ReferenceExpression(to.getThisBinding()));
+          if (!CompareVisitor.compare(myEquations, CMP.LE, entry.getValue().getType(), fieldType, Type.OMEGA, sourceNode)) {
+            break;
+          }
+        }
+      }
+      to.getImplementedHere().put(entry.getKey(), entry.getValue().subst(from.getThisBinding(), thisExpr));
+    }
+  }
+
   private TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, Expression expectedType, Expression renewExpr, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr, boolean useDefaults) {
     ClassDefinition baseClass = classCallExpr.getDefinition();
     Map<ClassField, Expression> fieldSet = new LinkedHashMap<>();
     ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getLevels(), fieldSet, Sort.PROP, baseClass.getUniverseKind());
-    resultClassCall.copyImplementationsFrom(classCallExpr);
+    copyImplementationsFrom(resultClassCall, classCallExpr, expr);
     resultClassCall.updateHasUniverses();
 
     Set<ClassField> defined = new HashSet<>();
@@ -1683,7 +1704,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
               fieldsOK = false;
             }
             if (fieldsOK) {
-              actualClassCall.copyImplementationsFrom(expectedClassCall);
+              copyImplementationsFrom(actualClassCall, expectedClassCall, expr);
             }
           }
           if (!ok) {

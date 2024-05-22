@@ -313,8 +313,8 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
     for (Map.Entry<ClassField, Pair<AbsExpression, Boolean>> entry : def.getDefaults()) {
       entry.getValue().proj1.getExpression().accept(this, params);
     }
-    for (Map.Entry<ClassField, PiExpression> entry : def.getOverriddenFields()) {
-      visitPi(entry.getValue(), params);
+    for (var entry : def.getOverriddenFields()) {
+      visitPi(entry.getValue().proj1, params);
     }
     return null;
   }

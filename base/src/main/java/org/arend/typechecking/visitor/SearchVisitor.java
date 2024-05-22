@@ -369,8 +369,8 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     for (Map.Entry<ClassField, Pair<AbsExpression, Boolean>> entry : def.getDefaults()) {
       if (entry.getValue().proj1.getExpression().accept(this, params)) return true;
     }
-    for (Map.Entry<ClassField, PiExpression> entry : def.getOverriddenFields()) {
-      if (entry.getValue().getCodomain().accept(this, params)) return true;
+    for (var entry : def.getOverriddenFields()) {
+      if (entry.getValue().proj1.getCodomain().accept(this, params)) return true;
     }
     return false;
   }

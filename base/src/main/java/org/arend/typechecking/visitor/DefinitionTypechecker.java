@@ -2873,6 +2873,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
                 if (!type.getCodomain().reportIfError(errorReporter, def) && !superType.getCodomain().reportIfError(errorReporter, def)) {
                   errorReporter.report(new TypecheckingError("The types of the field '" + field.getName() + "' differ in super classes '" + originalSuperClass.getName() + "' and '" + superClass.getName() + "'", def));
                 }
+                originalSuperClass = typedDef;
                 type = new PiExpression(type.getResultSort(), type.getParameters(), new ErrorExpression());
                 break;
               }
@@ -2880,13 +2881,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
         if (type != null) {
-          typedDef.overrideField(field, type);
+          typedDef.overrideField(field, type, originalSuperClass);
         }
       }
 
-      for (Map.Entry<ClassField, PiExpression> entry : typedDef.getOverriddenFields()) {
+      for (var entry : typedDef.getOverriddenFields()) {
         if (!overriddenHere.contains(entry.getKey())) {
-          overrideField(entry.getKey(), entry.getValue(), typedDef, def);
+          overrideField(entry.getKey(), entry.getValue().proj1, typedDef, def, entry.getValue().proj2);
         }
       }
     }
@@ -3139,7 +3140,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           Expression type = field.getResultTypeFor(typedDef).subst(field.getThisParameter(), new ReferenceExpression(thisParam));
           Type newType = type.accept(new MinimizeLevelVisitor(), null);
           if (newType != null && newType != type) {
-            typedDef.overrideField(field, new PiExpression(thisParam.getType().getSortOfType().max(newType.getSortOfType()), thisParam, newType.getExpr()));
+            typedDef.overrideField(field, new PiExpression(thisParam.getType().getSortOfType().max(newType.getSortOfType()), thisParam, newType.getExpr()), typedDef);
           }
         }
       }
@@ -3420,7 +3421,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
       if (newDef && ok) {
-        overrideField(typedDef, piType, parentClass, def);
+        overrideField(typedDef, piType, parentClass, def, parentClass);
       }
       if (!ok) {
         return null;
@@ -3491,7 +3492,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private void overrideField(ClassField field, PiExpression type, ClassDefinition classDef, Concrete.SourceNode sourceNode) {
+  private void overrideField(ClassField field, PiExpression type, ClassDefinition classDef, Concrete.SourceNode sourceNode, ClassDefinition originalClass) {
     AbsExpression impl = classDef.getImplementation(field);
     if (impl != null) {
       Expression implType = impl.apply(new ReferenceExpression(type.getParameters()), LevelSubstitution.EMPTY).computeType();
@@ -3501,7 +3502,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
     if (myNewDef) {
-      classDef.overrideField(field, type);
+      classDef.overrideField(field, type, originalClass);
     }
   }
 

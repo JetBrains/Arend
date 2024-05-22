@@ -46,6 +46,10 @@ message Definition {
       Expression.Abs expr = 1;
       bool is_func = 2;
     }
+  message OverriddenData {
+    Expression.Pi type = 1;
+    int32 original_class = 2;
+  }
     message ClassData {
         repeated int32 super_class_ref = 1;
         repeated Field personal_field = 2;
@@ -61,7 +65,7 @@ message Definition {
         repeated int32 good_field = 9;
         repeated int32 type_class_field = 10;
         repeated ClassParametersLevel parameters_level = 11;
-        map<int32, Expression.Pi> overridden_field = 12;
+        map<int32, OverriddenData> overridden_field = 23;
         repeated int32 covariant_field = 20;
         int32 squasher = 13;
         map<int32, Levels> super_levels = 19;

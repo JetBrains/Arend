@@ -10,7 +10,6 @@ import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.AbsExpression;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.PiExpression;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.EmptyPattern;
@@ -168,8 +167,11 @@ public class DefinitionSerialization implements ArendSerializer {
     for (Map.Entry<ClassField, Set<ClassField>> entry : definition.getDefaultImplDependencies().entrySet()) {
       builder.putDefaultImplDependencies(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeRefList(entry.getValue()));
     }
-    for (Map.Entry<ClassField, PiExpression> entry : definition.getOverriddenFields()) {
-      builder.putOverriddenField(myCallTargetIndexProvider.getDefIndex(entry.getKey()), defSerializer.visitPi(entry.getValue()));
+    for (var entry : definition.getOverriddenFields()) {
+      builder.putOverriddenField(myCallTargetIndexProvider.getDefIndex(entry.getKey()), DefinitionProtos.Definition.OverriddenData.newBuilder()
+        .setType(defSerializer.visitPi(entry.getValue().proj1))
+        .setOriginalClass(myCallTargetIndexProvider.getDefIndex(entry.getValue().proj2))
+        .build());
     }
     for (ClassField field : definition.getCovariantFields()) {
       builder.addCovariantField(myCallTargetIndexProvider.getDefIndex(field));
