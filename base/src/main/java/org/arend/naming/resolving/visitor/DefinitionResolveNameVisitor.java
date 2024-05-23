@@ -74,12 +74,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
   private void resolveTypeClassReference(List<? extends Concrete.Parameter> parameters, Concrete.Expression expr, Scope scope, boolean isType) {
     if (isType) {
-      for (Concrete.Parameter parameter : parameters) {
-        if (parameter.isExplicit()) {
-          return;
-        }
-      }
-
       Concrete.Expression expr1 = expr;
       while (expr1 instanceof Concrete.PiExpression) {
         for (Concrete.TypeParameter parameter : ((Concrete.PiExpression) expr1).getParameters()) {
@@ -229,6 +223,47 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     return params == null ? Collections.emptyList() : params.referables;
   }
 
+  private void resolveCoclauseImplementedField(Concrete.CoClauseFunctionDefinition function, Scope scope) {
+    if (!(function.getImplementedField() instanceof UnresolvedReference)) {
+      return;
+    }
+
+    Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(function.getUseParent());
+    Referable classRef = null;
+    List<? extends Concrete.ClassElement> elements = Collections.emptyList();
+    if (enclosingDef instanceof Concrete.BaseFunctionDefinition enclosingFunction) {
+      if (enclosingFunction.getResultType() != null) {
+        if (enclosingFunction.getStage().ordinal() < Concrete.Stage.RESOLVED.ordinal()) {
+          resolveTypeClassReference(enclosingFunction.getParameters(), enclosingFunction.getResultType(), scope, true);
+        }
+        classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(enclosingFunction.getResultType());
+        elements = enclosingFunction.getBody().getCoClauseElements();
+      }
+    } else if (enclosingDef instanceof Concrete.ClassDefinition) {
+      classRef = enclosingDef.getData();
+      elements = ((Concrete.ClassDefinition) enclosingDef).getElements();
+    }
+
+    if (classRef != null && !(classRef instanceof ClassReferable)) {
+      classRef = classRef.getUnderlyingReferable();
+    }
+    if (classRef instanceof ClassReferable) {
+      Concrete.CoClauseFunctionReference functionRef = null;
+      for (Concrete.ClassElement element : elements) {
+        if (element instanceof Concrete.CoClauseFunctionReference && ((Concrete.CoClauseFunctionReference) element).getFunctionReference().equals(function.getData())) {
+          functionRef = (Concrete.CoClauseFunctionReference) element;
+          break;
+        }
+      }
+      if (functionRef != null) {
+        function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
+      }
+    }
+    if (function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet() && function.getImplementedField() instanceof GlobalReferable) {
+      ((LocatedReferableImpl) function.getData()).setPrecedence(((GlobalReferable) function.getImplementedField()).getPrecedence());
+    }
+  }
+
   private ExpressionResolveNameVisitor resolveFunctionHeader(Concrete.BaseFunctionDefinition def, Scope scope) {
     if (def.getStage().ordinal() >= Concrete.Stage.HEADER_RESOLVED.ordinal()) {
       return null;
@@ -244,10 +279,15 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         if (def.getBody() instanceof Concrete.TermFunctionBody) {
           resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false);
         }
-        if (def.getResultType() != null) {
+        if (def.getResultType() != null && !(def instanceof Concrete.CoClauseFunctionDefinition)) {
           resolveTypeClassReference(def.getParameters(), def.getResultType(), scope, true);
         }
       }
+
+      if (def instanceof Concrete.CoClauseFunctionDefinition function) {
+        resolveCoclauseImplementedField(function, scope);
+      }
+
       def.setTypeClassReferencesResolved();
       return null;
     }
@@ -263,49 +303,15 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         }
       }
 
-      if (def instanceof Concrete.CoClauseFunctionDefinition function && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
-        if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
+      if (def instanceof Concrete.CoClauseFunctionDefinition function) {
+        resolveCoclauseImplementedField(function, scope);
+        if (function.getNumberOfExternalParameters() == 0 && enclosingDef instanceof Concrete.BaseFunctionDefinition) {
           List<Concrete.Parameter> parameters = new SubstConcreteVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
           for (Concrete.Parameter parameter : parameters) {
             parameter.setExplicit(false);
           }
           def.getParameters().addAll(0, parameters);
           function.setNumberOfExternalParameters(parameters.size());
-        }
-        if (function.getImplementedField() instanceof UnresolvedReference || function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet()) {
-          Referable classRef = null;
-          List<? extends Concrete.ClassElement> elements = Collections.emptyList();
-          if (enclosingDef instanceof Concrete.BaseFunctionDefinition enclosingFunction) {
-            if (enclosingFunction.getResultType() != null) {
-              if (enclosingFunction.getStage().ordinal() < Concrete.Stage.RESOLVED.ordinal()) {
-                resolveTypeClassReference(enclosingFunction.getParameters(), enclosingFunction.getResultType(), scope, true);
-              }
-              classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(enclosingFunction.getResultType());
-              elements = enclosingFunction.getBody().getCoClauseElements();
-            }
-          } else if (enclosingDef instanceof Concrete.ClassDefinition) {
-            classRef = enclosingDef.getData();
-            elements = ((Concrete.ClassDefinition) enclosingDef).getElements();
-          }
-
-          if (classRef != null && !(classRef instanceof ClassReferable)) {
-            classRef = classRef.getUnderlyingReferable();
-          }
-          if (classRef instanceof ClassReferable) {
-            Concrete.CoClauseFunctionReference functionRef = null;
-            for (Concrete.ClassElement element : elements) {
-              if (element instanceof Concrete.CoClauseFunctionReference && ((Concrete.CoClauseFunctionReference) element).getFunctionReference().equals(def.getData())) {
-                functionRef = (Concrete.CoClauseFunctionReference) element;
-                break;
-              }
-            }
-            if (functionRef != null) {
-              function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
-            }
-          }
-          if (function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet() && function.getImplementedField() instanceof GlobalReferable) {
-            ((LocatedReferableImpl) function.getData()).setPrecedence(((GlobalReferable) function.getImplementedField()).getPrecedence());
-          }
         }
       }
     }
