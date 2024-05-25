@@ -51,6 +51,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable CoreBinding getFreeBinding(@NotNull ArendRef ref);
 
   /**
+   * Returns `\this` binding from the context or {@code null} if there is no such binding in the context.
+   */
+  @Nullable CoreBinding getThisBinding();
+
+  /**
    * Returns the merged local and global prettifier.
    */
   @Nullable ExpressionPrettifier getExpressionPrettifier();

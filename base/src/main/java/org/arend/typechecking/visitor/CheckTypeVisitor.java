@@ -265,6 +265,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return context.get(ref);
   }
 
+  @Override
+  public @Nullable CoreBinding getThisBinding() {
+    return context.isEmpty() ? null : context.values().iterator().next();
+  }
+
   public LocalExpressionPrettifier getLocalExpressionPrettifier() {
     return myLocalPrettifier;
   }
@@ -419,6 +424,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           result.expression = coerceResult.expression;
           result.type = coerceResult.type.normalize(NormalizationMode.WHNF);
           TypecheckingResult result2 = (TypecheckingResult) myArgsInference.inferTail(result, expectedType, expr);
+          if (result2 == null) return null;
           result.expression = result2.expression;
           result.type = result2.type;
         }
