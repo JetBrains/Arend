@@ -1709,7 +1709,26 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
 
           if (!def.isRecursive()) {
-            typedDef.setResultType(termResult.type);
+            Expression newType = termResult.type;
+            if ((typedDef.isSFunc() || kind == FunctionKind.CONS) && typedDef.getResultType() != null) {
+              Expression normNewType = newType.normalize(NormalizationMode.WHNF);
+              Expression oldType = typedDef.getResultType().normalize(NormalizationMode.WHNF);
+              if (oldType instanceof ClassCallExpression oldClassCall && normNewType instanceof ClassCallExpression newClassCall) {
+                Map<ClassField, Expression> impls = new LinkedHashMap<>();
+                for (Map.Entry<ClassField, Expression> entry : newClassCall.getImplementedHere().entrySet()) {
+                  if (oldClassCall.isImplemented(entry.getKey())) {
+                    impls.put(entry.getKey(), entry.getValue());
+                  }
+                }
+                if (impls.size() != newClassCall.getImplementedHere().size()) {
+                  newClassCall = new ClassCallExpression(newClassCall.getDefinition(), newClassCall.getLevels(), impls, newClassCall.getDefinition().getSort(), newClassCall.getDefinition().getUniverseKind());
+                  newClassCall.updateHasUniverses();
+                  typechecker.fixClassExtSort(newClassCall, def.getResultType());
+                  newType = newClassCall;
+                }
+              }
+            }
+            typedDef.setResultType(newType);
           }
           if (termResult.expression != null) {
             typedDef.setBody(termResult.expression);
