@@ -346,7 +346,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     if (body instanceof Concrete.TermFunctionBody) {
       ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(exprVisitor, null));
     }
-    if (body instanceof Concrete.CoelimFunctionBody) {
+    if (body instanceof Concrete.CoelimFunctionBody || def.getKind() == FunctionKind.INSTANCE) {
       ClassReferable typeRef = def.getResultType() == null ? null : new TypeClassReferenceExtractVisitor().getTypeClassReference(def.getResultType());
       if (typeRef != null) {
         if (def.getKind() == FunctionKind.INSTANCE && typeRef.isRecord()) {
@@ -420,7 +420,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     SyntacticDesugarVisitor.desugar(def, myLocalErrorReporter);
 
-    if (def instanceof Concrete.CoClauseFunctionDefinition function && def.getKind() == FunctionKind.FUNC_COCLAUSE && ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() > 0) {
+    if (def instanceof Concrete.CoClauseFunctionDefinition function && def.getKind() == FunctionKind.FUNC_COCLAUSE && function.getNumberOfExternalParameters() > 0) {
       BaseConcreteExpressionVisitor<Void> visitor = new BaseConcreteExpressionVisitor<>() {
         @Override
         public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
