@@ -1950,7 +1950,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
           index++;
         }
-      } else {
+      } else if (!expectedType.isError()) {
         errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.INSTANCE_TYPE, def));
       }
     } else if (kind == FunctionKind.TYPE) {
