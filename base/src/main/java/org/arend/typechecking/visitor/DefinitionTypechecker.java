@@ -2428,7 +2428,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         dataDefinition.addConstructor(constructor);
       }
 
-      ok = typecheckParameters(def, constructor, list, null, dataDefinition.getSort(), myNewDef ? null : oldConstructor.getParameters(), null, null) != null;
+      ok = typecheckParameters(def, constructor, list, null, dataDefinition.getSort(), null, null, null) != null;
       if (constructor != null) {
         constructor.setStrictParameters(getStrictParameters(def.getParameters()));
       }
