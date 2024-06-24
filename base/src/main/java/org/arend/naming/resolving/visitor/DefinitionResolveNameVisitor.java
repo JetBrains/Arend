@@ -346,7 +346,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     if (body instanceof Concrete.TermFunctionBody) {
       ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(exprVisitor, null));
     }
-    if (body instanceof Concrete.CoelimFunctionBody || def.getKind() == FunctionKind.INSTANCE) {
+    if (body instanceof Concrete.CoelimFunctionBody) {
       ClassReferable typeRef = def.getResultType() == null ? null : new TypeClassReferenceExtractVisitor().getTypeClassReference(def.getResultType());
       if (typeRef != null) {
         if (def.getKind() == FunctionKind.INSTANCE && typeRef.isRecord()) {

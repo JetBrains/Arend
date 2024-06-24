@@ -20,6 +20,7 @@ public class CertainTypecheckingError extends TypecheckingError {
     CASE_RESULT_TYPE("Cannot infer the result type"),
     COULD_BE_LEMMA(Level.WARNING, "Function can be declared as a lemma"),
     AXIOM_WITH_BODY(Level.WARNING, "An axiom should not have a body"),
+    INSTANCE_TYPE("The type of an instance must be a class"),
     NO_CLASSIFYING_IGNORED(Level.WARNING_UNUSED, "\\noclassifying is ignored");
 
     private final Level level;

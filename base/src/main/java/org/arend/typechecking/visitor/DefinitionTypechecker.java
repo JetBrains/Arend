@@ -1930,7 +1930,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         for (DependentLink link = typedDef.getParameters(); link.hasNext(); link = link.getNext()) {
           if (link instanceof TypedDependentLink && typedDef.getTypeClassParameterKind(index) == Definition.TypeClassParameterKind.YES) {
             Expression type = link.getTypeExpr();
-            if (type instanceof ClassCallExpression classCall && !((ClassCallExpression) type).getDefinition().isRecord()) {
+            if (type instanceof ClassCallExpression classCall && !classCall.getDefinition().isRecord()) {
               ClassField paramClassifyingField = classCall.getDefinition().getClassifyingField();
               ReferenceExpression refExpr = new ReferenceExpression(link);
               Expression classifyingImpl = null;
@@ -1950,6 +1950,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
           index++;
         }
+      } else {
+        errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.INSTANCE_TYPE, def));
       }
     } else if (kind == FunctionKind.TYPE) {
       if (!(typedDef.getResultType() instanceof UniverseExpression)) {
