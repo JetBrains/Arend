@@ -1,6 +1,7 @@
 package org.arend.term.concrete;
 
 import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.TCDefReferable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -528,9 +529,13 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return compareLevelParameters(def1.pLevelParameters, def2.pLevelParameters) && compareLevelParameters(def1.hLevelParameters, def2.hLevelParameters);
   }
 
+  public static boolean compareReferables(TCDefReferable ref1, TCDefReferable ref2) {
+    return ref1.getPrecedence().equals(ref2.getPrecedence()) && ref1.getAccessModifier() == ref2.getAccessModifier() && Objects.equals(ref1.getAliasName(), ref2.getAliasName()) && ref1.getAliasPrecedence().equals(ref2.getAliasPrecedence()) && ref1.getKind().equals(ref2.getKind());
+  }
+
   @Override
   public Boolean visitFunction(Concrete.BaseFunctionDefinition def, Concrete.Definition def2) {
-    if (!(def2 instanceof Concrete.BaseFunctionDefinition fun2)) {
+    if (!(def2 instanceof Concrete.BaseFunctionDefinition fun2 && compareReferables(def.getData(), def2.getData()))) {
       return false;
     }
 
@@ -565,7 +570,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitData(Concrete.DataDefinition def, Concrete.Definition def2) {
-    if (!(def2 instanceof Concrete.DataDefinition data2)) {
+    if (!(def2 instanceof Concrete.DataDefinition data2 && compareReferables(def.getData(), data2.getData()))) {
       return false;
     }
 
@@ -631,7 +636,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitClass(Concrete.ClassDefinition def, Concrete.Definition def2) {
-    if (!(def2 instanceof Concrete.ClassDefinition class2)) {
+    if (!(def2 instanceof Concrete.ClassDefinition class2 && compareReferables(def.getData(), class2.getData()))) {
       return false;
     }
 

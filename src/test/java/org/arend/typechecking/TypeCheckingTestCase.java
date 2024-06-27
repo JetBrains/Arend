@@ -4,7 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.type.Type;
-import org.arend.frontend.ConcreteReferableProvider;
+import org.arend.typechecking.provider.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
 import org.arend.naming.reference.*;
 import org.arend.naming.NameResolverTestCase;

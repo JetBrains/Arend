@@ -11,7 +11,7 @@ import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
-import org.arend.frontend.ConcreteReferableProvider;
+import org.arend.typechecking.provider.ConcreteReferableProvider;
 import org.arend.frontend.FileLibraryResolver;
 import org.arend.frontend.PositionComparator;
 import org.arend.frontend.library.FileSourceLibrary;
@@ -62,7 +62,7 @@ public abstract class CommonCliRepl extends Repl {
 
   public @NotNull Path pwd = Paths.get("").toAbsolutePath();
   /**
-   * See https://gist.github.com/ice1000/a915b6fcbc6f90b0c3c65db44dab29cc
+   * See <a href="https://gist.github.com/ice1000/a915b6fcbc6f90b0c3c65db44dab29cc">...</a>
    */
   @Language("TEXT")
   public static final @NotNull String ASCII_BANNER =

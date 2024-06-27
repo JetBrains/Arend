@@ -826,7 +826,7 @@ public final class Concrete {
   }
 
   public static class CoClauseFunctionReference extends ClassFieldImpl {
-    public final TCDefReferable functionReference;
+    public TCDefReferable functionReference;
 
     public CoClauseFunctionReference(Object data, Referable implementedField, TCDefReferable functionReference, boolean isDefault) {
       super(data, implementedField, new ReferenceExpression(data, functionReference), null, isDefault);
@@ -1702,7 +1702,7 @@ public final class Concrete {
     if (definition instanceof ClassDefinition) {
       List<TypeParameter> parameters = new ArrayList<>();
       for (ClassElement element : ((ClassDefinition) definition).getElements()) {
-        if (element instanceof ClassField field && ((ClassField) element).getData().isParameterField()) {
+        if (element instanceof ClassField field && field.getData().isParameterField()) {
           Expression type = field.getResultType();
           List<TypeParameter> fieldParams = field.getParameters();
           boolean isDesugarized = definition.getStage().ordinal() >= Stage.DESUGARIZED.ordinal();
@@ -1979,7 +1979,7 @@ public final class Concrete {
   }
 
   public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition, ConcreteDefinition {
-    private final TCDefReferable myReferable;
+    private TCDefReferable myReferable;
     public TCDefReferable enclosingClass;
     private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
     private Map<TCDefReferable, ExternalParameters> myExternalParameters = Collections.emptyMap();
@@ -2013,6 +2013,10 @@ public final class Concrete {
     @Override
     public @NotNull TCDefReferable getData() {
       return myReferable;
+    }
+
+    public void setData(TCDefReferable referable) {
+      myReferable = referable;
     }
 
     @Override

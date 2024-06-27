@@ -8,6 +8,8 @@ import org.arend.term.group.AccessModifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.*;
+
 public class ConcreteLocatedReferable extends LocatedReferableImpl implements DataContainer, TypedReferable {
   private final Object myData;
   private final String myAliasName;
@@ -70,5 +72,35 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements Da
   @Override
   public @Nullable Referable getBodyReference(TypeClassReferenceExtractVisitor visitor) {
     return myDefinition instanceof Concrete.FunctionDefinition function && function.getBody() instanceof Concrete.TermFunctionBody ? TypeClassReferenceExtractVisitor.getTypeReference(function.getBody().getTerm(), false) : null;
+  }
+
+  public List<ParameterReferable> makeParameterReferableList() {
+    LocatedReferable parent = getLocatedReferableParent();
+    if (!(parent instanceof ConcreteLocatedReferable)) return Collections.emptyList();
+    Concrete.ReferableDefinition def = ((ConcreteLocatedReferable) parent).getDefinition();
+    if (def == null) return Collections.emptyList();
+    List<? extends Concrete.Parameter> parameters = def.getParameters();
+    if (parameters.isEmpty()) return Collections.emptyList();
+
+    Set<String> eliminated = new HashSet<>();
+    Concrete.FunctionBody body = def instanceof Concrete.BaseFunctionDefinition ? ((Concrete.BaseFunctionDefinition) def).getBody() : null;
+    if (body instanceof Concrete.ElimFunctionBody) {
+      if (body.getEliminatedReferences().isEmpty()) return Collections.emptyList();
+      for (Concrete.ReferenceExpression reference : body.getEliminatedReferences()) {
+        eliminated.add(reference.getReferent().getRefName());
+      }
+    }
+
+    List<ParameterReferable> result = new ArrayList<>();
+    int i = 0;
+    for (Concrete.Parameter parameter : parameters) {
+      for (Referable referable : parameter.getReferableList()) {
+        if (referable != null && !eliminated.contains(referable.getRefName())) {
+          result.add(new ParameterReferable((ConcreteLocatedReferable) parent, i, referable, TypeClassReferenceExtractVisitor.getTypeReferenceExpression(parameter.getType(), true)));
+        }
+        i++;
+      }
+    }
+    return result;
   }
 }

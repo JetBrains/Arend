@@ -19,4 +19,9 @@ public interface ChildGroup extends Group {
   default Scope getGroupScope() {
     return getGroupScope(LexicalScope.Extent.EXTERNAL_AND_FIELDS);
   }
+
+  @Override
+  default boolean isTopLevel() {
+    return getParentGroup() == null;
+  }
 }

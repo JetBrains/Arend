@@ -42,6 +42,7 @@ import org.arend.typechecking.order.MapTarjanSCC;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.dependency.MetaDependencyCollector;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.arend.typechecking.provider.ConcreteReferableProvider;
 import org.arend.util.FileUtils;
 import org.arend.ext.util.Pair;
 import org.arend.util.Range;

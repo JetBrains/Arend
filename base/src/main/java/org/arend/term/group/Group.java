@@ -31,6 +31,10 @@ public interface Group {
     return Collections.emptyList();
   }
 
+  default boolean isTopLevel() {
+    return getReferable().getLocatedReferableParent() == null;
+  }
+
   interface InternalReferable {
     LocatedReferable getReferable();
     boolean isVisible();

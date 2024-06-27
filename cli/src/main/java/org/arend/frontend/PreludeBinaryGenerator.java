@@ -9,6 +9,7 @@ import org.arend.prelude.Prelude;
 import org.arend.source.BinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
+import org.arend.typechecking.provider.ConcreteReferableProvider;
 
 import java.nio.file.Paths;
 

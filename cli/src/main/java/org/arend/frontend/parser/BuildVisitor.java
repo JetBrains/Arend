@@ -13,7 +13,6 @@ import org.arend.frontend.reference.*;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.InternalConcreteLocatedReferable;
 import org.arend.naming.reference.*;
-import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
 import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
@@ -466,36 +465,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return ctx == null ? null : (Concrete.LevelParameters) parseLevelParameters(ctx.start, ctx.ID(), null, false);
   }
 
-  private List<ParameterReferable> makeParameterReferableList(ConcreteLocatedReferable defReferable) {
-    LocatedReferable parent = defReferable.getLocatedReferableParent();
-    if (!(parent instanceof ConcreteLocatedReferable)) return Collections.emptyList();
-    Concrete.ReferableDefinition def = ((ConcreteLocatedReferable) parent).getDefinition();
-    if (def == null) return Collections.emptyList();
-    List<? extends Concrete.Parameter> parameters = def.getParameters();
-    if (parameters.isEmpty()) return Collections.emptyList();
-
-    Set<String> eliminated = new HashSet<>();
-    Concrete.FunctionBody body = def instanceof Concrete.BaseFunctionDefinition ? ((Concrete.BaseFunctionDefinition) def).getBody() : null;
-    if (body instanceof Concrete.ElimFunctionBody) {
-      if (body.getEliminatedReferences().isEmpty()) return Collections.emptyList();
-      for (Concrete.ReferenceExpression reference : body.getEliminatedReferences()) {
-        eliminated.add(reference.getReferent().getRefName());
-      }
-    }
-
-    List<ParameterReferable> result = new ArrayList<>();
-    int i = 0;
-    for (Concrete.Parameter parameter : parameters) {
-      for (Referable referable : parameter.getReferableList()) {
-        if (referable != null && !eliminated.contains(referable.getRefName())) {
-          result.add(new ParameterReferable((ConcreteLocatedReferable) parent, i, referable, TypeClassReferenceExtractVisitor.getTypeReferenceExpression(parameter.getType(), true)));
-        }
-        i++;
-      }
-    }
-    return result;
-  }
-
   private StaticGroup visitDefInstance(AccessModifier accessModifier, DefInstanceContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     boolean isInstance = ctx.instanceKw() instanceof FuncKwInstanceContext;
     List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele(), true);
@@ -506,7 +475,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr2());
 
     List<Statement> statements = new ArrayList<>();
-    StaticGroup resultGroup = new StaticGroup(reference, statements, makeParameterReferableList(reference), parent);
+    StaticGroup resultGroup = new StaticGroup(reference, statements, reference.makeParameterReferableList(), parent);
 
     Concrete.FunctionBody body;
     InstanceBodyContext bodyCtx = ctx.instanceBody();
@@ -645,7 +614,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     Pair<String, Precedence> alias = visitAlias(defId.alias());
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(defId.ID().getSymbol()), accessModifier, defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, GlobalReferable.Kind.FUNCTION);
     List<Statement> statements = new ArrayList<>();
-    StaticGroup resultGroup = new StaticGroup(referable, statements, makeParameterReferableList(referable), parent);
+    StaticGroup resultGroup = new StaticGroup(referable, statements, referable.makeParameterReferableList(), parent);
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr2());
 
     List<CoClauseContext> coClauses = null;
@@ -726,7 +695,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     visitDataBody(dataBodyCtx, dataDefinition, constructors, accessModifier);
 
     List<Statement> statements = new ArrayList<>();
-    DataGroup resultGroup = new DataGroup(referable, constructors, statements, makeParameterReferableList(referable), parent);
+    DataGroup resultGroup = new DataGroup(referable, constructors, statements, referable.makeParameterReferableList(), parent);
     visitWhere(ctx.where(), statements, resultGroup, enclosingClass);
 
     List<TCDefReferable> usedDefinitions = new ArrayList<>();
@@ -942,7 +911,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     reference = parent instanceof FileGroup
       ? new ConcreteClassReferable(pos, accessModifier, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, new FullModuleReferable(myModule))
       : new ConcreteClassReferable(pos, accessModifier, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, parent.getReferable());
-    ClassGroup resultGroup = new ClassGroup(reference, fieldReferables, dynamicSubgroups, statements, makeParameterReferableList(reference), parent);
+    ClassGroup resultGroup = new ClassGroup(reference, fieldReferables, dynamicSubgroups, statements, reference.makeParameterReferableList(), parent);
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     ClassBodyContext classBodyCtx = ctx.classBody();
     List<ClassStatContext> classStatCtxs = classBodyCtx instanceof ClassBodyStatsContext ? ((ClassBodyStatsContext) classBodyCtx).classStat() : Collections.emptyList();

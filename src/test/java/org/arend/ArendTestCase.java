@@ -4,7 +4,7 @@ import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.extImpl.DefinitionRequester;
-import org.arend.frontend.ConcreteReferableProvider;
+import org.arend.typechecking.provider.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
 import org.arend.frontend.library.PreludeFileLibrary;
 import org.arend.library.Library;

@@ -5,7 +5,7 @@ import org.arend.error.DummyErrorReporter;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
-import org.arend.frontend.ConcreteReferableProvider;
+import org.arend.typechecking.provider.ConcreteReferableProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;

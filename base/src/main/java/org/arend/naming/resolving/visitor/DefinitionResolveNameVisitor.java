@@ -830,7 +830,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     myLocalErrorReporter = myErrorReporter;
 
-    boolean isTopLevel = !(group instanceof ChildGroup) || ((ChildGroup) group).getParentGroup() == null;
+    boolean isTopLevel = group.isTopLevel();
     boolean hasNamespaceCommands = false;
     for (Statement statement : statements) {
       NamespaceCommand namespaceCommand = statement.getNamespaceCommand();
