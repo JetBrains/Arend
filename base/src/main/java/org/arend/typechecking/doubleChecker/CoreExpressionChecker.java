@@ -546,7 +546,12 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     List<Expression> args = new ArrayList<>(3);
     args.add(type);
     args.add(expr.getExpression());
-    args.add(expr.eval());
+    Expression evaluated = expr.eval();
+    if (evaluated == null) {
+      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Expression does not evaluate", mySourceNode), expr.getExpression()));
+    }
+
+    args.add(evaluated);
     return check(expectedType, FunCallExpression.make(Prelude.PATH_INFIX, new LevelPair(sort.getPLevel(), sort.getHLevel()), args), expr);
   }
 
@@ -675,7 +680,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (constructor != Prelude.EMPTY_ARRAY && constructor != Prelude.ARRAY_CONS) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Expected either '" + Prelude.EMPTY_ARRAY.getName() + "' or '" + Prelude.ARRAY_CONS.getName() + "'", mySourceNode), errorExpr));
       }
-      if (!(type instanceof ClassCallExpression classCall && ((ClassCallExpression) type).getDefinition() == Prelude.DEP_ARRAY)) {
+      if (!(type instanceof ClassCallExpression classCall && classCall.getDefinition() == Prelude.DEP_ARRAY)) {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.STD), type, mySourceNode), errorExpr));
       }
       Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);

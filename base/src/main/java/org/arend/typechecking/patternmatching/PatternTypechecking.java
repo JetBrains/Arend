@@ -321,9 +321,9 @@ public class PatternTypechecking {
       @Override
       public Expression visitFunCall(FunCallExpression expr, Void params) {
         if (expr.getDefinition() == def) {
-          Expression result = NormalizeVisitor.INSTANCE.eval(expr);
+          Expression result = NormalizeVisitor.INSTANCE.eval(expr, false);
           if (result != null) {
-            if (result instanceof FunCallExpression funCall && ((FunCallExpression) result).getDefinition() == def) {
+            if (result instanceof FunCallExpression funCall && funCall.getDefinition() == def) {
               List<Expression> args = new ArrayList<>();
               for (Expression arg : funCall.getDefCallArguments()) {
                 args.add(arg.accept(this, null).normalize(NormalizationMode.WHNF));
@@ -343,7 +343,7 @@ public class PatternTypechecking {
     for (Expression arg : args) {
       substArgs.add(arg.subst(substitution));
     }
-    return NormalizeVisitor.INSTANCE.eval(body, substArgs, new ExprSubstitution(), LevelSubstitution.EMPTY, null, null);
+    return NormalizeVisitor.INSTANCE.eval(body, substArgs, new ExprSubstitution(), LevelSubstitution.EMPTY, null, null, false);
   }
 
   private int getIntervalBindings(List<? extends ExpressionPattern> patterns, int index, List<Binding> result) {
@@ -628,7 +628,7 @@ public class PatternTypechecking {
       if (pattern instanceof Concrete.ConstructorPattern conPattern) {
         Definition def = conPattern.getConstructor() instanceof TCDefReferable ? ((TCDefReferable) conPattern.getConstructor()).getTypechecked() : null;
         if (def instanceof DConstructor constructor && def != Prelude.EMPTY_ARRAY && def != Prelude.ARRAY_CONS) {
-          if (myVisitor == null || ((DConstructor) def).getPattern() == null) {
+          if (myVisitor == null || constructor.getPattern() == null) {
             return null;
           }
 
