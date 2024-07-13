@@ -82,7 +82,7 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
 
   @Override
   public @Nullable Expression evaluate() {
-    return NormalizeVisitor.INSTANCE.eval(this);
+    return NormalizeVisitor.INSTANCE.eval(this, true);
   }
 
   @Override

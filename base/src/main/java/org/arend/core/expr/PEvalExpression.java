@@ -53,7 +53,7 @@ public class PEvalExpression extends Expression implements CorePEvalExpression {
   }
 
   public Expression eval() {
-    return NormalizeVisitor.INSTANCE.eval(myExpression);
+    return NormalizeVisitor.INSTANCE.eval(myExpression, true);
   }
 
   @Override
