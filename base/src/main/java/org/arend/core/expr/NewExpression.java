@@ -72,7 +72,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
 
   public Expression getImplementation(ClassField field) {
     Expression impl = myClassCall.getImplementation(field, this);
-    return impl != null ? impl : FieldCallExpression.make(field, myRenewExpression);
+    return impl != null ? impl : myRenewExpression != null ? FieldCallExpression.make(field, myRenewExpression) : new ErrorExpression();
   }
 
   @Override
