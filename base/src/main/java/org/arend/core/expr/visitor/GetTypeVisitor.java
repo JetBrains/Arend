@@ -256,7 +256,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     if (myNormalizing) {
       type = type.normalize(NormalizationMode.WHNF);
     }
-    if (type instanceof ClassCallExpression classCall) {
+    if (type instanceof ClassCallExpression classCall && classCall.getDefinition().isSubClassOf(expr.getDefinition().getParentClass())) {
       if (classCall.getDefinition().getOverriddenType(expr.getDefinition()) != null) {
         return classCall.getDefinition().getOverriddenType(expr.getDefinition(), myMinimal ? minimizeLevels(classCall) : classCall.getLevels()).applyExpression(expr.getArgument());
       }
@@ -430,7 +430,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     } else {
       type = type.getUnderlyingExpression();
     }
-    if (!(type instanceof FunCallExpression funCall && ((FunCallExpression) type).getDefinition() == expr.getDefinition())) {
+    if (!(type instanceof FunCallExpression funCall && funCall.getDefinition() == expr.getDefinition())) {
       return type instanceof ErrorExpression ? type : new ErrorExpression();
     }
 
