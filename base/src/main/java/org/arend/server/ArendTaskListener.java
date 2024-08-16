@@ -1,6 +1,6 @@
 package org.arend.server;
 
-import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.error.GeneralError;
 import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,7 +21,7 @@ public interface ArendTaskListener {
    * @param definition  the definition that was typechecked.
    * @param errors      the list of errors that occurred during typechecking of {@param definition}.
    */
-  void definitionChecked(@NotNull TCDefReferable definition, @NotNull List<TypecheckingError> errors);
+  void definitionChecked(@NotNull TCDefReferable definition, @NotNull List<GeneralError> errors);
 
   /**
    * Invoked if all definitions were successfully typechecked.
@@ -30,8 +30,6 @@ public interface ArendTaskListener {
 
   /**
    * Invoked if the task was cancelled.
-   *
-   * @return {@code true} if the task should be rescheduled, {@code false} otherwise.
    */
-  boolean taskCancelled();
+  void taskCancelled();
 }

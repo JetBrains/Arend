@@ -1,5 +1,6 @@
 package org.arend.typechecking.order.listener;
 
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
 
 import java.util.ArrayList;
@@ -135,6 +136,17 @@ public class CollectingOrderingListener implements OrderingListener {
     List<Concrete.ResolvableDefinition> result = new ArrayList<>();
     for (Element element : myElements) {
       result.addAll(element.getAllDefinitions());
+    }
+    return result;
+  }
+
+  public List<TCDefReferable> getAllReferables() {
+    List<TCDefReferable> result = new ArrayList<>();
+    for (Element element : myElements) {
+      List<? extends Concrete.ResolvableDefinition> defs = element.getAllDefinitions();
+      for (Concrete.ResolvableDefinition def : defs) {
+        result.add(def.getData());
+      }
     }
     return result;
   }

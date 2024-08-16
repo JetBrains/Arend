@@ -26,6 +26,10 @@ public class InstanceProviderSet {
     return referable instanceof TCDefReferable ? myProviders.get(referable) : null;
   }
 
+  public Map<TCDefReferable, ? extends InstanceProvider> getProviders() {
+    return myProviders;
+  }
+
   public InstanceProvider computeIfAbsent(TCDefReferable referable, Function<? super TCDefReferable, ? extends InstanceProvider> fun) {
     return myProviders.computeIfAbsent(referable, fun);
   }

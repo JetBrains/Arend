@@ -57,4 +57,9 @@ public class SimpleInstanceProvider implements InstanceProvider {
     }
     return null;
   }
+
+  @Override
+  public List<? extends TCDefReferable> geTInstances() {
+    return myInstances;
+  }
 }

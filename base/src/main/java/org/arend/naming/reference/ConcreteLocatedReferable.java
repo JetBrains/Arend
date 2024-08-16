@@ -16,6 +16,7 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements Da
   private final Precedence myAliasPrecedence;
   private Concrete.ReferableDefinition myDefinition;
   private String myDescription = "";
+  public int index = -1;
 
   public ConcreteLocatedReferable(Object data, AccessModifier accessModifier, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, LocatedReferable parent, Kind kind) {
     super(accessModifier, precedence, name, parent, kind);

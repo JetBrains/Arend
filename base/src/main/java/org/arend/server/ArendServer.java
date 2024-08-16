@@ -4,6 +4,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.resolving.ResolverListener;
+import org.arend.typechecking.computation.CancellationIndicator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -30,5 +31,5 @@ public interface ArendServer {
    * Schedules a new typechecking task.
    * If the set of definitions of the new task intersects with the definitions of some old one, the old task will be cancelled.
    */
-  void scheduleTask(@NotNull Collection<? extends TCDefReferable> definitions, @NotNull ArendTaskListener listener);
+  void scheduleTask(@NotNull Collection<? extends TCDefReferable> definitions, @NotNull ArendTaskListener listener, @NotNull CancellationIndicator cancellationIndicator);
 }
