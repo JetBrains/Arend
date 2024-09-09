@@ -45,7 +45,7 @@ public class ModuleDeserialization {
 
   public void readModule(ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener) throws DeserializationException {
     if (myModuleProto.getVersion() != ModuleSerialization.VERSION) {
-      throw new DeserializationException("Version mismatch");
+      throw new DeserializationException("Version mismatch:\nLanguage version: " + ModuleSerialization.VERSION + "\nLibrary binaries version: " + myModuleProto.getVersion());
     }
 
     for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleProto.getModuleCallTargetsList()) {
