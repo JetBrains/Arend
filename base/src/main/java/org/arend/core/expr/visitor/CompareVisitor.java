@@ -1142,7 +1142,15 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       TypeClassInferenceVariable variable;
       FieldCallExpression fieldCall = funNorm.cast(FieldCallExpression.class);
       if (fieldCall != null) {
-        InferenceVariable infVar = fieldCall.getArgument().getInferenceVariable();
+        while (true) {
+          funNorm = myNormalCompare ? fieldCall.getArgument().normalize(NormalizationMode.WHNF) : fieldCall.getArgument();
+          if (funNorm instanceof FieldCallExpression) {
+            fieldCall = (FieldCallExpression) funNorm;
+          } else {
+            break;
+          }
+        }
+        InferenceVariable infVar = funNorm.getInferenceVariable();
         variable = infVar instanceof TypeClassInferenceVariable ? (TypeClassInferenceVariable) infVar : null;
       } else {
         variable = null;
