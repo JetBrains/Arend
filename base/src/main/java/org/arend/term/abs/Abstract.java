@@ -238,10 +238,12 @@ public final class Abstract {
 
   public interface Definition extends ReferableDefinition {
     @Nullable ClassReferable getEnclosingClass();
+    @Nullable LocatedReferable getUseParent();
     @Override @NotNull LocatedReferable getReferable();
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
     @Nullable LevelParameters getPLevelParameters();
     @Nullable LevelParameters getHLevelParameters();
+    boolean withUse();
   }
 
   public interface MetaDefinition extends Definition, ParametersHolder {

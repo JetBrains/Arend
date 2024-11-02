@@ -1702,7 +1702,7 @@ public final class Concrete {
     if (definition instanceof ClassDefinition) {
       List<TypeParameter> parameters = new ArrayList<>();
       for (ClassElement element : ((ClassDefinition) definition).getElements()) {
-        if (element instanceof ClassField field && ((ClassField) element).getData().isParameterField()) {
+        if (element instanceof ClassField field && field.getData().isParameterField()) {
           Expression type = field.getResultType();
           List<TypeParameter> fieldParams = field.getParameters();
           boolean isDesugarized = definition.getStage().ordinal() >= Stage.DESUGARIZED.ordinal();
@@ -1980,6 +1980,7 @@ public final class Concrete {
 
   public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition, ConcreteDefinition {
     private final TCDefReferable myReferable;
+    private TCDefReferable myUseParent;
     public TCDefReferable enclosingClass;
     private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
     private Map<TCDefReferable, ExternalParameters> myExternalParameters = Collections.emptyMap();
@@ -2003,6 +2004,7 @@ public final class Concrete {
       newDef.setStatus(getStatus());
       newDef.pLevelParameters = pLevelParameters;
       newDef.hLevelParameters = hLevelParameters;
+      newDef.myUseParent = myUseParent;
       newDef.enclosingClass = enclosingClass;
       newDef.myRecursiveDefinitions = myRecursiveDefinitions;
       newDef.myExternalParameters = myExternalParameters;
@@ -2015,7 +2017,6 @@ public final class Concrete {
       return myReferable;
     }
 
-    @Override
     public TCDefReferable getEnclosingClass() {
       return enclosingClass;
     }
@@ -2071,6 +2072,14 @@ public final class Concrete {
       ((ConcreteResolvedClassReferable) parent).addDynamicReferable(myReferable);
     }
 
+    public TCDefReferable getUseParent() {
+      return myUseParent;
+    }
+
+    public void setUseParent(TCDefReferable useParent) {
+      myUseParent = useParent;
+    }
+
     @Override
     public List<TCDefReferable> getUsedDefinitions() {
       return myUsedDefinitions;
@@ -2078,6 +2087,13 @@ public final class Concrete {
 
     public void setUsedDefinitions(List<TCDefReferable> usedDefinitions) {
       myUsedDefinitions = usedDefinitions;
+    }
+
+    public void addUsedDefinition(TCDefReferable usedDefinition) {
+      if (myUsedDefinitions.isEmpty()) {
+        myUsedDefinitions = new ArrayList<>();
+      }
+      myUsedDefinitions.add(usedDefinition);
     }
 
     public List<Pair<TCDefReferable,Integer>> getParametersOriginalDefinitions() {
@@ -2185,13 +2201,14 @@ public final class Concrete {
     }
   }
 
-  public static class CoClauseFunctionDefinition extends UseDefinition {
+  public static class CoClauseFunctionDefinition extends FunctionDefinition {
     private Referable myImplementedField;
     private int myNumberOfExternalParameters;
 
     public CoClauseFunctionDefinition(FunctionKind kind, TCDefReferable referable, TCDefReferable enclosingDefinition, Referable implementedField, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
-      super(kind, referable, null, null, parameters, resultType, resultTypeLevel, body, enclosingDefinition);
+      super(kind, referable, null, null, parameters, resultType, resultTypeLevel, body);
       myImplementedField = implementedField;
+      setUseParent(enclosingDefinition);
     }
 
     public Referable getImplementedField() {
@@ -2213,6 +2230,9 @@ public final class Concrete {
     @Override
     public CoClauseFunctionDefinition copy(List<Parameter> parameters, FunctionBody body) {
       Concrete.CoClauseFunctionDefinition result = new CoClauseFunctionDefinition(getKind(), getData(), getUseParent(), getImplementedField(), parameters, getResultType(), getResultTypeLevel(), body);
+      result.enclosingClass = enclosingClass;
+      result.setUseParent(getUseParent());
+      result.setUsedDefinitions(getUsedDefinitions());
       result.setNumberOfExternalParameters(myNumberOfExternalParameters);
       return result;
     }
@@ -2507,10 +2527,6 @@ public final class Concrete {
     @NotNull
     public abstract FunctionKind getKind();
 
-    public TCDefReferable getUseParent() {
-      return null;
-    }
-
     @NotNull
     @Override
     public List<Parameter> getParameters() {
@@ -2555,7 +2571,7 @@ public final class Concrete {
   }
 
   public static class FunctionDefinition extends BaseFunctionDefinition {
-    private final FunctionKind myKind;
+    private FunctionKind myKind;
 
     public FunctionDefinition(FunctionKind kind, TCDefReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(referable, null, null, parameters, resultType, resultTypeLevel, body);
@@ -2575,31 +2591,17 @@ public final class Concrete {
       return myKind;
     }
 
+    public void setKind(FunctionKind kind) {
+      myKind = kind;
+    }
+
     @Override
     public FunctionDefinition copy(List<Parameter> parameters, FunctionBody body) {
-      return new FunctionDefinition(myKind, getData(), getPLevelParameters(), getHLevelParameters(), parameters, getResultType(), getResultTypeLevel(), body);
-    }
-  }
-
-  public static class UseDefinition extends FunctionDefinition {
-    private final TCDefReferable myUseParent;
-
-    private UseDefinition(FunctionKind kind, TCDefReferable referable, LevelParameters pParams, LevelParameters hParams, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, TCDefReferable useParent) {
-      super(kind, referable, pParams, hParams, parameters, resultType, resultTypeLevel, body);
-      myUseParent = useParent;
-    }
-
-    public static FunctionDefinition make(FunctionKind kind, TCDefReferable referable, LevelParameters pParams, LevelParameters hParams, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, LocatedReferable coerceParent) {
-      return coerceParent instanceof TCDefReferable && kind.isUse() ? new UseDefinition(kind, referable, pParams, hParams, parameters, resultType, resultTypeLevel, body, (TCDefReferable) coerceParent) : new FunctionDefinition(kind.isUse() ? FunctionKind.FUNC : kind, referable, pParams, hParams, parameters, resultType, resultTypeLevel, body);
-    }
-
-    public TCDefReferable getUseParent() {
-      return myUseParent;
-    }
-
-    @Override
-    public UseDefinition copy(List<Parameter> parameters, FunctionBody body) {
-      return new UseDefinition(getKind(), getData(), getPLevelParameters(), getHLevelParameters(), parameters, getResultType(), getResultTypeLevel(), body, myUseParent);
+      FunctionDefinition result = new FunctionDefinition(myKind, getData(), getPLevelParameters(), getHLevelParameters(), parameters, getResultType(), getResultTypeLevel(), body);
+      result.enclosingClass = enclosingClass;
+      result.setUseParent(getUseParent());
+      result.setUsedDefinitions(getUsedDefinitions());
+      return result;
     }
   }
 

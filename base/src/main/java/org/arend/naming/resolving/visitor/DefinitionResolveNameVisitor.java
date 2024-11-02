@@ -292,26 +292,31 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
-    if (def instanceof Concrete.UseDefinition) {
-      Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(def.getUseParent());
-      if (enclosingDef instanceof Concrete.Definition) {
-        if (def.getPLevelParameters() == null && ((Concrete.Definition) enclosingDef).getPLevelParameters() != null) {
-          def.setPLevelParameters(((Concrete.Definition) enclosingDef).getPLevelParameters());
-        }
-        if (def.getHLevelParameters() == null && ((Concrete.Definition) enclosingDef).getHLevelParameters() != null) {
-          def.setHLevelParameters(((Concrete.Definition) enclosingDef).getHLevelParameters());
-        }
-      }
-
-      if (def instanceof Concrete.CoClauseFunctionDefinition function) {
-        resolveCoclauseImplementedField(function, scope);
-        if (function.getNumberOfExternalParameters() == 0 && enclosingDef instanceof Concrete.BaseFunctionDefinition) {
-          List<Concrete.Parameter> parameters = new SubstConcreteVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
-          for (Concrete.Parameter parameter : parameters) {
-            parameter.setExplicit(false);
+    if (def instanceof Concrete.FunctionDefinition funDef && (funDef.getKind().isUse() || funDef.getKind().isCoclause())) {
+      if (def.getUseParent() == null) {
+        myErrorReporter.report(new NameResolverError("This function must be declared with \\use", def));
+        funDef.setKind(FunctionKind.FUNC);
+      } else {
+        Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(def.getUseParent());
+        if (enclosingDef instanceof Concrete.Definition) {
+          if (def.getPLevelParameters() == null && ((Concrete.Definition) enclosingDef).getPLevelParameters() != null) {
+            def.setPLevelParameters(((Concrete.Definition) enclosingDef).getPLevelParameters());
           }
-          def.getParameters().addAll(0, parameters);
-          function.setNumberOfExternalParameters(parameters.size());
+          if (def.getHLevelParameters() == null && ((Concrete.Definition) enclosingDef).getHLevelParameters() != null) {
+            def.setHLevelParameters(((Concrete.Definition) enclosingDef).getHLevelParameters());
+          }
+        }
+
+        if (def instanceof Concrete.CoClauseFunctionDefinition function) {
+          resolveCoclauseImplementedField(function, scope);
+          if (function.getNumberOfExternalParameters() == 0 && enclosingDef instanceof Concrete.BaseFunctionDefinition) {
+            List<Concrete.Parameter> parameters = new SubstConcreteVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
+            for (Concrete.Parameter parameter : parameters) {
+              parameter.setExplicit(false);
+            }
+            def.getParameters().addAll(0, parameters);
+            function.setNumberOfExternalParameters(parameters.size());
+          }
         }
       }
     }

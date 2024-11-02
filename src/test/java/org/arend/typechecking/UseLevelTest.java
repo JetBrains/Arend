@@ -455,4 +455,29 @@ public class UseLevelTest extends TypeCheckingTestCase {
       """);
     assertFalse(getDefinition("empty2").getParametersLevels().isEmpty());
   }
+
+  @Test
+  public void useNoParent() {
+    parseModule("\\use \\func test => 0", 1);
+  }
+
+  @Test
+  public void useNoParent2() {
+    parseModule("""
+      \\func foo => 0 \\where {
+        \\module M \\where {
+          \\use \\func test => 0
+        }
+      }
+      """, 1);
+  }
+
+  @Test
+  public void levelNoUse() {
+    resolveNamesModule("""
+      \\data Empty
+      \\func empty (e : Empty) : \\Set
+        \\where \\level isProp (e : Empty) (x y : empty e) : x = y
+      """, 1);
+  }
 }

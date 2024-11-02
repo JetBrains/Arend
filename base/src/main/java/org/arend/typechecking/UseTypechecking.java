@@ -24,11 +24,11 @@ import org.arend.ext.util.Pair;
 import java.util.*;
 
 public class UseTypechecking {
-  public static void typecheck(List<Concrete.UseDefinition> definitions, ErrorReporter errorReporter) {
+  public static void typecheck(List<Concrete.FunctionDefinition> definitions, ErrorReporter errorReporter) {
     Map<Definition, List<Pair<Expression,FunctionDefinition>>> fromMap = new HashMap<>();
     Map<Definition, List<Pair<Expression,FunctionDefinition>>> toMap = new HashMap<>();
 
-    for (Concrete.UseDefinition definition : definitions) {
+    for (Concrete.FunctionDefinition definition : definitions) {
       Definition typedDefinition = definition.getData().getTypechecked();
       if (!(typedDefinition instanceof FunctionDefinition useDefinition)) {
         continue;
@@ -50,7 +50,7 @@ public class UseTypechecking {
     registerCoerce(toMap, false, errorReporter, definitions);
   }
 
-  private static void registerCoerce(Map<Definition, List<Pair<Expression,FunctionDefinition>>> depMap, boolean isFrom, ErrorReporter errorReporter, List<Concrete.UseDefinition> definitions) {
+  private static void registerCoerce(Map<Definition, List<Pair<Expression,FunctionDefinition>>> depMap, boolean isFrom, ErrorReporter errorReporter, List<Concrete.FunctionDefinition> definitions) {
     if (depMap.isEmpty()) {
       return;
     }
@@ -82,8 +82,8 @@ public class UseTypechecking {
         dfs.visit(definition);
       }
     } catch (DFS.CycleException e) {
-      List<Concrete.UseDefinition> coerceDefs = new ArrayList<>();
-      for (Concrete.UseDefinition definition : definitions) {
+      List<Concrete.FunctionDefinition> coerceDefs = new ArrayList<>();
+      for (Concrete.FunctionDefinition definition : definitions) {
         if (definition.getKind() == FunctionKind.COERCE) {
           coerceDefs.add(definition);
         }
@@ -107,7 +107,7 @@ public class UseTypechecking {
     }
   }
 
-  private static void typecheckCoerce(Concrete.UseDefinition def, FunctionDefinition typedDef, ErrorReporter errorReporter, Map<Definition, List<Pair<Expression,FunctionDefinition>>> fromMap, Map<Definition, List<Pair<Expression,FunctionDefinition>>> toMap) {
+  private static void typecheckCoerce(Concrete.FunctionDefinition def, FunctionDefinition typedDef, ErrorReporter errorReporter, Map<Definition, List<Pair<Expression,FunctionDefinition>>> fromMap, Map<Definition, List<Pair<Expression,FunctionDefinition>>> toMap) {
     Definition useParent = def.getUseParent().getTypechecked();
     if ((useParent instanceof DataDefinition || useParent instanceof ClassDefinition) && !def.getParameters().isEmpty()) {
       DependentLink lastParam = DependentLink.Helper.getLast(typedDef.getParameters());
@@ -132,7 +132,7 @@ public class UseTypechecking {
     }
   }
 
-  public static ParametersLevel typecheckLevel(Concrete.UseDefinition def, FunctionDefinition typedDef, Definition useParent, ErrorReporter errorReporter) {
+  public static ParametersLevel typecheckLevel(Concrete.FunctionDefinition def, FunctionDefinition typedDef, Definition useParent, ErrorReporter errorReporter) {
     if (!(useParent instanceof DataDefinition || useParent instanceof ClassDefinition || useParent instanceof FunctionDefinition)) {
       return null;
     }

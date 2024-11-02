@@ -10,16 +10,16 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 public class CoerceCycleError extends TypecheckingError {
-  public final List<? extends Concrete.UseDefinition> cycle;
+  public final List<? extends Concrete.FunctionDefinition> cycle;
   private final GlobalReferable myCauseReferable;
 
-  private CoerceCycleError(List<? extends Concrete.UseDefinition> cycle, GlobalReferable causeReferable) {
+  private CoerceCycleError(List<? extends Concrete.FunctionDefinition> cycle, GlobalReferable causeReferable) {
     super("Dependency cycle between \\coerce definitions", cycle.get(0));
     this.cycle = cycle;
     myCauseReferable = causeReferable;
   }
 
-  public CoerceCycleError(List<? extends Concrete.UseDefinition> cycle) {
+  public CoerceCycleError(List<? extends Concrete.FunctionDefinition> cycle) {
     this(cycle, null);
   }
 
@@ -30,7 +30,7 @@ public class CoerceCycleError extends TypecheckingError {
 
   @Override
   public void forAffectedDefinitions(BiConsumer<ArendRef, GeneralError> consumer) {
-    for (Concrete.UseDefinition def : cycle) {
+    for (Concrete.FunctionDefinition def : cycle) {
       consumer.accept(def.getData(), new CoerceCycleError(cycle, def.getData()));
     }
   }

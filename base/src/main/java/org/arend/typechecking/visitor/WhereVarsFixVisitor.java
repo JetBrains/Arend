@@ -112,7 +112,7 @@ public class WhereVarsFixVisitor extends BaseConcreteExpressionVisitor<Void> {
         int myLevel = getReferableLevel(definition.getData());
         for (Definition def : whereVars.proj2) {
           for (Pair<TCDefReferable, Integer> pair : def.getParametersOriginalDefinitions()) {
-            if (definition.getExternalParameters().containsKey(pair.proj1) && pair.proj1 != definition.getData() && !wherePairs.contains(pair) && getReferableLevel(pair.proj1) < myLevel && !(definition instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) definition).getUseParent() == pair.proj1)) {
+            if (definition.getExternalParameters().containsKey(pair.proj1) && pair.proj1 != definition.getData() && !wherePairs.contains(pair) && getReferableLevel(pair.proj1) < myLevel && !(definition instanceof Concrete.CoClauseFunctionDefinition && definition.getUseParent() == pair.proj1)) {
               wherePairs.add(pair);
             }
           }

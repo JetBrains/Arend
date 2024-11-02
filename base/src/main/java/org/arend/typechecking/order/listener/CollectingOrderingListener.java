@@ -101,7 +101,7 @@ public class CollectingOrderingListener implements OrderingListener {
     @Override
     public void feedTo(OrderingListener listener) {
       if (kind == MyDefinitions.Kind.USE) {
-        listener.useFound((List<Concrete.UseDefinition>) definitions);
+        listener.useFound((List<Concrete.FunctionDefinition>) definitions);
       } else if (kind == Kind.PRE_BODIES) {
         listener.preBodiesFound((List<Concrete.ResolvableDefinition>) definitions);
       } else if (kind == Kind.BODIES) {
@@ -165,7 +165,7 @@ public class CollectingOrderingListener implements OrderingListener {
   }
 
   @Override
-  public void useFound(List<Concrete.UseDefinition> definitions) {
+  public void useFound(List<Concrete.FunctionDefinition> definitions) {
     myElements.add(new MyDefinitions(definitions, MyDefinitions.Kind.USE));
   }
 

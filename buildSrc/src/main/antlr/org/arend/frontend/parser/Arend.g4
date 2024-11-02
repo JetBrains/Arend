@@ -2,7 +2,7 @@ grammar Arend;
 
 statements : statement* EOF;
 
-statement : accessMod? definition                                           # statDef
+statement : accessMod? USE? definition                                      # statDef
           | accessMod '{' statement* '}'                                    # statAccessMod
           | nsCmd longName nsUsing? ('\\hiding' '(' ID (',' ID)* ')')?      # statCmd
           | '\\plevels' ID*                                                 # statPLevels
@@ -38,7 +38,7 @@ classStat : '|' classFieldOrImpl                        # classFieldOrImplStat
           | '\\default' coClause                        # classDefaultStat
           ;
 
-definition  : funcKw topDefId tele* (':' returnExpr2)? functionBody where?                                              # defFunction
+definition  : funcKw topDefId tele* (':' returnExpr2)? functionBody where?                                         # defFunction
             | TRUNCATED? '\\data' topDefId tele* (':' expr2)? dataBody where?                                           # defData
             | classKw topDefId NO_CLASSIFYING? fieldTele* ('\\extends' superClass (',' superClass)*)? classBody where?  # defClass
             | '\\module' ID where?                                                                                      # defModule
@@ -60,17 +60,14 @@ funcKw      : '\\func'            # funcKwFunc
             | '\\sfunc'           # funcKwSFunc
             | '\\lemma'           # funcKwLemma
             | '\\type'            # funcKwType
-            | '\\use' useMod      # funcKwUse
+            | COERCE              # funcKwCoerce
+            | '\\level'           # funcKwLevel
             | '\\axiom'           # funcKwAxiom
             ;
 
 instanceKw  : '\\instance'        # funcKwInstance
             | '\\cons'            # funcKwCons
             ;
-
-useMod    : COERCE              # useCoerce
-          | '\\level'           # useLevel
-          ;
 
 classKw   : '\\class'   # classKwClass
           | '\\record'  # classKwRecord
@@ -327,6 +324,7 @@ COMMA : ',';
 AS : '\\as';
 USING : '\\using';
 TRUNCATED : '\\truncated';
+USE : '\\use';
 CLASSIFYING : '\\classifying';
 NO_CLASSIFYING : '\\noclassifying';
 PROPERTY : '\\property';

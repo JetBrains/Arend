@@ -919,8 +919,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
     findLevelsParents(typedDef, cdef, refs, 0);
 
-    if (cdef instanceof Concrete.UseDefinition && ((Concrete.UseDefinition) cdef).getKind().isUse()) {
-      Definition def = ((Concrete.UseDefinition) cdef).getUseParent().getTypechecked();
+    if (cdef instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) cdef).getKind().isUse()) {
+      Definition def = cdef.getUseParent().getTypechecked();
       var levelParams = def.getLevelParameters();
       if (levelParams != null) {
         int n = def.getNumberOfPLevelParameters();

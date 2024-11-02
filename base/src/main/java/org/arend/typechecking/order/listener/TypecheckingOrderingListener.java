@@ -174,7 +174,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     Definition typechecked;
     if (definition instanceof Concrete.DataDefinition def) {
       typechecked = new DataDefinition(def.getData());
-      for (Concrete.ConstructorClause constructorClause : ((Concrete.DataDefinition) definition).getConstructorClauses()) {
+      for (Concrete.ConstructorClause constructorClause : def.getConstructorClauses()) {
         for (Concrete.Constructor constructor : constructorClause.getConstructors()) {
           Constructor tcConstructor = new Constructor(constructor.getData(), (DataDefinition) typechecked);
           tcConstructor.setParameters(EmptyDependentLink.getInstance());
@@ -188,7 +188,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       ((FunctionDefinition) typechecked).setResultType(new ErrorExpression());
     } else if (definition instanceof Concrete.ClassDefinition def) {
       typechecked = new ClassDefinition(def.getData());
-      for (Concrete.ClassElement element : ((Concrete.ClassDefinition) definition).getElements()) {
+      for (Concrete.ClassElement element : def.getElements()) {
         if (element instanceof Concrete.ClassField) {
           ClassField classField = new ClassField(((Concrete.ClassField) element).getData(), (ClassDefinition) typechecked, new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, typechecked.makeIdLevels()), true), new ErrorExpression()), null);
           classField.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
@@ -497,14 +497,14 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   }
 
   @Override
-  public void useFound(List<Concrete.UseDefinition> definitions) {
+  public void useFound(List<Concrete.FunctionDefinition> definitions) {
     myCurrentDefinitions = new ArrayList<>();
-    List<Concrete.UseDefinition> newDefs = new ArrayList<>(definitions.size());
-    for (Concrete.UseDefinition definition : definitions) {
+    List<Concrete.FunctionDefinition> newDefs = new ArrayList<>(definitions.size());
+    for (Concrete.FunctionDefinition definition : definitions) {
       myCurrentDefinitions.add(definition.getData());
       myCurrentDefinitions.add(definition.getUseParent());
       Concrete.ResolvableDefinition newDef = myDesugaredDefinitions.get(definition.getData());
-      newDefs.add(newDef instanceof Concrete.UseDefinition ? (Concrete.UseDefinition) newDef : definition);
+      newDefs.add(newDef instanceof Concrete.FunctionDefinition ? (Concrete.FunctionDefinition) newDef : definition);
     }
     UseTypechecking.typecheck(newDefs, myErrorReporter);
     myCurrentDefinitions = Collections.emptyList();

@@ -154,8 +154,8 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
         visitor.addDependency((TCReferable) ref);
       }
     }
-    if (definition instanceof Concrete.UseDefinition && (!(definition instanceof Concrete.CoClauseFunctionDefinition) || ((Concrete.CoClauseFunctionDefinition) definition).getKind() == FunctionKind.CLASS_COCLAUSE)) {
-      visitor.addDependency(((Concrete.UseDefinition) definition).getUseParent());
+    if (definition instanceof Concrete.FunctionDefinition funDef && funDef.getKind().isUse() && (!(definition instanceof Concrete.CoClauseFunctionDefinition) || ((Concrete.CoClauseFunctionDefinition) definition).getKind() == FunctionKind.CLASS_COCLAUSE)) {
+      visitor.addDependency(funDef.getUseParent());
     }
     definition.accept(visitor, null);
 
@@ -221,7 +221,7 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
         hasInstances = true;
         break;
       }
-      if (definition instanceof Concrete.UseDefinition && ((Concrete.UseDefinition) definition).getKind() != FunctionKind.FUNC_COCLAUSE) {
+      if (definition instanceof Concrete.FunctionDefinition funDef && (funDef.getKind().isUse() || funDef.getKind() == FunctionKind.CLASS_COCLAUSE)) {
         if (myStage.ordinal() >= Stage.WITHOUT_USE.ordinal()) {
           myOrderingListener.cycleFound(scc, false);
           return;
@@ -293,10 +293,10 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
         ordering.order(definition);
       }
 
-      List<Concrete.UseDefinition> useDefinitions = new ArrayList<>();
+      List<Concrete.FunctionDefinition> useDefinitions = new ArrayList<>();
       for (Concrete.ResolvableDefinition definition : scc) {
-        if (definition instanceof Concrete.UseDefinition) {
-          useDefinitions.add((Concrete.UseDefinition) definition);
+        if (definition instanceof Concrete.FunctionDefinition funDef && funDef.getKind().isUse()) {
+          useDefinitions.add(funDef);
         } else if (definition instanceof Concrete.ClassDefinition) {
           myOrderingListener.classFinished((Concrete.ClassDefinition) definition);
         }

@@ -14,15 +14,11 @@ public class CoerceTest extends TypeCheckingTestCase {
 
   @Test
   public void coerceDynamic() {
-    typeCheckModule(
-      """
-        \\record C (n : Nat) (m : Nat -> Nat) {
-          \\use \\coerce f => n
-          \\use \\coerce g => m
+    parseModule("""
+      \\record C {
+          \\use \\coerce f : Nat => 0
         }
-        \\func f' (c : C) : Nat => c
-        \\func g' (c : C) : Nat -> Nat => c
-        """);
+      """, -1);
   }
 
   @Test

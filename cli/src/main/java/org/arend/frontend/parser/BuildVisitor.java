@@ -149,7 +149,18 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     if (ctx instanceof StatCmdContext) {
       return Collections.singletonList(visitStatCmd((StatCmdContext) ctx, parent));
     } else if (ctx instanceof StatDefContext statDef) {
-      return Collections.singletonList(visitDefinition(visitAccessModifier(statDef.accessMod(), accessModifier), statDef.definition(), parent, enclosingClass));
+      StaticGroup group = visitDefinition(visitAccessModifier(statDef.accessMod(), accessModifier), statDef.definition(), parent, enclosingClass);
+      if (statDef.USE() != null && group.getReferable() instanceof ConcreteLocatedReferable ref && ref.getDefinition() instanceof Concrete.Definition def) {
+        if (parent.getReferable() instanceof TCDefReferable parentRef && parentRef.getKind() != GlobalReferable.Kind.OTHER) {
+          def.setUseParent(parentRef);
+          if (parentRef instanceof ConcreteLocatedReferable && ((ConcreteLocatedReferable) parentRef).getDefinition() instanceof Concrete.Definition parentDef) {
+            parentDef.addUsedDefinition(ref);
+          }
+        } else {
+          myErrorReporter.report(new ParserError(tokenPosition(statDef.USE().getSymbol()), "\\use must belong to a \\where-block of a definition"));
+        }
+      }
+      return Collections.singletonList(group);
     } else if (ctx instanceof StatAccessModContext stat) {
       List<Statement> statements = new ArrayList<>();
       visitStatementList(visitAccessModifier(stat.accessMod(), accessModifier), stat.statement(), statements, parent, enclosingClass);
@@ -662,26 +673,17 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
     if (body != null) {
       FuncKwContext funcKw = ctx.funcKw();
-      boolean isUse = funcKw instanceof FuncKwUseContext;
-      Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
-        isUse ? (((FuncKwUseContext) funcKw).useMod() instanceof UseCoerceContext
-          ? FunctionKind.COERCE
-          : FunctionKind.LEVEL)
-        : funcKw instanceof FuncKwLemmaContext
-          ? FunctionKind.LEMMA
-          : funcKw instanceof FuncKwTypeContext
-            ? FunctionKind.TYPE
-            : funcKw instanceof FuncKwSFuncContext
-              ? FunctionKind.SFUNC
-              : funcKw instanceof FuncKwAxiomContext
-                ? FunctionKind.AXIOM
-                : FunctionKind.FUNC,
-        referable, visitPlevelParams(topDefId.plevelParams()), visitHlevelParams(topDefId.hlevelParams()), visitLamTeles(ctx.tele(), true), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
+      FunctionKind kind =
+        funcKw instanceof FuncKwCoerceContext ? FunctionKind.COERCE :
+        funcKw instanceof FuncKwLevelContext ? FunctionKind.LEVEL :
+        funcKw instanceof FuncKwLemmaContext ? FunctionKind.LEMMA :
+        funcKw instanceof FuncKwTypeContext ? FunctionKind.TYPE :
+        funcKw instanceof FuncKwSFuncContext ? FunctionKind.SFUNC :
+        funcKw instanceof FuncKwAxiomContext ? FunctionKind.AXIOM :
+        FunctionKind.FUNC;
+      Concrete.FunctionDefinition funDef = new Concrete.FunctionDefinition(kind, referable, visitPlevelParams(topDefId.plevelParams()), visitHlevelParams(topDefId.hlevelParams()), visitLamTeles(ctx.tele(), true), returnPair.proj1, returnPair.proj2, body);
       if (coClauses != null) {
         visitCoClauses(coClauses, statements, resultGroup, referable, enclosingClass, body.getCoClauseElements());
-      }
-      if (isUse && !funDef.getKind().isUse()) {
-        myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));
       }
 
       funDef.enclosingClass = enclosingClass;
@@ -956,9 +958,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<TCDefReferable> usedDefinitions = new ArrayList<>();
     if (!classStatCtxs.isEmpty()) {
       visitInstanceStatements(classStatCtxs, elements, dynamicSubgroups, classDefinition, resultGroup);
-      for (Group subgroup : dynamicSubgroups) {
-        collectUsedDefinitions(subgroup, usedDefinitions);
-      }
     }
     visitInstanceStatements(classFieldOrImplCtxs, elements, classDefinition);
     reference.setGroup(resultGroup);

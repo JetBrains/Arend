@@ -85,6 +85,24 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     }
   }
 
+  private void setUseParent(Concrete.Definition definition, Abstract.Definition abstractDef) {
+    if (!abstractDef.withUse()) {
+      return;
+    }
+
+    LocatedReferable useParent = abstractDef.getUseParent();
+    TCReferable tcUseParent = useParent == null ? null : myReferableConverter.toDataLocatedReferable(useParent);
+    if (!(tcUseParent instanceof TCDefReferable) || tcUseParent.getKind() == GlobalReferable.Kind.OTHER) {
+      tcUseParent = null;
+    }
+
+    if (tcUseParent == null) {
+      myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "\\use must belong to a \\where-block of a definition", abstractDef));
+    } else {
+      definition.setUseParent((TCDefReferable) tcUseParent);
+    }
+  }
+
   private Concrete.LevelParameters visitLevelParameters(Abstract.LevelParameters params, boolean isPLevels) {
     if (params == null) return null;
     Boolean increasing = null;
@@ -158,9 +176,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         result.enclosingClass = (TCDefReferable) parentRef;
       }
     } else {
-      result = Concrete.UseDefinition.make(def.getFunctionKind(), (TCDefReferable) myDefinition, visitLevelParameters(def.getPLevelParameters(), true), visitLevelParameters(def.getHLevelParameters(), false), parameters, type, typeLevel, body, parentRef);
+      result = new Concrete.FunctionDefinition(def.getFunctionKind(), (TCDefReferable) myDefinition, visitLevelParameters(def.getPLevelParameters(), true), visitLevelParameters(def.getHLevelParameters(), false), parameters, type, typeLevel, body);
     }
     setEnclosingClass(result, def);
+    setUseParent(result, def);
     result.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
     return result;
   }
@@ -206,6 +225,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       clauses.add(new Concrete.ConstructorClause(clause.getData(), patterns.isEmpty() ? null : buildPatterns(patterns), constructors));
     }
 
+    setUseParent(data, def);
     data.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
     return data;
   }
@@ -291,6 +311,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       }
     }
 
+    setUseParent(classDef, def);
     classDef.setUsedDefinitions(usedDefinitions);
     return classDef;
   }
