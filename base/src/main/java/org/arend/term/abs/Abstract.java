@@ -244,6 +244,7 @@ public final class Abstract {
     @Nullable LevelParameters getPLevelParameters();
     @Nullable LevelParameters getHLevelParameters();
     boolean withUse();
+    @NotNull Collection<? extends LocatedReferable> getUsedDefinitions();
   }
 
   public interface MetaDefinition extends Definition, ParametersHolder {
@@ -257,7 +258,6 @@ public final class Abstract {
     @Nullable Expression getTerm();
     @Override @NotNull Collection<? extends Reference> getEliminatedExpressions();
     @NotNull Collection<? extends FunctionClause> getClauses();
-    @NotNull Collection<? extends LocatedReferable> getUsedDefinitions();
     boolean withTerm();
     boolean isCowith();
     FunctionKind getFunctionKind();
