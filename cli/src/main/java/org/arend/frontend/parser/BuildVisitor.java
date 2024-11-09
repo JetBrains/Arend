@@ -689,12 +689,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       funDef.enclosingClass = enclosingClass;
       referable.setDefinition(funDef);
       visitWhere(ctx.where(), statements, resultGroup, enclosingClass);
-
-      List<TCDefReferable> usedDefinitions = new ArrayList<>();
-      collectUsedDefinitions(statements, usedDefinitions);
-      if (!usedDefinitions.isEmpty()) {
-        funDef.setUsedDefinitions(usedDefinitions);
-      }
     }
 
     return resultGroup;
@@ -731,31 +725,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     DataGroup resultGroup = new DataGroup(referable, constructors, statements, makeParameterReferableList(referable), parent);
     visitWhere(ctx.where(), statements, resultGroup, enclosingClass);
 
-    List<TCDefReferable> usedDefinitions = new ArrayList<>();
-    collectUsedDefinitions(statements, usedDefinitions);
-    if (!usedDefinitions.isEmpty()) {
-      dataDefinition.setUsedDefinitions(usedDefinitions);
-    }
-
     return resultGroup;
-  }
-
-  private void collectUsedDefinitions(Group group, List<TCDefReferable> usedDefinitions) {
-    if (group.getReferable() instanceof ConcreteLocatedReferable ref) {
-      Concrete.ReferableDefinition def = ref.getDefinition();
-      if (def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).getKind().isUse()) {
-        usedDefinitions.add(ref);
-      }
-    }
-  }
-
-  private void collectUsedDefinitions(List<? extends Statement> statements, List<TCDefReferable> usedDefinitions) {
-    for (Statement statement : statements) {
-      Group group = statement.getGroup();
-      if (group != null) {
-        collectUsedDefinitions(group, usedDefinitions);
-      }
-    }
   }
 
   private void visitDataBody(DataBodyContext ctx, Concrete.DataDefinition def, List<InternalConcreteLocatedReferable> constructors, AccessModifier dataAccessModifier) {
@@ -955,7 +925,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     reference.setDefinition(classDefinition);
     visitFieldTeles(ctx.fieldTele(), classDefinition, elements);
 
-    List<TCDefReferable> usedDefinitions = new ArrayList<>();
     if (!classStatCtxs.isEmpty()) {
       visitInstanceStatements(classStatCtxs, elements, dynamicSubgroups, classDefinition, resultGroup);
     }
@@ -966,16 +935,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       if (element instanceof Concrete.ClassField) {
         fieldReferables.add((ConcreteClassFieldReferable) element.getData());
       } else if (element instanceof Concrete.CoClauseFunctionReference) {
-        usedDefinitions.add(((Concrete.CoClauseFunctionReference) element).getFunctionReference());
+        classDefinition.addUsedDefinition(((Concrete.CoClauseFunctionReference) element).getFunctionReference());
       }
     }
 
     visitWhere(where, statements, resultGroup, enclosingClass);
-
-    collectUsedDefinitions(statements, usedDefinitions);
-    if (!usedDefinitions.isEmpty()) {
-      classDefinition.setUsedDefinitions(usedDefinitions);
-    }
 
     return resultGroup;
   }

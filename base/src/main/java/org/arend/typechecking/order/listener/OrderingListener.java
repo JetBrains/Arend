@@ -10,6 +10,4 @@ public interface OrderingListener {
   void preBodiesFound(List<Concrete.ResolvableDefinition> definitions);
   void headerFound(Concrete.ResolvableDefinition definition);
   void bodiesFound(List<Concrete.ResolvableDefinition> definitions);
-  void useFound(List<Concrete.FunctionDefinition> definitions);
-  void classFinished(Concrete.ClassDefinition definition);
 }

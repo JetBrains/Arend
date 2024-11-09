@@ -63,31 +63,8 @@ public class CollectingOrderingListener implements OrderingListener {
     }
   }
 
-  private static class MyClass implements Element {
-    private final Concrete.ClassDefinition definition;
-
-    private MyClass(Concrete.ClassDefinition definition) {
-      this.definition = definition;
-    }
-
-    @Override
-    public void feedTo(OrderingListener listener) {
-      listener.classFinished(definition);
-    }
-
-    @Override
-    public Concrete.ResolvableDefinition getAnyDefinition() {
-      return definition;
-    }
-
-    @Override
-    public List<? extends Concrete.ResolvableDefinition> getAllDefinitions() {
-      return Collections.singletonList(definition);
-    }
-  }
-
   private static class MyDefinitions implements Element {
-    enum Kind { CYCLE, INSTANCE_CYCLE, PRE_BODIES, BODIES, USE }
+    enum Kind { CYCLE, INSTANCE_CYCLE, PRE_BODIES, BODIES }
 
     final List<? extends Concrete.ResolvableDefinition> definitions;
     final Kind kind;
@@ -100,9 +77,7 @@ public class CollectingOrderingListener implements OrderingListener {
     @SuppressWarnings("unchecked")
     @Override
     public void feedTo(OrderingListener listener) {
-      if (kind == MyDefinitions.Kind.USE) {
-        listener.useFound((List<Concrete.FunctionDefinition>) definitions);
-      } else if (kind == Kind.PRE_BODIES) {
+      if (kind == Kind.PRE_BODIES) {
         listener.preBodiesFound((List<Concrete.ResolvableDefinition>) definitions);
       } else if (kind == Kind.BODIES) {
         listener.bodiesFound((List<Concrete.ResolvableDefinition>) definitions);
@@ -162,16 +137,6 @@ public class CollectingOrderingListener implements OrderingListener {
   @Override
   public void bodiesFound(List<Concrete.ResolvableDefinition> bodies) {
     myElements.add(new MyDefinitions(bodies, MyDefinitions.Kind.BODIES));
-  }
-
-  @Override
-  public void useFound(List<Concrete.FunctionDefinition> definitions) {
-    myElements.add(new MyDefinitions(definitions, MyDefinitions.Kind.USE));
-  }
-
-  @Override
-  public void classFinished(Concrete.ClassDefinition definition) {
-    myElements.add(new MyClass(definition));
   }
 
   public void feed(OrderingListener listener) {

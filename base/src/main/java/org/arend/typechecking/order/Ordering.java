@@ -31,7 +31,7 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
   private final Set<TCReferable> myAllowedDependencies;
   private final Stage myStage;
 
-  private enum Stage { EVERYTHING, WITHOUT_INSTANCES, WITHOUT_USE, WITHOUT_BODIES }
+  private enum Stage { EVERYTHING, WITHOUT_INSTANCES, WITHOUT_BODIES }
 
   private Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, PartialComparator<TCDefReferable> comparator, Set<TCReferable> allowedDependencies, Stage stage) {
     myInstanceProviderSet = instanceProviderSet;
@@ -113,8 +113,21 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
     }
   }
 
+  private Concrete.ResolvableDefinition getCanonicalRepresentative(Concrete.ResolvableDefinition definition) {
+    while (definition instanceof Concrete.Definition def && def.getUseParent() != null && !(definition instanceof Concrete.CoClauseFunctionDefinition coClauseDef && coClauseDef.getKind() == FunctionKind.FUNC_COCLAUSE)) {
+      var useParent = myConcreteProvider.getConcrete(def.getUseParent());
+      if (useParent instanceof Concrete.ResolvableDefinition) {
+        definition = (Concrete.ResolvableDefinition) useParent;
+      } else {
+        break;
+      }
+    }
+    return definition;
+  }
+
   @Override
   public void order(Concrete.ResolvableDefinition definition) {
+    definition = getCanonicalRepresentative(definition);
     if (definition.getStage() != Concrete.Stage.TYPECHECKED && getTypechecked(definition.getData()) == null) {
       ComputationRunner.checkCanceled();
       super.order(definition);
@@ -126,22 +139,27 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
     return typechecked == null || typechecked.status().needsTypeChecking() ? null : typechecked;
   }
 
+  private void collectInUsedDefinitions(TCDefReferable referable, CollectDefCallsVisitor visitor) {
+    var def = myConcreteProvider.getConcrete(referable);
+    if (def instanceof Concrete.ResolvableDefinition resolvableDef) {
+      resolvableDef.accept(visitor, null);
+      for (TCDefReferable usedDefinition : resolvableDef.getUsedDefinitions()) {
+        collectInUsedDefinitions(usedDefinition, visitor);
+      }
+    }
+  }
+
   @Override
   protected boolean forDependencies(Concrete.ResolvableDefinition definition, Consumer<Concrete.ResolvableDefinition> consumer) {
     Set<TCReferable> dependencies = new LinkedHashSet<>();
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(dependencies, myStage.ordinal() < Stage.WITHOUT_BODIES.ordinal());
-    if (myStage.ordinal() < Stage.WITHOUT_USE.ordinal()) {
-      if (myStage.ordinal() < Stage.WITHOUT_INSTANCES.ordinal()) {
-        InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
-        if (instanceProvider != null) {
-          instanceProvider.findInstance(instance -> {
-            visitor.addDependency(instance);
-            return false;
-          });
-        }
-      }
-      for (TCReferable usedDefinition : definition.getUsedDefinitions()) {
-        visitor.addDependency(usedDefinition);
+    if (myStage.ordinal() < Stage.WITHOUT_INSTANCES.ordinal()) {
+      InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
+      if (instanceProvider != null) {
+        instanceProvider.findInstance(instance -> {
+          visitor.addDependency(instance);
+          return false;
+        });
       }
     }
 
@@ -158,10 +176,22 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
       visitor.addDependency(funDef.getUseParent());
     }
     definition.accept(visitor, null);
+    if (myStage.ordinal() < Stage.WITHOUT_BODIES.ordinal()) {
+      for (TCDefReferable usedDefinition : definition.getUsedDefinitions()) {
+        collectInUsedDefinitions(usedDefinition, visitor);
+      }
+    }
 
     boolean withLoops = false;
     for (TCReferable referable : dependencies) {
       TCReferable tcReferable = referable.getTypecheckable();
+      var dependency = myConcreteProvider.getConcrete(tcReferable);
+      if (dependency instanceof Concrete.ResolvableDefinition) {
+        dependency = getCanonicalRepresentative((Concrete.ResolvableDefinition) dependency);
+      }
+      if (dependency != null) {
+        tcReferable = dependency.getData();
+      }
       if (myAllowedDependencies != null && !myAllowedDependencies.contains(tcReferable)) {
         continue;
       }
@@ -173,7 +203,6 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
       } else {
         myDependencyListener.dependsOn(definition.getData(), tcReferable);
         if (!tcReferable.isTypechecked()) {
-          var dependency = myConcreteProvider.getConcrete(tcReferable);
           if (dependency instanceof Concrete.ResolvableDefinition && dependency.getStage() != Concrete.Stage.TYPECHECKED && !dependency.getData().isTypechecked()) {
             consumer.accept((Concrete.ResolvableDefinition) dependency);
           }
@@ -210,7 +239,6 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
       return;
     }
 
-    boolean hasUse = false;
     boolean hasInstances = false;
     for (Concrete.ResolvableDefinition definition : scc) {
       if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind() == FunctionKind.INSTANCE) {
@@ -220,13 +248,6 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
         }
         hasInstances = true;
         break;
-      }
-      if (definition instanceof Concrete.FunctionDefinition funDef && (funDef.getKind().isUse() || funDef.getKind() == FunctionKind.CLASS_COCLAUSE)) {
-        if (myStage.ordinal() >= Stage.WITHOUT_USE.ordinal()) {
-          myOrderingListener.cycleFound(scc, false);
-          return;
-        }
-        hasUse = true;
       }
     }
 
@@ -287,26 +308,8 @@ public class Ordering extends TarjanSCC<Concrete.ResolvableDefinition> {
       return;
     }
 
-    if (hasUse) {
-      Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_USE);
-      for (Concrete.ResolvableDefinition definition : scc) {
-        ordering.order(definition);
-      }
-
-      List<Concrete.FunctionDefinition> useDefinitions = new ArrayList<>();
-      for (Concrete.ResolvableDefinition definition : scc) {
-        if (definition instanceof Concrete.FunctionDefinition funDef && funDef.getKind().isUse()) {
-          useDefinitions.add(funDef);
-        } else if (definition instanceof Concrete.ClassDefinition) {
-          myOrderingListener.classFinished((Concrete.ClassDefinition) definition);
-        }
-      }
-      myOrderingListener.useFound(useDefinitions);
-      return;
-    }
-
     for (Concrete.ResolvableDefinition definition : scc) {
-      if (definition instanceof Concrete.ClassDefinition) {
+      if (definition instanceof Concrete.ClassDefinition || !definition.getUsedDefinitions().isEmpty()) {
         myOrderingListener.cycleFound(scc, false);
         return;
       }

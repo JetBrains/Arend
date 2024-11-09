@@ -1,5 +1,6 @@
 package org.arend.typechecking;
 
+import org.arend.Matchers;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.DataDefinition;
@@ -10,7 +11,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class UseLevelTest extends TypeCheckingTestCase {
+public class UseTest extends TypeCheckingTestCase {
   @Test
   public void testData() {
     typeCheckModule("""
@@ -129,16 +130,50 @@ public class UseLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void mutualRecursion() {
-    typeCheckModule(
-      "\\func f (c : C) : c = c => idp\n" +
-      "\\class C \\where \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1");
+    typeCheckModule("""
+      \\class C \\where {
+        \\use \\func f (c : C) : c = c => idp
+        \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1
+      }
+      """);
   }
 
   @Test
-  public void mutualRecursion2() {
+  public void mutualRecursionError() {
+    typeCheckModule(
+      "\\func f (c : C) : c = c => idp\n" +
+      "\\class C \\where \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1", 1);
+    assertThatErrorsAre(Matchers.cycle(get("f"), get("C")));
+  }
+
+  @Test
+  public void mutualRecursionError2() {
     typeCheckModule(
       "\\class C \\where \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1\n" +
-      "\\func f (c : C) : c = c => idp");
+      "\\func f (c : C) : c = c => idp", 1);
+    assertThatErrorsAre(Matchers.cycle(get("f"), get("C")));
+  }
+
+  @Test
+  public void mutualRecursionError3() {
+    typeCheckModule("""
+      \\class C \\where {
+        \\func f (c : C) : c = c => idp
+        \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1
+      }
+      """, 1);
+    assertThatErrorsAre(Matchers.cycle(get("C.f"), get("C")));
+  }
+
+  @Test
+  public void mutualRecursionError4() {
+    typeCheckModule("""
+      \\class C \\where {
+        \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1
+        \\use \\func f (c : C) : c = c => idp
+      }
+      """, 1);
+    assertThatErrorsAre(Matchers.typecheckingError());
   }
 
   @Test
@@ -479,5 +514,27 @@ public class UseLevelTest extends TypeCheckingTestCase {
       \\func empty (e : Empty) : \\Set
         \\where \\level isProp (e : Empty) (x y : empty e) : x = y
       """, 1);
+  }
+
+  @Test
+  public void inverseOrderTest() {
+    typeCheckModule("""
+      \\class C (x : Nat)
+      \\instance test : C (\\let t => D.fromNat \\in 0)
+      \\data D | con Nat
+        \\where
+          \\use \\coerce fromNat (n : Nat) => con n
+      """);
+  }
+
+  @Test
+  public void mutualRecursionBan() {
+    typeCheckModule("""
+      \\data D1 : \\Set | con1 D2
+      \\data D2 : \\Set | con2 D1
+        \\where
+          \\use \\coerce toNat (d : D2) : Nat => 0
+      """, 1);
+    assertThatErrorsAre(Matchers.cycle(get("D1"), get("D2")));
   }
 }
