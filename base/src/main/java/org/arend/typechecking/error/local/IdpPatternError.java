@@ -37,7 +37,7 @@ public class IdpPatternError extends TypecheckingError {
   }
 
   public static String noParameter() {
-    return "One of the sides in the expected type should be a variable";
+    return "One of the sides in the expected type should be a parameter";
   }
 
   @Override

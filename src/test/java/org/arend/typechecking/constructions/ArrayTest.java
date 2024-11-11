@@ -425,7 +425,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void casePatternMatchingTest6() {
     typeCheckModule("""
       \\func test {A : \\Set} {n : Nat} (l : Array A n) : Nat
-        => \\case \\elim n, \\elim l : Array A n \\with {
+        => \\case \\elim n, l : Array A n \\with {
           | 0, nil => 0
           | suc n, a :: l => 1
         }
