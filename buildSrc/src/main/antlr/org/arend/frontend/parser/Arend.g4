@@ -32,13 +32,13 @@ fieldMod  : '\\field'     # fieldField
           ;
 
 classStat : '|' classFieldOrImpl                        # classFieldOrImplStat
-          | accessMod? definition                       # classDefinitionStat
+          | accessMod? USE? definition                  # classDefinitionStat
           | fieldMod classFieldDef                      # classFieldStat
           | '\\override' longName tele* ':' returnExpr  # classOverrideStat
           | '\\default' coClause                        # classDefaultStat
           ;
 
-definition  : funcKw topDefId tele* (':' returnExpr2)? functionBody where?                                         # defFunction
+definition  : funcKw topDefId tele* (':' returnExpr2)? functionBody where?                                              # defFunction
             | TRUNCATED? '\\data' topDefId tele* (':' expr2)? dataBody where?                                           # defData
             | classKw topDefId NO_CLASSIFYING? fieldTele* ('\\extends' superClass (',' superClass)*)? classBody where?  # defClass
             | '\\module' ID where?                                                                                      # defModule

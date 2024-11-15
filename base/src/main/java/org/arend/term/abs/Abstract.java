@@ -268,7 +268,6 @@ public final class Abstract {
     boolean isTruncated();
     @Nullable Expression getUniverse();
     @NotNull Collection<? extends ConstructorClause> getClauses();
-    @NotNull Collection<? extends LocatedReferable> getUsedDefinitions();
   }
 
   public interface ClassDefinition extends Definition, ParametersHolder, ClassReferenceHolder  {
@@ -279,7 +278,6 @@ public final class Abstract {
     boolean withoutClassifying();
     @NotNull Collection<? extends ReferenceExpression> getSuperClasses();
     @NotNull Collection<? extends ClassElement> getClassElements();
-    @NotNull Collection<? extends LocatedReferable> getUsedDefinitions();
   }
 
   public interface Constructor extends ReferableDefinition, EliminatedExpressionsHolder {
