@@ -13,15 +13,6 @@ public class CoerceTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void coerceDynamic() {
-    parseModule("""
-      \\record C {
-          \\use \\coerce f : Nat => 0
-        }
-      """, -1);
-  }
-
-  @Test
   public void coerceFunction() {
     resolveNamesDef(
       "\\func g => 0\n" +

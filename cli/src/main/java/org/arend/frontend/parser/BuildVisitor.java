@@ -853,7 +853,12 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         if (statementCtx instanceof ClassFieldOrImplStatContext) {
           visitInstanceStatement(((ClassFieldOrImplStatContext) statementCtx).classFieldOrImpl(), elements, parentClass);
         } else if (statementCtx instanceof ClassDefinitionStatContext defStat) {
-          statements.add(visitDefinition(visitAccessModifier(defStat.accessMod()), defStat.definition(), parent, parentClass.getData()));
+          StaticGroup subgroup = visitDefinition(visitAccessModifier(defStat.accessMod()), defStat.definition(), parent, parentClass.getData());
+          if (defStat.USE() != null && subgroup.getReferable() instanceof ConcreteLocatedReferable ref && ref.getDefinition() instanceof Concrete.Definition def) {
+            def.setUseParent(parentClass.getData());
+            parentClass.addUsedDefinition(ref);
+          }
+          statements.add(subgroup);
         } else if (statementCtx instanceof ClassFieldStatContext fieldStatCtx) {
           elements.add(visitClassFieldDef(fieldStatCtx.classFieldDef(), (ClassFieldKind) visit(fieldStatCtx.fieldMod()), parentClass));
         } else if (statementCtx instanceof ClassOverrideStatContext overrideCtx) {
