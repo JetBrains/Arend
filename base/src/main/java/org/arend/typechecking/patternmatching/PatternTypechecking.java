@@ -193,7 +193,7 @@ public class PatternTypechecking {
         List<Binding> intervalBindings;
         Expression exprType = expectedType;
         if (!myPathPatterns.isEmpty()) {
-          Body body = new ElimTypechecking(null, null, null, myMode, null, Level.INFINITY, false, null, null).typecheckElim(resultClauses, parameters, myElimParams);
+          Body body = new ElimTypechecking(null, null, null, myMode, null, Level.INFINITY, false, null, 0, null).typecheckElim(resultClauses, parameters, myElimParams);
           if (body == null) {
             myErrorReporter.report(new TypecheckingError("Cannot compute body", clause));
             return false;

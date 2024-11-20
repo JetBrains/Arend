@@ -4108,7 +4108,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (clauses == null) {
       return null;
     }
-    ElimBody elimBody = new ElimTypechecking(errorReporter, myEquations, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, expr.isSCase(), expr.getClauses(), expr).typecheckElim(clauses, list.getFirst());
+    ElimBody elimBody = new ElimTypechecking(errorReporter, myEquations, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, expr.isSCase(), expr.getClauses(), 0, expr).typecheckElim(clauses, list.getFirst());
     if (elimBody == null) {
       return null;
     }

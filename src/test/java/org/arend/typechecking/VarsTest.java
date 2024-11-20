@@ -908,4 +908,15 @@ public class VarsTest extends TypeCheckingTestCase {
       }
       """);
   }
+
+  @Test
+  public void patternMatchingTest2() {
+    typeCheckModule("""
+      \\func f {m : Nat} => m \\where {
+        \\func g (n : Nat) : Nat \\with
+          | 0 => m
+          | suc n => n
+      }
+      """);
+  }
 }
