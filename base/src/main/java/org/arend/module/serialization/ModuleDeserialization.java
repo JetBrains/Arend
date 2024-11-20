@@ -244,6 +244,9 @@ public class ModuleDeserialization {
       case CONSTRUCTOR -> {
         return GlobalReferable.Kind.DEFINED_CONSTRUCTOR;
       }
+      case META -> {
+        return GlobalReferable.Kind.META;
+      }
       default -> {
         return GlobalReferable.Kind.OTHER;
       }
@@ -269,7 +272,9 @@ public class ModuleDeserialization {
         referable = new FullModuleReferable(modulePath);
       } else {
         String name = referableProto.getName();
-        if (myPrelude && kind == GlobalReferable.Kind.FUNCTION && Prelude.ARRAY_NAME.equals(name)) {
+        if (kind == GlobalReferable.Kind.META) {
+          referable = new MetaReferable(AccessModifier.PUBLIC, readPrecedence(referableProto.getPrecedence()), name, "", null, null, parent.getReferable());
+        } else if (myPrelude && kind == GlobalReferable.Kind.FUNCTION && Prelude.ARRAY_NAME.equals(name)) {
           referable = new TypedLocatedReferable(AccessModifier.PUBLIC, readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind, null, null);
         } else {
           referable = new LocatedReferableImpl(AccessModifier.PUBLIC, readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind);
@@ -290,9 +295,7 @@ public class ModuleDeserialization {
     List<Statement> statements = new ArrayList<>(groupProto.getSubgroupCount());
 
     StaticGroup group;
-    if (def == null || def instanceof FunctionDefinition) {
-      group = new StaticGroup(referable, statements, Collections.emptyList(), parent);
-    } else if (def instanceof DataDefinition) {
+    if (def instanceof DataDefinition) {
       Set<Definition> invisibleRefs = new HashSet<>();
       for (Integer index : groupProto.getInvisibleInternalReferableList()) {
         invisibleRefs.add(myCallTargetProvider.getCallTarget(index));
@@ -326,7 +329,7 @@ public class ModuleDeserialization {
         dynamicReferables.add(subgroup.getReferable());
       }
     } else {
-      throw new IllegalStateException();
+      group = new StaticGroup(referable, statements, Collections.emptyList(), parent);
     }
 
     for (ModuleProtos.Group subgroup : groupProto.getSubgroupList()) {

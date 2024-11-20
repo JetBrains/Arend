@@ -52,7 +52,7 @@ public final class ListLoadedModulesAction implements CliReplCommand {
       if (scope != null) {
         for (Referable referable : scope.getElements()) {
           if (referable instanceof TCDefReferable referable1) {
-            if (referable1.getTypechecked() == null && referable1.getKind() != GlobalReferable.Kind.OTHER)
+            if (referable1.getTypechecked() == null && referable1.getKind().isTypecheckable())
               failedDefs.add(referable);
             else successful++;
           }

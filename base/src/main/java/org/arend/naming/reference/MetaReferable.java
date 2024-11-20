@@ -107,7 +107,7 @@ public class MetaReferable implements TCDefReferable, MetaRef {
   @NotNull
   @Override
   public Kind getKind() {
-    return Kind.OTHER;
+    return Kind.META;
   }
 
   @Override

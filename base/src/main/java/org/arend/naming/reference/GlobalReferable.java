@@ -17,6 +17,7 @@ public interface GlobalReferable extends Referable {
     },
     FIELD { @Override public boolean isTypecheckable() { return false; } },
     LEVEL { @Override public boolean isTypecheckable() { return false; } },
+    META { @Override public boolean isTypecheckable() { return false; } },
     OTHER { @Override public boolean isTypecheckable() { return false; } };
 
     public boolean isTypecheckable() {
