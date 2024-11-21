@@ -68,8 +68,8 @@ public class ConvertingScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
-    Scope scope = myScope.resolveNamespace(name, onlyInternal);
+  public Scope resolveNamespace(@NotNull String name) {
+    Scope scope = myScope.resolveNamespace(name);
     return scope == null ? null : new ConvertingScope(myConverter, scope);
   }
 

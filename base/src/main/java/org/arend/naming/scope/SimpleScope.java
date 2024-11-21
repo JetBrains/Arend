@@ -24,7 +24,7 @@ public class SimpleScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name) {
     return namespaces.get(name);
   }
 }

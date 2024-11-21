@@ -78,7 +78,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       if (resolvedRefs != null) {
         resolvedRefs.add(scope.resolveName(myPath.get(i)));
       }
-      scope = scope.resolveNamespace(myPath.get(i), i < myPath.size() - 2);
+      scope = scope.resolveNamespace(myPath.get(i));
       if (scope == null) {
         if (!onlyTry) {
           Object data = getData();
@@ -125,7 +125,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
     Scope prevScope = scope;
     for (int i = 0; i < myPath.size() - 1; i++) {
-      Scope nextScope = scope.resolveNamespace(myPath.get(i), i < myPath.size() - 2);
+      Scope nextScope = scope.resolveNamespace(myPath.get(i));
       if (nextScope == null) {
         return resolveField(prevScope, i - 1, onlyTry, resolvedRefs);
       }
@@ -261,7 +261,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
 
     for (int i = 0; i < myPath.size(); i++) {
-      scope = scope.resolveNamespace(myPath.get(i), true);
+      scope = scope.resolveNamespace(myPath.get(i));
       if (scope == null) {
         Object data = getData();
         resolved = new ErrorReference(data, make(data, myPath.subList(0, i)), i, myPath.get(i));
@@ -293,7 +293,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
   public Scope resolveNamespaceWithArgument(Scope scope) {
     Scope prevScope = scope;
     for (int i = 0; i < myPath.size(); i++) {
-      Scope nextScope = scope.resolveNamespace(myPath.get(i), false);
+      Scope nextScope = scope.resolveNamespace(myPath.get(i));
       if (nextScope == null) {
         return resolveFieldNamespace(prevScope, i == 0 ? 0 : i - 1);
       }

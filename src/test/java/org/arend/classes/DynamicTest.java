@@ -814,13 +814,13 @@ public class DynamicTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicInheritance() {
-    typeCheckModule("""
+    resolveNamesModule("""
       \\class X {
         \\class A
       }
       \\lemma x : X => \\new X
       \\class B \\extends x.A
-      """);
+      """, 1);
   }
 
   @Test
@@ -846,5 +846,18 @@ public class DynamicTest extends TypeCheckingTestCase {
       }
       """, 1);
     assertThatErrorsAre(argInferenceError());
+  }
+
+  @Test
+  public void dynamicInStatic() {
+    resolveNamesModule("""
+      \\record A {
+        \\func foo => 0
+      }
+      \\record B \\extends A \\where {
+        \\func test => foo
+      }
+      """, 1);
+    assertThatErrorsAre(notInScope("foo"));
   }
 }

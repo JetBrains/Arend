@@ -11,8 +11,8 @@ public abstract class DelegateScope implements Scope {
   }
 
   @Override
-  public @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
-    return parent.resolveNamespace(name, onlyInternal);
+  public @Nullable Scope resolveNamespace(@NotNull String name) {
+    return parent.resolveNamespace(name);
   }
 
   @Override

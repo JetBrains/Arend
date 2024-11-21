@@ -34,7 +34,7 @@ public class LexicalScope implements Scope {
   }
 
   private boolean ignoreOpens() {
-    return myKind == Kind.OPENED || myKind == Kind.OPENED_INTERNAL;
+    return myKind == Kind.OPENED;
   }
 
   public static LexicalScope insideOf(Group group, Scope parent, Extent extent) {
@@ -46,12 +46,8 @@ public class LexicalScope implements Scope {
     return insideOf(group, parent, Extent.EVERYTHING);
   }
 
-  private static LexicalScope opened(Group group, boolean onlyInternal) {
-    return new LexicalScope(EmptyScope.INSTANCE, group, null, onlyInternal ? Kind.OPENED_INTERNAL : Kind.OPENED, Extent.EVERYTHING);
-  }
-
   public static LexicalScope opened(Group group) {
-    return opened(group, false);
+    return new LexicalScope(EmptyScope.INSTANCE, group, null, Kind.OPENED, Extent.EVERYTHING);
   }
 
   private Referable checkReferable(Referable referable, Predicate<Referable> pred) {
@@ -115,7 +111,7 @@ public class LexicalScope implements Scope {
         checkReferable(constructor.getReferable(), pred);
       }
       GlobalReferable groupRef = myGroup.getReferable();
-      if (myKind != Kind.OPENED_INTERNAL && groupRef instanceof ClassReferable) {
+      if (groupRef instanceof ClassReferable) {
         Referable ref = new ClassFieldImplScope((ClassReferable) groupRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC).find(pred);
         if (ref != null) return ref;
       } else {
@@ -208,7 +204,7 @@ public class LexicalScope implements Scope {
       }
     }
     if (match) {
-      return resolveType == ResolveType.REF ? ref : LexicalScope.opened(group, resolveType == ResolveType.INTERNAL_SCOPE);
+      return resolveType == ResolveType.REF ? ref : LexicalScope.opened(group);
     }
 
     if (resolveType == ResolveType.REF) {
@@ -218,7 +214,7 @@ public class LexicalScope implements Scope {
     return null;
   }
 
-  private enum ResolveType { REF, SCOPE, INTERNAL_SCOPE }
+  private enum ResolveType { REF, SCOPE }
 
   private Object resolve(String name, ResolveType resolveType, Referable.RefKind refKind) {
     if (name.isEmpty() || "_".equals(name)) {
@@ -268,7 +264,7 @@ public class LexicalScope implements Scope {
       }
 
       if (resolveType == ResolveType.REF && myExtent != Extent.ONLY_EXTERNAL) {
-        Object result = resolveInternal(myGroup, name, myKind == Kind.OPENED_INTERNAL);
+        Object result = resolveInternal(myGroup, name, false);
         if (result != null) {
           return result;
         }
@@ -297,7 +293,7 @@ public class LexicalScope implements Scope {
         }
 
         scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
-        Object result = resolveType == ResolveType.REF ? scope.resolveName(name, refKind) : scope.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
+        Object result = resolveType == ResolveType.REF ? scope.resolveName(name, refKind) : scope.resolveNamespace(name);
         if (result != null) {
           return result;
         }
@@ -314,7 +310,7 @@ public class LexicalScope implements Scope {
       }
     }
 
-    return resolveType == ResolveType.REF ? myParent.resolveName(name, refKind) : myParent.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
+    return resolveType == ResolveType.REF ? myParent.resolveName(name, refKind) : myParent.resolveNamespace(name);
   }
 
   @Nullable
@@ -326,8 +322,8 @@ public class LexicalScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
-    Object result = resolve(name, onlyInternal ? ResolveType.INTERNAL_SCOPE : ResolveType.SCOPE, null);
+  public Scope resolveNamespace(@NotNull String name) {
+    Object result = resolve(name, ResolveType.SCOPE, null);
     return result instanceof Scope ? (Scope) result : null;
   }
 

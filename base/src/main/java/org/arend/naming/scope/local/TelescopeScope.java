@@ -77,7 +77,7 @@ public class TelescopeScope extends DelegateScope {
   }
 
   @Override
-  public @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
-    return findHere(ref -> ref.textRepresentation().equals(name)) != null ? EmptyScope.INSTANCE : parent.resolveNamespace(name, onlyInternal);
+  public @Nullable Scope resolveNamespace(@NotNull String name) {
+    return findHere(ref -> ref.textRepresentation().equals(name)) != null ? EmptyScope.INSTANCE : parent.resolveNamespace(name);
   }
 }

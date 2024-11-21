@@ -11,7 +11,6 @@ import java.util.function.Predicate;
 public class CachingScope implements Scope {
   private final EnumMap<Referable.RefKind, Map<String, Referable>> myElements = new EnumMap<>(Referable.RefKind.class);
   private final Map<String, Scope> myNamespaces = new HashMap<>();
-  private final Map<String, Scope> myOnlyInternalNamespaces = new HashMap<>();
   private final Scope myScope;
   private final static Scope EMPTY_SCOPE = new Scope() {};
 
@@ -28,7 +27,7 @@ public class CachingScope implements Scope {
   }
 
   public static Scope make(Scope scope) {
-    return scope instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope);
+    return scope; // TODO: instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope);
   }
 
   @Override
@@ -72,11 +71,11 @@ public class CachingScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
-    Map<String, Scope> namespaces = onlyInternal ? myOnlyInternalNamespaces : myNamespaces;
+  public Scope resolveNamespace(@NotNull String name) {
+    Map<String, Scope> namespaces = myNamespaces;
     Scope namespace = namespaces.get(name);
     if (namespace == null) {
-      namespace = myScope.resolveNamespace(name, onlyInternal);
+      namespace = myScope.resolveNamespace(name);
       namespace = namespace == null ? EMPTY_SCOPE : CachingScope.make(namespace);
       namespaces.put(name, namespace);
     }

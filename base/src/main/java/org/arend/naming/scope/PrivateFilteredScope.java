@@ -39,8 +39,8 @@ public class PrivateFilteredScope extends DelegateScope {
   }
 
   @Override
-  public @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
-    Scope result = parent.resolveNamespace(name, onlyInternal);
+  public @Nullable Scope resolveNamespace(@NotNull String name) {
+    Scope result = parent.resolveNamespace(name);
     return result == null ? null : new PrivateFilteredScope(result, true);
   }
 }

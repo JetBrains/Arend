@@ -52,7 +52,7 @@ public interface LocatedReferable extends GlobalReferable {
         return moduleScopeProvider.forModule(moduleLocation.getModulePath());
       } else {
         Scope scope = resolveNamespace(parent, moduleScopeProvider);
-        return scope == null ? null : scope.resolveNamespace(locatedReferable.textRepresentation(), true);
+        return scope == null ? null : scope.resolveNamespace(locatedReferable.textRepresentation());
       }
     }
 

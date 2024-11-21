@@ -47,11 +47,11 @@ public class ReplScope implements Scope {
   }
 
   @Override
-  public @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
+  public @Nullable Scope resolveNamespace(@NotNull String name) {
     return Optional
       .ofNullable(myCurrentLineScope)
-      .map(scope -> scope.resolveNamespace(name, onlyInternal))
-      .orElseGet(() -> myPreviousMergeScope.resolveNamespace(name, onlyInternal));
+      .map(scope -> scope.resolveNamespace(name))
+      .orElseGet(() -> myPreviousMergeScope.resolveNamespace(name));
   }
 
   @Override

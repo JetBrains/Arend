@@ -87,8 +87,12 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void extendsTest() {
-    resolveNamesDef("\\record R \\extends Array", 1);
-    assertThatErrorsAre(Matchers.notInScope("Array"));
+    resolveNamesModule("\\record R \\extends DArray", 1);
+  }
+
+  @Test
+  public void extendsTest2() {
+    resolveNamesModule("\\record R \\extends Array", 1);
   }
 
   @Test

@@ -56,7 +56,7 @@ public interface Scope {
     return resolveName(name, Referable.RefKind.EXPR);
   }
 
-  default @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
+  default @Nullable Scope resolveNamespace(@NotNull String name) {
     return null;
   }
 
@@ -75,7 +75,7 @@ public interface Scope {
   default @Nullable Scope resolveNamespace(List<? extends String> path) {
     Scope scope = this;
     for (String name : path) {
-      scope = scope.resolveNamespace(name, true);
+      scope = scope.resolveNamespace(name);
       if (scope == null) {
         return null;
       }
@@ -93,7 +93,7 @@ public interface Scope {
         return null;
       }
       if (withFields && i == path.size() - 2) {
-        Scope scope1 = scope.resolveNamespace(path.get(i), false);
+        Scope scope1 = scope.resolveNamespace(path.get(i));
         if (scope1 != null) {
           Referable ref = scope1.resolveName(path.get(i + 1));
           if (ref != null) return ref;
@@ -109,7 +109,7 @@ public interface Scope {
       if (i == path.size() - 1) {
         return scope.resolveName(path.get(i));
       } else {
-        scope = scope.resolveNamespace(path.get(i), i < path.size() - 2);
+        scope = scope.resolveNamespace(path.get(i));
       }
     }
     return null;
@@ -119,7 +119,7 @@ public interface Scope {
     if (scope == null) return;
     for (Referable ref : scope.getElements()) {
       consumer.accept(ref);
-      traverse(scope.resolveNamespace(ref.getRefName(), false), consumer);
+      traverse(scope.resolveNamespace(ref.getRefName()), consumer);
     }
   }
 }

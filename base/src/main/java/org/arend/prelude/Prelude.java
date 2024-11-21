@@ -290,7 +290,7 @@ public class Prelude implements ArendPrelude {
     }
 
     for (String name : new String[] { "Nat", "Int", "Fin", "Path", "I", "DArray" }) {
-      Scope childScope = scope.resolveNamespace(name, true);
+      Scope childScope = scope.resolveNamespace(name);
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {
         if (ref instanceof TCDefReferable && ((TCDefReferable) ref).getKind().isTypecheckable()) {

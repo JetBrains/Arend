@@ -799,13 +799,12 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     var def = myConcreteProvider.getConcrete(groupRef);
     Scope cachedScope = CachingScope.make(makeScope(group, scope, def instanceof Concrete.ClassDefinition ? LexicalScope.Extent.EXTERNAL_AND_FIELDS : LexicalScope.Extent.EVERYTHING));
+    myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     if (def instanceof Concrete.ClassDefinition) {
       resolveSuperClasses((Concrete.ClassDefinition) def, new PrivateFilteredScope(cachedScope), false);
     }
     if (def instanceof Concrete.ResolvableDefinition) {
       ((Concrete.ResolvableDefinition) def).accept(this, cachedScope);
-    } else {
-      myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }
     if (def instanceof Concrete.Definition && !myExternalParameters.isEmpty()) {
       ((Concrete.Definition) def).setExternalParameters(new HashMap<>(myExternalParameters));

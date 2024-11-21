@@ -57,11 +57,11 @@ public class MergeScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name) {
     if (myMergeNamespaces) {
       List<Scope> scopes = new ArrayList<>(myScopes.size());
       for (Scope scope : myScopes) {
-        Scope result = scope.resolveNamespace(name, onlyInternal);
+        Scope result = scope.resolveNamespace(name);
         if (result != null) {
           scopes.add(result);
         }
@@ -69,7 +69,7 @@ public class MergeScope implements Scope {
       return scopes.isEmpty() ? null : scopes.size() == 1 ? scopes.get(0) : new MergeScope(true, scopes);
     } else {
       for (Scope scope : myScopes) {
-        Scope result = scope.resolveNamespace(name, onlyInternal);
+        Scope result = scope.resolveNamespace(name);
         if (result != null) {
           return result;
         }

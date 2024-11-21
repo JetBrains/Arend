@@ -108,7 +108,7 @@ public class ListScope extends DelegateScope {
   }
 
   @Override
-  public @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
-    return resolveNameLocal(name, Referable.RefKind.EXPR) != null ? EmptyScope.INSTANCE : parent.resolveNamespace(name, onlyInternal);
+  public @Nullable Scope resolveNamespace(@NotNull String name) {
+    return resolveNameLocal(name, Referable.RefKind.EXPR) != null ? EmptyScope.INSTANCE : parent.resolveNamespace(name);
   }
 }

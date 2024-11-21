@@ -140,7 +140,7 @@ public class NamespaceCommandNamespace implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name) {
     if (isHidden(name, Referable.RefKind.EXPR)) {
       return null;
     }
@@ -160,10 +160,10 @@ public class NamespaceCommandNamespace implements Scope {
         ok = oldRef.getRefName().equals(name);
       }
       if (ok) {
-        return myModuleNamespace.resolveNamespace(oldRef.getRefName(), onlyInternal);
+        return myModuleNamespace.resolveNamespace(oldRef.getRefName());
       }
     }
 
-    return isHiddenByUsing(name, Referable.RefKind.EXPR) ? null : myModuleNamespace.resolveNamespace(name, onlyInternal);
+    return isHiddenByUsing(name, Referable.RefKind.EXPR) ? null : myModuleNamespace.resolveNamespace(name);
   }
 }
