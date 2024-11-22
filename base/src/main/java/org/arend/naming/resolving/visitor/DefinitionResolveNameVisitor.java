@@ -812,6 +812,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     boolean isTopLevel = !(group instanceof ChildGroup) || ((ChildGroup) group).getParentGroup() == null;
+    Scope namespaceScope = CachingScope.make(new LexicalScope(scope, group, null, true, false));
     if (!myResolveTypeClassReferences) {
       for (Statement statement : statements) {
         NamespaceCommand namespaceCommand = statement.getNamespaceCommand();
@@ -825,7 +826,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         }
 
         LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, path);
-        Scope importedScope = kind == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope;
+        Scope importedScope = kind == NamespaceCommand.Kind.IMPORT ? namespaceScope.getImportedSubscope() : namespaceScope;
         List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
         reference.resolve(importedScope, resolvedRefs);
         if (myResolverListener != null) {
@@ -868,7 +869,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     if (!dynamicSubgroups.isEmpty()) {
       Scope dynamicScope = CachingScope.make(makeScope(group, scope, true));
       if (def != null && def.getData().getUnderlyingReferable() instanceof ClassReferable classRef) {
-        dynamicScope = new MergeScope(CachingScope.make(makeScope(group, scope, true)), new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC));
+        dynamicScope = new MergeScope(dynamicScope, new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC));
       }
       for (Group subgroup : dynamicSubgroups) {
         resolveGroup(subgroup, dynamicScope);
@@ -937,7 +938,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       } else {
         checkNamespaceCommand(cmd, referables.keySet());
       }
-      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope, cmd).getElements(null);
+      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? namespaceScope.getImportedSubscope() : namespaceScope, cmd).getElements(null);
       if (!elements.isEmpty()) {
         Map<String, Referable> map = new LinkedHashMap<>();
         for (Referable element : elements) {

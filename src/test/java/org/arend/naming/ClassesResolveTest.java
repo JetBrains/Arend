@@ -296,4 +296,18 @@ public class ClassesResolveTest extends NameResolverTestCase {
       \\record S (r : R')
       """);
   }
+
+  @Test
+  public void openDynamic() {
+    resolveNamesModule("""
+      \\record R {
+        \\func foo => 0
+          \\where
+            \\func bar => 1
+      } \\where {
+        \\open foo
+        \\func test => bar
+      }
+      """);
+  }
 }

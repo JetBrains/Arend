@@ -21,12 +21,12 @@ public class LexicalScope implements Scope {
   private final boolean myDynamicContext;
   private final boolean myWithAdditionalContent; // with external parameters and content of \open
 
-  private LexicalScope(Scope parent, Group group, ModulePath module, boolean isDynamicContext, boolean withOpens) {
+  public LexicalScope(Scope parent, Group group, ModulePath module, boolean isDynamicContext, boolean withAdditionalContent) {
     myParent = parent;
     myGroup = group;
     myModule = module;
     myDynamicContext = isDynamicContext;
-    myWithAdditionalContent = withOpens;
+    myWithAdditionalContent = withAdditionalContent;
   }
 
   public static LexicalScope insideOf(Group group, Scope parent, boolean isDynamicContext) {
@@ -117,7 +117,7 @@ public class LexicalScope implements Scope {
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = myWithAdditionalContent ? CachingScope.make(new LexicalScope(myParent, myGroup, null, myDynamicContext, false)) : this;
+          cachingScope = myDynamicContext && !myWithAdditionalContent ? this : CachingScope.make(new LexicalScope(myParent, myGroup, null, true, false));
         }
         scope = cachingScope;
       }
@@ -258,7 +258,7 @@ public class LexicalScope implements Scope {
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = myWithAdditionalContent ? CachingScope.make(new LexicalScope(myParent, myGroup, null, myDynamicContext, false)) : this;
+          cachingScope = myDynamicContext && !myWithAdditionalContent ? this : CachingScope.make(new LexicalScope(myParent, myGroup, null, true, false));
         }
         scope = cachingScope;
       }
