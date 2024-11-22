@@ -270,7 +270,8 @@ public class DynamicTest extends TypeCheckingTestCase {
           }
         }
       }
-      """);
+      """, 1);
+    assertThatErrorsAre(notInScope("g"));
   }
 
   @Test
@@ -299,7 +300,8 @@ public class DynamicTest extends TypeCheckingTestCase {
           }
         }
       }
-      """);
+      """, 1);
+    assertThatErrorsAre(notInScope("g"));
   }
 
   @Test
@@ -328,7 +330,8 @@ public class DynamicTest extends TypeCheckingTestCase {
           }
         }
       }
-      """);
+      """, 1);
+    assertThatErrorsAre(notInScope("g"));
   }
 
   @Test
@@ -357,7 +360,8 @@ public class DynamicTest extends TypeCheckingTestCase {
           }
         }
       }
-      """);
+      """, 1);
+    assertThatErrorsAre(notInScope("g"));
   }
 
   @Test

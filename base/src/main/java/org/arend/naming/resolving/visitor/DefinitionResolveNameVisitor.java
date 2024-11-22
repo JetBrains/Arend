@@ -30,7 +30,6 @@ import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.arend.ext.util.Pair;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -727,19 +726,21 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     return null;
   }
 
-  public void resolveDefinition(Concrete.ResolvableDefinition definition, Scope defScope, ChildGroup parentGroup) {
-    List<ChildGroup> groups = new ArrayList<>();
-    do {
-      groups.add(parentGroup);
-      parentGroup = parentGroup.getParentGroup();
-    } while (parentGroup != null);
+  public void resolveDefinition(Concrete.ResolvableDefinition definition, Scope defScope, ChildGroup group) {
+    List<Pair<ChildGroup,Boolean>> groups = new ArrayList<>();
+    while (true) {
+      ChildGroup parentGroup = group.getParentGroup();
+      if (parentGroup == null) break;
+      groups.add(new Pair<>(parentGroup, group.isDynamicContext()));
+      group = parentGroup;
+    }
 
     if (groups.size() > 1) {
-      Scope scope = CachingScope.make(groups.get(groups.size() - 1).getGroupScope());
+      Scope scope = CachingScope.make(groups.get(groups.size() - 1).proj1.getGroupScope());
       for (int i = groups.size() - 2; i >= 0; i--) {
-        LocatedReferable groupRef = groups.get(i).getReferable();
+        LocatedReferable groupRef = groups.get(i).proj1.getReferable();
         var def = myConcreteProvider.getConcrete(groupRef);
-        scope = CachingScope.make(makeScope(groups.get(i), scope, LexicalScope.Extent.EVERYTHING));
+        scope = CachingScope.make(makeScope(groups.get(i).proj1, scope, groups.get(i).proj2));
         if (def instanceof Concrete.FunctionDefinition) {
           resolveFunctionHeader((Concrete.BaseFunctionDefinition) def, new PrivateFilteredScope(scope));
         } else if (def instanceof Concrete.DataDefinition) {
@@ -766,8 +767,8 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     resolveGroup(group, scope);
   }
 
-  private static Scope makeScope(Group group, Scope parentScope, LexicalScope.Extent extent) {
-    return parentScope == null ? null : LexicalScope.insideOf(group, parentScope, extent);
+  private static Scope makeScope(Group group, Scope parentScope, boolean isDynamicScope) {
+    return parentScope == null ? null : LexicalScope.insideOf(group, parentScope, isDynamicScope);
   }
 
   private boolean addExternalParameters(Concrete.GeneralDefinition def) {
@@ -798,21 +799,65 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
 
     var def = myConcreteProvider.getConcrete(groupRef);
-    Scope cachedScope = CachingScope.make(makeScope(group, scope, def instanceof Concrete.ClassDefinition ? LexicalScope.Extent.EXTERNAL_AND_FIELDS : LexicalScope.Extent.EVERYTHING));
+    Scope cachedScope = CachingScope.make(makeScope(group, scope, false));
     myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     if (def instanceof Concrete.ClassDefinition) {
       resolveSuperClasses((Concrete.ClassDefinition) def, new PrivateFilteredScope(cachedScope), false);
     }
     if (def instanceof Concrete.ResolvableDefinition) {
-      ((Concrete.ResolvableDefinition) def).accept(this, cachedScope);
+      ((Concrete.ResolvableDefinition) def).accept(this, def.getData().getUnderlyingReferable() instanceof ClassReferable classRef ? new MergeScope(new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC), cachedScope) : cachedScope);
     }
     if (def instanceof Concrete.Definition && !myExternalParameters.isEmpty()) {
       ((Concrete.Definition) def).setExternalParameters(new HashMap<>(myExternalParameters));
     }
 
-    if (def instanceof Concrete.ClassDefinition && (!statements.isEmpty() || !dynamicSubgroups.isEmpty())) {
-      cachedScope = CachingScope.make(makeScope(group, scope, LexicalScope.Extent.EVERYTHING));
+    boolean isTopLevel = !(group instanceof ChildGroup) || ((ChildGroup) group).getParentGroup() == null;
+    if (!myResolveTypeClassReferences) {
+      for (Statement statement : statements) {
+        NamespaceCommand namespaceCommand = statement.getNamespaceCommand();
+        if (namespaceCommand == null) {
+          continue;
+        }
+        List<String> path = namespaceCommand.getPath();
+        NamespaceCommand.Kind kind = namespaceCommand.getKind();
+        if (path.isEmpty() || kind == NamespaceCommand.Kind.IMPORT && !isTopLevel) {
+          continue;
+        }
+
+        LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, path);
+        Scope importedScope = kind == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope;
+        List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
+        reference.resolve(importedScope, resolvedRefs);
+        if (myResolverListener != null) {
+          myResolverListener.namespaceResolved(namespaceCommand, resolvedRefs);
+        }
+        Scope curScope = reference.resolveNamespace(importedScope);
+        if (curScope == null) {
+          myErrorReporter.report(reference.getErrorReference().getError());
+        }
+
+        if (curScope != null) {
+          for (NameRenaming renaming : namespaceCommand.getOpenedReferences()) {
+            Referable oldRef = renaming.getOldReference();
+            Referable ref = ExpressionResolveNameVisitor.resolve(oldRef, new PrivateFilteredScope(curScope, true), null);
+            if (myResolverListener != null) {
+              myResolverListener.renamingResolved(renaming, oldRef, ref);
+            }
+            if (ref instanceof ErrorReference) {
+              myErrorReporter.report(((ErrorReference) ref).getError());
+            }
+          }
+
+          for (Referable ref : namespaceCommand.getHiddenReferences()) {
+            ref = ExpressionResolveNameVisitor.resolve(ref, new PrivateFilteredScope(curScope, true), null);
+            if (ref instanceof ErrorReference) {
+              myErrorReporter.report(((ErrorReference) ref).getError());
+            }
+          }
+        }
+      }
     }
+
     boolean added = addExternalParameters(def);
     for (Statement statement : statements) {
       Group subgroup = statement.getGroup();
@@ -820,8 +865,14 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         resolveGroup(subgroup, cachedScope);
       }
     }
-    for (Group subgroup : dynamicSubgroups) {
-      resolveGroup(subgroup, cachedScope);
+    if (!dynamicSubgroups.isEmpty()) {
+      Scope dynamicScope = CachingScope.make(makeScope(group, scope, true));
+      if (def != null && def.getData().getUnderlyingReferable() instanceof ClassReferable classRef) {
+        dynamicScope = new MergeScope(CachingScope.make(makeScope(group, scope, true)), new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC));
+      }
+      for (Group subgroup : dynamicSubgroups) {
+        resolveGroup(subgroup, dynamicScope);
+      }
     }
     if (added) {
       assert def != null;
@@ -833,84 +884,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     myLocalErrorReporter = myErrorReporter;
-
-    boolean isTopLevel = !(group instanceof ChildGroup) || ((ChildGroup) group).getParentGroup() == null;
-    boolean hasNamespaceCommands = false;
-    for (Statement statement : statements) {
-      NamespaceCommand namespaceCommand = statement.getNamespaceCommand();
-      if (namespaceCommand == null) {
-        continue;
-      }
-      hasNamespaceCommands = true;
-      List<String> path = namespaceCommand.getPath();
-      NamespaceCommand.Kind kind = namespaceCommand.getKind();
-      if (path.isEmpty() || kind == NamespaceCommand.Kind.IMPORT && !isTopLevel) {
-        continue;
-      }
-
-      LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, path);
-      Scope importedScope = kind == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope;
-      List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
-      reference.resolve(importedScope, resolvedRefs);
-      if (myResolverListener != null) {
-        myResolverListener.namespaceResolved(namespaceCommand, resolvedRefs);
-      }
-      Scope curScope = reference.resolveNamespace(importedScope);
-      if (curScope == null) {
-        myLocalErrorReporter.report(reference.getErrorReference().getError());
-      }
-
-      if (curScope != null) {
-        for (NameRenaming renaming : namespaceCommand.getOpenedReferences()) {
-          Referable oldRef = renaming.getOldReference();
-          Referable ref = ExpressionResolveNameVisitor.resolve(oldRef, new PrivateFilteredScope(curScope, true), null);
-          if (myResolverListener != null) {
-            myResolverListener.renamingResolved(renaming, oldRef, ref);
-          }
-          if (ref instanceof ErrorReference) {
-            myLocalErrorReporter.report(((ErrorReference) ref).getError());
-          }
-        }
-
-        curScope = NamespaceCommandNamespace.makeNamespace(curScope, new NamespaceCommand() {
-          @NotNull
-          @Override
-          public Kind getKind() {
-            return namespaceCommand.getKind();
-          }
-
-          @NotNull
-          @Override
-          public List<String> getPath() {
-            return namespaceCommand.getPath();
-          }
-
-          @Override
-          public boolean isUsing() {
-            return namespaceCommand.isUsing();
-          }
-
-          @NotNull
-          @Override
-          public Collection<? extends NameRenaming> getOpenedReferences() {
-            return namespaceCommand.getOpenedReferences();
-          }
-
-          @NotNull
-          @Override
-          public Collection<? extends Referable> getHiddenReferences() {
-            return Collections.emptyList();
-          }
-        });
-
-        for (Referable ref : namespaceCommand.getHiddenReferences()) {
-          ref = ExpressionResolveNameVisitor.resolve(ref, new PrivateFilteredScope(curScope, true), null);
-          if (ref instanceof ErrorReference) {
-            myLocalErrorReporter.report(((ErrorReference) ref).getError());
-          }
-        }
-      }
-    }
 
     // Some checks
 
@@ -951,10 +924,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       if (subgroup != null) {
         checkSubgroup(subgroup, referables);
       }
-    }
-
-    if (!hasNamespaceCommands) {
-      return;
     }
 
     List<Pair<NamespaceCommand, Map<String, Referable>>> namespaces = new ArrayList<>();

@@ -129,7 +129,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
     resolveNamesModule("""
       \\class X \\where { \\class C1 { | A : \\Set } }
       \\class Y \\where { \\class C2 { | A : \\Set } }
-      \\class D \\extends X.C1, Y.C2 { | C1.A => \\Prop | C2.A => \\Prop -> \\Prop }
+      \\class D \\extends X.C1, Y.C2 { | X.A => \\Prop | Y.A => \\Prop -> \\Prop }
       """);
   }
 

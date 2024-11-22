@@ -12,7 +12,7 @@ public class FileGroup extends StaticGroup {
   private Scope myScope = EmptyScope.INSTANCE;
 
   public FileGroup(LocatedReferable referable, List<Statement> statements) {
-    super(referable, statements, Collections.emptyList(), null);
+    super(referable, statements, Collections.emptyList(), null, false);
   }
 
   public void setModuleScopeProvider(ModuleScopeProvider moduleScopeProvider) {
@@ -24,7 +24,7 @@ public class FileGroup extends StaticGroup {
 
   @NotNull
   @Override
-  public Scope getGroupScope(LexicalScope.Extent extent) {
+  public Scope getGroupScope() {
     return myScope;
   }
 }

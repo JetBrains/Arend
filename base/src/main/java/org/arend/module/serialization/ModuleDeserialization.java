@@ -225,7 +225,7 @@ public class ModuleDeserialization {
 
   @NotNull
   public ChildGroup readGroup(ModuleLocation modulePath) throws DeserializationException {
-    return readGroup(myModuleProto.getGroup(), null, modulePath);
+    return readGroup(myModuleProto.getGroup(), null, false, modulePath);
   }
 
   private static GlobalReferable.Kind getDefinitionKind(DefinitionProtos.Definition defProto) {
@@ -251,7 +251,7 @@ public class ModuleDeserialization {
   }
 
   @NotNull
-  private StaticGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, ModuleLocation modulePath) throws DeserializationException {
+  private StaticGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, boolean isDynamicContext, ModuleLocation modulePath) throws DeserializationException {
     DefinitionProtos.Referable referableProto = groupProto.getReferable();
     List<TCFieldReferable> fieldReferables;
     LocatedReferable referable;
@@ -291,7 +291,7 @@ public class ModuleDeserialization {
 
     StaticGroup group;
     if (def == null || def instanceof FunctionDefinition) {
-      group = new StaticGroup(referable, statements, Collections.emptyList(), parent);
+      group = new StaticGroup(referable, statements, Collections.emptyList(), parent, isDynamicContext);
     } else if (def instanceof DataDefinition) {
       Set<Definition> invisibleRefs = new HashSet<>();
       for (Integer index : groupProto.getInvisibleInternalReferableList()) {
@@ -303,7 +303,7 @@ public class ModuleDeserialization {
         internalReferables.add(new SimpleInternalReferable(conDef.getReferable(), !invisibleRefs.contains(conDef)));
       }
 
-      group = new DataGroup(referable, internalReferables, statements, Collections.emptyList(), parent);
+      group = new DataGroup(referable, internalReferables, statements, Collections.emptyList(), parent, isDynamicContext);
     } else if (referable instanceof ClassReferable && def instanceof ClassDefinition) {
       Set<Definition> invisibleRefs = new HashSet<>();
       for (Integer index : groupProto.getInvisibleInternalReferableList()) {
@@ -319,9 +319,9 @@ public class ModuleDeserialization {
       }
 
       List<Group> dynamicGroups = new ArrayList<>(groupProto.getDynamicSubgroupCount());
-      group = new ClassGroup((ClassReferable) referable, internalReferables, dynamicGroups, statements, Collections.emptyList(), parent);
+      group = new ClassGroup((ClassReferable) referable, internalReferables, dynamicGroups, statements, Collections.emptyList(), parent, isDynamicContext);
       for (ModuleProtos.Group subgroupProto : groupProto.getDynamicSubgroupList()) {
-        Group subgroup = readGroup(subgroupProto, group, modulePath);
+        Group subgroup = readGroup(subgroupProto, group, true, modulePath);
         dynamicGroups.add(subgroup);
         dynamicReferables.add(subgroup.getReferable());
       }
@@ -330,7 +330,7 @@ public class ModuleDeserialization {
     }
 
     for (ModuleProtos.Group subgroup : groupProto.getSubgroupList()) {
-      statements.add(readGroup(subgroup, group, modulePath));
+      statements.add(readGroup(subgroup, group, false, modulePath));
     }
 
     return group;

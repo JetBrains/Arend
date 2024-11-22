@@ -10,16 +10,23 @@ import java.util.List;
 public class EmptyGroup implements ChildGroup, Statement {
   private final LocatedReferable myReferable;
   private final ChildGroup myParent;
+  private final boolean myDynamicContext;
 
-  public EmptyGroup(LocatedReferable referable, ChildGroup parent) {
+  public EmptyGroup(LocatedReferable referable, ChildGroup parent, boolean isDynamicScope) {
     myReferable = referable;
     myParent = parent;
+    myDynamicContext = isDynamicScope;
   }
 
   @Nullable
   @Override
   public ChildGroup getParentGroup() {
     return myParent;
+  }
+
+  @Override
+  public boolean isDynamicContext() {
+    return myDynamicContext;
   }
 
   @NotNull

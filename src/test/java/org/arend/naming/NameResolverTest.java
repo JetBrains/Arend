@@ -631,9 +631,17 @@ public class NameResolverTest extends NameResolverTestCase {
       """
         \\class X \\where { \\func f => 0 }
         \\open X(f \\as f') \\hiding(f)
+        """);
+  }
+
+  @Test
+  public void openRenameHideOldTest2() {
+    resolveNamesModule(
+      """
+        \\class X \\where { \\func f => 0 }
+        \\open X(f \\as f') \\hiding(f)
         \\func g => f'
-        """, 1);
-    assertThatErrorsAre(notInScope("f"));
+        """);
   }
 
   @Test
@@ -642,10 +650,20 @@ public class NameResolverTest extends NameResolverTestCase {
       """
         \\class X \\where { \\func f => 0 }
         \\open X(f \\as f') \\hiding(f')
+        """, 1);
+    assertThatErrorsAre(notInScope("f'"));
+  }
+
+  @Test
+  public void openRenameHideNewTest2() {
+    resolveNamesModule(
+      """
+        \\class X \\where { \\func f => 0 }
+        \\open X(f \\as f') \\hiding(f')
         \\func g => f
         \\func g' => f'
-        """, 2);
-    assertThatErrorsAre(notInScope("f"), notInScope("f'"));
+        """, 3);
+    assertThatErrorsAre(notInScope("f'"), notInScope("f"), notInScope("f'"));
   }
 
   @Test

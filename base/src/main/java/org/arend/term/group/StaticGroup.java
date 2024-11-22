@@ -13,12 +13,14 @@ public class StaticGroup implements ChildGroup, Statement {
   private final List<Statement> myStatements;
   private final List<ParameterReferable> myExternalParameters;
   private final ChildGroup myParent;
+  private final boolean myDynamicContext;
 
-  public StaticGroup(LocatedReferable referable, List<Statement> statements, List<ParameterReferable> externalParameters, ChildGroup parent) {
+  public StaticGroup(LocatedReferable referable, List<Statement> statements, List<ParameterReferable> externalParameters, ChildGroup parent, boolean isDynamicContext) {
     myReferable = referable;
     myStatements = statements;
     myExternalParameters = externalParameters;
     myParent = parent;
+    myDynamicContext = isDynamicContext;
   }
 
   @NotNull
@@ -47,6 +49,11 @@ public class StaticGroup implements ChildGroup, Statement {
   @Override
   public ChildGroup getParentGroup() {
     return myParent;
+  }
+
+  @Override
+  public boolean isDynamicContext() {
+    return myDynamicContext;
   }
 
   @Override

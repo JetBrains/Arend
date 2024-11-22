@@ -90,7 +90,7 @@ public class DefCallTest extends TypeCheckingTestCase {
       \\class Test {
         \\func f => 0
       } \\where {
-        \\func test : Nat => f
+        \\func test : Nat => Test.f
       }
       """, 1);
   }
@@ -319,7 +319,7 @@ public class DefCallTest extends TypeCheckingTestCase {
       \\class Test {
         \\data D | c
       } \\where {
-        \\func test : D => c
+        \\func test : Test.D => Test.c
       }
       """, 2);
   }
@@ -330,7 +330,7 @@ public class DefCallTest extends TypeCheckingTestCase {
       \\class Test {
         \\data D | c
       } \\where {
-        \\func test : D => D.c
+        \\func test : Test.D => Test.D.c
       }
       """, 2);
   }
@@ -659,7 +659,7 @@ public class DefCallTest extends TypeCheckingTestCase {
       \\class Test {
         \\class C
       } \\where {
-        \\func test : \\Prop => C
+        \\func test : \\Prop => Test.C
       }
       """);
   }

@@ -9,14 +9,11 @@ import org.jetbrains.annotations.Nullable;
 
 public interface ChildGroup extends Group {
   @Nullable ChildGroup getParentGroup();
+  boolean isDynamicContext();
 
   @NotNull
-  default Scope getGroupScope(LexicalScope.Extent extent) {
-    ChildGroup parent = getParentGroup();
-    return parent == null ? ScopeFactory.forGroup(this, EmptyModuleScopeProvider.INSTANCE) : LexicalScope.insideOf(this, parent.getGroupScope(extent == LexicalScope.Extent.ONLY_EXTERNAL ? extent : LexicalScope.Extent.EVERYTHING), extent);
-  }
-
   default Scope getGroupScope() {
-    return getGroupScope(LexicalScope.Extent.EXTERNAL_AND_FIELDS);
+    ChildGroup parent = getParentGroup();
+    return parent == null ? ScopeFactory.forGroup(this, EmptyModuleScopeProvider.INSTANCE) : LexicalScope.insideOf(this, parent.getGroupScope(), isDynamicContext());
   }
 }

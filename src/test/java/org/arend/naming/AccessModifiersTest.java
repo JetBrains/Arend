@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import static org.arend.Matchers.notInScope;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class AccessModifiersTest extends NameResolverTestCase {
   @Test
@@ -408,14 +407,30 @@ public class AccessModifiersTest extends NameResolverTestCase {
   @Test
   public void testField() {
     resolveNamesModule("""
-      \\private \\record R
-        | field : Nat
-      """);
-    assertNull(get("R.field"));
+      \\module M \\where {
+        \\private \\record R
+          | field : Nat
+      }
+      \\func test => M.field
+      """, 1);
+    assertThatErrorsAre(notInScope("field"));
   }
 
   @Test
   public void testField2() {
+    resolveNamesModule("""
+      \\module M \\where {
+        \\private \\record R
+          | field : Nat
+      }
+      \\open M
+      \\func test => field
+      """, 1);
+    assertThatErrorsAre(notInScope("field"));
+  }
+
+  @Test
+  public void testField3() {
     lastGroup = parseModule("""
       \\private \\data R
         | \\private field : Nat

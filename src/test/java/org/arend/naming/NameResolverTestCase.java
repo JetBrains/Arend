@@ -45,7 +45,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   public TCReferable get(String path) {
     ChildGroup parent = lastGroup.getParentGroup();
-    Scope scope = parent == null ? LexicalScope.insideOf(lastGroup, EmptyScope.INSTANCE, LexicalScope.Extent.EXTERNAL_AND_FIELDS) : LexicalScope.insideOf(lastGroup, parent.getGroupScope());
+    Scope scope = LexicalScope.insideOf(lastGroup, parent == null ? EmptyScope.INSTANCE : LexicalScope.insideOf(lastGroup, parent.getGroupScope(), true), true);
     return get(scope, path);
   }
 
@@ -102,7 +102,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   ChildGroup resolveNamesDefGroup(String text, int errors) {
     ChildGroup group = parseDef(text);
     Scope parentScope = new MergeScope(new SingletonScope(group.getReferable()), metaScope, PreludeLibrary.getPreludeScope());
-    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, null, errorReporter).resolveGroupWithTypes(group, CachingScope.make(LexicalScope.insideOf(group, parentScope)));
+    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, null, errorReporter).resolveGroupWithTypes(group, CachingScope.make(LexicalScope.insideOf(group, parentScope, true)));
     assertThat(errorList, containsErrors(errors));
     return group;
   }

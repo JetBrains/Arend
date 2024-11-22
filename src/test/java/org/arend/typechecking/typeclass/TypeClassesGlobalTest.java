@@ -417,8 +417,8 @@ public class TypeClassesGlobalTest extends TypeCheckingTestCase {
       \\func test1 : Nat => a
       \\func test2 : \\Sigma Nat Nat => a""");
     ClassDefinition classE = (ClassDefinition) getDefinition("E");
-    ClassField fieldA = (ClassField) getDefinition("E.A");
-    assertEquals(classE.getClassifyingField(), fieldA);
+    ClassField fieldA = (ClassField) getDefinition("C.A");
+    assertEquals(fieldA, classE.getClassifyingField());
   }
 
   @Test

@@ -18,36 +18,24 @@ public class LexicalScope implements Scope {
   private final Scope myParent;
   private final Group myGroup;
   private final ModulePath myModule;
-  private final Kind myKind;
-  private final Extent myExtent;
+  private final boolean myDynamicContext;
+  private final boolean myWithAdditionalContent; // with external parameters and content of \open
 
-  private enum Kind { INSIDE, OPENED_WITH_IMPORTS, OPENED, OPENED_INTERNAL }
-
-  public enum Extent { EVERYTHING, EXTERNAL_AND_FIELDS, ONLY_EXTERNAL }
-
-  private LexicalScope(Scope parent, Group group, ModulePath module, Kind kind, Extent extent) {
+  private LexicalScope(Scope parent, Group group, ModulePath module, boolean isDynamicContext, boolean withOpens) {
     myParent = parent;
     myGroup = group;
     myModule = module;
-    myKind = kind;
-    myExtent = extent;
+    myDynamicContext = isDynamicContext;
+    myWithAdditionalContent = withOpens;
   }
 
-  private boolean ignoreOpens() {
-    return myKind == Kind.OPENED;
-  }
-
-  public static LexicalScope insideOf(Group group, Scope parent, Extent extent) {
+  public static LexicalScope insideOf(Group group, Scope parent, boolean isDynamicContext) {
     ModuleLocation moduleLocation = group.getReferable().getLocation();
-    return new LexicalScope(parent, group, moduleLocation == null ? null : moduleLocation.getModulePath(), Kind.INSIDE, extent);
-  }
-
-  public static LexicalScope insideOf(Group group, Scope parent) {
-    return insideOf(group, parent, Extent.EVERYTHING);
+    return new LexicalScope(parent, group, moduleLocation == null ? null : moduleLocation.getModulePath(), isDynamicContext, true);
   }
 
   public static LexicalScope opened(Group group) {
-    return new LexicalScope(EmptyScope.INSTANCE, group, null, Kind.OPENED, Extent.EVERYTHING);
+    return new LexicalScope(EmptyScope.INSTANCE, group, null, true, false);
   }
 
   private Referable checkReferable(Referable referable, Predicate<Referable> pred) {
@@ -100,54 +88,44 @@ public class LexicalScope implements Scope {
       }
     }
 
-    if (myExtent == Extent.EVERYTHING) {
+    if (myDynamicContext) {
       for (Group subgroup : myGroup.getDynamicSubgroups()) {
         checkSubgroup(subgroup, pred);
       }
     }
 
-    if (myExtent != Extent.ONLY_EXTERNAL) {
-      for (Group.InternalReferable constructor : myGroup.getConstructors()) {
-        checkReferable(constructor.getReferable(), pred);
-      }
-      GlobalReferable groupRef = myGroup.getReferable();
-      if (groupRef instanceof ClassReferable) {
-        Referable ref = new ClassFieldImplScope((ClassReferable) groupRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC).find(pred);
-        if (ref != null) return ref;
-      } else {
-        for (Group.InternalReferable field : myGroup.getFields()) {
-          checkReferable(field.getReferable(), pred);
-        }
-      }
+    for (Group.InternalReferable constructor : myGroup.getConstructors()) {
+      checkReferable(constructor.getReferable(), pred);
+    }
+    for (Group.InternalReferable field : myGroup.getFields()) {
+      checkReferable(field.getReferable(), pred);
     }
 
-    if (!ignoreOpens()) {
-      Scope cachingScope = null;
-      for (Statement statement : myGroup.getStatements()) {
-        NamespaceCommand cmd = statement.getNamespaceCommand();
-        if (cmd == null || myKind == Kind.OPENED_WITH_IMPORTS && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
+    Scope cachingScope = null;
+    for (Statement statement : myGroup.getStatements()) {
+      NamespaceCommand cmd = statement.getNamespaceCommand();
+      if (cmd == null || !(myWithAdditionalContent || cmd.getKind() == NamespaceCommand.Kind.IMPORT)) {
+        continue;
+      }
+
+      Scope scope;
+      if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+        if (myModule != null && cmd.getPath().equals(myModule.toList())) {
           continue;
         }
-
-        Scope scope;
-        if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-          if (myModule != null && cmd.getPath().equals(myModule.toList())) {
-            continue;
-          }
-          scope = getImportedSubscope();
-        } else {
-          if (cachingScope == null) {
-            cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED_WITH_IMPORTS, myExtent));
-          }
-          scope = cachingScope;
+        scope = getImportedSubscope();
+      } else {
+        if (cachingScope == null) {
+          cachingScope = myWithAdditionalContent ? CachingScope.make(new LexicalScope(myParent, myGroup, null, myDynamicContext, false)) : this;
         }
-        scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
-        Referable ref = scope.find(pred);
-        if (ref != null) return ref;
+        scope = cachingScope;
       }
+      scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
+      Referable ref = scope.find(pred);
+      if (ref != null) return ref;
     }
 
-    if (myKind == Kind.INSIDE) {
+    if (myWithAdditionalContent) {
       for (ParameterReferable ref : myGroup.getExternalParameters()) {
         if (pred.test(ref)) return ref;
       }
@@ -170,22 +148,17 @@ public class LexicalScope implements Scope {
       }
     }
 
-    if (onlyInternal || !(group.getReferable() instanceof ClassReferable)) {
-      for (Group.InternalReferable internalReferable : group.getFields()) {
-        if (!onlyInternal || internalReferable.isVisible()) {
-          GlobalReferable field = internalReferable.getReferable();
-          if (field.textRepresentation().equals(name)) {
-            return field;
-          }
-          String alias = field.getAliasName();
-          if (alias != null && alias.equals(name)) {
-            return new AliasReferable(field);
-          }
+    for (Group.InternalReferable internalReferable : group.getFields()) {
+      if (!onlyInternal || internalReferable.isVisible()) {
+        GlobalReferable field = internalReferable.getReferable();
+        if (field.textRepresentation().equals(name)) {
+          return field;
+        }
+        String alias = field.getAliasName();
+        if (alias != null && alias.equals(name)) {
+          return new AliasReferable(field);
         }
       }
-    } else {
-      Referable referable = new ClassFieldImplScope((ClassReferable) group.getReferable(), ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC).resolveName(name);
-      return referable instanceof GlobalReferable ? (GlobalReferable) referable : null;
     }
 
     return null;
@@ -254,7 +227,7 @@ public class LexicalScope implements Scope {
     }
 
     if (resolveType != ResolveType.REF || refKind == null || refKind == Referable.RefKind.EXPR) {
-      if (myExtent == Extent.EVERYTHING) {
+      if (myDynamicContext) {
         for (Group subgroup : myGroup.getDynamicSubgroups()) {
           Object result = resolveSubgroup(subgroup, name, resolveType);
           if (result != null) {
@@ -263,44 +236,40 @@ public class LexicalScope implements Scope {
         }
       }
 
-      if (resolveType == ResolveType.REF && myExtent != Extent.ONLY_EXTERNAL) {
-        Object result = resolveInternal(myGroup, name, false);
-        if (result != null) {
-          return result;
-        }
+      Object result = resolveInternal(myGroup, name, false);
+      if (result != null) {
+        return result;
       }
     }
 
-    if (!ignoreOpens()) {
-      Scope cachingScope = null;
-      for (Statement statement : myGroup.getStatements()) {
-        NamespaceCommand cmd = statement.getNamespaceCommand();
-        if (cmd == null || myKind == Kind.OPENED_WITH_IMPORTS && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
+    Scope cachingScope = null;
+    for (Statement statement : myGroup.getStatements()) {
+      NamespaceCommand cmd = statement.getNamespaceCommand();
+      if (cmd == null || !(myWithAdditionalContent || cmd.getKind() == NamespaceCommand.Kind.IMPORT)) {
+        continue;
+      }
+
+      Scope scope;
+      if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+        if (myModule != null && cmd.getPath().equals(myModule.toList())) {
           continue;
         }
-
-        Scope scope;
-        if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-          if (myModule != null && cmd.getPath().equals(myModule.toList())) {
-            continue;
-          }
-          scope = getImportedSubscope();
-        } else {
-          if (cachingScope == null) {
-            cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED_WITH_IMPORTS, myExtent));
-          }
-          scope = cachingScope;
+        scope = getImportedSubscope();
+      } else {
+        if (cachingScope == null) {
+          cachingScope = myWithAdditionalContent ? CachingScope.make(new LexicalScope(myParent, myGroup, null, myDynamicContext, false)) : this;
         }
+        scope = cachingScope;
+      }
 
-        scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
-        Object result = resolveType == ResolveType.REF ? scope.resolveName(name, refKind) : scope.resolveNamespace(name);
-        if (result != null) {
-          return result;
-        }
+      scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
+      Object result = resolveType == ResolveType.REF ? scope.resolveName(name, refKind) : scope.resolveNamespace(name);
+      if (result != null) {
+        return result;
       }
     }
 
-    if (myKind == Kind.INSIDE && resolveType == ResolveType.REF) {
+    if (myWithAdditionalContent && resolveType == ResolveType.REF) {
       List<? extends Referable> refs = myGroup.getExternalParameters();
       for (int i = refs.size() - 1; i >= 0; i--) {
         Referable ref = refs.get(i);
@@ -330,7 +299,7 @@ public class LexicalScope implements Scope {
   @NotNull
   @Override
   public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
-    return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null, withImports ? Kind.OPENED_WITH_IMPORTS : Kind.OPENED, myExtent);
+    return myWithAdditionalContent ? new LexicalScope(myParent, myGroup, null, myDynamicContext, false) : this;
   }
 
   @Override

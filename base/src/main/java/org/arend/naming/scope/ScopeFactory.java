@@ -20,11 +20,11 @@ import java.util.function.Function;
 
 public class ScopeFactory {
   public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider) {
-    return forGroup(group, moduleScopeProvider, true, LexicalScope.Extent.EXTERNAL_AND_FIELDS);
+    return forGroup(group, moduleScopeProvider, true, false);
   }
 
   public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
-    return forGroup(group, moduleScopeProvider, prelude, LexicalScope.Extent.EXTERNAL_AND_FIELDS);
+    return forGroup(group, moduleScopeProvider, prelude, false);
   }
 
   public static @NotNull Scope parentScopeForGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
@@ -47,14 +47,14 @@ public class ScopeFactory {
       ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider);
       parentScope = preludeScope == null ? importedScope : new MergeScope(preludeScope, importedScope);
     } else {
-      parentScope = forGroup(parentGroup, moduleScopeProvider, prelude, LexicalScope.Extent.EVERYTHING);
+      parentScope = forGroup(parentGroup, moduleScopeProvider, prelude, ((ChildGroup) group).isDynamicContext());
     }
     return parentScope;
   }
 
-  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude, LexicalScope.Extent extent) {
+  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude, boolean isDynamicContext) {
     Scope parent = parentScopeForGroup(group, moduleScopeProvider, prelude);
-    return group == null ? parent : LexicalScope.insideOf(group, parent, extent);
+    return group == null ? parent : LexicalScope.insideOf(group, parent, isDynamicContext);
   }
 
   public static boolean isGlobalScopeVisible(Abstract.SourceNode sourceNode) {

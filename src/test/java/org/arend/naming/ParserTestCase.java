@@ -40,7 +40,7 @@ public abstract class ParserTestCase extends ArendTestCase {
     ArendParser.DefinitionContext ctx = _parse(text).definition();
     List<Statement> statements = new ArrayList<>(1);
     FileGroup fileGroup = new FileGroup(new FullModuleReferable(MODULE_PATH), statements);
-    StaticGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(AccessModifier.PUBLIC, ctx, fileGroup, null) : null;
+    StaticGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(AccessModifier.PUBLIC, ctx, fileGroup, false, null) : null;
     if (definition != null) {
       statements.add(definition);
     }

@@ -10,8 +10,8 @@ public class ClassGroup extends StaticGroup {
   private final List<Group> myDynamicGroups;
   private final List<? extends InternalReferable> myInternalGlobalReferables;
 
-  public ClassGroup(ClassReferable reference, List<? extends InternalReferable> internalGlobalReferables, List<Group> dynamicGroups, List<Statement> statements, List<ParameterReferable> externalParameters, ChildGroup parent) {
-    super(reference, statements, externalParameters, parent);
+  public ClassGroup(ClassReferable reference, List<? extends InternalReferable> internalGlobalReferables, List<Group> dynamicGroups, List<Statement> statements, List<ParameterReferable> externalParameters, ChildGroup parent, boolean isDynamicContext) {
+    super(reference, statements, externalParameters, parent, isDynamicContext);
     myInternalGlobalReferables = internalGlobalReferables;
     myDynamicGroups = dynamicGroups;
   }

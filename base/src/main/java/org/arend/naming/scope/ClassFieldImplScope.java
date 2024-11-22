@@ -103,22 +103,6 @@ public class ClassFieldImplScope implements Scope {
     return null;
   }
 
-  @Nullable
-  @Override
-  public Scope resolveNamespace(@NotNull String name) {
-    Referable referable = resolveName(name);
-    if (myExtent == Extent.WITH_SUPER_CLASSES && referable instanceof ClassReferable) {
-      return new ClassFieldImplScope((ClassReferable) referable, Extent.WITH_SUPER_CLASSES);
-    }
-    if (referable instanceof TypedReferable) {
-      ClassReferable classRef = ((TypedReferable) referable).getTypeClassReference();
-      if (classRef != null) {
-        return new ClassFieldImplScope(classRef, Extent.WITH_DYNAMIC);
-      }
-    }
-    return null;
-  }
-
   @NotNull
   @Override
   public Scope getGlobalSubscope() {

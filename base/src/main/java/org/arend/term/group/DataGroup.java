@@ -9,8 +9,8 @@ import java.util.List;
 public class DataGroup extends StaticGroup {
   private final List<? extends InternalReferable> myConstructors;
 
-  public DataGroup(LocatedReferable referable, List<? extends InternalReferable> constructors, List<Statement> statements, List<ParameterReferable> parameterReferables, ChildGroup parent) {
-    super(referable, statements, parameterReferables, parent);
+  public DataGroup(LocatedReferable referable, List<? extends InternalReferable> constructors, List<Statement> statements, List<ParameterReferable> parameterReferables, ChildGroup parent, boolean isDynamicContext) {
+    super(referable, statements, parameterReferables, parent, isDynamicContext);
     myConstructors = constructors;
   }
 
