@@ -90,7 +90,8 @@ public class LexicalScope implements Scope {
 
     if (myDynamicContext) {
       for (Group subgroup : myGroup.getDynamicSubgroups()) {
-        checkSubgroup(subgroup, pred);
+        Referable ref = checkSubgroup(subgroup, pred);
+        if (ref != null) return ref;
       }
     }
 
