@@ -176,7 +176,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return resolved != null;
   }
 
-  public Concrete.Expression resolveField(Scope scope, int i, boolean onlyTry, List<Referable> resolvedRefs) {
+  private Concrete.Expression resolveField(Scope scope, int i, boolean onlyTry, List<Referable> resolvedRefs) {
     if (i == -1) {
       resolved = scope.resolveName(myPath.get(0));
       if (resolvedRefs != null) {
@@ -188,6 +188,10 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
 
     ClassReferable classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
+    boolean withArg = classRef != null;
+    if (classRef == null && resolved != null && resolved.getUnderlyingReferable() instanceof ClassReferable classRef2) {
+      classRef = classRef2;
+    }
     if (classRef == null) {
       if (onlyTry) {
         resolved = null;
@@ -211,7 +215,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
 
     Object data = getData();
-    Concrete.Expression result = new Concrete.ReferenceExpression(data, getReferable());
+    Concrete.Expression result = withArg ? new Concrete.ReferenceExpression(data, getReferable()) : null;
     for (i++; i < myPath.size(); i++) {
       resolved = new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC).resolveName(myPath.get(i));
       if (resolved == null) {
@@ -228,7 +232,8 @@ public class LongUnresolvedReference implements UnresolvedReference {
       if (i == myPath.size() - 1) {
         return result;
       }
-      result = Concrete.AppExpression.make(data, new Concrete.ReferenceExpression(data, getReferable()), result, false);
+      Concrete.Expression refExpr = new Concrete.ReferenceExpression(data, getReferable());
+      result = result == null ? refExpr : Concrete.AppExpression.make(data, refExpr, result, false);
 
       classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
       if (classRef == null) {

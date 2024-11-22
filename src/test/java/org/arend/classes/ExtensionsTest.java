@@ -479,4 +479,13 @@ public class ExtensionsTest extends TypeCheckingTestCase {
               \\record S \\extends B
       """);
   }
+
+  @Test
+  public void superFieldTest() {
+    typeCheckModule("""
+      \\record R (x : Nat)
+      \\record S \\extends R
+      \\func test => S.x
+      """);
+  }
 }
