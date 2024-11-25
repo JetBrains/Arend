@@ -27,7 +27,7 @@ public class CachingScope implements Scope {
   }
 
   public static Scope make(Scope scope) {
-    return scope; // TODO: instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope);
+    return scope instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope);
   }
 
   @Override
