@@ -14,8 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.arend.ExpressionFactory.*;
-import static org.arend.Matchers.argInferenceError;
-import static org.arend.Matchers.notInScope;
+import static org.arend.Matchers.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
@@ -448,23 +447,26 @@ public class DynamicTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorIndicesThisTest() {
-    typeCheckClass("""
-      | \\infix 6 + : Nat -> Nat -> Nat
-      \\class A {t : Test} {
-        | x : Nat
-        \\data D (n : Nat) (f : Nat -> Nat -> Nat) \\elim n
-          | zero => con1 (f x x = f x x)
-          | suc n => con2 (D n f) (f n x = f n x)
-        \\func f (n : Nat) : D n (+ {t})
-          | zero => con1 (path (\\lam _ => x + {t} x))
-          | suc n => con2 (f n) (path (\\lam _ => n + {t} x))
+    typeCheckModule("""
+      \\class Test {
+        | \\infix 6 + : Nat -> Nat -> Nat
+        \\class A {t : Test} {
+          | x : Nat
+          \\data D (n : Nat) (f : Nat -> Nat -> Nat) \\elim n
+            | zero => con1 (f x x = f x x)
+            | suc n => con2 (D n f) (f n x = f n x)
+          \\func f (n : Nat) : D n (+ {t})
+            | zero => con1 (path (\\lam _ => x + {t} x))
+            | suc n => con2 (f n) (path (\\lam _ => n + {t} x))
+        }
+      } \\where {
+        \\open Test
+        \\func f {t : Test} (a : A {t}) (n : Nat) : A.D {a} n (+) => A.f {a} n
+        \\func f' {t : Test} (a : A {t}) (n : Nat) => A.f {a}
+        \\func g {t : Test} (a : A {t}) (n : Nat) : A.D {a} n (+) \\elim n
+          | zero => A.con1 {a} (path (\\lam _ => a.x + a.x))
+          | suc n => A.con2 {a} (g a n) (path (\\lam _ => n + a.x))
       }
-      """, """
-      \\func f {t : Test} (a : A {t}) (n : Nat) : A.D {a} n (+) => A.f {a} n
-      \\func f' {t : Test} (a : A {t}) (n : Nat) => A.f {a}
-      \\func g {t : Test} (a : A {t}) (n : Nat) : A.D {a} n (+) \\elim n
-        | zero => A.con1 {a} (path (\\lam _ => a.x + a.x))
-        | suc n => A.con2 {a} (g a n) (path (\\lam _ => n + a.x))
       """);
   }
 
@@ -863,5 +865,61 @@ public class DynamicTest extends TypeCheckingTestCase {
       }
       """, 1);
     assertThatErrorsAre(notInScope("foo"));
+  }
+
+  @Test
+  public void wrongClassTest() {
+    typeCheckModule("""
+      \\record R {
+        \\func foo => 0
+      }
+      \\record S
+      \\func test (s : S) => s.foo
+      """, 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void openTest() {
+    typeCheckModule("""
+      \\module M \\where {
+        \\record R {
+          \\func foo => 0
+        }
+      }
+      \\open M
+      \\func test (r : R) => r.foo
+      """);
+  }
+
+  @Test
+  public void openClashTest() {
+    resolveNamesModule("""
+      \\module M \\where {
+        \\record R {
+          \\func foo => 0
+        }
+      }
+      \\module N \\where {
+        \\record S {
+          \\func foo => 0
+        }
+      }
+      \\open M
+      \\open N
+      """, 1);
+  }
+
+  @Test
+  public void resolveGlobalDynamicElementTest() {
+    typeCheckModule("""
+      \\record R {
+        \\func foo => 0
+      }
+      \\module M \\where {
+        \\func rrr : R \\cowith
+      }
+      \\func test => M.rrr.foo
+      """);
   }
 }

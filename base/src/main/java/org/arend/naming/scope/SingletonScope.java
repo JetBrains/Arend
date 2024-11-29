@@ -17,14 +17,14 @@ public class SingletonScope implements Scope {
 
   @NotNull
   @Override
-  public List<Referable> getElements(Referable.RefKind kind) {
-    return kind == null || myReferable.getRefKind() == kind ? Collections.singletonList(myReferable) : Collections.emptyList();
+  public List<Referable> getElements(@Nullable ScopeContext context) {
+    return context == null || context == ScopeContext.STATIC ? Collections.singletonList(myReferable) : Collections.emptyList();
   }
 
   @Nullable
   @Override
-  public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
-    return (kind == null || myReferable.getRefKind() == kind) && myReferable.textRepresentation().equals(name) ? myReferable : null;
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    return (context == null || context == ScopeContext.STATIC) && myReferable.textRepresentation().equals(name) ? myReferable : null;
   }
 
   @Nullable
@@ -35,7 +35,7 @@ public class SingletonScope implements Scope {
 
   @Nullable
   @Override
-  public Referable find(Predicate<Referable> pred) {
-    return pred.test(myReferable) ? myReferable : null;
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    return (context == null || context == ScopeContext.STATIC) && pred.test(myReferable) ? myReferable : null;
   }
 }

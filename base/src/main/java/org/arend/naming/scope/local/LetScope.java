@@ -37,24 +37,26 @@ public class LetScope extends DelegateScope {
   }
 
   @Override
-  public Referable find(Predicate<Referable> pred) {
-    for (int i = myClauses.size() - 1; i >= 0; i--) {
-      Referable ref = myClauses.get(i).getReferable();
-      if (ref != null) {
-        if (pred.test(ref)) {
-          return ref;
-        }
-      } else {
-        Abstract.Pattern pattern = myClauses.get(i).getPattern();
-        if (pattern != null) {
-          ref = find(pattern, pred);
-          if (ref != null) {
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    if (context == null || context == ScopeContext.STATIC) {
+      for (int i = myClauses.size() - 1; i >= 0; i--) {
+        Referable ref = myClauses.get(i).getReferable();
+        if (ref != null) {
+          if (pred.test(ref)) {
             return ref;
+          }
+        } else {
+          Abstract.Pattern pattern = myClauses.get(i).getPattern();
+          if (pattern != null) {
+            ref = find(pattern, pred);
+            if (ref != null) {
+              return ref;
+            }
           }
         }
       }
     }
-    return parent.find(pred);
+    return parent.find(pred, context);
   }
 
   private Referable resolveName(Abstract.Pattern pattern, String name) {
@@ -77,8 +79,8 @@ public class LetScope extends DelegateScope {
 
   @Nullable
   @Override
-  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
-    if (kind == Referable.RefKind.EXPR || kind == null) {
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    if (context == null || context == ScopeContext.STATIC) {
       for (int i = myClauses.size() - 1; i >= 0; i--) {
         Referable ref = myClauses.get(i).getReferable();
         if (ref != null) {
@@ -96,6 +98,6 @@ public class LetScope extends DelegateScope {
         }
       }
     }
-    return parent.resolveName(name, kind);
+    return parent.resolveName(name, context);
   }
 }

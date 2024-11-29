@@ -9,33 +9,46 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class CachingScope implements Scope {
-  private final EnumMap<Referable.RefKind, Map<String, Referable>> myElements = new EnumMap<>(Referable.RefKind.class);
+  private final EnumMap<ScopeContext, Map<String, Referable>> myElements = new EnumMap<>(ScopeContext.class);
   private final Map<String, Scope> myNamespaces = new HashMap<>();
   private final Scope myScope;
   private final static Scope EMPTY_SCOPE = new Scope() {};
 
   private CachingScope(Scope scope) {
     myScope = scope;
-    scope.find(ref -> {
-      myElements.compute(ref.getRefKind(), (k, map) -> {
-        if (map == null) map = new LinkedHashMap<>();
-        map.putIfAbsent(ref instanceof ModuleReferable ? ((ModuleReferable) ref).path.getLastName() : ref.textRepresentation(), ref);
-        return map;
-      });
-      return false;
-    });
+    for (ScopeContext context : ScopeContext.values()) {
+      scope.find(ref -> {
+        myElements.compute(context, (k, map) -> {
+          if (map == null) map = new LinkedHashMap<>();
+          map.putIfAbsent(ref instanceof ModuleReferable ? ((ModuleReferable) ref).path.getLastName() : ref.textRepresentation(), ref);
+          return map;
+        });
+        return false;
+      }, context);
+    }
   }
 
   public static Scope make(Scope scope) {
-    return scope instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope);
+    return scope; // TODO: instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope);
   }
 
   @Override
-  public @Nullable Referable find(Predicate<Referable> pred) {
-    for (Map<String, Referable> map : myElements.values()) {
-      for (Referable ref : map.values()) {
-        if (pred.test(ref)) {
-          return ref;
+  public @Nullable Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    if (context == null) {
+      for (Map<String, Referable> map : myElements.values()) {
+        for (Referable ref : map.values()) {
+          if (pred.test(ref)) {
+            return ref;
+          }
+        }
+      }
+    } else {
+      Map<String, Referable> map = myElements.get(context);
+      if (map != null) {
+        for (Referable ref : map.values()) {
+          if (pred.test(ref)) {
+            return ref;
+          }
         }
       }
     }
@@ -44,27 +57,27 @@ public class CachingScope implements Scope {
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
-    if (kind == null) {
+  public Collection<? extends Referable> getElements(@Nullable ScopeContext context) {
+    if (context == null) {
       return Scope.super.getElements(null);
     }
-    Map<String, Referable> map = myElements.get(kind);
+    Map<String, Referable> map = myElements.get(context);
     return map == null ? Collections.emptyList() : map.values();
   }
 
   @Nullable
   @Override
-  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
-    if (kind == null) {
-      for (Referable.RefKind refKind : Referable.RefKind.values()) {
-        Referable ref = resolveName(name, refKind);
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    if (context == null) {
+      for (ScopeContext ctx : ScopeContext.values()) {
+        Referable ref = resolveName(name, ctx);
         if (ref != null) {
           return ref;
         }
       }
       return null;
     } else {
-      var map = myElements.get(kind);
+      var map = myElements.get(context);
       return map == null ? null : map.get(name);
     }
   }

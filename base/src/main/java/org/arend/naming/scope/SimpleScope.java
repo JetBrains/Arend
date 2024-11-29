@@ -12,14 +12,14 @@ public class SimpleScope implements Scope {
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
-    return kind == null || kind == Referable.RefKind.EXPR ? names.values() : Collections.emptyList();
+  public Collection<? extends Referable> getElements(@Nullable ScopeContext context) {
+    return context == null || context == ScopeContext.STATIC ? names.values() : Collections.emptyList();
   }
 
   @Nullable
   @Override
-  public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
-    return kind == null || kind == Referable.RefKind.EXPR ? names.get(name) : null;
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    return context == null || context == ScopeContext.STATIC ? names.get(name) : null;
   }
 
   @Nullable

@@ -71,7 +71,7 @@ public class LevelsDefinitionTest extends TypeCheckingTestCase {
         \\module M \\where {
           \\plevels p1 <= p2
         }
-        \\open M(p1,p2)
+        \\open M (\\plevel p1, \\plevel p2)
         \\func test (A : \\Type p1) : \\Type p2 => A
         """);
   }

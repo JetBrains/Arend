@@ -30,8 +30,8 @@ public class TelescopeScope extends DelegateScope {
   }
 
   @Override
-  public @NotNull Collection<? extends Referable> getElements(Referable.@Nullable RefKind kind) {
-    if (!(kind == Referable.RefKind.EXPR || kind == null)) {
+  public @NotNull Collection<? extends Referable> getElements(@Nullable ScopeContext context) {
+    if (!(context == null || context == ScopeContext.STATIC)) {
       return parent.getElements();
     }
 
@@ -48,7 +48,7 @@ public class TelescopeScope extends DelegateScope {
     parent.find(ref -> {
       if (!names.contains(ref.getRefName())) result.add(ref);
       return false;
-    });
+    }, context);
     return result;
   }
 
@@ -65,15 +65,15 @@ public class TelescopeScope extends DelegateScope {
   }
 
   @Override
-  public Referable find(Predicate<Referable> pred) {
-    Referable ref = findHere(pred);
-    return ref != null ? ref : parent.find(pred);
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    Referable ref = context == null || context == ScopeContext.STATIC ? findHere(pred) : null;
+    return ref != null ? ref : parent.find(pred, context);
   }
 
   @Override
-  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
-    Referable ref = findHere(ref2 -> (kind == null || ref2.getRefKind() == kind) && ref2.textRepresentation().equals(name));
-    return ref != null ? ref : parent.resolveName(name, kind);
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    Referable ref = context == null || context == ScopeContext.STATIC ? findHere(ref2 -> ref2.textRepresentation().equals(name)) : null;
+    return ref != null ? ref : parent.resolveName(name, context);
   }
 
   @Override

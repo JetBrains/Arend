@@ -14,8 +14,10 @@ import java.util.function.Predicate;
 
 // Minimal definition: (find or getElements) and resolveNamespace
 public interface Scope {
-  default @Nullable Referable find(Predicate<Referable> pred) {
-    for (Referable referable : getElements(null)) {
+  enum ScopeContext { STATIC, DYNAMIC, PLEVEL, HLEVEL }
+
+  default @Nullable Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    for (Referable referable : getElements(context)) {
       if (pred.test(referable)) {
         return referable;
       }
@@ -23,37 +25,41 @@ public interface Scope {
     return null;
   }
 
+  default @Nullable Referable find(Predicate<Referable> pred) {
+    return find(pred, ScopeContext.STATIC);
+  }
+
   /**
    * Returns elements in this scope.
    *
-   * @param kind  the kind of elements to return, or null to return all elements
+   * @param context  if null, returns all elements.
    */
   @NotNull
-  default Collection<? extends Referable> getElements(@Nullable Referable.RefKind kind) {
+  default Collection<? extends Referable> getElements(@Nullable ScopeContext context) {
     List<Referable> result = new ArrayList<>();
-    find(ref -> { if (kind == null || ref.getRefKind() == kind) result.add(ref); return false; });
+    find(ref -> { result.add(ref); return false; }, context);
     return result;
   }
 
   @NotNull
   default Collection<? extends Referable> getElements() {
-    return getElements(Referable.RefKind.EXPR);
+    return getElements(ScopeContext.STATIC);
   }
 
   /**
    * Resolves a name in this scope.
    *
-   * @param name  the name to resolve
-   * @param kind  the kind of element to resolve, or null to resolve an element of any kind
+   * @param name      the name to resolve
+   * @param context   if null, allows any kind of referable
    */
   @Nullable
-  default Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
-    return find(ref -> (kind == null || ref.getRefKind() == kind) && Objects.equals(name, ref.textRepresentation()));
+  default Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    return find(ref -> Objects.equals(name, ref.textRepresentation()), context);
   }
 
   @Nullable
   default Referable resolveName(@NotNull String name) {
-    return resolveName(name, Referable.RefKind.EXPR);
+    return resolveName(name, ScopeContext.STATIC);
   }
 
   default @Nullable Scope resolveNamespace(@NotNull String name) {

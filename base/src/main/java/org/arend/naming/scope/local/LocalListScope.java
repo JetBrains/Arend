@@ -4,6 +4,7 @@ import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.DelegateScope;
 import org.arend.naming.scope.Scope;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -27,8 +28,8 @@ public class LocalListScope extends DelegateScope {
   }
 
   @Override
-  public Referable find(Predicate<Referable> pred) {
-    Referable ref = findHere(pred);
-    return ref != null ? ref : parent.find(pred);
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    Referable ref = context == null || context == ScopeContext.STATIC ? findHere(pred) : null;
+    return ref != null ? ref : parent.find(pred, context);
   }
 }

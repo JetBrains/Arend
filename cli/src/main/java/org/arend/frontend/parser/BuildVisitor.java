@@ -14,6 +14,7 @@ import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.InternalConcreteLocatedReferable;
 import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
+import org.arend.naming.scope.Scope;
 import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
@@ -206,6 +207,25 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
+  @Override
+  public Scope.ScopeContext visitDynamicContext(DynamicContextContext ctx) {
+    return Scope.ScopeContext.DYNAMIC;
+  }
+
+  @Override
+  public Scope.ScopeContext visitPlevelContext(PlevelContextContext ctx) {
+    return Scope.ScopeContext.PLEVEL;
+  }
+
+  @Override
+  public Scope.ScopeContext visitHlevelContext(HlevelContextContext ctx) {
+    return Scope.ScopeContext.HLEVEL;
+  }
+
+  private Scope.ScopeContext visitScopeContext(ScopeContextContext ctx) {
+    return ctx == null ? Scope.ScopeContext.STATIC : (Scope.ScopeContext) visit(ctx);
+  }
+
   private SimpleNamespaceCommand visitStatCmd(StatCmdContext ctx, ChildGroup parent) {
     NamespaceCommand.Kind kind = (NamespaceCommand.Kind) visit(ctx.nsCmd());
     var longName = ctx.longName();
@@ -218,17 +238,21 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     } else {
       openedReferences = new ArrayList<>();
       for (NsIdContext nsIdCtx : nsUsing.nsId()) {
-        Position position = tokenPosition(nsIdCtx.ID(0).getSymbol());
+        Position position = tokenPosition(nsIdCtx.scId().ID().getSymbol());
+        TerminalNode id = nsIdCtx.ID();
         openedReferences.add(new SimpleNamespaceCommand.SimpleNameRenaming(position,
-          new NamedUnresolvedReference(position, nsIdCtx.ID(0).getText()),
+          visitScopeContext(nsIdCtx.scId().scopeContext()),
+          new NamedUnresolvedReference(position, nsIdCtx.scId().ID().getText()),
           nsIdCtx.precedence() == null ? null : visitPrecedence(nsIdCtx.precedence()),
-          nsIdCtx.ID().size() < 2 ? null : nsIdCtx.ID(1).getText()));
+          id == null ? null : id.getText()));
       }
     }
 
-    List<Referable> hiddenReferences = new ArrayList<>();
-    for (TerminalNode id : ctx.ID()) {
-      hiddenReferences.add(new NamedUnresolvedReference(tokenPosition(id.getSymbol()), id.getText()));
+    List<SimpleNamespaceCommand.SimpleNameHiding> hiddenReferences = new ArrayList<>();
+    for (ScIdContext scIdCtx : ctx.scId()) {
+      TerminalNode id = scIdCtx.ID();
+      Position position = tokenPosition(id.getSymbol());
+      hiddenReferences.add(new SimpleNamespaceCommand.SimpleNameHiding(position, visitScopeContext(scIdCtx.scopeContext()), new NamedUnresolvedReference(position, id.getText())));
     }
 
     return new SimpleNamespaceCommand(tokenPosition(longName.start), kind, path, nsUsing == null || nsUsing.USING() != null, openedReferences, hiddenReferences, parent);

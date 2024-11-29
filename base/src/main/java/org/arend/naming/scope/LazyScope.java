@@ -23,15 +23,15 @@ public class LazyScope implements Scope {
   }
 
   @Override
-  public @NotNull Collection<? extends Referable> getElements(Referable.RefKind kind) {
+  public @NotNull Collection<? extends Referable> getElements(ScopeContext context) {
     updateScope();
-    return myScope.getElements(kind);
+    return myScope.getElements(context);
   }
 
   @Override
-  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
     updateScope();
-    return myScope.resolveName(name, kind);
+    return myScope.resolveName(name, context);
   }
 
   @Nullable
@@ -42,9 +42,9 @@ public class LazyScope implements Scope {
   }
 
   @Override
-  public Referable find(Predicate<Referable> pred) {
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
     updateScope();
-    return myScope.find(pred);
+    return myScope.find(pred, context);
   }
 
   @NotNull

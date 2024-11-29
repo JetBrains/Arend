@@ -45,12 +45,12 @@ public class NamedUnresolvedReference implements UnresolvedReference {
 
   @NotNull
   @Override
-  public Referable resolve(Scope scope, @Nullable List<Referable> resolvedRefs, RefKind kind) {
+  public Referable resolve(Scope scope, @Nullable List<Referable> resolvedRefs, @Nullable Scope.ScopeContext context) {
     if (resolved != null) {
       return resolved;
     }
 
-    resolved = scope.resolveName(myName, kind);
+    resolved = scope.resolveName(myName, context);
     if (resolved == null) {
       resolved = new ErrorReference(myData, myName);
     }

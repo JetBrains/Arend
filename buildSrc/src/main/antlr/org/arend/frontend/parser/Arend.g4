@@ -4,7 +4,7 @@ statements : statement* EOF;
 
 statement : accessMod? USE? definition                                      # statDef
           | accessMod '{' statement* '}'                                    # statAccessMod
-          | nsCmd longName nsUsing? ('\\hiding' '(' ID (',' ID)* ')')?      # statCmd
+          | nsCmd longName nsUsing? ('\\hiding' '(' scId (',' scId)* ')')?  # statCmd
           | '\\plevels' ID*                                                 # statPLevels
           | '\\hlevels' ID*                                                 # statHLevels
           ;
@@ -19,7 +19,14 @@ accessMod : '\\private'   # privateMod
 
 nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
-nsId : ID (AS precedence ID)?;
+scopeContext : DOT          # dynamicContext
+             | '\\plevel'   # plevelContext
+             | '\\hlevel'   # hlevelContext
+             ;
+
+scId : scopeContext? ID;
+
+nsId : scId (AS precedence ID)?;
 
 classFieldDef : accessMod? (CLASSIFYING | COERCE)? defId tele* ':' returnExpr;
 
@@ -105,7 +112,7 @@ where : '\\where' ('{' statement* '}' | statement);
 pattern : atomPattern+ (AS ID)? (':' expr)?  # patternConstructor
         ;
 
-atomPattern : (longName '.')? (INFIX | POSTFIX | ID) # patternID
+atomPattern : (longName DOT)? (INFIX | POSTFIX | ID) # patternID
             | '(' (pattern (',' pattern)*)? ')'      # patternExplicit
             | '{' pattern '}'                        # patternImplicit
             | NUMBER                                 # patternNumber
@@ -266,13 +273,13 @@ atom  : literal                                     # atomLiteral
       | '\\this'                                    # atomThis
       ;
 
-atomFieldsAcc : atom ('.' NUMBER)*;
+atomFieldsAcc : atom (DOT NUMBER)*;
 
 implementStatements : '{' ('|' localCoClause)* '}';
 
-longName : ID ('.' ID)*;
+longName : ID (DOT ID)*;
 
-literal : longName ('.' (INFIX | POSTFIX))? # name
+literal : longName (DOT (INFIX | POSTFIX))? # name
         | '\\Prop'                          # prop
         | '_'                               # unknown
         | INFIX                             # infix
@@ -346,6 +353,7 @@ COLON : ':';
 ARROW : '->';
 APPLY_HOLE : '__';
 UNDERSCORE : '_';
+DOT : '.';
 WS : [ \t\r\n]+ -> channel(HIDDEN);
 LINE_COMMENT : '--' '-'* (~[~!@#$%^&*\-+=<>?/|:[\u005Da-zA-Z_0-9'\u2200-\u22FF\u2A00-\u2AFF\r\n] ~[\r\n]* | ) -> skip;
 COMMENT : '{-' (COMMENT|.)*? '-}' -> channel(HIDDEN);

@@ -36,18 +36,18 @@ public class MergeScope implements Scope {
 
   @NotNull
   @Override
-  public List<Referable> getElements(Referable.RefKind kind) {
+  public List<Referable> getElements(@Nullable ScopeContext context) {
     List<Referable> result = new ArrayList<>();
     for (Scope scope : myScopes) {
-      result.addAll(scope.getElements(kind));
+      result.addAll(scope.getElements(context));
     }
     return result;
   }
 
   @Override
-  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
     for (Scope scope : myScopes) {
-      Referable ref = scope.resolveName(name, kind);
+      Referable ref = scope.resolveName(name, context);
       if (ref != null) {
         return ref;
       }
@@ -79,9 +79,9 @@ public class MergeScope implements Scope {
   }
 
   @Override
-  public Referable find(Predicate<Referable> pred) {
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
     for (Scope scope : myScopes) {
-      Referable ref = scope.find(pred);
+      Referable ref = scope.find(pred, context);
       if (ref != null) {
         return ref;
       }

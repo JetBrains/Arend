@@ -50,15 +50,15 @@ public class PatternScope extends DelegateScope {
   }
 
   @Override
-  public Referable find(Predicate<Referable> pred) {
-    Referable ref = find(myPatterns, pred);
-    return ref != null ? ref : parent.find(pred);
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    Referable ref = context == null || context == ScopeContext.STATIC ? find(myPatterns, pred) : null;
+    return ref != null ? ref : parent.find(pred, context);
   }
 
   @Nullable
   @Override
-  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
-    Referable ref = find(myPatterns, ref2 -> (kind == null || ref2.getRefKind() == kind) && ref2.textRepresentation().equals(name));
-    return ref != null ? ref : parent.resolveName(name, kind);
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    Referable ref = context == null || context == ScopeContext.STATIC ? find(myPatterns, ref2 -> ref2.textRepresentation().equals(name)) : null;
+    return ref != null ? ref : parent.resolveName(name, context);
   }
 }

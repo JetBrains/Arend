@@ -69,7 +69,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return result;
   }
 
-  private Referable resolve(Scope scope, List<Referable> resolvedRefs, boolean onlyTry, RefKind kind) {
+  private Referable resolve(Scope scope, List<Referable> resolvedRefs, boolean onlyTry, Scope.ScopeContext context) {
     if (resolved != null) {
       return resolved;
     }
@@ -94,7 +94,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
 
     String name = myPath.get(myPath.size() - 1);
-    resolved = scope.resolveName(name, kind);
+    resolved = scope.resolveName(name, context);
     if (resolved == null && !onlyTry) {
       Object data = getData();
       resolved = new ErrorReference(data, make(data, myPath.subList(0, myPath.size() - 1)), myPath.size() - 1, name);
@@ -108,14 +108,14 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
   @NotNull
   @Override
-  public Referable resolve(Scope scope, @Nullable List<Referable> resolvedRefs, RefKind kind) {
-    return resolve(scope, resolvedRefs, false, kind);
+  public Referable resolve(Scope scope, @Nullable List<Referable> resolvedRefs, @Nullable Scope.ScopeContext context) {
+    return resolve(scope, resolvedRefs, false, context);
   }
 
   @Nullable
   @Override
   public Referable tryResolve(Scope scope, List<Referable> resolvedRefs) {
-    return resolve(scope, resolvedRefs, true, RefKind.EXPR);
+    return resolve(scope, resolvedRefs, true, Scope.ScopeContext.STATIC);
   }
 
   private Concrete.Expression resolveArgument(Scope scope, boolean onlyTry, List<Referable> resolvedRefs) {
@@ -123,11 +123,12 @@ public class LongUnresolvedReference implements UnresolvedReference {
       return null;
     }
 
+    Scope initialScope = scope;
     Scope prevScope = scope;
     for (int i = 0; i < myPath.size() - 1; i++) {
       Scope nextScope = scope.resolveNamespace(myPath.get(i));
       if (nextScope == null) {
-        return resolveField(prevScope, i - 1, onlyTry, resolvedRefs);
+        return resolveField(prevScope, initialScope, i - 1, onlyTry, resolvedRefs);
       }
 
       if (resolvedRefs != null) {
@@ -145,7 +146,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
         if (onlyTry) return null;
         resolved = new ErrorReference(getData(), name);
       } else {
-        return resolveField(prevScope, myPath.size() - 2, onlyTry, resolvedRefs);
+        return resolveField(prevScope, initialScope, myPath.size() - 2, onlyTry, resolvedRefs);
       }
     }
     if (resolvedRefs != null) {
@@ -176,7 +177,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return resolved != null;
   }
 
-  private Concrete.Expression resolveField(Scope scope, int i, boolean onlyTry, List<Referable> resolvedRefs) {
+  private Concrete.Expression resolveField(Scope scope, Scope initialScope, int i, boolean onlyTry, List<Referable> resolvedRefs) {
     if (i == -1) {
       resolved = scope.resolveName(myPath.get(0));
       if (resolvedRefs != null) {
@@ -187,44 +188,29 @@ public class LongUnresolvedReference implements UnresolvedReference {
       resolved = resolvedRefs != null ? resolvedRefs.get(i) : scope.resolveName(myPath.get(i));
     }
 
-    ClassReferable classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
-    boolean withArg = classRef != null;
-    if (classRef == null && resolved != null && resolved.getUnderlyingReferable() instanceof ClassReferable classRef2) {
-      classRef = classRef2;
-    }
-    if (classRef == null) {
-      if (onlyTry) {
-        resolved = null;
-        return null;
-      }
-      Object data = getData();
-      boolean wasResolved = resolved != null;
-      if (wasResolved) {
-        i++;
-      }
-      resolved = new ErrorReference(data, make(data, myPath.subList(0, i)), i, myPath.get(i));
-
-      if (resolvedRefs != null) {
-        if (wasResolved) {
-          resolvedRefs.add(resolved);
-        } else {
+    if (resolved == null) {
+      if (!onlyTry) {
+        Object data = getData();
+        resolved = new ErrorReference(data, make(data, myPath.subList(0, i)), i, myPath.get(i));
+        if (resolvedRefs != null) {
           resolvedRefs.set(i, resolved);
         }
       }
       return null;
     }
 
+    ClassReferable classRef = resolved.getUnderlyingReferable() instanceof ClassReferable classRef2 ? classRef2 : null;
     Object data = getData();
-    Concrete.Expression result = withArg ? new Concrete.ReferenceExpression(data, getReferable()) : null;
+    Concrete.Expression result = classRef == null ? new Concrete.ReferenceExpression(data, getReferable()) : null;
     for (i++; i < myPath.size(); i++) {
-      resolved = new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC).resolveName(myPath.get(i));
+      resolved = classRef == null ? initialScope.resolveName(myPath.get(i), Scope.ScopeContext.DYNAMIC) : new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC).resolveName(myPath.get(i));
       if (resolved == null) {
         if (onlyTry) return null;
-        resolved = new ErrorReference(data, classRef, i, myPath.get(i));
+        resolved = classRef == null ? new ErrorReference(data, myPath.get(i)) : new ErrorReference(data, classRef, i, myPath.get(i));
         if (resolvedRefs != null) {
           resolvedRefs.add(resolved);
         }
-        return result;
+        return null;
       }
       if (resolvedRefs != null) {
         resolvedRefs.add(resolved);
@@ -234,19 +220,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       }
       Concrete.Expression refExpr = new Concrete.ReferenceExpression(data, getReferable());
       result = result == null ? refExpr : Concrete.AppExpression.make(data, refExpr, result, false);
-
-      classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
-      if (classRef == null) {
-        if (onlyTry) {
-          resolved = null;
-          return null;
-        }
-        resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), i + 1, myPath.get(i + 1));
-        if (resolvedRefs != null) {
-          resolvedRefs.add(resolved);
-        }
-        return null;
-      }
+      classRef = null;
     }
 
     return result;
@@ -277,41 +251,20 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return scope;
   }
 
-  private Scope resolveFieldNamespace(Scope scope, int i) {
-    Referable ref = scope.resolveName(myPath.get(i));
-    ClassReferable classRef = ref instanceof TypedReferable ? ((TypedReferable) ref).getTypeClassReference() : null;
-    if (classRef == null) {
-      return EmptyScope.INSTANCE;
-    }
-
-    for (i++; i < myPath.size(); i++) {
-      ref = new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC).resolveName(myPath.get(i));
-      classRef = ref instanceof TypedReferable ? ((TypedReferable) ref).getTypeClassReference() : null;
-      if (classRef == null) {
-        return EmptyScope.INSTANCE;
-      }
-    }
-
-    return new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC);
-  }
-
   public Scope resolveNamespaceWithArgument(Scope scope) {
     Scope prevScope = scope;
-    for (int i = 0; i < myPath.size(); i++) {
-      Scope nextScope = scope.resolveNamespace(myPath.get(i));
+    for (String name : myPath) {
+      Scope nextScope = scope.resolveNamespace(name);
       if (nextScope == null) {
-        return resolveFieldNamespace(prevScope, i == 0 ? 0 : i - 1);
+        return EmptyScope.INSTANCE;
       }
       prevScope = scope;
       scope = nextScope;
     }
 
     Referable ref = prevScope.resolveName(myPath.get(myPath.size() - 1));
-    if (ref instanceof TypedReferable) {
-      ClassReferable classRef = ((TypedReferable) ref).getTypeClassReference();
-      if (classRef != null) {
-        scope = new MergeScope(scope, new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC));
-      }
+    if (ref instanceof ClassReferable classRef) {
+      scope = new MergeScope(scope, new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC));
     }
 
     return scope;

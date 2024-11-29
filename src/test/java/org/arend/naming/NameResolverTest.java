@@ -758,4 +758,50 @@ public class NameResolverTest extends NameResolverTestCase {
       """, 1);
     assertThatErrorsAre(notInScope("foo"));
   }
+
+  @Test
+  public void dynamicOpenClashTest() {
+    resolveNamesModule("""
+      \\module M \\where {
+        \\record R (x : Nat)
+      }
+      \\module N \\where {
+        \\record S (x : Nat)
+      }
+      \\open M
+      \\open N
+      """);
+  }
+
+  @Test
+  public void dynamicOpenClashTest2() {
+    resolveNamesModule("""
+      \\module M \\where {
+        \\record R | x : Nat
+      }
+      \\module N \\where {
+        \\record S | x : Nat
+      }
+      \\open M
+      \\open N
+      """, 1);
+  }
+
+  @Test
+  public void dynamicOpenClashTest3() {
+    resolveNamesModule("""
+      \\module M \\where {
+        \\record R {
+          \\func foo => 0
+        }
+      }
+      \\module N \\where {
+        \\record S {
+          \\func foo => 0
+        }
+      }
+      \\open M
+      \\open N
+      """, 1);
+  }
 }

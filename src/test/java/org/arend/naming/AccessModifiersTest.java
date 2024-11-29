@@ -357,7 +357,8 @@ public class AccessModifiersTest extends NameResolverTestCase {
         \\protected \\func foo => 0
       }
       \\func test (r : R) => r.foo
-      """);
+      """, 1);
+    assertThatErrorsAre(notInScope("foo"));
   }
 
   @Test

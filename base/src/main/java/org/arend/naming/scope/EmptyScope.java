@@ -2,6 +2,7 @@ package org.arend.naming.scope;
 
 import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -13,18 +14,18 @@ public class EmptyScope implements Scope {
   private EmptyScope() {}
 
   @Override
-  public Referable find(Predicate<Referable> pred) {
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
     return null;
   }
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
+  public Collection<? extends Referable> getElements(@Nullable ScopeContext context) {
     return Collections.emptyList();
   }
 
   @Override
-  public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
     return null;
   }
 }

@@ -3,12 +3,11 @@ package org.arend.term;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
-import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.prettyprinting.doc.DocStringBuilder;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.ModuleReferable;
-import org.arend.naming.reference.Referable;
+import org.arend.naming.scope.Scope;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -24,7 +23,11 @@ public interface NamespaceCommand extends PrettyPrintable {
   @NotNull List<String> getPath();
   boolean isUsing();
   @NotNull Collection<? extends NameRenaming> getOpenedReferences();
-  @NotNull Collection<? extends Referable> getHiddenReferences();
+  @NotNull Collection<? extends NameHiding> getHiddenReferences();
+
+  private String scopeContextToString(Scope.ScopeContext context) {
+    return context == Scope.ScopeContext.DYNAMIC ? "." : context == Scope.ScopeContext.PLEVEL ? "\\plevel " : context == Scope.ScopeContext.HLEVEL ? "\\hlevel " : "";
+  }
 
   @Override
   default void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
@@ -50,7 +53,7 @@ public interface NamespaceCommand extends PrettyPrintable {
     if (!using || !openedReferences.isEmpty()) {
       List<LineDoc> renamingDocs = new ArrayList<>(openedReferences.size());
       for (NameRenaming renaming : openedReferences) {
-        LineDoc renamingDoc = refDoc(renaming.getOldReference());
+        LineDoc renamingDoc = hList(text(scopeContextToString(renaming.getScopeContext())), refDoc(renaming.getOldReference()));
         String newName = renaming.getName();
         if (newName != null) {
           Precedence precedence = renaming.getPrecedence();
@@ -72,10 +75,10 @@ public interface NamespaceCommand extends PrettyPrintable {
       docs.add(referenceDoc);
     }
 
-    Collection<? extends Referable> hidingReferences = getHiddenReferences();
+    Collection<? extends NameHiding> hidingReferences = getHiddenReferences();
     if (!hidingReferences.isEmpty()) {
       docs.add(text("\\hiding"));
-      docs.add(hList(text("("), hSep(text(", "), hidingReferences.stream().map(DocFactory::refDoc).collect(Collectors.toList())), text(")")));
+      docs.add(hList(text("("), hSep(text(", "), hidingReferences.stream().map(nh -> hList(text(scopeContextToString(nh.getScopeContext())), refDoc(nh.getHiddenReference()))).collect(Collectors.toList())), text(")")));
     }
 
     DocStringBuilder.build(builder, hSep(text(" "), docs));

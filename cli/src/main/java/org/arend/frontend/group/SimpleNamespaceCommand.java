@@ -4,13 +4,14 @@ import org.arend.ext.error.SourceInfo;
 import org.arend.ext.reference.DataContainer;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.parser.Position;
+import org.arend.naming.reference.NamedUnresolvedReference;
 import org.arend.naming.reference.Referable;
+import org.arend.naming.scope.Scope;
 import org.arend.term.ChildNamespaceCommand;
+import org.arend.term.NameHiding;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
-import org.arend.term.abs.Abstract;
 import org.arend.term.group.ChildGroup;
-import org.arend.term.group.Group;
 import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,10 +25,10 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
   private final List<String> myPath;
   private final boolean myUsing;
   private final List<SimpleNameRenaming> myOpenedReferences;
-  private final List<Referable> myHiddenReferences;
+  private final List<SimpleNameHiding> myHiddenReferences;
   private final ChildGroup myParent;
 
-  public SimpleNamespaceCommand(Position position, Kind kind, List<String> path, boolean isUsing, List<SimpleNameRenaming> openedReferences, List<Referable> hiddenReferences, ChildGroup parent) {
+  public SimpleNamespaceCommand(Position position, Kind kind, List<String> path, boolean isUsing, List<SimpleNameRenaming> openedReferences, List<SimpleNameHiding> hiddenReferences, ChildGroup parent) {
     myPosition = position;
     myKind = kind;
     myPath = path;
@@ -67,7 +68,7 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getHiddenReferences() {
+  public Collection<? extends NameHiding> getHiddenReferences() {
     return myHiddenReferences;
   }
 
@@ -94,20 +95,27 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
 
   public static class SimpleNameRenaming implements NameRenaming, SourceInfo {
     private final Position myPosition;
-    private final Referable myReference;
+    private final Scope.ScopeContext myScopeContext;
+    private final NamedUnresolvedReference myReference;
     private final Precedence myPrecedence;
     private final String myName;
 
-    public SimpleNameRenaming(Position position, Referable reference, Precedence precedence, String name) {
+    public SimpleNameRenaming(Position position, Scope.ScopeContext scopeContext, NamedUnresolvedReference reference, Precedence precedence, String name) {
       myPosition = position;
+      myScopeContext = scopeContext;
       myReference = reference;
       myPrecedence = precedence;
       myName = name;
     }
 
+    @Override
+    public @NotNull Scope.ScopeContext getScopeContext() {
+      return myScopeContext;
+    }
+
     @NotNull
     @Override
-    public Referable getOldReference() {
+    public NamedUnresolvedReference getOldReference() {
       return myReference;
     }
 
@@ -131,6 +139,38 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
     @Override
     public String positionTextRepresentation() {
       return myPosition.positionTextRepresentation();
+    }
+  }
+
+  public static class SimpleNameHiding implements NameHiding, SourceInfo {
+    private final Position myPosition;
+    private final Scope.ScopeContext myScopeContext;
+    private final Referable myReference;
+
+    public SimpleNameHiding(Position position, Scope.ScopeContext scopeContext, Referable reference) {
+      myPosition = position;
+      myScopeContext = scopeContext;
+      myReference = reference;
+    }
+
+    @Override
+    public String moduleTextRepresentation() {
+      return myPosition.moduleTextRepresentation();
+    }
+
+    @Override
+    public String positionTextRepresentation() {
+      return myPosition.positionTextRepresentation();
+    }
+
+    @Override
+    public @NotNull Scope.ScopeContext getScopeContext() {
+      return myScopeContext;
+    }
+
+    @Override
+    public @NotNull Referable getHiddenReference() {
+      return myReference;
     }
   }
 }

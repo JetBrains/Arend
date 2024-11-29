@@ -5,6 +5,7 @@ import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.*;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.abs.Abstract;
+import org.arend.term.group.AccessModifier;
 import org.arend.term.group.Group;
 import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
@@ -67,39 +68,56 @@ public class LexicalScope implements Scope {
 
   @Nullable
   @Override
-  public Referable find(Predicate<Referable> pred) {
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
     for (Statement statement : myGroup.getStatements()) {
       Group subgroup = statement.getGroup();
       if (subgroup != null) {
-        Referable ref = checkSubgroup(subgroup, pred);
-        if (ref != null) return ref;
+        if (context == null || context == ScopeContext.STATIC) {
+          Referable ref = checkSubgroup(subgroup, pred);
+          if (ref != null) return ref;
+        }
+        if (context == null || context == ScopeContext.DYNAMIC) {
+          for (Group dynamicGroup : subgroup.getDynamicSubgroups()) {
+            if (dynamicGroup.getReferable().getAccessModifier() == AccessModifier.PUBLIC) {
+              Referable ref = checkSubgroup(dynamicGroup, pred);
+              if (ref != null) return ref;
+            }
+          }
+          for (Group.InternalReferable field : subgroup.getFields()) {
+            if (field.isVisible() && field.getReferable().getAccessModifier() == AccessModifier.PUBLIC) {
+              checkReferable(field.getReferable(), pred);
+            }
+          }
+        }
       }
       Abstract.LevelParameters pDef = statement.getPLevelsDefinition();
-      if (pDef != null) {
+      if (pDef != null && (context == null || context == ScopeContext.PLEVEL)) {
         for (Referable referable : pDef.getReferables()) {
           if (pred.test(referable)) return referable;
         }
       }
       Abstract.LevelParameters hDef = statement.getHLevelsDefinition();
-      if (hDef != null) {
+      if (hDef != null && (context == null || context == ScopeContext.HLEVEL)) {
         for (Referable referable : hDef.getReferables()) {
           if (pred.test(referable)) return referable;
         }
       }
     }
 
-    if (myDynamicContext) {
+    if (myDynamicContext && (context == null || context == ScopeContext.STATIC)) {
       for (Group subgroup : myGroup.getDynamicSubgroups()) {
         Referable ref = checkSubgroup(subgroup, pred);
         if (ref != null) return ref;
       }
     }
 
-    for (Group.InternalReferable constructor : myGroup.getConstructors()) {
-      checkReferable(constructor.getReferable(), pred);
-    }
-    for (Group.InternalReferable field : myGroup.getFields()) {
-      checkReferable(field.getReferable(), pred);
+    if (context == null || context == ScopeContext.STATIC) {
+      for (Group.InternalReferable constructor : myGroup.getConstructors()) {
+        checkReferable(constructor.getReferable(), pred);
+      }
+      for (Group.InternalReferable field : myGroup.getFields()) {
+        checkReferable(field.getReferable(), pred);
+      }
     }
 
     Scope cachingScope = null;
@@ -122,17 +140,17 @@ public class LexicalScope implements Scope {
         scope = cachingScope;
       }
       scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
-      Referable ref = scope.find(pred);
+      Referable ref = scope.find(pred, context);
       if (ref != null) return ref;
     }
 
-    if (myWithAdditionalContent) {
+    if (myWithAdditionalContent && (context == null || context == ScopeContext.STATIC)) {
       for (ParameterReferable ref : myGroup.getExternalParameters()) {
         if (pred.test(ref)) return ref;
       }
     }
 
-    return myParent.find(pred);
+    return myParent.find(pred, context);
   }
 
   private static GlobalReferable resolveInternal(Group group, String name, boolean onlyInternal) {
@@ -190,22 +208,36 @@ public class LexicalScope implements Scope {
 
   private enum ResolveType { REF, SCOPE }
 
-  private Object resolve(String name, ResolveType resolveType, Referable.RefKind refKind) {
+  private Object resolve(String name, ResolveType resolveType, ScopeContext context) {
     if (name.isEmpty() || "_".equals(name)) {
       return null;
     }
 
     for (Statement statement : myGroup.getStatements()) {
-      if (resolveType != ResolveType.REF || refKind == null || refKind == Referable.RefKind.EXPR) {
-        Group subgroup = statement.getGroup();
-        if (subgroup != null) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        if (resolveType != ResolveType.REF || context == null || context == ScopeContext.STATIC) {
           Object result = resolveSubgroup(subgroup, name, resolveType);
           if (result != null) {
             return result;
           }
         }
+        if (resolveType == ResolveType.REF && (context == null || context == ScopeContext.DYNAMIC)) {
+          for (Group dynamicGgroup : subgroup.getDynamicSubgroups()) {
+            if (dynamicGgroup.getReferable().getAccessModifier() == AccessModifier.PUBLIC) {
+              Object result = resolveSubgroup(dynamicGgroup, name, resolveType);
+              if (result != null) {
+                return result;
+              }
+            }
+          }
+          GlobalReferable result = resolveInternal(subgroup, name, false);
+          if (result != null && result.getAccessModifier() == AccessModifier.PUBLIC) {
+            return result;
+          }
+        }
       }
-      if (refKind == null || refKind == Referable.RefKind.PLEVEL) {
+      if (context == null || context == ScopeContext.PLEVEL) {
         Abstract.LevelParameters levelParams = statement.getPLevelsDefinition();
         if (levelParams != null) {
           for (Referable ref : levelParams.getReferables()) {
@@ -215,7 +247,7 @@ public class LexicalScope implements Scope {
           }
         }
       }
-      if (refKind == null || refKind == Referable.RefKind.HLEVEL) {
+      if (context == null || context == ScopeContext.HLEVEL) {
         Abstract.LevelParameters levelParams = statement.getHLevelsDefinition();
         if (levelParams != null) {
           for (Referable ref : levelParams.getReferables()) {
@@ -227,17 +259,17 @@ public class LexicalScope implements Scope {
       }
     }
 
-    if (resolveType != ResolveType.REF || refKind == null || refKind == Referable.RefKind.EXPR) {
-      if (myDynamicContext) {
-        for (Group subgroup : myGroup.getDynamicSubgroups()) {
-          Object result = resolveSubgroup(subgroup, name, resolveType);
-          if (result != null) {
-            return result;
-          }
+    if (myDynamicContext && (context == null || context == ScopeContext.STATIC)) {
+      for (Group subgroup : myGroup.getDynamicSubgroups()) {
+        Object result = resolveSubgroup(subgroup, name, resolveType);
+        if (result != null) {
+          return result;
         }
       }
+    }
 
-      Object result = resolveInternal(myGroup, name, false);
+    if (resolveType == ResolveType.REF && (context == null || context == ScopeContext.STATIC)) {
+      GlobalReferable result = resolveInternal(myGroup, name, false);
       if (result != null) {
         return result;
       }
@@ -264,7 +296,7 @@ public class LexicalScope implements Scope {
       }
 
       scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
-      Object result = resolveType == ResolveType.REF ? scope.resolveName(name, refKind) : scope.resolveNamespace(name);
+      Object result = resolveType == ResolveType.REF ? scope.resolveName(name, context) : scope.resolveNamespace(name);
       if (result != null) {
         return result;
       }
@@ -280,13 +312,13 @@ public class LexicalScope implements Scope {
       }
     }
 
-    return resolveType == ResolveType.REF ? myParent.resolveName(name, refKind) : myParent.resolveNamespace(name);
+    return resolveType == ResolveType.REF ? myParent.resolveName(name, context) : myParent.resolveNamespace(name);
   }
 
   @Nullable
   @Override
-  public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
-    Object result = resolve(name, ResolveType.REF, kind);
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    Object result = resolve(name, ResolveType.REF, context);
     return result instanceof Referable ? (Referable) result : null;
   }
 

@@ -51,9 +51,9 @@ public class ImportedScope implements Scope {
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
+  public Collection<? extends Referable> getElements(ScopeContext context) {
     if (myElementsScope != null) {
-      return myElementsScope.getElements(kind);
+      return myElementsScope.getElements(context);
     }
 
     List<Referable> result = new ArrayList<>();
@@ -67,7 +67,7 @@ public class ImportedScope implements Scope {
 
   @Nullable
   @Override
-  public Referable find(Predicate<Referable> pred) {
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
     for (Triple triple : myExpectedNamesTree.map.values()) {
       if (triple.scope != null && pred.test(triple.referable)) {
         return triple.referable;
@@ -78,7 +78,7 @@ public class ImportedScope implements Scope {
 
   @Nullable
   @Override
-  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
     Triple triple = myExpectedNamesTree.map.get(name);
     return triple == null || triple.scope == null ? null : triple.referable;
   }

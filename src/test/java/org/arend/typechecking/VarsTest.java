@@ -546,7 +546,7 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func bar (p : var = var) => 0
           \\record R (f : bar idp = bar idp) (var : Nat -> Nat)
         }
-      \\func test (r : foo.R) : Nat -> Nat => r.var
+      \\func test (r : foo.R) : Nat -> Nat => foo.R.var {r}
       """);
   }
 
@@ -672,7 +672,7 @@ public class VarsTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldResolveTest3() {
-    resolveNamesModule("""
+    typeCheckModule("""
       \\record R (f : Nat)
       \\func foo (r : R) => 0
         \\where {
@@ -680,7 +680,7 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func test => r.f
         }
       """, 1);
-    assertThatErrorsAre(Matchers.notInScope("f"));
+    assertThatErrorsAre(Matchers.typeMismatchError());
   }
 
   @Test

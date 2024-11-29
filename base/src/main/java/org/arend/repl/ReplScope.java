@@ -39,11 +39,11 @@ public class ReplScope implements Scope {
   }
 
   @Override
-  public @Nullable Referable find(Predicate<Referable> pred) {
+  public @Nullable Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
     return Optional
       .ofNullable(myCurrentLineScope)
-      .map(scope -> scope.find(pred))
-      .orElseGet(() -> myPreviousMergeScope.find(pred));
+      .map(scope -> scope.find(pred, context))
+      .orElseGet(() -> myPreviousMergeScope.find(pred, context));
   }
 
   @Override
@@ -55,11 +55,11 @@ public class ReplScope implements Scope {
   }
 
   @Override
-  public @Nullable Referable resolveName(@NotNull String name, Referable.RefKind kind) {
+  public @Nullable Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
     return Optional
       .ofNullable(myCurrentLineScope)
-      .map(scope -> scope.resolveName(name, kind))
-      .orElseGet(() -> myPreviousMergeScope.resolveName(name, kind));
+      .map(scope -> scope.resolveName(name, context))
+      .orElseGet(() -> myPreviousMergeScope.resolveName(name, context));
   }
 
   @Override
@@ -72,10 +72,10 @@ public class ReplScope implements Scope {
   }
 
   @Override
-  public @NotNull List<Referable> getElements(Referable.RefKind kind) {
-    var list = myPreviousMergeScope.getElements(kind);
+  public @NotNull List<Referable> getElements(ScopeContext context) {
+    List<Referable> list = new ArrayList<>(myPreviousMergeScope.getElements(context));
     if (myCurrentLineScope != null)
-      list.addAll(myCurrentLineScope.getElements(kind));
+      list.addAll(myCurrentLineScope.getElements(context));
     return list;
   }
 

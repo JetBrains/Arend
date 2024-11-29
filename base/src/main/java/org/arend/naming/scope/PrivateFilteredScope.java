@@ -23,18 +23,18 @@ public class PrivateFilteredScope extends DelegateScope {
   }
 
   @Override
-  public @NotNull Collection<? extends Referable> getElements(Referable.@Nullable RefKind kind) {
-    return myDiscardPrivate ? parent.getElements(kind).stream().filter(ref -> !(ref instanceof GlobalReferable) || ((GlobalReferable) ref).getAccessModifier() != AccessModifier.PRIVATE).toList() : parent.getElements(kind);
+  public @NotNull Collection<? extends Referable> getElements(@Nullable ScopeContext context) {
+    return myDiscardPrivate ? parent.getElements(context).stream().filter(ref -> !(ref instanceof GlobalReferable) || ((GlobalReferable) ref).getAccessModifier() != AccessModifier.PRIVATE).toList() : parent.getElements(context);
   }
 
   @Override
-  public @Nullable Referable find(Predicate<Referable> pred) {
-    return myDiscardPrivate ? parent.find(ref -> (!(ref instanceof GlobalReferable) || ((GlobalReferable) ref).getAccessModifier() != AccessModifier.PRIVATE) && pred.test(ref)) : parent.find(pred);
+  public @Nullable Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    return myDiscardPrivate ? parent.find(ref -> (!(ref instanceof GlobalReferable) || ((GlobalReferable) ref).getAccessModifier() != AccessModifier.PRIVATE) && pred.test(ref), context) : parent.find(pred, context);
   }
 
   @Override
-  public @Nullable Referable resolveName(@NotNull String name, Referable.@Nullable RefKind kind) {
-    Referable ref = parent.resolveName(name, kind);
+  public @Nullable Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    Referable ref = parent.resolveName(name, context);
     return myDiscardPrivate && ref instanceof GlobalReferable && ((GlobalReferable) ref).getAccessModifier() == AccessModifier.PRIVATE ? null : ref;
   }
 

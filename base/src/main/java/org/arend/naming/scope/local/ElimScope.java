@@ -19,13 +19,13 @@ public class ElimScope extends DelegateScope {
   }
 
   @Override
-  public Referable find(Predicate<Referable> pred) {
-    return parent.find(ref -> !myExcluded.contains(ref) && pred.test(ref));
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    return parent.find(ref -> !myExcluded.contains(ref) && pred.test(ref), context);
   }
 
   @Override
-  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
-    Referable ref = parent.resolveName(name, kind);
+  public Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    Referable ref = parent.resolveName(name, context);
     return ref != null && myExcluded.contains(ref) ? null : ref;
   }
 }

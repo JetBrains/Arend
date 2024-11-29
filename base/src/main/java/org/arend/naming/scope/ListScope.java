@@ -32,25 +32,25 @@ public class ListScope extends DelegateScope {
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
-    if (parent == EmptyScope.INSTANCE && kind != null) {
-      return kind == Referable.RefKind.EXPR ? myContext : kind == Referable.RefKind.PLEVEL ? myPLevels : myHLevels;
+  public Collection<? extends Referable> getElements(@Nullable ScopeContext context) {
+    if (parent == EmptyScope.INSTANCE && context != null) {
+      return context == ScopeContext.STATIC ? myContext : context == ScopeContext.PLEVEL ? myPLevels : myHLevels;
     }
     List<Referable> result = new ArrayList<>();
     Set<String> names = new HashSet<>();
-    if (kind == Referable.RefKind.EXPR || kind == null) {
+    if (context == null || context == ScopeContext.STATIC) {
       result.addAll(myContext);
       for (Referable referable : myContext) {
         names.add(referable.getRefName());
       }
     }
-    if (kind == Referable.RefKind.PLEVEL || kind == null) {
+    if (context == null || context == ScopeContext.PLEVEL) {
       result.addAll(myPLevels);
       for (Referable referable : myPLevels) {
         names.add(referable.getRefName());
       }
     }
-    if (kind == Referable.RefKind.HLEVEL || kind == null) {
+    if (context == null || context == ScopeContext.HLEVEL) {
       result.addAll(myHLevels);
       for (Referable referable : myHLevels) {
         names.add(referable.getRefName());
@@ -60,38 +60,44 @@ public class ListScope extends DelegateScope {
     parent.find(ref -> {
       if (!names.contains(ref.getRefName())) result.add(ref);
       return false;
-    });
+    }, context);
     return result;
   }
 
   @Override
-  public Referable find(Predicate<Referable> pred) {
-    for (int i = myContext.size() - 1; i >= 0; i--) {
-      if (pred.test(myContext.get(i))) {
-        return myContext.get(i);
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    if (context == null || context == ScopeContext.STATIC) {
+      for (int i = myContext.size() - 1; i >= 0; i--) {
+        if (pred.test(myContext.get(i))) {
+          return myContext.get(i);
+        }
       }
     }
-    for (int i = myPLevels.size() - 1; i >= 0; i--) {
-      if (pred.test(myPLevels.get(i))) {
-        return myPLevels.get(i);
+    if (context == null || context == ScopeContext.PLEVEL) {
+      for (int i = myPLevels.size() - 1; i >= 0; i--) {
+        if (pred.test(myPLevels.get(i))) {
+          return myPLevels.get(i);
+        }
       }
     }
-    for (int i = myHLevels.size() - 1; i >= 0; i--) {
-      if (pred.test(myHLevels.get(i))) {
-        return myHLevels.get(i);
+    if (context == null || context == ScopeContext.HLEVEL) {
+      for (int i = myHLevels.size() - 1; i >= 0; i--) {
+        if (pred.test(myHLevels.get(i))) {
+          return myHLevels.get(i);
+        }
       }
     }
-    return parent.find(pred);
+    return parent.find(pred, context);
   }
 
-  private Referable resolveNameLocal(@NotNull String name, Referable.RefKind kind) {
-    if (kind == null) {
-      for (Referable.RefKind refKind : Referable.RefKind.values()) {
-        Referable ref = resolveName(name, refKind);
+  private Referable resolveNameLocal(@NotNull String name, @Nullable ScopeContext context) {
+    if (context == null) {
+      for (ScopeContext ctx : ScopeContext.values()) {
+        Referable ref = resolveName(name, ctx);
         if (ref != null) return ref;
       }
     } else {
-      List<? extends Referable> list = kind == Referable.RefKind.EXPR ? myContext : kind == Referable.RefKind.PLEVEL ? myPLevels : myHLevels;
+      List<? extends Referable> list = context == ScopeContext.STATIC ? myContext : context == ScopeContext.PLEVEL ? myPLevels : myHLevels;
       for (int i = list.size() - 1; i >= 0; i--) {
         if (list.get(i).getRefName().equals(name)) {
           return list.get(i);
@@ -102,13 +108,13 @@ public class ListScope extends DelegateScope {
   }
 
   @Override
-  public @Nullable Referable resolveName(@NotNull String name, Referable.RefKind kind) {
-    Referable ref = resolveNameLocal(name, kind);
-    return ref != null ? ref : parent.resolveName(name, kind);
+  public @Nullable Referable resolveName(@NotNull String name, @Nullable ScopeContext context) {
+    Referable ref = resolveNameLocal(name, context);
+    return ref != null ? ref : parent.resolveName(name, context);
   }
 
   @Override
   public @Nullable Scope resolveNamespace(@NotNull String name) {
-    return resolveNameLocal(name, Referable.RefKind.EXPR) != null ? EmptyScope.INSTANCE : parent.resolveNamespace(name);
+    return resolveNameLocal(name, ScopeContext.STATIC) != null ? EmptyScope.INSTANCE : parent.resolveNamespace(name);
   }
 }

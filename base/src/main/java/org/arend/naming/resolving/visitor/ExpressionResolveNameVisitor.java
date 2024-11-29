@@ -168,24 +168,23 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return myScope;
   }
 
-  public static Referable resolve(Referable referable, Scope scope, boolean withArg, List<Referable> resolvedRefs, @Nullable Referable.RefKind kind) {
+  public static Referable resolve(Referable referable, Scope scope, boolean withArg, List<Referable> resolvedRefs, @Nullable Scope.ScopeContext context) {
     referable = RedirectingReferable.getOriginalReferable(referable);
     if (referable instanceof UnresolvedReference) {
       if (withArg) {
-        assert kind == Referable.RefKind.EXPR;
         ((UnresolvedReference) referable).resolveArgument(scope, resolvedRefs);
       }
-      referable = RedirectingReferable.getOriginalReferable(((UnresolvedReference) referable).resolve(scope, withArg ? null : resolvedRefs, kind));
+      referable = RedirectingReferable.getOriginalReferable(((UnresolvedReference) referable).resolve(scope, withArg ? null : resolvedRefs, context));
     }
     return referable;
   }
 
-  public static Referable resolve(Referable referable, Scope scope, @Nullable Referable.RefKind kind) {
-    return resolve(referable, scope, false, null, kind);
+  public static Referable resolve(Referable referable, Scope scope, @Nullable Scope.ScopeContext context) {
+    return resolve(referable, scope, false, null, context);
   }
 
   public static Referable resolve(Referable referable, Scope scope) {
-    return resolve(referable, scope, false, null, Referable.RefKind.EXPR);
+    return resolve(referable, scope, false, null, Scope.ScopeContext.STATIC);
   }
 
   public static Referable tryResolve(Referable referable, Scope scope, List<Referable> resolvedRefs) {
@@ -705,7 +704,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
       LocalReferable local = referable.getRefName().equals("_") ? null : new DataLocalReferable(referable instanceof DataContainer ? ((DataContainer) referable).getData() : referable, referable.getRefName());
       addReferable(local, namePattern.type, usedNames);
-      Concrete.NamePattern result = new Concrete.NamePattern(pattern.getData(), namePattern.isExplicit(), local, ((Concrete.NamePattern) pattern).type);
+      Concrete.NamePattern result = new Concrete.NamePattern(pattern.getData(), namePattern.isExplicit(), local, namePattern.type);
       if (myResolverListener != null && local != null) {
         myResolverListener.patternResolved(referable, local, result, Collections.singletonList(local));
       }
@@ -841,7 +840,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     Referable origReferable = ((Concrete.ConstructorPattern) pattern).getConstructor();
     if (origReferable instanceof UnresolvedReference) {
       List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
-      Referable referable = convertChecked(resolve(origReferable, myParentScope, false, resolvedList, Referable.RefKind.EXPR), ((UnresolvedReference) origReferable).getData(), true);
+      Referable referable = convertChecked(resolve(origReferable, myParentScope, false, resolvedList, Scope.ScopeContext.STATIC), ((UnresolvedReference) origReferable).getData(), true);
       if (referable instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) referable).getError());
       } else if (referable instanceof GlobalReferable && !((GlobalReferable) referable).getKind().isConstructor()) {
@@ -918,7 +917,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   Referable visitClassFieldReference(Concrete.ClassElement element, Referable oldField, ClassReferable classDef) {
     if (oldField instanceof UnresolvedReference) {
       List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
-      Referable field = resolve(oldField, new MergeScope(true, new ClassFieldImplScope(classDef, true), myScope), false, resolvedRefs, Referable.RefKind.EXPR);
+      Referable field = resolve(oldField, new MergeScope(true, new ClassFieldImplScope(classDef, true), myScope), false, resolvedRefs, Scope.ScopeContext.STATIC);
       if (myResolverListener != null) {
         if (element instanceof Concrete.CoClauseElement) {
           myResolverListener.coPatternResolved((Concrete.CoClauseElement) element, oldField, field, resolvedRefs);
@@ -1038,15 +1037,15 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.LevelExpression visitVar(Concrete.VarLevelExpression expr, LevelVariable type) {
-    Referable.RefKind refKind = type == LevelVariable.HVAR ? Referable.RefKind.HLEVEL : Referable.RefKind.PLEVEL;
-    Referable ref = resolve(expr.getReferent(), myScope, refKind);
+    Scope.ScopeContext scopeContext = type == LevelVariable.HVAR ? Scope.ScopeContext.HLEVEL : Scope.ScopeContext.PLEVEL;
+    Referable ref = resolve(expr.getReferent(), myScope, scopeContext);
     if (ref instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) ref).getError());
     }
     Referable convertedRef = convertReferable(ref, expr.getData());
     Concrete.VarLevelExpression result = new Concrete.VarLevelExpression(expr.getData(), convertedRef, type.getType());
     if (myResolverListener != null) {
-      myResolverListener.levelResolved(expr.getReferent(), result, ref, new ArrayList<>(myScope.getElements(refKind)));
+      myResolverListener.levelResolved(expr.getReferent(), result, ref, new ArrayList<>(myScope.getElements(scopeContext)));
     }
     expr.setReferent(convertedRef);
     return result;

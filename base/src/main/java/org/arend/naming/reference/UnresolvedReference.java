@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public interface UnresolvedReference extends Referable, DataContainer {
-  @NotNull Referable resolve(Scope scope, @Nullable List<Referable> resolvedRefs, @Nullable RefKind kind);
+  @NotNull Referable resolve(Scope scope, @Nullable List<Referable> resolvedRefs, @Nullable Scope.ScopeContext context);
   @Nullable Referable tryResolve(Scope scope, List<Referable> resolvedRefs);
   @Nullable Concrete.Expression resolveArgument(Scope scope, List<Referable> resolvedRefs);
   @Nullable Concrete.Expression tryResolveArgument(Scope scope, List<Referable> resolvedRefs);
@@ -18,7 +18,7 @@ public interface UnresolvedReference extends Referable, DataContainer {
 
   @NotNull
   default Referable resolve(Scope scope, List<Referable> resolvedRefs) {
-    return resolve(scope, resolvedRefs, RefKind.EXPR);
+    return resolve(scope, resolvedRefs, Scope.ScopeContext.STATIC);
   }
 
   @Override

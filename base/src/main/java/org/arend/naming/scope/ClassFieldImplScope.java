@@ -18,10 +18,6 @@ public class ClassFieldImplScope implements Scope {
     return myReferable;
   }
 
-  public boolean withSuperClasses() {
-    return myExtent == Extent.WITH_SUPER_CLASSES;
-  }
-
   public ClassFieldImplScope(ClassReferable referable, Extent extent) {
     myReferable = referable;
     myExtent = extent;
@@ -34,7 +30,11 @@ public class ClassFieldImplScope implements Scope {
 
   @Nullable
   @Override
-  public Referable find(Predicate<Referable> pred) {
+  public Referable find(Predicate<Referable> pred, @Nullable ScopeContext context) {
+    if (!(context == null || context == ScopeContext.STATIC)) {
+      return null;
+    }
+
     Set<ClassReferable> visitedClasses = new HashSet<>();
     Deque<ClassReferable> toVisit = new ArrayDeque<>();
     toVisit.add(myReferable);

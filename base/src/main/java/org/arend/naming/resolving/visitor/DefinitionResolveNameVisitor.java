@@ -20,6 +20,7 @@ import org.arend.naming.scope.*;
 import org.arend.naming.scope.local.ElimScope;
 import org.arend.prelude.Prelude;
 import org.arend.ext.concrete.definition.FunctionKind;
+import org.arend.term.NameHiding;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.*;
@@ -794,12 +795,16 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   }
 
   public void resolveGroup(Group group, Scope scope) {
+    resolveGroup(group, scope, true);
+  }
+
+  private void resolveGroup(Group group, Scope scope, boolean topLevel) {
     LocatedReferable groupRef = group.getReferable();
     Collection<? extends Statement> statements = group.getStatements();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
 
     var def = myConcreteProvider.getConcrete(groupRef);
-    Scope cachedScope = CachingScope.make(makeScope(group, scope, false));
+    Scope cachedScope = CachingScope.make(topLevel ? scope : makeScope(group, scope, false));
     myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     if (def instanceof Concrete.ClassDefinition) {
       resolveSuperClasses((Concrete.ClassDefinition) def, new PrivateFilteredScope(cachedScope), false);
@@ -849,8 +854,8 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
             }
           }
 
-          for (Referable ref : namespaceCommand.getHiddenReferences()) {
-            ref = ExpressionResolveNameVisitor.resolve(ref, new PrivateFilteredScope(curScope, true), null);
+          for (NameHiding nameHiding : namespaceCommand.getHiddenReferences()) {
+            Referable ref = ExpressionResolveNameVisitor.resolve(nameHiding.getHiddenReference(), new PrivateFilteredScope(curScope, true), nameHiding.getScopeContext());
             if (ref instanceof ErrorReference) {
               myErrorReporter.report(((ErrorReference) ref).getError());
             }
@@ -863,7 +868,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     for (Statement statement : statements) {
       Group subgroup = statement.getGroup();
       if (subgroup != null) {
-        resolveGroup(subgroup, cachedScope);
+        resolveGroup(subgroup, cachedScope, false);
       }
     }
     if (!dynamicSubgroups.isEmpty()) {
@@ -872,7 +877,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         dynamicScope = new MergeScope(dynamicScope, new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC));
       }
       for (Group subgroup : dynamicSubgroups) {
-        resolveGroup(subgroup, dynamicScope);
+        resolveGroup(subgroup, dynamicScope, false);
       }
     }
     if (added) {
@@ -927,7 +932,19 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    List<Pair<NamespaceCommand, Map<String, Referable>>> namespaces = new ArrayList<>();
+    class NamespaceStruct {
+      final Scope.ScopeContext context;
+      final NamespaceCommand command;
+      final Map<String, Referable> refMap;
+
+      NamespaceStruct(Scope.ScopeContext context, NamespaceCommand command, Map<String, Referable> refMap) {
+        this.context = context;
+        this.command = command;
+        this.refMap = refMap;
+      }
+    }
+
+    List<NamespaceStruct> namespaces = new ArrayList<>();
     for (Statement statement : statements) {
       NamespaceCommand cmd = statement.getNamespaceCommand();
       if (cmd == null) {
@@ -938,27 +955,30 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       } else {
         checkNamespaceCommand(cmd, referables.keySet());
       }
-      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? namespaceScope.getImportedSubscope() : namespaceScope, cmd).getElements(null);
-      if (!elements.isEmpty()) {
-        Map<String, Referable> map = new LinkedHashMap<>();
-        for (Referable element : elements) {
-          map.put(element.getRefName(), element);
+      for (Scope.ScopeContext context : Scope.ScopeContext.values()) {
+        Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? namespaceScope.getImportedSubscope() : namespaceScope, cmd).getElements(context);
+        if (!elements.isEmpty()) {
+          Map<String, Referable> map = new LinkedHashMap<>();
+          for (Referable element : elements) {
+            map.put(element.getRefName(), element);
+          }
+          namespaces.add(new NamespaceStruct(context, cmd, map));
         }
-        namespaces.add(new Pair<>(cmd, map));
       }
     }
 
     for (int i = 0; i < namespaces.size(); i++) {
-      Pair<NamespaceCommand, Map<String, Referable>> pair = namespaces.get(i);
-      for (Map.Entry<String, Referable> entry : pair.proj2.entrySet()) {
-        if (referables.containsKey(entry.getKey())) {
+      NamespaceStruct struct = namespaces.get(i);
+      for (Map.Entry<String, Referable> entry : struct.refMap.entrySet()) {
+        if (!(struct.context == Scope.ScopeContext.STATIC || struct.context == Scope.ScopeContext.DYNAMIC) || referables.containsKey(entry.getKey())) {
           continue;
         }
 
         for (int j = i + 1; j < namespaces.size(); j++) {
-          Referable ref = namespaces.get(j).proj2.get(entry.getKey());
+          if (!struct.context.equals(namespaces.get(j).context)) continue;
+          Referable ref = namespaces.get(j).refMap.get(entry.getKey());
           if (ref != null && !ref.equals(entry.getValue())) {
-            NamespaceCommand nsCmd = namespaces.get(j).proj1;
+            NamespaceCommand nsCmd = namespaces.get(j).command;
             Object cause = nsCmd;
             for (NameRenaming renaming : nsCmd.getOpenedReferences()) {
               String name = renaming.getName();
@@ -967,7 +987,10 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
                 break;
               }
             }
-            myLocalErrorReporter.report(new DuplicateOpenedNameError(ref, pair.proj1, cause));
+            myLocalErrorReporter.report(new DuplicateOpenedNameError(struct.context, ref, struct.command, cause));
+            if (ref instanceof LocatedReferable) {
+              referables.putIfAbsent(ref.getRefName(), (LocatedReferable) ref);
+            }
           }
         }
       }
