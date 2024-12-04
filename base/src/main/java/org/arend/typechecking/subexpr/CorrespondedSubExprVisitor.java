@@ -77,6 +77,21 @@ public class CorrespondedSubExprVisitor implements
   }
 
   @Override
+  public @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression> visitFieldCall(Concrete.FieldCallExpression expr, @NotNull Expression coreExpr) {
+    if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
+    if (subExpr instanceof Concrete.AppExpression appExpr && Objects.equals(appExpr.getFunction().getData(), expr.getData()) ||
+        subExpr instanceof Concrete.ReferenceExpression   && Objects.equals(subExpr.getData(), expr.getData())) {
+      return new Pair<>(coreExpr, expr);
+    }
+    if (coreExpr instanceof FieldCallExpression fieldCall) {
+      var accepted = expr.argument.accept(this, fieldCall.getArgument());
+      return accepted != null ? accepted : nullWithError(new SubExprError(SubExprError.Kind.Arguments, fieldCall));
+    } else {
+      return nullWithError(SubExprError.mismatch(coreExpr));
+    }
+  }
+
+  @Override
   public Pair<Expression, Concrete.Expression> visitThis(Concrete.ThisExpression expr, Expression coreExpr) {
     return atomicExpr(expr, coreExpr);
   }

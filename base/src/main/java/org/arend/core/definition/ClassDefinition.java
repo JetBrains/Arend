@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class ClassDefinition extends TopLevelDefinition implements CoreClassDefinition {
   private final Set<ClassDefinition> mySuperClasses = new LinkedHashSet<>();
@@ -278,6 +279,25 @@ public class ClassDefinition extends TopLevelDefinition implements CoreClassDefi
         return null;
       }
     }.visit(this);
+  }
+
+  public ClassField findField(Predicate<ClassField> pred) {
+    Set<ClassDefinition> visited = new HashSet<>();
+    return findField(pred, visited);
+  }
+
+  private ClassField findField(Predicate<ClassField> pred, Set<ClassDefinition> visited) {
+    if (!visited.add(this)) return null;
+    for (ClassField field : myPersonalFields) {
+      if (pred.test(field)) {
+        return field;
+      }
+    }
+    for (ClassDefinition superClass : mySuperClasses) {
+      ClassField result = superClass.findField(pred, visited);
+      if (result != null) return result;
+    }
+    return null;
   }
 
   @NotNull

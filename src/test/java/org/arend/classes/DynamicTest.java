@@ -42,13 +42,13 @@ public class DynamicTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicStaticCallError() {
-    resolveNamesModule("""
+    typeCheckModule("""
       \\class A \\where {
         \\func f => 0
       }
       \\func h (a : A) => a.f
       """, 1);
-    assertThatErrorsAre(notInScope("f"));
+    assertThatErrorsAre(notInClass("f", get("A")));
   }
 
   @Test

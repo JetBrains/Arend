@@ -29,7 +29,6 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.context.CoreParameterBuilder;
-import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.*;
 import org.arend.ext.core.level.CoreSort;
@@ -370,7 +369,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     result.type = result.type.normalize(NormalizationMode.WHNF);
     expectedType = expectedType.normalize(NormalizationMode.WHNF);
 
-    if (result.expression instanceof FunCallExpression idp && ((FunCallExpression) result.expression).getDefinition() == Prelude.IDP) {
+    if (result.expression instanceof FunCallExpression idp && idp.getDefinition() == Prelude.IDP) {
       FunCallExpression equality = expectedType.toEquality();
       if (equality != null) {
         CompareVisitor visitor = new CompareVisitor(myEquations, CMP.LE, expr);
@@ -2026,6 +2025,26 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Override
   public TypecheckingResult visitReference(Concrete.ReferenceExpression expr, Expression expectedType) {
     return visitReference(expr, expectedType, true);
+  }
+
+  @Override
+  public TypecheckingResult visitFieldCall(Concrete.FieldCallExpression expr, Expression expectedType) {
+    TypecheckingResult argResult = checkExpr(expr.getArgument(), null);
+    if (argResult == null) return null;
+    argResult = TypeConstructorExpression.unfoldResult(argResult);
+    Expression type = argResult.type.normalize(NormalizationMode.WHNF);
+    if (!(type instanceof ClassCallExpression classCall)) {
+      errorReporter.report(new TypeMismatchError(DocFactory.text("a class"), type, expr.getArgument()));
+      return null;
+    }
+
+    ClassField field = classCall.getDefinition().findField(field2 -> expr.getFieldName().equals(field2.getName()));
+    if (field == null) {
+      errorReporter.report(new NotInDynamicScopeError(classCall.getDefinition(), expr.getFieldName(), expr));
+      return null;
+    }
+
+    return checkResult(expectedType, new TypecheckingResult(FieldCallExpression.make(field, argResult.expression), GetTypeVisitor.INSTANCE.getFieldCallType(field, classCall, argResult.expression)), expr);
   }
 
   private TypecheckingResult visitReference(Concrete.ReferenceExpression expr, Expression expectedType, boolean inferTailImplicits) {

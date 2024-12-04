@@ -250,6 +250,17 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     }
   }
 
+  public Expression getFieldCallType(ClassField field, ClassCallExpression type, Expression argument) {
+    if (type.getDefinition().getOverriddenType(field) != null) {
+      return type.getDefinition().getOverriddenType(field, myMinimal ? minimizeLevels(type) : type.getLevels()).applyExpression(argument);
+    }
+    if (myMinimal) {
+      return field.getType(minimizeLevelsToSuperClass(type, field.getParentClass())).applyExpression(argument);
+    } else {
+      return field.getType(type.getDefinition().castLevels(field.getParentClass(), type.getLevels())).applyExpression(argument);
+    }
+  }
+
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression type = expr.getArgument().accept(this, null);
@@ -257,14 +268,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
       type = type.normalize(NormalizationMode.WHNF);
     }
     if (type instanceof ClassCallExpression classCall && classCall.getDefinition().isSubClassOf(expr.getDefinition().getParentClass())) {
-      if (classCall.getDefinition().getOverriddenType(expr.getDefinition()) != null) {
-        return classCall.getDefinition().getOverriddenType(expr.getDefinition(), myMinimal ? minimizeLevels(classCall) : classCall.getLevels()).applyExpression(expr.getArgument());
-      }
-      if (myMinimal) {
-        return expr.getDefinition().getType(minimizeLevelsToSuperClass(classCall, expr.getDefinition().getParentClass())).applyExpression(expr.getArgument());
-      } else {
-        return expr.getDefinition().getType(classCall.getDefinition().castLevels(expr.getDefinition().getParentClass(), classCall.getLevels())).applyExpression(expr.getArgument());
-      }
+      return getFieldCallType(expr.getDefinition(), classCall, expr.getArgument());
     }
     return new ErrorExpression();
   }

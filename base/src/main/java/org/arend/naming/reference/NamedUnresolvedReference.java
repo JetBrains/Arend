@@ -77,13 +77,13 @@ public class NamedUnresolvedReference implements UnresolvedReference {
 
   @Nullable
   @Override
-  public Concrete.Expression resolveArgument(Scope scope, List<Referable> resolvedRefs) {
+  public Concrete.Expression resolveExpression(Scope scope, List<Referable> resolvedRefs) {
     resolve(scope, resolvedRefs);
     return null;
   }
 
   @Override
-  public @Nullable Concrete.Expression tryResolveArgument(Scope scope, List<Referable> resolvedRefs) {
+  public @Nullable Concrete.Expression tryResolveExpression(Scope scope, List<Referable> resolvedRefs) {
     tryResolve(scope, resolvedRefs);
     return null;
   }

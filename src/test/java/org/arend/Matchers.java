@@ -72,7 +72,7 @@ public class Matchers {
     return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-          if (error instanceof TypeMismatchError || error instanceof TypeMismatchWithSubexprError) {
+          if (error instanceof TypeMismatchError) {
             description.appendText("type mismatch");
             return true;
           } else {
@@ -157,6 +157,26 @@ public class Matchers {
           return true;
         } else {
           description.appendText(error instanceof NotInScopeError ? "'Not in scope: " + ((NotInScopeError) error).name + "' error" : "not a 'Not in scope' error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a 'Not in scope: " + name + "' error");
+      }
+    };
+  }
+
+  public static Matcher<? super GeneralError> notInClass(String name, TCReferable classRef) {
+    return new TypeSafeDiagnosingMatcher<>() {
+      @Override
+      protected boolean matchesSafely(GeneralError error, Description description) {
+        if (error instanceof NotInDynamicScopeError scopeError && scopeError.fieldName.equals(name) && classRef.equals(scopeError.classDef.getRef())) {
+          description.appendText("Definition '" + name + "' is not in class '" + classRef.getRefName() + "'");
+          return true;
+        } else {
+          description.appendText(error instanceof NotInDynamicScopeError scopeError ? "'" + scopeError.fieldName + " is not in class " + scopeError.classDef.getName() + "' error" : "not a 'Not in class' error");
           return false;
         }
       }

@@ -2,12 +2,14 @@ package org.arend.naming;
 
 import org.arend.Matchers;
 import org.arend.term.group.AccessModifier;
+import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import static org.arend.Matchers.notInClass;
 import static org.arend.Matchers.notInScope;
 import static org.junit.Assert.assertEquals;
 
-public class AccessModifiersTest extends NameResolverTestCase {
+public class AccessModifiersTest extends TypeCheckingTestCase {
   @Test
   public void testPrivate() {
     resolveNamesModule(
@@ -331,13 +333,13 @@ public class AccessModifiersTest extends NameResolverTestCase {
 
   @Test
   public void testDynamicPrivate2() {
-    resolveNamesModule("""
+    typeCheckModule("""
       \\record R {
         \\private \\func foo => 0
       }
       \\func test (r : R) => r.foo
       """, 1);
-    assertThatErrorsAre(notInScope("foo"));
+    assertThatErrorsAre(notInClass("foo", get("R")));
   }
 
   @Test
@@ -352,13 +354,13 @@ public class AccessModifiersTest extends NameResolverTestCase {
 
   @Test
   public void testDynamicProtected2() {
-    resolveNamesModule("""
+    typeCheckModule("""
       \\record R {
         \\protected \\func foo => 0
       }
       \\func test (r : R) => r.foo
       """, 1);
-    assertThatErrorsAre(notInScope("foo"));
+    assertThatErrorsAre(notInClass("foo", get("R")));
   }
 
   @Test

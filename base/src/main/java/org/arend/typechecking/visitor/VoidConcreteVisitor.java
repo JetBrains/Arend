@@ -122,6 +122,12 @@ public class VoidConcreteVisitor<P> implements ConcreteExpressionVisitor<P,Void>
   }
 
   @Override
+  public Void visitFieldCall(Concrete.FieldCallExpression expr, P params) {
+    expr.argument.accept(this, params);
+    return null;
+  }
+
+  @Override
   public Void visitThis(Concrete.ThisExpression expr, P params) {
     return null;
   }

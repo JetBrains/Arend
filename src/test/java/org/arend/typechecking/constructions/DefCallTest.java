@@ -781,11 +781,6 @@ public class DefCallTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void staticTestError() {
-    resolveNamesModule("\\class A \\where { \\func x => 0 } \\func y (a : A) => a.x", 1);
-  }
-
-  @Test
   public void innerNonStaticTestError() {
     typeCheckModule("\\class A { \\class B { \\func x => 0 } } \\func y (a : A) => A.B.x {a}", 1);
     assertThatErrorsAre(typeMismatchError());

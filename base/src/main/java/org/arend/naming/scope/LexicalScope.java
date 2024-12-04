@@ -231,7 +231,7 @@ public class LexicalScope implements Scope {
               }
             }
           }
-          GlobalReferable result = resolveInternal(subgroup, name, false);
+          GlobalReferable result = resolveInternal(subgroup, name, true);
           if (result != null && result.getAccessModifier() == AccessModifier.PUBLIC) {
             return result;
           }

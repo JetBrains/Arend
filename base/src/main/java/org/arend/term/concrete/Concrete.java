@@ -667,6 +667,31 @@ public final class Concrete {
     }
   }
 
+  public static class FieldCallExpression extends Expression {
+    public static final byte PREC = 12;
+    private final String myFieldName;
+    public Expression argument;
+
+    public FieldCallExpression(Object data, @NotNull String fieldName, Expression argument) {
+      super(data);
+      myFieldName = fieldName;
+      this.argument = argument;
+    }
+
+    public @NotNull String getFieldName() {
+      return myFieldName;
+    }
+
+    public @NotNull Expression getArgument() {
+      return argument;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitFieldCall(this, params);
+    }
+  }
+
   public static class LongReferenceExpression extends ReferenceExpression {
     private final LongName myLongName;
     private final @Nullable Concrete.ReferenceExpression myQualifier;

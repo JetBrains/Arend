@@ -45,6 +45,11 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
     return new Concrete.ReferenceExpression(expr.getData(), expr.getReferent());
   }
 
+  @Override
+  public Concrete.Expression visitFieldCall(Concrete.FieldCallExpression expr, Concrete.SourceNode sourceNode) {
+    return new Concrete.FieldCallExpression(expr.getData(), expr.getFieldName(), expr.getArgument().accept(this, ((Concrete.FieldCallExpression) sourceNode).getArgument()));
+  }
+
   protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {
     //noinspection DuplicatedCode
     if (parameter.getType() == null) {
@@ -176,7 +181,7 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
   private Concrete.Pattern visitPattern(Concrete.Pattern pattern, Concrete.Pattern widePattern) {
     Concrete.Pattern newPattern;
     if (pattern instanceof Concrete.NamePattern namePattern) {
-      newPattern = new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), ((Concrete.NamePattern) pattern).getReferable(), null);
+      newPattern = new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), namePattern.getReferable(), null);
       if (namePattern.type != null) {
         ((Concrete.NamePattern) newPattern).type = namePattern.type.accept(this, ((Concrete.NamePattern) widePattern).type);
       }

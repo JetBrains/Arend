@@ -55,6 +55,11 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return ref1.equals(refExpr2.getReferent()) && compareLevels(expr1.getPLevels(), refExpr2.getPLevels()) && compareLevels(expr1.getHLevels(), refExpr2.getHLevels());
   }
 
+  @Override
+  public Boolean visitFieldCall(Concrete.FieldCallExpression expr, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.FieldCallExpression fieldCall2 && expr.getFieldName().equals(fieldCall2.getFieldName()) && expr.argument.accept(this, fieldCall2.argument);
+  }
+
   private boolean compareLevels(List<Concrete.LevelExpression> levels1, List<Concrete.LevelExpression> levels2) {
     if (levels1 == null) return levels2 == null;
     if (levels2 == null) return false;

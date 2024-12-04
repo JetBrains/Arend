@@ -60,6 +60,15 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
   }
 
   @Override
+  public Concrete.Expression visitFieldCall(Concrete.FieldCallExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertFieldCallAppHoles(expr, parameters);
+    return !parameters.isEmpty()
+      ? new Concrete.LamExpression(expr.argument.getData(), parameters, expr).accept(this, null)
+      : super.visitFieldCall(expr, params);
+  }
+
+  @Override
   protected void visitPattern(Concrete.Pattern pattern, Void params) {
     super.visitPattern(pattern, params);
   }
@@ -170,6 +179,8 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
       convertClassExtAppHoles((Concrete.ClassExtExpression) expression, parameters);
     else if (expression instanceof Concrete.NewExpression)
       convertNewAppHoles((Concrete.NewExpression) expression, parameters);
+    else if (expression instanceof Concrete.FieldCallExpression)
+      convertFieldCallAppHoles((Concrete.FieldCallExpression) expression, parameters);
 /*
     else if (expression instanceof Concrete.CaseExpression)
       convertCaseAppHoles((Concrete.CaseExpression) expression, parameters);
@@ -193,6 +204,12 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
         argument.expression = createAppHoleRef(parameters, argument.expression.getData());
       else if (argument.expression instanceof Concrete.AppExpression)
         convertRecursively(argument.expression, parameters);
+  }
+
+  private void convertFieldCallAppHoles(Concrete.FieldCallExpression fieldCall, List<Concrete.Parameter> parameters) {
+    if (fieldCall.argument instanceof Concrete.ApplyHoleExpression)
+      fieldCall.argument = createAppHoleRef(parameters, fieldCall.argument.getData());
+    else convertRecursively(fieldCall.argument, parameters);
   }
 
   private void convertProjAppHoles(Concrete.ProjExpression proj, List<Concrete.Parameter> parameters) {

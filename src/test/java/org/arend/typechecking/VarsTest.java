@@ -680,7 +680,7 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func test => r.f
         }
       """, 1);
-    assertThatErrorsAre(Matchers.typeMismatchError());
+    assertThatErrorsAre(Matchers.notInClass("f", get("foo.R")));
   }
 
   @Test

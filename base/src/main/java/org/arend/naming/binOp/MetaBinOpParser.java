@@ -131,10 +131,7 @@ public class MetaBinOpParser {
           myVisitor.finalizeReference(sequence.get(i), myResolvedReferences.get(i));
           if (isRef) {
             Concrete.BinOpSequenceElem<Concrete.Expression> elem = sequence.get(i);
-            Concrete.Expression function = elem.getComponent() instanceof Concrete.AppExpression ? ((Concrete.AppExpression) elem.getComponent()).getFunction() : elem.getComponent();
-            if (function instanceof Concrete.ReferenceExpression) {
-              elem.setComponent(myVisitor.invokeMetaWithoutArguments((Concrete.ReferenceExpression) function, elem.getComponent() instanceof Concrete.AppExpression ? ((Concrete.AppExpression) elem.getComponent()).getArguments().get(0).expression : null, true));
-            }
+            elem.setComponent(myVisitor.invokeMetaWithoutArguments(elem.getComponent()));
           }
           myResult.add(sequence.get(i));
         }

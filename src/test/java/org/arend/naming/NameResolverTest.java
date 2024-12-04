@@ -62,16 +62,16 @@ public class NameResolverTest extends NameResolverTestCase {
   public void notInScopeLongNameError5() {
     resolveNamesModule(
       "\\class X \\where { \\func y => 0 }\n" +
-      "\\func f => X.y.z", 1);
-    assertThatErrorsAre(notInScope("z"));
+      "\\func f => X.y.z");
+    assertTrue(((Concrete.FunctionDefinition) getConcrete("f")).getBody().getTerm() instanceof Concrete.FieldCallExpression);
   }
 
   @Test
   public void notInScopeLongNameError6() {
     resolveNamesModule(
       "\\class X \\where { \\func y => 0 }\n" +
-      "\\func f => X.y.z.w", 1);
-    assertThatErrorsAre(notInScope("z"));
+      "\\func f => X.y.z.w");
+    assertTrue(((Concrete.FunctionDefinition) getConcrete("f")).getBody().getTerm() instanceof Concrete.FieldCallExpression);
   }
 
   @Test
@@ -754,9 +754,9 @@ public class NameResolverTest extends NameResolverTestCase {
       \\module M \\where {
         \\func foo => 0
       }
-      \\func test (M : \\Type) (X : 0 = M.foo) => X
-      """, 1);
-    assertThatErrorsAre(notInScope("foo"));
+      \\func test (M : \\Type) => M.foo
+      """);
+    assertTrue(((Concrete.FunctionDefinition) getConcrete("test")).getBody().getTerm() instanceof Concrete.FieldCallExpression);
   }
 
   @Test

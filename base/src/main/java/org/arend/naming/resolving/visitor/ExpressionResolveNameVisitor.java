@@ -172,7 +172,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     referable = RedirectingReferable.getOriginalReferable(referable);
     if (referable instanceof UnresolvedReference) {
       if (withArg) {
-        ((UnresolvedReference) referable).resolveArgument(scope, resolvedRefs);
+        ((UnresolvedReference) referable).resolveExpression(scope, resolvedRefs);
       }
       referable = RedirectingReferable.getOriginalReferable(((UnresolvedReference) referable).resolve(scope, withArg ? null : resolvedRefs, context));
     }
@@ -195,32 +195,32 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return referable;
   }
 
-  public static Concrete.Expression tryResolve(Concrete.ReferenceExpression refExpr, Scope scope, List<Referable> resolvedRefs) {
+  private static Concrete.Expression tryResolve(Concrete.ReferenceExpression refExpr, Scope scope, List<Referable> resolvedRefs) {
     Referable referable = RedirectingReferable.getOriginalReferable(refExpr.getReferent());
-    Concrete.Expression arg = null;
-    Referable resolved = null;
+    refExpr.setReferent(referable);
     if (referable instanceof UnresolvedReference unresolved) {
-      arg = unresolved.tryResolveArgument(scope, resolvedRefs);
+      Concrete.Expression resolved = unresolved.tryResolveExpression(scope, resolvedRefs);
       if (unresolved.isResolved()) {
-        resolved = unresolved.resolve(scope, null);
+        refExpr.setReferent(unresolved.resolve(scope, null));
       }
+      return resolved == null ? refExpr : resolved;
+    } else {
+      return refExpr;
     }
-    refExpr.setReferent(resolved == null ? referable : resolved);
-    return arg;
   }
 
   public static Concrete.Expression resolve(Concrete.ReferenceExpression refExpr, Scope scope, boolean removeRedirection, List<Referable> resolvedRefs) {
     Referable referable = RedirectingReferable.getOriginalReferable(refExpr.getReferent());
-    Concrete.Expression arg = null;
-    if (referable instanceof UnresolvedReference) {
-      arg = ((UnresolvedReference) referable).resolveArgument(scope, resolvedRefs);
-      referable = ((UnresolvedReference) referable).resolve(scope, null);
+    Concrete.Expression resolved = null;
+    if (referable instanceof UnresolvedReference unresolved) {
+      resolved = unresolved.resolveExpression(scope, resolvedRefs);
+      referable = unresolved.resolve(scope, null);
       if (removeRedirection) {
         referable = RedirectingReferable.getOriginalReferable(referable);
       }
     }
     refExpr.setReferent(referable);
-    return arg;
+    return resolved;
   }
 
   private void resolveLevels(Concrete.ReferenceExpression expr) {
@@ -297,8 +297,15 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   private void convertArgument(Concrete.Expression arg) {
-    for (; arg instanceof Concrete.AppExpression; arg = ((Concrete.AppExpression) arg).getArguments().get(0).expression) {
-      convertExpr((Concrete.ReferenceExpression) ((Concrete.AppExpression) arg).getFunction());
+    while (true) {
+      if (arg instanceof Concrete.AppExpression appExpr) {
+        convertExpr((Concrete.ReferenceExpression) appExpr.getFunction());
+        arg = appExpr.getArguments().get(0).expression;
+      } else if (arg instanceof Concrete.FieldCallExpression) {
+        arg = ((Concrete.FieldCallExpression) arg).getArgument();
+      } else {
+        break;
+      }
     }
     if (arg instanceof Concrete.ReferenceExpression) {
       convertExpr((Concrete.ReferenceExpression) arg);
@@ -312,16 +319,26 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return ref instanceof MetaReferable ? ((MetaReferable) ref).getResolver() : null;
   }
 
-  public Concrete.Expression invokeMetaWithoutArguments(Concrete.ReferenceExpression expr, Concrete.Expression argument, boolean invokeMeta) {
-    if (invokeMeta) {
-      MetaResolver metaDef = getMetaResolver(expr.getReferent());
+  public Concrete.Expression invokeMetaWithoutArguments(Concrete.Expression expr) {
+    Concrete.Expression function;
+    Concrete.Expression argument;
+    if (expr instanceof Concrete.AppExpression appExpr && appExpr.getArguments().size() == 1 && !appExpr.getArguments().get(0).isExplicit()) {
+      function = appExpr.getFunction();
+      argument = appExpr.getArguments().get(0).expression;
+    } else {
+      function = expr;
+      argument = null;
+    }
+
+    if (function instanceof Concrete.ReferenceExpression refExpr) {
+      MetaResolver metaDef = getMetaResolver(refExpr.getReferent());
       if (metaDef != null) {
         myErrorReporter.resetErrorsNumber();
-        return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null, null, null)), expr, Collections.emptyList(), null, null);
+        return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(refExpr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null, null, null)), refExpr, Collections.emptyList(), null, null);
       }
     }
 
-    return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
+    return expr;
   }
 
   Concrete.Expression visitReference(Concrete.ReferenceExpression expr, boolean invokeMeta, boolean resolveLevels) {
@@ -337,28 +354,30 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       origRef = ((RedirectingReferable) origRef).getOriginalReferable();
     }
 
-    Concrete.Expression argument;
+    Concrete.Expression resolved;
     if (origRef instanceof UnresolvedReference) {
       expr.setReferent(origRef);
       List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
-      argument = resolve(expr, myScope, false, resolvedList);
+      resolved = resolve(expr, myScope, false, resolvedList);
       if (expr.getReferent() instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
       }
-      convertExpr(expr);
-      convertArgument(argument);
+      convertArgument(resolved);
       if (myResolverListener != null) {
-        myResolverListener.referenceResolved(argument, origRef, expr, resolvedList, myScope);
+        myResolverListener.referenceResolved(resolved, origRef, expr, resolvedList, myScope);
       }
     } else {
-      argument = null;
+      resolved = null;
+    }
+    if (resolved == null) {
+      resolved = expr;
     }
 
     if (resolveLevels) {
       resolveLevels(expr);
     }
 
-    return invokeMetaWithoutArguments(expr, argument, invokeMeta);
+    return invokeMeta ? invokeMetaWithoutArguments(resolved) : resolved;
   }
 
   @Override
@@ -444,10 +463,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         }
         if (ref instanceof UnresolvedReference) {
           List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
-          Concrete.Expression argument = tryResolve(refExpr, myScope, resolvedList);
-          convertExpr(refExpr);
-          convertArgument(argument);
-          elem.setComponent(argument == null ? refExpr : Concrete.AppExpression.make(refExpr.getData(), refExpr, argument, false));
+          Concrete.Expression resolved = tryResolve(refExpr, myScope, resolvedList);
+          convertArgument(resolved);
+          elem.setComponent(resolved);
           resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, (UnresolvedReference) ref, resolvedList));
         } else {
           resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, null, null));
@@ -492,8 +510,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
     }
     if (resolvedReference.resolvedList != null && myResolverListener != null) {
-      Concrete.Expression argument = elem.getComponent() instanceof Concrete.AppExpression ? ((Concrete.AppExpression) elem.getComponent()).getArguments().get(0).expression : null;
-      myResolverListener.referenceResolved(argument, resolvedReference.originalReference, resolvedReference.refExpr, resolvedReference.resolvedList, myScope);
+      myResolverListener.referenceResolved(elem.getComponent(), resolvedReference.originalReference, resolvedReference.refExpr, resolvedReference.resolvedList, myScope);
     }
   }
 

@@ -294,6 +294,15 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
+  public Void visitFieldCall(Concrete.FieldCallExpression expr, Precedence prec) {
+    if (prec.priority > Concrete.FieldCallExpression.PREC) myBuilder.append('(');
+    printExpr(expr.argument, new Precedence(Concrete.FieldCallExpression.PREC));
+    myBuilder.append('.').append(expr.getFieldName());
+    if (prec.priority > Concrete.FieldCallExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
+  @Override
   public Void visitThis(Concrete.ThisExpression expr, Precedence params) {
     myBuilder.append("\\this");
     return null;
