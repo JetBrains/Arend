@@ -2032,10 +2032,21 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     TypecheckingResult argResult = checkExpr(expr.getArgument(), null);
     if (argResult == null) return null;
     argResult = TypeConstructorExpression.unfoldResult(argResult);
-    Expression type = argResult.type.normalize(NormalizationMode.WHNF);
+    List<SingleDependentLink> params = new ArrayList<>();
+    Expression type = argResult.type.getPiParameters(params, true);
     if (!(type instanceof ClassCallExpression classCall)) {
       errorReporter.report(new TypeMismatchError(DocFactory.text("a class"), type, expr.getArgument()));
       return null;
+    }
+
+    if (!params.isEmpty()) {
+      ExprSubstitution substitution = new ExprSubstitution();
+      for (SingleDependentLink param : params) {
+        Expression arg = new InferenceReferenceExpression(new ExpressionInferenceVariable(param.getTypeExpr().subst(substitution), expr, getAllBindings(), true));
+        argResult.expression = AppExpression.make(argResult.expression, arg, param.isExplicit());
+        substitution.add(param, arg);
+      }
+      argResult.type = classCall.subst(substitution);
     }
 
     ClassField field = classCall.getDefinition().findField(field2 -> expr.getFieldName().equals(field2.getName()));
@@ -2044,7 +2055,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return null;
     }
 
-    return checkResult(expectedType, new TypecheckingResult(FieldCallExpression.make(field, argResult.expression), GetTypeVisitor.INSTANCE.getFieldCallType(field, classCall, argResult.expression)), expr);
+    TResult result = myArgsInference.inferTail(new TypecheckingResult(FieldCallExpression.make(field, argResult.expression), GetTypeVisitor.INSTANCE.getFieldCallType(field, classCall, argResult.expression)), expectedType, expr);
+    return result == null ? null : checkResult(expectedType, result.toResult(this), expr);
   }
 
   private TypecheckingResult visitReference(Concrete.ReferenceExpression expr, Expression expectedType, boolean inferTailImplicits) {

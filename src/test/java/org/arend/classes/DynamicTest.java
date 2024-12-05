@@ -922,4 +922,20 @@ public class DynamicTest extends TypeCheckingTestCase {
       \\func test => M.rrr.foo
       """);
   }
+
+  @Test
+  public void tailImplicitArgumentsTest() {
+    typeCheckModule("""
+      \\record R (r : Nat)
+      \\func test (f : \\Pi {x : \\Sigma} -> R) => f.r
+      """);
+  }
+
+  @Test
+  public void fieldTailImplicitArgumentsTest() {
+    typeCheckModule("""
+      \\record R (f : \\Pi {x : \\Sigma} -> Nat)
+      \\func test (r : R) : Nat => r.f
+      """);
+  }
 }

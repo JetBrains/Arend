@@ -142,16 +142,12 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   @Override
   public Expression getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly) {
     Expression cod = this;
-    while (cod instanceof PiExpression) {
-      PiExpression piCod = (PiExpression) cod;
+    while (cod instanceof PiExpression piCod) {
       if (implicitOnly) {
         if (piCod.getParameters().isExplicit()) {
           break;
         }
         for (SingleDependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
-          if (link.isExplicit()) {
-            return null;
-          }
           if (params != null) {
             params.add(link);
           }
