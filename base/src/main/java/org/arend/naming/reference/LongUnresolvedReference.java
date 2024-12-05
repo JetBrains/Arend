@@ -206,7 +206,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       return null;
     }
 
-    Concrete.Expression result = classRef == null ? new Concrete.ReferenceExpression(data, getReferable()) : null;
+    Concrete.Expression result = classRef == null ? new Concrete.ReferenceExpression(data, resolved) : null;
     for (i++; i < myPath.size(); i++) {
       Referable newResolved = classRef == null ? initialScope.resolveName(myPath.get(i), Scope.ScopeContext.DYNAMIC) : new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC).resolveName(myPath.get(i));
       if (newResolved == null) {
@@ -228,20 +228,12 @@ public class LongUnresolvedReference implements UnresolvedReference {
       if (resolvedRefs != null) {
         resolvedRefs.add(resolved);
       }
-      Concrete.Expression refExpr = new Concrete.ReferenceExpression(data, getReferable());
+      Concrete.Expression refExpr = new Concrete.ReferenceExpression(data, resolved);
       result = result == null ? refExpr : Concrete.AppExpression.make(data, refExpr, result, false);
       classRef = null;
     }
 
     return result;
-  }
-
-  private Referable getReferable() {
-    Referable ref = resolved;
-    while (ref instanceof RedirectingReferable) {
-      ref = ((RedirectingReferable) ref).getOriginalReferable();
-    }
-    return ref;
   }
 
   public Scope resolveNamespace(Scope scope) {

@@ -669,4 +669,13 @@ public class AliasTest extends TypeCheckingTestCase {
       "\\class A \\alias X\n" +
       "\\class B \\extends X");
   }
+
+  @Test
+  public void dynamicInfixTest() {
+    typeCheckModule("""
+      \\record R
+        | field \\alias \\infix 4 >> : Nat -> Nat -> Nat
+      \\func test (r : R) => 0 r.>> 1
+      """);
+  }
 }
