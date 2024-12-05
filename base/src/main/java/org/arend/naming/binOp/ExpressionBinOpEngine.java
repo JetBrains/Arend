@@ -3,6 +3,7 @@ package org.arend.naming.binOp;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.util.Pair;
 import org.arend.naming.reference.LocalReferable;
+import org.arend.naming.reference.NamedUnresolvedReference;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.renamer.Renamer;
 import org.arend.term.Fixity;
@@ -25,7 +26,8 @@ public class ExpressionBinOpEngine implements BinOpEngine<Concrete.Expression> {
   @Override
   public @Nullable Referable getReferable(@NotNull Concrete.Expression elem) {
     return elem instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) elem).getReferent()
-            : elem instanceof Concrete.AppExpression && ((Concrete.AppExpression) elem).getFunction() instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) ((Concrete.AppExpression) elem).getFunction()).getReferent()
+            : elem instanceof Concrete.AppExpression appExpr && appExpr.getFunction() instanceof Concrete.ReferenceExpression refExpr ? refExpr.getReferent()
+            : elem instanceof Concrete.FieldCallExpression ? new NamedUnresolvedReference(elem.getData(), ((Concrete.FieldCallExpression) elem).getFieldName())
             : null;
   }
 
