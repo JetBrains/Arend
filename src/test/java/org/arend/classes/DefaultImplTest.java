@@ -396,4 +396,40 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       """);
     assertEquals(1, ((ClassDefinition) getDefinition("T")).getDefaultImplDependencies().values().iterator().next().size());
   }
+
+  @Test
+  public void defaultAccessorTest() {
+    typeCheckModule("""
+      \\record R {
+        \\func foo => 0
+      }
+      \\module M \\where {
+        \\record S (foo : Nat)
+      }
+      \\record T \\extends M.S {
+        \\default foo : Nat => 0
+      }
+      """);
+  }
+
+  @Test
+  public void defaultAccessorTest2() {
+    typeCheckModule("""
+      \\module N \\where {
+        \\record R {
+          \\func foo => 0
+        }
+      }
+      \\module M \\where {
+        \\record S (foo : Nat)
+      }
+      \\module L \\where {
+        \\record T \\extends M.S {
+          \\default foo : Nat => 0
+        }
+      }
+      \\open N
+      \\open L
+      """);
+  }
 }

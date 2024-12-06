@@ -1296,7 +1296,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           term = Concrete.PatternLamExpression.make(pos, parameters, patterns, term);
         }
       } else {
-        ConcreteLocatedReferable reference = makeReferable(position, AccessModifier.PUBLIC, id != null ? id.getText() : path.get(path.size() - 1), precCtx == null || precCtx instanceof NoPrecedenceContext ? null : visitPrecedence(precCtx), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.COCLAUSE_FUNCTION);
+        ConcreteLocatedReferable reference = makeReferable(position, isDefault ? AccessModifier.PROTECTED : AccessModifier.PUBLIC, id != null ? id.getText() : path.get(path.size() - 1), precCtx == null || precCtx instanceof NoPrecedenceContext ? null : visitPrecedence(precCtx), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.COCLAUSE_FUNCTION);
         EmptyGroup myGroup = new EmptyGroup(reference, parentGroup, isDefault);
         statements.add(myGroup);
         Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(returnCtx);
