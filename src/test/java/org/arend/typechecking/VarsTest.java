@@ -672,7 +672,7 @@ public class VarsTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldResolveTest3() {
-    typeCheckModule("""
+    resolveNamesModule("""
       \\record R (f : Nat)
       \\func foo (r : R) => 0
         \\where {
@@ -680,7 +680,7 @@ public class VarsTest extends TypeCheckingTestCase {
           \\func test => r.f
         }
       """, 1);
-    assertThatErrorsAre(Matchers.notInClass("f", get("foo.R")));
+    assertThatErrorsAre(Matchers.notInScope("f"));
   }
 
   @Test

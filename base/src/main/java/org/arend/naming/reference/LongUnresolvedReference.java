@@ -190,8 +190,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
     if (resolved == null) {
       if (!onlyTry) {
-        Object data = getData();
-        resolved = new ErrorReference(data, make(data, myPath.subList(0, i)), i, myPath.get(i));
+        resolved = new ErrorReference(myData, make(myData, myPath.subList(0, i)), i, myPath.get(i));
         if (resolvedRefs != null) {
           resolvedRefs.set(i, resolved);
         }
@@ -199,27 +198,31 @@ public class LongUnresolvedReference implements UnresolvedReference {
       return null;
     }
 
-    ClassReferable classRef = resolved.getUnderlyingReferable() instanceof ClassReferable classRef2 ? classRef2 : null;
-    Object data = getData();
+    ClassReferable classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
+    boolean withArg = true;
+    if (classRef == null && resolved.getUnderlyingReferable() instanceof ClassReferable classRef2) {
+      classRef = classRef2;
+      withArg = false;
+    }
     if (classRef == null && i + 1 < myPath.size() && RedirectingReferable.getOriginalReferable(resolved) instanceof GlobalReferable globalRef && globalRef.getKind() == GlobalReferable.Kind.OTHER) {
-      resolved = new ErrorReference(data, resolved, i + 1, myPath.get(i + 1));
+      resolved = new ErrorReference(myData, resolved, i + 1, myPath.get(i + 1));
       return null;
     }
 
-    Concrete.Expression result = classRef == null ? new Concrete.ReferenceExpression(data, resolved) : null;
+    Concrete.Expression result = withArg ? new Concrete.ReferenceExpression(myData, resolved) : null;
     for (i++; i < myPath.size(); i++) {
       Referable newResolved = classRef == null ? initialScope.resolveName(myPath.get(i), Scope.ScopeContext.DYNAMIC) : new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC).resolveName(myPath.get(i));
       if (newResolved == null) {
         if (classRef != null) {
           if (onlyTry) return null;
-          resolved = new ErrorReference(data, classRef, i, myPath.get(i));
+          resolved = new ErrorReference(myData, classRef, i, myPath.get(i));
           if (resolvedRefs != null) {
             resolvedRefs.add(resolved);
           }
           return null;
         } else {
           for (; i < myPath.size(); i++) {
-            result = new Concrete.FieldCallExpression(data, myPath.get(i), result);
+            result = new Concrete.FieldCallExpression(myData, myPath.get(i), result);
           }
           return result;
         }
@@ -228,9 +231,9 @@ public class LongUnresolvedReference implements UnresolvedReference {
       if (resolvedRefs != null) {
         resolvedRefs.add(resolved);
       }
-      Concrete.Expression refExpr = new Concrete.ReferenceExpression(data, resolved);
-      result = result == null ? refExpr : Concrete.AppExpression.make(data, refExpr, result, false);
-      classRef = null;
+      Concrete.Expression refExpr = new Concrete.ReferenceExpression(myData, resolved);
+      result = result == null ? refExpr : Concrete.AppExpression.make(myData, refExpr, result, false);
+      classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
     }
 
     return result;

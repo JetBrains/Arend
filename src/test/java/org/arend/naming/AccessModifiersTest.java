@@ -333,11 +333,22 @@ public class AccessModifiersTest extends TypeCheckingTestCase {
 
   @Test
   public void testDynamicPrivate2() {
-    typeCheckModule("""
+    resolveNamesModule("""
       \\record R {
         \\private \\func foo => 0
       }
       \\func test (r : R) => r.foo
+      """, 1);
+    assertThatErrorsAre(notInScope("foo"));
+  }
+
+  @Test
+  public void testDynamicPrivate3() {
+    typeCheckModule("""
+      \\record R {
+        \\private \\func foo => 0
+      }
+      \\func test (r : R) => \\let r' => r \\in r'.foo
       """, 1);
     assertThatErrorsAre(notInClass("foo", get("R")));
   }
@@ -359,6 +370,16 @@ public class AccessModifiersTest extends TypeCheckingTestCase {
         \\protected \\func foo => 0
       }
       \\func test (r : R) => r.foo
+      """);
+  }
+
+  @Test
+  public void testDynamicProtected3() {
+    typeCheckModule("""
+      \\record R {
+        \\protected \\func foo => 0
+      }
+      \\func test (r : R) => \\let r' => r \\in r'.foo
       """, 1);
     assertThatErrorsAre(notInClass("foo", get("R")));
   }

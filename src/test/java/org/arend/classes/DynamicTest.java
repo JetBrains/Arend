@@ -42,11 +42,22 @@ public class DynamicTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicStaticCallError() {
-    typeCheckModule("""
+    resolveNamesModule("""
       \\class A \\where {
         \\func f => 0
       }
       \\func h (a : A) => a.f
+      """, 1);
+    assertThatErrorsAre(notInScope("f"));
+  }
+
+  @Test
+  public void dynamicStaticCallError2() {
+    typeCheckModule("""
+      \\class A \\where {
+        \\func f => 0
+      }
+      \\func h (a : A) => \\let a' => a \\in a'.f
       """, 1);
     assertThatErrorsAre(notInClass("f", get("A")));
   }
@@ -869,12 +880,24 @@ public class DynamicTest extends TypeCheckingTestCase {
 
   @Test
   public void wrongClassTest() {
-    typeCheckModule("""
+    resolveNamesModule("""
       \\record R {
         \\func foo => 0
       }
       \\record S
       \\func test (s : S) => s.foo
+      """, 1);
+    assertThatErrorsAre(notInScope("foo"));
+  }
+
+  @Test
+  public void wrongClassTest2() {
+    typeCheckModule("""
+      \\record R {
+        \\func foo => 0
+      }
+      \\record S
+      \\func test (s : S) => \\let s' => s \\in s'.foo
       """, 1);
     assertThatErrorsAre(typeMismatchError());
   }
