@@ -211,16 +211,18 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   public static Concrete.Expression resolve(Concrete.ReferenceExpression refExpr, Scope scope, boolean removeRedirection, List<Referable> resolvedRefs) {
     Referable referable = RedirectingReferable.getOriginalReferable(refExpr.getReferent());
-    Concrete.Expression resolved = null;
+    Concrete.Expression resolved;
     if (referable instanceof UnresolvedReference unresolved) {
       resolved = unresolved.resolveExpression(scope, resolvedRefs);
       referable = unresolved.resolve(scope, null);
       if (removeRedirection) {
         referable = RedirectingReferable.getOriginalReferable(referable);
       }
+    } else {
+      resolved = null;
     }
     refExpr.setReferent(referable);
-    return resolved;
+    return resolved == null ? refExpr : resolved;
   }
 
   private void resolveLevels(Concrete.ReferenceExpression expr) {
