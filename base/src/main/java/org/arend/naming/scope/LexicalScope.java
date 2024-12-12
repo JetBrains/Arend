@@ -104,7 +104,7 @@ public class LexicalScope implements Scope {
       }
     }
 
-    if (myDynamicContext && (context == null || context == ScopeContext.STATIC)) {
+    if (context == ScopeContext.DYNAMIC || myDynamicContext && (context == null || context == ScopeContext.STATIC)) {
       for (Group subgroup : myGroup.getDynamicSubgroups()) {
         Referable ref = checkSubgroup(subgroup, pred);
         if (ref != null) return ref;
@@ -259,7 +259,7 @@ public class LexicalScope implements Scope {
       }
     }
 
-    if (myDynamicContext && (context == null || context == ScopeContext.STATIC)) {
+    if (context == ScopeContext.DYNAMIC || myDynamicContext && (context == null || context == ScopeContext.STATIC)) {
       for (Group subgroup : myGroup.getDynamicSubgroups()) {
         Object result = resolveSubgroup(subgroup, name, resolveType);
         if (result != null) {

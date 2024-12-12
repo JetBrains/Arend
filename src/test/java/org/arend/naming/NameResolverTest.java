@@ -804,4 +804,45 @@ public class NameResolverTest extends NameResolverTestCase {
       \\open N
       """, 1);
   }
+
+  @Test
+  public void staticOpenStatic() {
+    resolveNamesModule("""
+      \\record R \\where {
+        \\func foo => 0
+      }
+      \\open R(foo)
+      """);
+  }
+
+  @Test
+  public void dynamicOpenDynamic() {
+    resolveNamesModule("""
+      \\record R {
+        \\func foo => 0
+      }
+      \\open R(.foo)
+      """);
+  }
+
+  @Test
+  public void dynamicOpenStatic() {
+    resolveNamesModule("""
+      \\record R \\where {
+        \\func foo => 0
+      }
+      \\open R(.foo)
+      """, 1);
+    assertThatErrorsAre(notInScope("foo"));
+  }
+
+  @Test
+  public void staticOpenDynamic() {
+    resolveNamesModule("""
+      \\record R {
+        \\func foo => 0
+      }
+      \\open R(foo)
+      """);
+  }
 }

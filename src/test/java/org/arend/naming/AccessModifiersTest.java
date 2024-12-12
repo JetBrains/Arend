@@ -463,4 +463,30 @@ public class AccessModifiersTest extends TypeCheckingTestCase {
     assertEquals(AccessModifier.PRIVATE, get("R.field").getAccessModifier());
     assertThatErrorsAre(Matchers.warning());
   }
+
+  @Test
+  public void dynamicOpenTest() {
+    resolveNamesModule("""
+      \\record R {
+        \\protected \\func foo => 0
+      }
+      \\open R(.foo)
+      \\func rrr : R \\cowith
+      \\func test => rrr.foo
+      """);
+  }
+
+  @Test
+  public void fieldDynamicTest() {
+    typeCheckModule("""
+      \\record R {
+        \\protected \\func foo => 0
+      }
+      \\record S {
+        | field : R
+      }
+      \\open R(.foo)
+      \\func test (s : S) => s.field.foo
+      """);
+  }
 }
