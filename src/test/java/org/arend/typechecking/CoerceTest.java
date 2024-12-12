@@ -411,4 +411,26 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void finIntTest() {
     typeCheckDef("\\func test (x : Fin 3) : Int => x");
   }
+
+  @Test
+  public void coerceToSuperClass() {
+    typeCheckModule("""
+      \\record R (n : Nat)
+      \\record S \\extends R
+      \\class C (s : S)
+      \\func test (c : C) : R => c
+      """);
+  }
+
+  @Test
+  public void coerceFromSubClass() {
+    typeCheckModule("""
+      \\record R (n : Nat)
+      \\record S \\extends R
+      \\data D | con Nat
+        \\where
+          \\use \\coerce fromR (r : R) => con r.n
+      \\func test (s : S) : D => s
+      """);
+  }
 }

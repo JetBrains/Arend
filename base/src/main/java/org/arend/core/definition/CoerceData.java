@@ -82,13 +82,37 @@ public class CoerceData {
     myMapTo.putIfAbsent(key, coercingDefinitions);
   }
 
+  private List<Definition> coerceTo(Key key) {
+    if (key instanceof DefinitionKey defKey && defKey.definition instanceof ClassDefinition classDef) {
+      for (Map.Entry<Key, List<Definition>> entry : myMapTo.entrySet()) {
+        if (entry.getKey() instanceof DefinitionKey defKey2 && defKey2.definition instanceof ClassDefinition classDef2 && classDef2.isSubClassOf(classDef)) {
+          return entry.getValue();
+        }
+      }
+      return null;
+    }
+    return myMapTo.get(key);
+  }
+
+  private List<Definition> coerceFrom(Key key) {
+    if (key instanceof DefinitionKey defKey && defKey.definition instanceof ClassDefinition classDef) {
+      for (Map.Entry<Key, List<Definition>> entry : myMapFrom.entrySet()) {
+        if (entry.getKey() instanceof DefinitionKey defKey2 && defKey2.definition instanceof ClassDefinition classDef2 && classDef.isSubClassOf(classDef2)) {
+          return entry.getValue();
+        }
+      }
+      return null;
+    }
+    return myMapFrom.get(key);
+  }
+
   public static TypecheckingResult coerceToKey(TypecheckingResult result, Key key, Concrete.Expression sourceNode, CheckTypeVisitor visitor) {
     CoerceData coerceData = result.type instanceof DefCallExpression ? ((DefCallExpression) result.type).getDefinition().getCoerceData() : null;
     if (coerceData == null) {
       return null;
     }
 
-    List<Definition> defs = coerceData.myMapTo.get(key);
+    List<Definition> defs = coerceData.coerceTo(key);
     return defs != null ? coerceResult(result, defs, null, sourceNode, visitor, false, false) : null;
   }
 
@@ -118,7 +142,7 @@ public class CoerceData {
 
     // Coerce from a definition
     if (expectedCoerceData != null && !(actualKey instanceof AnyKey)) {
-      List<Definition> defs = expectedCoerceData.myMapFrom.get(actualKey);
+      List<Definition> defs = expectedCoerceData.coerceFrom(actualKey);
       if (defs != null) {
         return coerceResult(result, defs, expectedType, sourceNode, visitor, false, false);
       }
@@ -126,7 +150,7 @@ public class CoerceData {
 
     // Coerce to a definition
     if (actualCoerceData != null && !(expectedKey instanceof AnyKey)) {
-      List<Definition> defs = actualCoerceData.myMapTo.get(expectedKey);
+      List<Definition> defs = actualCoerceData.coerceTo(expectedKey);
       if (defs != null) {
         return coerceResult(result, defs, expectedType, sourceNode, visitor, false, false);
       }
@@ -142,7 +166,7 @@ public class CoerceData {
 
     // Coerce from an arbitrary type
     if (expectedCoerceData != null) {
-      List<Definition> defs = expectedCoerceData.myMapFrom.get(actualKey);
+      List<Definition> defs = expectedCoerceData.coerceFrom(actualKey);
       if (defs != null) {
         return coerceResult(result, defs, expectedType, sourceNode, visitor, true, false);
       }
@@ -150,7 +174,7 @@ public class CoerceData {
 
     // Coerce to an arbitrary type
     if (actualCoerceData != null) {
-      List<Definition> defs = actualCoerceData.myMapTo.get(expectedKey);
+      List<Definition> defs = actualCoerceData.coerceTo(expectedKey);
       if (defs != null) {
         TypecheckingResult tcResult = coerceResult(result, defs, expectedType, sourceNode, visitor, false, true);
         if (tcResult != null) return tcResult;
