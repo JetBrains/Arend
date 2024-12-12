@@ -2834,7 +2834,19 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     // Copy data from super classes
     for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-      typedDef.addFields(superClass.getNotImplementedFields());
+      for (ClassField field : superClass.getNotImplementedFields()) {
+        if (field.getReferable().isParameterField()) {
+          typedDef.getNotImplementedFields().remove(field);
+          typedDef.addField(field);
+        }
+      }
+    }
+    for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+      for (ClassField field : superClass.getNotImplementedFields()) {
+        if (!field.getReferable().isParameterField()) {
+          typedDef.addField(field);
+        }
+      }
     }
 
     Concrete.SourceNode alreadyImplementedSourceNode = null;

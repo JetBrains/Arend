@@ -403,4 +403,43 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       """, 2);
     assertThatErrorsAre(argInferenceError(), argInferenceError());
   }
+
+  @Test
+  public void parametersOrder() {
+    typeCheckModule("""
+      \\record R (A : \\Set)
+        | a : A
+      \\record S (B : \\Set)
+        | b : B
+      \\record T \\extends R, S
+      \\func test => \\new T Nat Int 1 (neg 2)
+      """);
+  }
+
+  @Test
+  public void parametersOrder2() {
+    typeCheckModule("""
+      \\record Base (f : Nat -> Nat)
+        | p (n : Nat) : f n = n
+      \\record R (A : \\Set) \\extends Base
+        | a : A
+      \\record S (B : \\Set) \\extends Base
+        | b : B
+      \\record T \\extends R, S
+      \\func test => \\new T Nat Int (\\lam x => x) (\\lam n => idp) 1 (neg 2)
+      """);
+  }
+
+  @Test
+  public void parametersOrder3() {
+    typeCheckModule("""
+      \\record R (n : Nat)
+        | p : n = 1
+      \\record S (k : Int)
+        | q : k = neg 2
+      \\record R' \\extends R
+      \\record T \\extends R', S
+      \\func test => \\new T 1 (neg 2) idp idp
+      """);
+  }
 }
