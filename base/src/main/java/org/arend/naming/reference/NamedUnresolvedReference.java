@@ -5,6 +5,7 @@ import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 
 public class NamedUnresolvedReference implements UnresolvedReference {
@@ -86,6 +87,11 @@ public class NamedUnresolvedReference implements UnresolvedReference {
   public @Nullable Concrete.Expression tryResolveExpression(Scope scope, List<Referable> resolvedRefs) {
     tryResolve(scope, resolvedRefs);
     return null;
+  }
+
+  @Override
+  public @NotNull List<String> getPath() {
+    return Collections.singletonList(myName);
   }
 
   @Override

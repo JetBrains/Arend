@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.List;
 
 public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVisitor<P, R> {
   private final R defaultValue;
@@ -81,7 +82,7 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitFieldAccs(@Nullable Object data, @NotNull Abstract.Expression expression, @NotNull Collection<Integer> fieldAccs, P params) {
+  public R visitFieldAccs(@Nullable Object data, @NotNull Abstract.Expression expression, @NotNull List<Abstract.FieldAcc> fieldAccs, P params) {
     return defaultValue;
   }
 

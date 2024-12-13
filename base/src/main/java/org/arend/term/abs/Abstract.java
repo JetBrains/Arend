@@ -153,6 +153,12 @@ public final class Abstract {
     <P, R> R accept(@NotNull AbstractExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
   }
 
+  public interface FieldAcc extends SourceNode {
+    @Nullable Object getData();
+    @Nullable Integer getNumber();
+    @Nullable String getFieldName();
+  }
+
   public interface ReferenceExpression extends SourceNode {
     @Nullable Object getData();
     @NotNull Referable getReferent();

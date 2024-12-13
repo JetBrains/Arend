@@ -22,7 +22,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
   @Override
   public Concrete.Expression visitFieldCall(Concrete.FieldCallExpression expr, P params) {
-    return new Concrete.FieldCallExpression(expr.getData(), expr.getFieldName(), expr.getArgument().accept(this, params));
+    return new Concrete.FieldCallExpression(expr.getData(), expr.getFieldName(), expr.fixity, expr.getArgument().accept(this, params));
   }
 
   @Override

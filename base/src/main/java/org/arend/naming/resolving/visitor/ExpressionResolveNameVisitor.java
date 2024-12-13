@@ -387,6 +387,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return visitReference(expr, true, true);
   }
 
+  @Override
+  public Concrete.Expression visitFieldCall(Concrete.FieldCallExpression expr, Void params) {
+    if (expr.fixity == Fixity.INFIX || expr.fixity == Fixity.POSTFIX) {
+      myErrorReporter.report(new NameResolverError((expr.fixity == Fixity.INFIX ? "Infix" : "Postfix") + " notation is not allowed here", expr));
+    }
+    return super.visitFieldCall(expr, params);
+  }
+
   public Concrete.Expression convertMetaResult(ConcreteExpression expr, Concrete.ReferenceExpression refExpr, List<Concrete.Argument> args, Concrete.Coclauses coclauses, Concrete.FunctionClauses clauses) {
     if (!(expr == null || expr instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();

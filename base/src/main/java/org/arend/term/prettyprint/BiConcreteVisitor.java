@@ -47,7 +47,7 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
 
   @Override
   public Concrete.Expression visitFieldCall(Concrete.FieldCallExpression expr, Concrete.SourceNode sourceNode) {
-    return new Concrete.FieldCallExpression(expr.getData(), expr.getFieldName(), expr.getArgument().accept(this, ((Concrete.FieldCallExpression) sourceNode).getArgument()));
+    return new Concrete.FieldCallExpression(expr.getData(), expr.getFieldName(), expr.fixity, expr.getArgument().accept(this, ((Concrete.FieldCallExpression) sourceNode).getArgument()));
   }
 
   protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {

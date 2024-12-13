@@ -38,18 +38,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private String getVar(AtomFieldsAccContext ctx) {
-    if (!ctx.NUMBER().isEmpty() || !(ctx.atom() instanceof AtomLiteralContext)) {
+    if (!ctx.DOT().isEmpty() || !(ctx.atom() instanceof AtomLiteralContext)) {
       return null;
     }
     LiteralContext literal = ((AtomLiteralContext) ctx.atom()).literal();
     if (literal instanceof UnknownContext) {
       return "_";
     }
-    if (literal instanceof NameContext && ((NameContext) literal).longName() != null) {
-      List<TerminalNode> ids = ((NameContext) literal).longName().ID();
-      if (ids.size() == 1) {
-        return ids.get(0).getText();
-      }
+    if (literal instanceof NameContext nameCtx) {
+      return nameCtx.ID().getText();
     }
     return null;
   }
@@ -975,9 +972,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.ReferenceExpression visitName(NameContext ctx) {
-    TerminalNode infixCtx = ctx.INFIX();
-    TerminalNode postfixCtx = infixCtx == null ? ctx.POSTFIX() : null;
-    return visitLongNameRef(ctx.longName(), infixCtx != null ? getInfixText(infixCtx) : postfixCtx != null ? getPostfixText(postfixCtx) : null, infixCtx != null ? Fixity.INFIX : postfixCtx != null ? Fixity.POSTFIX : null);
+    TerminalNode id = ctx.ID();
+    Position position = tokenPosition(id.getSymbol());
+    return new Concrete.ReferenceExpression(position, new NamedUnresolvedReference(position, id.getText()));
   }
 
   @Override
@@ -1081,17 +1078,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     } else {
       boolean ok = tele instanceof TeleLiteralContext;
       if (ok) {
-        LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
-        if (literalContext instanceof NameContext && ((NameContext) literalContext).longName() != null) {
-          List<TerminalNode> ids = ((NameContext) literalContext).longName().ID();
-          if (ids.size() == 1) {
-            Position position = tokenPosition(ids.get(0).getSymbol());
-            parameters.add(new Concrete.NameParameter(position, true, new ParsedLocalReferable(position, ids.get(0).getText())));
-          } else {
-            ok = false;
-          }
-        } else if (literalContext instanceof UnknownContext) {
-          parameters.add(new Concrete.NameParameter(tokenPosition(literalContext.start), true, null));
+        String var = getVar(((TeleLiteralContext) tele).atomFieldsAcc());
+        if (var != null) {
+          Position position = tokenPosition(tele.start);
+          parameters.add(new Concrete.NameParameter(position, true, var.equals("_") ? null : new ParsedLocalReferable(position, var)));
         } else {
           ok = false;
         }
@@ -1237,7 +1227,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public Concrete.BinOpSequenceElem<Concrete.Expression> visitArgumentExplicit(ArgumentExplicitContext ctx) {
     AtomFieldsAccContext atomFieldsAcc = ctx.atomFieldsAcc();
-    return new Concrete.BinOpSequenceElem<>(visitAtomFieldsAcc(atomFieldsAcc), atomFieldsAcc.atom() instanceof AtomLiteralContext && isName(((AtomLiteralContext) atomFieldsAcc.atom()).literal()) && atomFieldsAcc.NUMBER().isEmpty() ? Fixity.UNKNOWN : Fixity.NONFIX, true);
+    Concrete.Expression expr = visitAtomFieldsAcc(atomFieldsAcc);
+    return new Concrete.BinOpSequenceElem<>(expr, expr instanceof Concrete.ReferenceExpression && atomFieldsAcc.atom() instanceof AtomLiteralContext literal && isName(literal.literal()) ? Fixity.UNKNOWN : Fixity.NONFIX, true);
   }
 
   private boolean isName(LiteralContext ctx) {
@@ -1612,7 +1603,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           typedExpr = ((ExplicitContext) tele).typedExpr();
         } else
         if (tele instanceof TeleLiteralContext) {
-          parameters.add(new Concrete.TypeParameter(true, visitExpr(((TeleLiteralContext) tele).literal()), false));
+          parameters.add(new Concrete.TypeParameter(true, visitAtomFieldsAcc(((TeleLiteralContext) tele).atomFieldsAcc()), false));
           continue;
         } else
         if (tele instanceof TeleUniverseContext) {
@@ -1829,11 +1820,44 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.Expression visitAtomFieldsAcc(AtomFieldsAccContext ctx) {
-    Concrete.Expression expression = visitExpr(ctx.atom());
-    for (TerminalNode projCtx : ctx.NUMBER()) {
-      expression = new Concrete.ProjExpression(tokenPosition(projCtx.getSymbol()), expression, Integer.parseInt(projCtx.getText()) - 1);
+    TerminalNode infixCtx = ctx.INFIX();
+    TerminalNode postfixCtx = infixCtx == null ? ctx.POSTFIX() : null;
+    AtomContext atomCtx = ctx.atom();
+    List<FieldAccContext> fieldAccs = ctx.fieldAcc();
+    int i = 0;
+    Concrete.Expression expression;
+    if (atomCtx instanceof AtomLiteralContext literalCtx && literalCtx.literal() instanceof NameContext nameCtx) {
+      List<String> names = new ArrayList<>();
+      TerminalNode id = nameCtx.ID();
+      names.add(id.getText());
+      for (; i < fieldAccs.size(); i++) {
+        if (fieldAccs.get(i) instanceof FieldAccIdContext fieldAcc) {
+          names.add(fieldAcc.ID().getText());
+        } else {
+          break;
+        }
+      }
+
+      Position position = tokenPosition(i == fieldAccs.size() && infixCtx != null ? infixCtx.getSymbol() : i == fieldAccs.size() && postfixCtx != null ? postfixCtx.getSymbol() : i == 0 ? id.getSymbol() : fieldAccs.get(i - 1).start);
+      if (i == fieldAccs.size()) {
+        if (infixCtx != null) {
+          names.add(getInfixText(infixCtx));
+        } else if (postfixCtx != null) {
+          names.add(getPostfixText(postfixCtx));
+        }
+        return Concrete.FixityReferenceExpression.make(position, LongUnresolvedReference.make(position, names), infixCtx != null ? Fixity.INFIX : postfixCtx != null ? Fixity.POSTFIX : null, null, null);
+      }
+      expression = new Concrete.ReferenceExpression(position, Objects.requireNonNull(LongUnresolvedReference.make(position, names)));
+    } else {
+      expression = visitExpr(atomCtx);
     }
-    return expression;
+
+    for (; i < fieldAccs.size(); i++) {
+      FieldAccContext fieldAcc = fieldAccs.get(i);
+      TerminalNode node = fieldAcc instanceof FieldAccNumberContext ? ((FieldAccNumberContext) fieldAcc).NUMBER() : ((FieldAccIdContext) fieldAcc).ID();
+      expression = fieldAcc instanceof FieldAccNumberContext ? new Concrete.ProjExpression(tokenPosition(node.getSymbol()), expression, Integer.parseInt(node.getText()) - 1) : new Concrete.FieldCallExpression(tokenPosition(node.getSymbol()), node.getText(), Fixity.UNKNOWN, expression);
+    }
+    return infixCtx != null || postfixCtx != null ? new Concrete.FieldCallExpression(tokenPosition((infixCtx != null ? infixCtx : postfixCtx).getSymbol()), infixCtx != null ? getInfixText(infixCtx) : getPostfixText(postfixCtx), infixCtx != null ? Fixity.INFIX : Fixity.POSTFIX, expression) : expression;
   }
 
   private List<Concrete.FunctionClause> visitClauses(ClausesContext ctx) {

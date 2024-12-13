@@ -4,6 +4,7 @@ import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
+import org.arend.term.Fixity;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +26,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return path.isEmpty() ? null : path.size() == 1 ? new NamedUnresolvedReference(data, path.get(0)) : new LongUnresolvedReference(data, path);
   }
 
-  public List<String> getPath() {
+  public @NotNull List<String> getPath() {
     return myPath;
   }
 
@@ -222,7 +223,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
           return null;
         } else {
           for (; i < myPath.size(); i++) {
-            result = new Concrete.FieldCallExpression(myData, myPath.get(i), result);
+            result = new Concrete.FieldCallExpression(myData, myPath.get(i), i == myPath.size() - 1 ? Fixity.UNKNOWN : Fixity.NONFIX, result);
           }
           return result;
         }

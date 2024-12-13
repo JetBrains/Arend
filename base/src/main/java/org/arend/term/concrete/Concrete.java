@@ -503,10 +503,14 @@ public final class Concrete {
       this.binOpComponent = binOpComponent;
       this.fixity = fixity != Fixity.UNKNOWN ? fixity
         : !isExplicit ? Fixity.NONFIX
-        : binOpComponent instanceof FixityReferenceExpression
-          ? ((FixityReferenceExpression) binOpComponent).fixity : Fixity.UNKNOWN;
-      if (isExplicit && fixity == Fixity.UNKNOWN && binOpComponent instanceof FixityReferenceExpression) {
-        ((FixityReferenceExpression) binOpComponent).fixity = Fixity.NONFIX;
+        : binOpComponent instanceof FixityReferenceExpression refExpr ? refExpr.fixity
+          : binOpComponent instanceof FieldCallExpression fieldCall ? fieldCall.fixity : Fixity.UNKNOWN;
+      if (isExplicit && fixity == Fixity.UNKNOWN) {
+        if (binOpComponent instanceof FixityReferenceExpression refExpr) {
+          refExpr.fixity = Fixity.NONFIX;
+        } else if (binOpComponent instanceof FieldCallExpression fieldCall) {
+          fieldCall.fixity = Fixity.NONFIX;
+        }
       }
       this.isExplicit = isExplicit;
     }
@@ -514,11 +518,14 @@ public final class Concrete {
     // Constructor for the first element in a BinOpSequence
     public BinOpSequenceElem(@NotNull T binOpComponent) {
       this.binOpComponent = binOpComponent;
-      this.fixity = binOpComponent instanceof FixityReferenceExpression ? ((FixityReferenceExpression) binOpComponent).fixity : Fixity.NONFIX;
+      this.fixity = binOpComponent instanceof FixityReferenceExpression refExpr ? refExpr.fixity :
+        binOpComponent instanceof FieldCallExpression fieldCall ? fieldCall.fixity : Fixity.NONFIX;
       boolean explicit = true;
-      if (binOpComponent instanceof FixityReferenceExpression) {
-        ((FixityReferenceExpression) binOpComponent).fixity = Fixity.NONFIX;
-      } else if (binOpComponent instanceof Concrete.Pattern) {
+      if (binOpComponent instanceof FixityReferenceExpression refExpr) {
+        refExpr.fixity = Fixity.NONFIX;
+      } else if (binOpComponent instanceof FieldCallExpression fieldCall) {
+        fieldCall.fixity = Fixity.NONFIX;
+      } else if (binOpComponent instanceof Pattern) {
         explicit = ((Pattern) binOpComponent).isExplicit();
       }
       this.isExplicit = explicit;
@@ -670,11 +677,13 @@ public final class Concrete {
   public static class FieldCallExpression extends Expression {
     public static final byte PREC = 12;
     private final String myFieldName;
+    public Fixity fixity;
     public Expression argument;
 
-    public FieldCallExpression(Object data, @NotNull String fieldName, Expression argument) {
+    public FieldCallExpression(Object data, @NotNull String fieldName, @NotNull Fixity fixity, Expression argument) {
       super(data);
       myFieldName = fieldName;
+      this.fixity = fixity;
       this.argument = argument;
     }
 

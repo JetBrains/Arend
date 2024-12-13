@@ -13,6 +13,7 @@ public interface UnresolvedReference extends Referable, DataContainer {
   @Nullable Referable tryResolve(Scope scope, List<Referable> resolvedRefs);
   @Nullable Concrete.Expression resolveExpression(Scope scope, List<Referable> resolvedRefs);
   @Nullable Concrete.Expression tryResolveExpression(Scope scope, List<Referable> resolvedRefs);
+  @NotNull List<String> getPath();
   void reset();
   boolean isResolved();
 

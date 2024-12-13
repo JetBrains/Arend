@@ -273,13 +273,17 @@ atom  : literal                                     # atomLiteral
       | '\\this'                                    # atomThis
       ;
 
-atomFieldsAcc : atom (DOT NUMBER)*;
+atomFieldsAcc : atom (DOT fieldAcc)* (DOT (INFIX | POSTFIX))?;
+
+fieldAcc : NUMBER   # fieldAccNumber
+         | ID       # fieldAccId
+         ;
 
 implementStatements : '{' ('|' localCoClause)* '}';
 
 longName : ID (DOT ID)*;
 
-literal : longName (DOT (INFIX | POSTFIX))? # name
+literal : ID                                # name
         | '\\Prop'                          # prop
         | '_'                               # unknown
         | INFIX                             # infix
@@ -292,10 +296,10 @@ universeAtom : TRUNCATED_UNIVERSE       # uniTruncatedUniverse
              | SET                      # uniSetUniverse
              ;
 
-tele : literal                          # teleLiteral
-     | universeAtom                     # teleUniverse
-     | '(' typedExpr ')'                # explicit
+tele : '(' typedExpr ')'                # explicit
      | '{' typedExpr '}'                # implicit
+     | universeAtom                     # teleUniverse
+     | atomFieldsAcc                    # teleLiteral
      ;
 
 paramAttr : (STRICT | PROPERTY)?;
@@ -310,8 +314,6 @@ nameTele : idOrUnknown                                            # nameId
 idOrUnknown : ID            # iuId
             | UNDERSCORE    # iuUnknown
             ;
-
-nameTypedExpr : expr ':' expr ;
 
 fieldTele : '(' accessMod? (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldTele
           | '{' accessMod? (CLASSIFYING | COERCE)? ID+ ':' expr '}'        # implicitFieldTele

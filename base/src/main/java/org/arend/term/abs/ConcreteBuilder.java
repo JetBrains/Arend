@@ -18,10 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.arend.term.concrete.Concrete.LevelParameters.getLevelParametersRefs;
 
@@ -727,10 +724,33 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   }
 
   @Override
-  public Concrete.Expression visitFieldAccs(@Nullable Object data, @NotNull Abstract.Expression expression, @NotNull Collection<Integer> fieldAccs, Void params) {
+  public Concrete.Expression visitFieldAccs(@Nullable Object data, @NotNull Abstract.Expression expression, @NotNull List<Abstract.FieldAcc> fieldAccs, Void params) {
     Concrete.Expression result = expression.accept(this, null);
-    for (Integer fieldAcc : fieldAccs) {
-      result = new Concrete.ProjExpression(data, result, fieldAcc - 1);
+
+    int i = 0;
+    if (result instanceof Concrete.ReferenceExpression refExpr && refExpr.getReferent() instanceof UnresolvedReference unresolved) {
+      List<String> names = new ArrayList<>(unresolved.getPath());
+      for (; i < fieldAccs.size(); i++) {
+        String fieldName = fieldAccs.get(i).getFieldName();
+        if (fieldName != null) {
+          names.add(fieldName);
+        } else {
+          break;
+        }
+      }
+      result = new Concrete.ReferenceExpression(refExpr.getData(), Objects.requireNonNull(LongUnresolvedReference.make(unresolved.getData(), names)));
+    }
+
+    for (; i < fieldAccs.size(); i ++) {
+      Integer number = fieldAccs.get(i).getNumber();
+      if (number != null) {
+        result = new Concrete.ProjExpression(data, result, number - 1);
+      } else {
+        String fieldName = fieldAccs.get(i).getFieldName();
+        if (fieldName != null) {
+          result = new Concrete.FieldCallExpression(data, fieldName, Fixity.UNKNOWN, result);
+        }
+      }
     }
 
     return result;

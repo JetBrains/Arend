@@ -71,7 +71,7 @@ public class SubstConcreteVisitor extends BaseConcreteExpressionVisitor<Void> im
 
   @Override
   public Concrete.Expression visitFieldCall(Concrete.FieldCallExpression expr, Void params) {
-    return new Concrete.FieldCallExpression(myData != null ? myData : expr.getData(), expr.getFieldName(), expr.getArgument().accept(this, null));
+    return new Concrete.FieldCallExpression(myData != null ? myData : expr.getData(), expr.getFieldName(), expr.fixity, expr.getArgument().accept(this, null));
   }
 
   private List<Concrete.LevelExpression> visitLevels(List<Concrete.LevelExpression> levels) {

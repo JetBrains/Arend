@@ -168,7 +168,7 @@ public class InfixPostfixTest extends TypeCheckingTestCase {
 
   @Test
   public void infixLongNameProjTest() {
-    resolveNamesModule("""
+    parseModule("""
       \\module Test \\where {
         \\func pair => (0,1)
       }
@@ -178,7 +178,7 @@ public class InfixPostfixTest extends TypeCheckingTestCase {
 
   @Test
   public void postfixLongNameProjTest() {
-    resolveNamesModule("""
+    parseModule("""
       \\module Test \\where {
         \\func pair => (0,1)
       }

@@ -39,7 +39,7 @@ public class ReplaceDataVisitor implements ConcreteExpressionVisitor<Void,Concre
 
   @Override
   public Concrete.Expression visitFieldCall(Concrete.FieldCallExpression expr, Void params) {
-    return new Concrete.FieldCallExpression(getData(expr), expr.getFieldName(), expr.getArgument().accept(this, null));
+    return new Concrete.FieldCallExpression(getData(expr), expr.getFieldName(), expr.fixity, expr.getArgument().accept(this, null));
   }
 
   @Override
