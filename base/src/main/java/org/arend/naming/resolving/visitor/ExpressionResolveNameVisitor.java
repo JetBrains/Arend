@@ -392,7 +392,25 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (expr.fixity == Fixity.INFIX || expr.fixity == Fixity.POSTFIX) {
       myErrorReporter.report(new NameResolverError((expr.fixity == Fixity.INFIX ? "Infix" : "Postfix") + " notation is not allowed here", expr));
     }
-    return super.visitFieldCall(expr, params);
+
+    Concrete.Expression argument = expr.getArgument().accept(this, null);
+    Referable ref = null;
+    if (argument instanceof Concrete.TypedExpression typedExpr) {
+      ClassReferable classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(typedExpr.getType());
+      if (classRef != null) {
+        ref = new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC).resolveName(expr.getFieldName());
+        if (ref == null) {
+          ErrorReference errorRef = new ErrorReference(expr.getData(), classRef, 0, expr.getFieldName());
+          myErrorReporter.report(errorRef.getError());
+          ref = errorRef;
+        }
+      }
+    }
+
+    if (ref == null) {
+      ref = myScope.resolveName(expr.getFieldName(), Scope.ScopeContext.DYNAMIC);
+    }
+    return ref != null ? Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), ref), argument, false) : super.visitFieldCall(expr, params);
   }
 
   public Concrete.Expression convertMetaResult(ConcreteExpression expr, Concrete.ReferenceExpression refExpr, List<Concrete.Argument> args, Concrete.Coclauses coclauses, Concrete.FunctionClauses clauses) {

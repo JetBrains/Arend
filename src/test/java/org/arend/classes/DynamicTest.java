@@ -969,4 +969,36 @@ public class DynamicTest extends TypeCheckingTestCase {
       \\func test (f : Nat -> R) => (f 0).r
       """);
   }
+
+  @Test
+  public void fieldAccTest2() {
+    typeCheckModule("""
+      \\record R {
+        \\func r => 0
+      }
+      \\func test (f : Nat -> R) => (f 0).r
+      """);
+  }
+
+  @Test
+  public void fieldAccTest3() {
+    typeCheckModule("""
+      \\module M \\where {
+        \\record R | r : Nat
+      }
+      \\func test (f : Nat -> M.R) => (f 0).r
+      """);
+  }
+
+  @Test
+  public void fieldAccTest4() {
+    typeCheckModule("""
+      \\module M \\where {
+        \\record R {
+          \\func r => 0
+        }
+      }
+      \\func test (f : Nat -> M.R) => (f 0 : M.R).r
+      """);
+  }
 }
