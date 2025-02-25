@@ -9,6 +9,10 @@ public abstract class BaseCallGraph<T> {
   BaseCallGraph() {
   }
 
+  public HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> getGraph() {
+    return myGraph;
+  }
+
   public void add(Set<BaseCallMatrix<T>> set) {
     for (BaseCallMatrix<T> cm : set) {
       append(cm, myGraph);
